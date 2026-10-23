@@ -47,6 +47,7 @@ SC.T = {
   homeBildschirm: "Tipp: Füge Spacecraft über „Teilen → Zum Home-Bildschirm“ hinzu, damit deine Welten sicher gespeichert bleiben.",
   laedtWelt: "Welt wird erzeugt …",
   entwickler: "Entwickler",
+  gegner: { patrouillendroide: "Patrouillendroide", weltraumbandit: "Weltraumbandit", krabbler: "Krabbler", spucker: "Spucker", schattenritter: "Schattenritter", panzerkoloss: "Panzerkoloss" },
   gegenstand: {
     laserschwert: ["Laserschwert", "n"], blasterpistole: ["Blasterpistole", "f"], blastergewehr: ["Blastergewehr", "n"],
     helm: ["Helm", "m"], brust: ["Brustpanzer", "m"], handschuhe: ["Handschuhe", "pl"], stiefel: ["Stiefel", "pl"], schildgenerator: ["Schildgenerator", "m"]

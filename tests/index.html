@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Spacecraft – Tests</title>
+<style>body{font:14px system-ui,sans-serif;background:#111;color:#ddd;padding:16px}.fehl{color:#ff7070}.ende{margin-top:8px;font-weight:bold}</style>
+<script>var V="test";</script>
+</head>
+<body>
+<div id="ausgabe"></div>
+<script src="helfer.js"></script>
+<script>
+// Gleiche Reihenfolge wie in ../index.html (ohne js/spiel.js), danach die Tests
+var DATEIEN=[
+  "js/kern.js",
+  "js/texte.js"
+];
+var TESTS=[
+  "test-kern.js"
+];
+(function(){
+  var alle=DATEIEN.map(function(d){return "../"+d;}).concat(TESTS);
+  alle.forEach(function(d,i){ var s=document.createElement("script"); s.src=d+"?v="+Date.now(); s.async=false; s.onerror=function(){ var d=document.createElement("div"); d.className="fehl"; d.textContent="❌ Ladefehler: "+s.src; document.getElementById("ausgabe").appendChild(d); }; if(i===alle.length-1) s.onload=function(){ testsStarten(); }; document.body.appendChild(s); });
+})();
+</script>
+</body>
+</html>

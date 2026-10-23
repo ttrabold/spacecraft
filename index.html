@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0e0b2e">
+<title>Spacecraft</title>
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script>
+// Version: einzige Stelle (Semantic Versioning, siehe AGENTS.md)
+var V="0.1.0";
+// Lader: alle Skripte in fester Reihenfolge mit ?v=V (gleiche Reihenfolge in tests/index.html)
+var DATEIEN=[
+  "js/kern.js",
+  "js/texte.js"
+];
+document.write('<link rel="stylesheet" href="css/style.css?v='+V+'">');
+// Manifest nur über http(s), unter file:// blockiert der Browser es
+if(/^https?:$/.test(location.protocol)) document.write('<link rel="manifest" href="manifest.webmanifest">');
+</script>
+</head>
+<body>
+<canvas id="leinwand"></canvas>
+<div id="ui"><div class="start-platzhalter">Spacecraft</div></div>
+<script>
+(function(){
+  DATEIEN.forEach(function(d){ var s=document.createElement("script"); s.src=d+"?v="+V; s.async=false; document.body.appendChild(s); });
+  if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js?v="+V);
+})();
+</script>
+</body>
+</html>

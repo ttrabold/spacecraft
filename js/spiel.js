@@ -21,12 +21,15 @@ SC.Spiel.autoSpeicherIntervall = 30000;
 
 // Startpunkt neuer Welten: Spalte über Land, spiralförmig um die Planetenmitte gesucht
 SC.Spiel.startpunkt = function(planet){
-  var g = new SC.Generator(planet), m = planet.groesse / 2;
+  var g = new SC.Generator(planet), m = planet.groesse / 2, chunks = {};
+  // Tatsächliche Blöcke prüfen: fester Boden, darüber zwei freie Blöcke (kein Baum, keine Wand)
+  function block(x, y, z){ var k = (x >> 4) + "," + (z >> 4); var c = chunks[k] || (chunks[k] = g.chunk(x >> 4, z >> 4)); return SC.BLOECKE[c[SC.idx(x & 15, y, z & 15)]]; }
   for(var r = 0; r < 400; r += 4){
     var schritte = Math.max(1, r * 2);
     for(var i = 0; i < schritte; i++){
-      var w = i / schritte * Math.PI * 2, x = Math.floor(m + Math.cos(w) * r), z = Math.floor(m + Math.sin(w) * r), b = g.biom(x, z), h = g.hoehe(x, z);
-      if(h > SC.MEER + 1 && b !== "see" && b !== "strand" && b !== "berge") return [x + 0.5, h + 1, z + 0.5];
+      var w = i / schritte * Math.PI * 2, x = SC.mod(Math.floor(m + Math.cos(w) * r), planet.groesse), z = SC.mod(Math.floor(m + Math.sin(w) * r), planet.groesse), b = g.biom(x, z), h = g.hoehe(x, z);
+      if(h <= SC.MEER + 1 || b === "see" || b === "strand" || b === "berge" || h + 2 >= SC.CHUNK.H) continue;
+      if(block(x, h, z).fest && !block(x, h + 1, z).fest && !block(x, h + 2, z).fest && block(x, h + 1, z).id !== SC.B.WASSER) return [x + 0.5, h + 1, z + 0.5];
     }
   }
   return [m + 0.5, g.hoehe(m, m) + 1, m + 0.5];

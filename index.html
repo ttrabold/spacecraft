@@ -14,6 +14,7 @@
 var V="0.1.0";
 // Lader: alle Skripte in fester Reihenfolge mit ?v=V (gleiche Reihenfolge in tests/index.html)
 var DATEIEN=[
+  "js/lib/three.min.js",
   "js/kern.js",
   "js/texte.js",
   "js/rauschen.js",
@@ -27,7 +28,9 @@ var DATEIEN=[
   "js/spieler.js",
   "js/zielen.js",
   "js/licht.js",
-  "js/mesher.js"
+  "js/mesher.js",
+  "js/texturen.js",
+  "js/render.js"
 ];
 document.write('<link rel="stylesheet" href="css/style.css?v='+V+'">');
 // Manifest nur über http(s), unter file:// blockiert der Browser es
@@ -40,6 +43,16 @@ if(/^https?:$/.test(location.protocol)) document.write('<link rel="manifest" hre
 <script>
 (function(){
   DATEIEN.forEach(function(d){ var s=document.createElement("script"); s.src=d+"?v="+V; s.async=false; document.body.appendChild(s); });
+  // Vorläufige Vorschau (bis Task 13): index.html?vorschau[&zeit=0.0][&x=..&z=..]
+  if(/vorschau/.test(location.search)) window.addEventListener("load", function(){
+    var q = new URLSearchParams(location.search), pl = new SC.Planet({ id: "start", seed: SC.hashText("Test:start") }), w = new SC.Welt(pl), r = new SC.Render(document.getElementById("leinwand"), pl);
+    r.welt(w); document.getElementById("ui").innerHTML = "";
+    var x = +(q.get("x") || 1024), z = +(q.get("z") || 1024), g = new SC.Generator(pl);
+    var s = new SC.Spieler({ id: "v", pos: [x, g.hoehe(x, z) + 12, z], blick: [0, -0.35], modus: "zuschauer", schnellleiste: [SC.B.GRAS] });
+    window.VORSCHAU = { spieler: s, render: r, welt: w, zeit: +(q.get("zeit") || 0.45) };
+    var t0 = performance.now();
+    (function bild(){ var t = performance.now(), dt = (t - t0) / 1000; t0 = t; s.blick[0] += dt * 0.15; r.bild(s, VORSCHAU.zeit, dt); requestAnimationFrame(bild); })();
+  });
   if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js?v="+V);
 })();
 </script>

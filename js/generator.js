@@ -112,7 +112,7 @@ SC.Generator = function(planet){
       var hz = SC.hash3(s, wx, wz, 501) & 1023;
       if(c[SC.idx(x, h, z)] !== oben) continue;                     // Oberfläche weggehöhlt
       if(biom === "kristallfeld" && hz < 20){ for(var k = 1; k <= 1 + (hz % 3); k++) if(h + k < H) c[SC.idx(x, h + k, z)] = B.KRISTALL; }
-      else if((biom === "wald" || biom === "wiese") && hz >= 1000 && h + 1 < H) c[SC.idx(x, h + 1, z)] = B.LEUCHTPILZ;
+      else if((biom === "wald" || biom === "wiese") && hz >= 1021 && h + 1 < H) c[SC.idx(x, h + 1, z)] = B.LEUCHTPILZ;
     }
     // Bäume: Ursprünge aus dem Chunk und einem 2-Block-Rand, damit Kronen über Grenzen passen
     for(var bx = -2; bx < 18; bx++) for(var bz = -2; bz < 18; bz++){

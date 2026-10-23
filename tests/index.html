@@ -12,6 +12,7 @@
 <script>
 // Gleiche Reihenfolge wie in ../index.html (ohne js/spiel.js), danach die Tests
 var DATEIEN=[
+  "js/lib/three.min.js",
   "js/kern.js",
   "js/texte.js",
   "js/rauschen.js",
@@ -25,7 +26,9 @@ var DATEIEN=[
   "js/spieler.js",
   "js/zielen.js",
   "js/licht.js",
-  "js/mesher.js"
+  "js/mesher.js",
+  "js/texturen.js",
+  "js/render.js"
 ];
 var TESTS=[
   "test-kern.js",
@@ -36,7 +39,8 @@ var TESTS=[
   "test-spielstand.js",
   "test-speicher.js",
   "test-spieler.js",
-  "test-mesher.js"
+  "test-mesher.js",
+  "test-render.js"
 ];
 (function(){
   var alle=DATEIEN.map(function(d){return "../"+d;}).concat(TESTS);

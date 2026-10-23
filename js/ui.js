@@ -137,7 +137,7 @@ SC.UI = function(wurzel, o){
 
   // --- Neue Welt ---
   SC.UI.prototype.zeigeNeueWelt = function(){
-    var ui = this, modus = "kreativ";
+    var ui = this, modus = "kreativ", schw = "leicht";
     this._zeige(
       "<h2>" + esc(SC.T.neueWelt) + "</h2>" +
       '<label class="feld">' + esc(SC.T.name) + '<input class="eingabe" id="nw-name" maxlength="40" value="' + esc(SC.T.meineWelt) + '"></label>' +
@@ -145,17 +145,23 @@ SC.UI = function(wurzel, o){
       '<div class="feld">' + esc(SC.T.modus) + '<div class="reihe modi">' +
       '<button class="modus an" data-aktion="modus" data-modus="kreativ">' + esc(SC.T.kreativ) + "</button>" +
       '<button class="modus" data-aktion="modus" data-modus="zuschauer">' + esc(SC.T.zuschauer) + "</button>" +
-      '<button class="modus" data-modus="survival" disabled>' + esc(SC.T.survival) + ' <small>' + esc(SC.T.kommtBald) + "</small></button></div></div>" +
+      '<button class="modus" data-aktion="modus" data-modus="survival">' + esc(SC.T.survival) + "</button></div></div>" +
+      '<div class="feld">' + esc(SC.T.schwierigkeit) + '<div class="reihe modi">' + schwierigkeitsKnoepfe(schw) + "</div></div>" +
       '<div class="reihe"><button data-aktion="zurueck">' + esc(SC.T.zurueck) + '</button><button class="haupt" data-aktion="los">' + esc(SC.T.welterzeugen) + "</button></div>",
       {
-        modus: function(el){ modus = el.getAttribute("data-modus"); Array.prototype.forEach.call(ui.ebene.querySelectorAll(".modus"), function(b){ b.classList.toggle("an", b === el); }); },
+        modus: function(el){ modus = el.getAttribute("data-modus"); Array.prototype.forEach.call(ui.ebene.querySelectorAll("[data-modus]"), function(b){ b.classList.toggle("an", b === el); }); },
+        schwierigkeit: function(el){ schw = el.getAttribute("data-schwierigkeit"); Array.prototype.forEach.call(ui.ebene.querySelectorAll("[data-schwierigkeit]"), function(b){ b.classList.toggle("an", b === el); }); },
         zurueck: function(){ return ui.zeigeWeltliste(); },
         los: function(){
-          var d = SC.Spielstand.neu({ name: ui.ebene.querySelector("#nw-name").value.trim() || SC.T.meineWelt, seedText: ui.ebene.querySelector("#nw-seed").value, modus: modus });
+          var d = SC.Spielstand.neu({ name: ui.ebene.querySelector("#nw-name").value.trim() || SC.T.meineWelt, seedText: ui.ebene.querySelector("#nw-seed").value, modus: modus, schwierigkeit: schw });
           return ui.slots.speichere(d).then(function(){ ui.schliesse(); ui.o.beiStart(d); }, function(f){ ui.hinweis(SC.T.speichernFehlgeschlagen); });
         }
       });
   };
+
+  function schwierigkeitsKnoepfe(akt){
+    return ["friedlich", "leicht", "normal", "schwer"].map(function(n){ return '<button class="modus' + (n === akt ? " an" : "") + '" data-aktion="schwierigkeit" data-schwierigkeit="' + n + '">' + esc(SC.T.schwierigkeiten[n]) + "</button>"; }).join("");
+  }
 
   // --- Pause ---
   SC.UI.prototype.zeigePause = function(daten){
@@ -167,7 +173,8 @@ SC.UI = function(wurzel, o){
       '<div class="reihe modi"><span>' + esc(SC.T.modus) + ":</span>" +
       '<button class="modus' + (daten.modus === "kreativ" ? " an" : "") + '" data-aktion="modus" data-modus="kreativ">' + esc(SC.T.kreativ) + "</button>" +
       '<button class="modus' + (daten.modus === "zuschauer" ? " an" : "") + '" data-aktion="modus" data-modus="zuschauer">' + esc(SC.T.zuschauer) + "</button>" +
-      '<button class="modus" data-modus="survival" disabled>' + esc(SC.T.survival) + " <small>" + esc(SC.T.kommtBald) + "</small></button></div>" +
+      '<button class="modus' + (daten.modus === "survival" ? " an" : "") + '" data-aktion="modus" data-modus="survival">' + esc(SC.T.survival) + "</button></div>" +
+      '<div class="reihe modi"><span>' + esc(SC.T.schwierigkeit) + ":</span>" + schwierigkeitsKnoepfe(daten.schwierigkeit || "leicht") + "</div>" +
       '<button data-aktion="einstellungen">' + esc(SC.T.einstellungen) + "</button>" +
       ((o.einstellungen || {}).entwickler ? '<button data-aktion="entwickler">' + esc(SC.T.entwickler) + "</button>" : "") +
       '<button data-aktion="export">' + esc(SC.T.weltExportieren) + "</button>" +
@@ -175,6 +182,7 @@ SC.UI = function(wurzel, o){
       {
         weiter: function(){ ui.schliesse(); o.beiWeiter && o.beiWeiter(); },
         modus: function(el){ var m = el.getAttribute("data-modus"); o.beiModus && o.beiModus(m); daten.modus = m; ui.zeigePause(daten); },
+        schwierigkeit: function(el){ var n = el.getAttribute("data-schwierigkeit"); daten.schwierigkeit = n; o.beiSchwierigkeit && o.beiSchwierigkeit(n); ui.zeigePause(daten); },
         einstellungen: function(){ ui.zeigeEinstellungen(function(){ ui.zeigePause(daten); }); },
         entwickler: function(){ ui.schliesse(); o.beiEntwickler && o.beiEntwickler(); },
         export: function(){ return Promise.resolve(o.beiExport(daten.id)); },
@@ -210,12 +218,23 @@ SC.UI = function(wurzel, o){
   };
 
   // --- Blockauswahl ---
-  SC.UI.prototype.zeigeBlockauswahl = function(beiWahl){
+  SC.UI.prototype.zeigeBlockauswahl = function(beiWahl, opt){
+    opt = opt || {};
     var ui = this, kacheln = Object.keys(SC.BLOECKE).map(Number).filter(function(id){ return SC.BLOECKE[id].inAuswahl; }).map(function(id){
       return '<button class="block" data-aktion="block" data-block="' + id + '" title="' + esc(SC.BLOECKE[id].name) + '"><img src="' + SC.UI.blockBild(id) + '" alt=""><span>' + esc(SC.BLOECKE[id].name) + "</span></button>";
     }).join("");
-    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + '</h2><div class="raster">' + kacheln + '</div><div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
-      { block: function(el){ beiWahl(+el.getAttribute("data-block")); }, fertig: function(){ ui.schliesse(); ui.o.beiWeiter && ui.o.beiWeiter(); } });
+    // Kreativ: zweiter Reiter mit Ausrüstung aller Arten und Seltenheiten
+    var reiter = opt.ausruestung ? '<div class="reihe reiter"><button class="modus an" data-aktion="reiter" data-id="bloecke">' + esc(SC.T.bloeckeTitel) + '</button><button class="modus" data-aktion="reiter" data-id="ausruestung">' + esc(SC.T.ausruestungTitel) + "</button></div>" : "";
+    var ausr = opt.ausruestung ? '<div class="raster ausr" hidden>' + Object.keys(SC.GEGENSTAENDE).map(function(a){
+      return [0, 1, 2, 3, 4].map(function(s){ return '<button class="block" data-aktion="gegenstand" data-art="' + a + '" data-selt="' + s + '" style="border-color:' + SC.SELTENHEIT[s].farbe + '"><img src="' + SC.UI.gegenstandBild({ art: a, seltenheit: s }) + '" alt=""><span>' + esc(SC.T.gegenstand[a][0]) + "</span></button>"; }).join("");
+    }).join("") + "</div>" : "";
+    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl">' + kacheln + "</div>" + ausr + '<div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+      {
+        block: function(el){ beiWahl(+el.getAttribute("data-block")); },
+        gegenstand: function(el){ opt.beiGegenstand && opt.beiGegenstand(el.getAttribute("data-art"), +el.getAttribute("data-selt")); },
+        reiter: function(el){ var a = el.getAttribute("data-id") === "ausruestung"; ui.ebene.querySelector(".raster.bl").hidden = a; ui.ebene.querySelector(".raster.ausr").hidden = !a; Array.prototype.forEach.call(ui.ebene.querySelectorAll(".reiter button"), function(b){ b.classList.toggle("an", b === el); }); },
+        fertig: function(){ ui.schliesse(); ui.o.beiWeiter && ui.o.beiWeiter(); }
+      });
   };
 
   // --- HUD ---
@@ -223,14 +242,22 @@ SC.UI = function(wurzel, o){
     var h = this.hudEl, zus = spieler.modus === "zuschauer";
     h.hidden = false;
     if(!this._hudGebaut){
-      h.innerHTML = '<div class="fadenkreuz"></div><div class="modus-anzeige"></div><div class="fps"></div><div class="leiste"></div>';
+      h.innerHTML = '<div class="fadenkreuz"></div><div class="modus-anzeige"></div><div class="fps"></div><div class="kampf" hidden></div><div class="leiste"></div>';
       this._hudGebaut = true; this._leisteSchl = "";
     }
-    var schl = spieler.schnellleiste.join(",") + "|" + spieler.auswahl + "|" + zus;
+    // Survival: die Leiste zeigt die ersten 9 Rucksackplätze (extra.leiste)
+    var leiste = extra && extra.leiste;
+    var schl = (leiste ? JSON.stringify(leiste) : spieler.schnellleiste.join(",")) + "|" + spieler.auswahl + "|" + zus + "|" + spieler.modus;
     if(schl !== this._leisteSchl){
       this._leisteSchl = schl;
       var l = h.querySelector(".leiste"); l.hidden = zus;
-      l.innerHTML = spieler.schnellleiste.map(function(id, i){ return '<button class="leiste-platz' + (i === spieler.auswahl ? " gewaehlt" : "") + '" data-aktion="leiste" data-id="' + i + '"><img src="' + SC.UI.blockBild(id) + '" alt=""><span>' + (i + 1) + "</span></button>"; }).join("");
+      l.innerHTML = (leiste || spieler.schnellleiste).map(function(x, i){
+        var bild = "", zahl = "", rand = "";
+        if(!leiste) bild = SC.UI.blockBild(x);
+        else if(x && x.gegenstand){ bild = SC.UI.gegenstandBild(x.gegenstand); rand = ' style="border-color:' + SC.SELTENHEIT[x.gegenstand.seltenheit || 0].farbe + '"'; }
+        else if(x){ bild = SC.UI.blockBild(x.block); zahl = '<b class="anzahl">' + x.anzahl + "</b>"; }
+        return '<button class="leiste-platz' + (i === spieler.auswahl ? " gewaehlt" : "") + '" data-aktion="leiste" data-id="' + i + '"' + rand + ">" + (bild ? '<img src="' + bild + '" alt="">' : "") + zahl + "<span>" + (i + 1) + "</span></button>";
+      }).join("");
       h.querySelector(".modus-anzeige").textContent = (MODI[spieler.modus] || MODI.kreativ)() + (spieler.fliegt && !zus ? " · " + SC.T.fliegt : "");
       var ui = this; this._hudAktionen = { leiste: function(el, i){ spieler.auswahl = +i; ui._leisteSchl = ""; } };
     }

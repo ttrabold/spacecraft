@@ -73,3 +73,31 @@ input[type=range]{width:100%}
 /* Gamepad: sichtbarer Fokus in Menüs */
 button:focus-visible,input:focus-visible,label.knopf:focus-visible,button:focus,label.knopf:focus{outline:3px solid #ffd95c;outline-offset:2px}
 input[type=range].regeln{outline:3px solid #3ef0ff}
+
+/* Survival: Kampf-HUD */
+.kampf{position:absolute;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(500px,90%);display:flex;flex-direction:column;gap:4px;pointer-events:none}
+.kampf-stufe{position:absolute;left:0;top:-22px;font-weight:bold;color:#ffd95c;text-shadow:0 1px 2px #000}
+.balken{position:relative;height:12px;background:rgba(0,0,0,.55);border:2px solid #0e0b2e}
+.balken i{position:absolute;left:0;top:0;bottom:0;display:block}
+.balken span{position:absolute;inset:0;font-size:10px;line-height:12px;text-align:center;color:#fff;text-shadow:0 1px 1px #000}
+.balken-lp{height:16px}.balken-lp i{background:#e84545}.balken-lp span{line-height:16px;font-size:12px}
+.balken-schild i{background:#4aa3ff}.balken-xp{height:6px}.balken-xp i{background:#ffd95c}
+.balken-hitze{height:6px;width:40%;align-self:center}.balken-hitze i{background:#ff9a3c}.balken-hitze.ueberhitzt i{background:#ff3b3b;animation:blink .3s infinite alternate}
+@keyframes blink{from{opacity:1}to{opacity:.3}}
+.treffer-rand{position:fixed;inset:0;box-shadow:inset 0 0 80px 20px rgba(255,40,40,.7);opacity:0;pointer-events:none}
+.treffer-pfeil{position:fixed;left:50%;top:50%;color:#ff4040;font-size:34px;text-shadow:0 0 6px #000;pointer-events:none}
+.leiste-platz .anzahl,.rs-platz .anzahl{position:absolute;left:3px;bottom:1px;font-size:12px;color:#fff;text-shadow:0 1px 2px #000}
+/* Rucksack */
+.rs{display:flex;flex-wrap:wrap;gap:14px}
+.rs-links{flex:1 1 240px;display:flex;flex-direction:column;gap:10px}
+.rs-ausruestung{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.rs-aplatz{flex-direction:column;justify-content:center;min-height:70px;padding:4px;font-size:11px}
+.rs-aplatz img,.rs-platz img{width:34px;height:34px;image-rendering:pixelated}
+.rs-werte{font-size:14px;color:#aab3d6}
+.rs-detail{min-height:90px;font-size:14px}.rs-detail h3{margin:0 0 4px}
+.besser{color:#5fdc5f}.schlechter{color:#ff6f6f}.sonder{color:#ffd95c}
+.rs-raster{flex:2 1 320px;display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.rs-platz{position:relative;min-height:0;aspect-ratio:1;padding:2px;justify-content:center}
+.rs-platz.leiste{background:#2b2766}.rs-platz.gewaehlt{outline:3px solid #ffd95c}
+.besiegt{text-align:center}.besiegt h1{color:#ffd95c;font-size:44px;margin:4px 0 10px}
+.reiter{margin:0 0 10px}

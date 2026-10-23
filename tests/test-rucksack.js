@@ -1,0 +1,6 @@
+test("Stapeln bis 64, Schnellleiste zuerst", function(){ var r=new SC.Rucksack(); gleich(r.lege({block:SC.B.STEIN,anzahl:70}),0); gleich(r.plaetze[0].anzahl,64); gleich(r.plaetze[1].anzahl,6); gleich(r.hat(SC.B.STEIN),70); gleich(r.lege({block:SC.B.STEIN,anzahl:3}),0); gleich(r.plaetze[1].anzahl,9); });
+test("voller Rucksack gibt Rest zurück", function(){ var r=new SC.Rucksack(); for(var i=0;i<36;i++) r.lege({gegenstand:{id:"g"+i}}); gleich(r.lege({block:SC.B.ERDE,anzahl:5}),5); gleich(r.lege({gegenstand:{id:"x"}}),1); });
+test("verbrauchen leert den Platz", function(){ var r=new SC.Rucksack(); r.lege({block:SC.B.GLAS,anzahl:1}); wahr(r.verbrauche(0)); gleich(r.plaetze[0],null); wahr(!r.verbrauche(0)); });
+test("tauschen und nehmen", function(){ var r=new SC.Rucksack(); r.lege({block:SC.B.ERDE,anzahl:10}); r.tausche(0,20); gleich(r.plaetze[0],null); gleich(r.plaetze[20].anzahl,10); var n=r.nimm(20,4); gleich(n.anzahl,4); gleich(r.plaetze[20].anzahl,6); });
+test("Abbauzeiten", function(){ gleich(SC.Abbau.zeit(SC.B.ERDE,null),0.4); gleich(SC.Abbau.zeit(SC.B.STEIN,"laserschwert"),0.7); gleich(SC.Abbau.zeit(SC.B.GRUNDGESTEIN,null),Infinity); });
+test("Was ein Block ergibt", function(){ gleich(SC.Abbau.ergibt(SC.B.GRAS),SC.B.ERDE); gleich(SC.Abbau.ergibt(SC.B.GLAS),null); gleich(SC.Abbau.ergibt(SC.B.STAMM),SC.B.STAMM); });

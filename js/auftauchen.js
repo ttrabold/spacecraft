@@ -46,8 +46,9 @@ SC.Auftauchen = function(welt, daten, zf){
     var R = 128, n = w.planet.groesse / R, rx = Math.floor(SC.mod(spieler.pos[0], w.planet.groesse) / R), rz = Math.floor(SC.mod(spieler.pos[2], w.planet.groesse) / R), pl = planet(this);
     pl.geraeumt = pl.geraeumt || {};
     for(var i = -1; i <= 1; i++) for(var j = -1; j <= 1; j++) SC.Bauwerke.inRegion(w.planet, SC.mod(rx + i, n), SC.mod(rz + j, n)).forEach(function(b){
-      var d = ring(w, spieler.pos, b.x + b.breite / 2, b.z + b.tiefe / 2);
-      if(Math.hypot(d[0], d[1]) > NAH + Math.max(b.breite, b.tiefe) / 2) return;
+      var d = ring(w, spieler.pos, b.x + b.breite / 2, b.z + b.tiefe / 2), dy = spieler.pos[1] - Math.max(b.y, Math.min(b.y + Math.min(b.hoehe, 10), spieler.pos[1]));
+      // Abstand mit Höhe: ein Dungeon tief unter dem Spieler erwacht erst, wenn man hinabsteigt
+      if(Math.hypot(d[0], d[1]) > NAH + Math.max(b.breite, b.tiefe) / 2 || Math.abs(dy) > 24) return;
       var t = pl.geraeumt[b.schluessel];
       if(t !== undefined){ if(spielzeit - t < 900) return; delete pl.geraeumt[b.schluessel]; delete a.besiegt[b.schluessel]; }
       var plaetze = b.plaetze.filter(function(q){ return q.typ === "gegner" || q.typ === "boss"; });

@@ -6,8 +6,8 @@ SC.SELTENHEIT = [
 
 SC.GEGENSTAENDE = {
   laserschwert: { platz: "waffe", haupt: { schaden: 14 }, waffe: { typ: "schwert", rate: 0.35, reichweite: 3 } },
-  blasterpistole: { platz: "waffe", haupt: { schaden: 6 }, waffe: { typ: "blaster", rate: 0.22, tempo: 45, hitze: 0.09, reichweite: 40 } },
-  blastergewehr: { platz: "waffe", haupt: { schaden: 13 }, waffe: { typ: "blaster", rate: 0.45, tempo: 60, hitze: 0.16, reichweite: 60 } },
+  blasterpistole: { platz: "waffe", haupt: { schaden: 6 }, waffe: { typ: "blaster", rate: 0.22, tempo: 75, hitze: 0.09, reichweite: 40 } },
+  blastergewehr: { platz: "waffe", haupt: { schaden: 13 }, waffe: { typ: "blaster", rate: 0.45, tempo: 95, hitze: 0.16, reichweite: 60 } },
   helm: { platz: "helm", haupt: { schutz: 4 } },
   brust: { platz: "brust", haupt: { schutz: 7 } },
   handschuhe: { platz: "handschuhe", haupt: { schutz: 3 } },

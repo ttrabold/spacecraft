@@ -2,9 +2,9 @@
 // Modell: Blockfigur aus Teilen (Maße und Mitte relativ zu den Füßen), Farben fest je Art.
 SC.GEGNER = {
   patrouillendroide: {
-    verhalten: "fernkampf", lp: function(s){ return 30 + 12 * s; }, schaden: function(s){ return 4 + 1.5 * s; },
+    verhalten: "fernkampf", lp: function(s){ return 30 + 12 * s; }, schaden: function(s){ return 3 + 1 * s; },
     tempo: 2.6, breite: 0.7, hoehe: 1.9, sicht: 24, abstand: [8, 14],
-    waffe: { art: "laser", rate: 1.1, tempo: 32, streuung: 0.12, farbe: "#ff4f4f" },
+    waffe: { art: "laser", rate: 1.5, tempo: 30, streuung: 0.14, farbe: "#ff4f4f" },
     beute: { chance: 0.35 }, orte: ["station"], laut: "droide",
     modell: [
       { teil: "kopf", w: 0.42, h: 0.38, d: 0.42, x: 0, y: 1.7, z: 0, farbe: "#e6e9ef" },
@@ -18,9 +18,9 @@ SC.GEGNER = {
     ]
   },
   weltraumbandit: {
-    verhalten: "ausweicher", lp: function(s){ return 24 + 10 * s; }, schaden: function(s){ return 3 + 1.2 * s; },
+    verhalten: "ausweicher", lp: function(s){ return 24 + 10 * s; }, schaden: function(s){ return 2 + 0.8 * s; },
     tempo: 3.6, breite: 0.6, hoehe: 1.8, sicht: 22, abstand: [5, 10],
-    waffe: { art: "laser", rate: 0.8, tempo: 30, streuung: 0.1, farbe: "#ffa64f" },
+    waffe: { art: "laser", rate: 1.3, tempo: 28, streuung: 0.14, farbe: "#ffa64f" },
     beute: { chance: 0.35 }, orte: ["lager"], laut: null,
     modell: [
       { teil: "kopf", w: 0.42, h: 0.42, d: 0.42, x: 0, y: 1.58, z: 0, farbe: "#c99a72" },
@@ -34,7 +34,7 @@ SC.GEGNER = {
     ]
   },
   krabbler: {
-    verhalten: "nahkampf", lp: function(s){ return 14 + 6 * s; }, schaden: function(s){ return 3 + 1 * s; },
+    verhalten: "nahkampf", lp: function(s){ return 14 + 6 * s; }, schaden: function(s){ return 2 + 0.8 * s; },
     tempo: 4.2, breite: 0.9, hoehe: 0.7, sicht: 16, hieb: { reichweite: 1.5, rate: 0.9 },
     beute: { chance: 0.2 }, orte: ["dungeon", "nacht"], laut: "krabbler",
     modell: [
@@ -46,7 +46,7 @@ SC.GEGNER = {
     ]
   },
   spucker: {
-    verhalten: "spucker", lp: function(s){ return 20 + 8 * s; }, schaden: function(s){ return 4 + 1.3 * s; },
+    verhalten: "spucker", lp: function(s){ return 20 + 8 * s; }, schaden: function(s){ return 3 + 1 * s; },
     tempo: 2.8, breite: 0.8, hoehe: 1.0, sicht: 20, abstand: [6, 12],
     waffe: { art: "spucke", rate: 1.8, tempo: 11, streuung: 0.05, farbe: "#7cff4f" },
     beute: { chance: 0.3 }, orte: ["dungeon", "nacht", "kristallfeld"], laut: "spucker",
@@ -60,7 +60,7 @@ SC.GEGNER = {
     ]
   },
   schattenritter: {
-    verhalten: "ritter", boss: true, lp: function(s){ return 220 + 40 * s; }, schaden: function(s){ return 8 + 2.5 * s; },
+    verhalten: "ritter", boss: true, lp: function(s){ return 600 + 160 * s; }, schaden: function(s){ return 8 + 2.5 * s; },
     tempo: 3.4, breite: 0.8, hoehe: 2.0, sicht: 24, hieb: { reichweite: 2.4, rate: 1.1 }, blockt: true,
     beute: { chance: 1 }, orte: ["herrenhaus", "dungeon"], laut: null,
     modell: [
@@ -76,7 +76,7 @@ SC.GEGNER = {
     ]
   },
   panzerkoloss: {
-    verhalten: "koloss", boss: true, lp: function(s){ return 320 + 50 * s; }, schaden: function(s){ return 10 + 3 * s; },
+    verhalten: "koloss", boss: true, lp: function(s){ return 800 + 200 * s; }, schaden: function(s){ return 10 + 3 * s; },
     tempo: 2.2, breite: 2.2, hoehe: 2.6, sicht: 20, hieb: { reichweite: 2.6, rate: 1.6 }, stampf: { radius: 4.5, rate: 3.5 },
     rueckenFaktor: 3, vorneFaktor: 0.3,
     beute: { chance: 1 }, orte: ["dungeon"], laut: null,

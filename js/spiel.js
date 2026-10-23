@@ -11,7 +11,8 @@ SC.Spiel = function(o){
     beiModus: function(m){ s.modus(m); },
     beiVerlassen: function(){ return s.verlasse(); },
     beiEinstellungen: function(e){ s._einstellungen(e); },
-    beiEntwickler: function(){ s._entwicklerAuf(); }
+    beiEntwickler: function(){ s._entwicklerAuf(); },
+    beiSchwierigkeit: function(n){ if(s.daten) s.daten.schwierigkeit = n; }
   });
   this.eingabe = new SC.Eingabe(o.leinwand, o.uiWurzel);
   this.eingabe.empfindlichkeit = this.einstellungen.empfindlichkeit;
@@ -84,7 +85,13 @@ SC.Spiel.startpunkt = function(planet){
     });
     this._schritt = 0; this._warBoden = true; this._warWasser = false; this._fall = 0; this._musikZeit = 0;
     var sp = daten.spieler, pos = sp.pos || SC.Spiel.startpunkt(planet);
-    this.spieler = new SC.Spieler({ id: "ich", pos: pos, blick: sp.blick, modus: daten.modus, schnellleiste: sp.schnellleiste, ansicht: sp.ansicht });
+    this.spieler = new SC.Spieler({ id: "ich", pos: pos, blick: sp.blick, modus: daten.modus, schnellleiste: sp.schnellleisteKreativ || sp.schnellleiste, ansicht: sp.ansicht });
+    if(!daten.startpunkt) daten.startpunkt = sp.pos ? SC.Spiel.startpunkt(planet) : pos.slice();
+    // Survival: Kampfwerte, Rucksack, Gegner
+    this._zf = SC.zufall((Date.now() ^ (Math.random() * 4294967296)) >>> 0);
+    this.kampf = new SC.Kampf(this.welt, this.spieler, daten, this._zf);
+    this.auftauchen = new SC.Auftauchen(this.welt, daten, this._zf);
+    this._besiegtOffen = false; this._ausrKey = null; this._kampfBis = 0; this._bossBis = 0; this.musikKampf = { kampf: false, boss: false };
     this.tageszeit = typeof daten.tageszeit === "number" ? daten.tageszeit : 0.3;
     this.zeitTempo = 1; this.entwickler.verberge();
     if(this.render){ this.render.renderer.dispose(); }
@@ -117,7 +124,14 @@ SC.Spiel.startpunkt = function(planet){
     if(!offen){
       sp.blick[0] += e.blickDx; sp.blick[1] = Math.max(-1.55, Math.min(1.55, sp.blick[1] + e.blickDy));
       if(e.menue){ this.pause(); return; }
-      if(e.blockauswahl && sp.modus !== "zuschauer"){ this.eingabe.gebeMausFrei(); ui.zeigeBlockauswahl(function(id){ sp.schnellleiste[sp.auswahl] = id; ui.hinweis(SC.BLOECKE[id].name, 1200); }); }
+      if(e.blockauswahl && sp.modus === "survival"){ this.eingabe.gebeMausFrei(); this.zeigeRucksack(); }
+      else if(e.blockauswahl && sp.modus !== "zuschauer"){
+        var kp = this.kampf; this.eingabe.gebeMausFrei();
+        ui.zeigeBlockauswahl(function(id){ sp.schnellleiste[sp.auswahl] = id; ui.hinweis(SC.BLOECKE[id].name, 1200); }, {
+          ausruestung: true,
+          beiGegenstand: function(art, selt){ var g = SC.Beute.erzeuge(SC.zufall((Math.random() * 4294967296) >>> 0), { stufe: kp.werte.stufe, art: art, mindest: selt }); g.seltenheit = selt; if(kp.rucksack.lege({ gegenstand: g })) ui.hinweis(SC.T.rucksackVoll); else ui.hinweis(g.name + " → " + SC.T.rucksackTitel, 1500); }
+        });
+      }
       if(e.ansicht) sp.ansicht = sp.ansicht === "ich" ? "aussen" : "ich";
       if(e.auswahl !== null) sp.auswahl = e.auswahl;
       if(e.auswahlRad) sp.auswahl = SC.mod(sp.auswahl + e.auswahlRad, 9);
@@ -125,19 +139,18 @@ SC.Spiel.startpunkt = function(planet){
     var vorBoden = sp.aufBoden, vy = sp.geschw[1];
     sp.schritt(w, e, dt);
     this._geraeusche(e, vorBoden, vy, dt);
-    var ziel = sp.modus === "zuschauer" ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
-    this.render.markiere(ziel);
-    if(ziel && !offen){
-      if(e.abbauen && SC.BLOECKE[w.holeBlock(ziel.x, ziel.y, ziel.z)].zerstoerbar) w.setzeBlock(ziel.x, ziel.y, ziel.z, SC.B.LUFT, "spieler");
-      else if(e.setzen){
-        var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz;
-        if(SC.kannSetzen(w, sp, x, y, z)) w.setzeBlock(x, y, z, sp.schnellleiste[sp.auswahl], "spieler");
-      }
-    }
+    this._survival(e, dt, offen, t);
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
     if(ew.offen() && (this._ewZeit = (this._ewZeit || 0) + dt) > 0.25){ this._ewZeit = 0; ew.aktualisiere(); }
     this.render.bild(sp, this.tageszeit, dt);
-    ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen });
+  };
+
+  SC.Spiel.prototype.zeigeRucksack = function(){
+    var s = this;
+    this.ui.zeigeRucksack(this.kampf, {
+      beiWegwerfen: function(sache){ if(sache) s.beuteAuswerfen([s.spieler.pos[0] - Math.sin(s.spieler.blick[0]) * 1.5, s.spieler.pos[1], s.spieler.pos[2] - Math.cos(s.spieler.blick[0]) * 1.5], [sache]); },
+      beiFertig: function(){ s._weiter(); }
+    });
   };
 
   // Schritte, Springen, Landen, Wasser; Musik nach Stimmung (Tag, Nacht, unter Tage)
@@ -158,7 +171,8 @@ SC.Spiel.startpunkt = function(planet){
       this._musikZeit = 0;
       var h = SC.himmelsFarben(SC.PALETTEN[w.planet.palette] || SC.PALETTEN.start, this.tageszeit);
       var unter = sp.pos[1] < w.generator.hoehe(sp.pos[0], sp.pos[2]) - 6;
-      a.musikTakt(SC.Musik.stimmung({ tageslicht: h.tageslicht, unterTage: unter }), true);
+      var mk = this.musikKampf || {};
+      a.musikTakt(SC.Musik.stimmung({ tageslicht: h.tageslicht, unterTage: unter, kampf: mk.kampf, boss: mk.boss }), true);
     }
   };
 
@@ -189,7 +203,8 @@ SC.Spiel.startpunkt = function(planet){
     var s = this;
     if(!this.daten || !this.welt) return Promise.resolve();
     this._kette = (this._kette || Promise.resolve()).then(function(){
-      SC.Spielstand.ausWelt(s.daten, s.welt, s.spieler);
+      SC.Spielstand.ausWelt(s.daten, s.welt, s.spieler, s.kampf);
+      s.daten.spieler.schnellleisteKreativ = s.spieler.schnellleiste.slice();
       s.daten.tageszeit = s.tageszeit;
       return s.slots.speichere(s.daten);
     }).catch(function(){ s.ui.hinweis(SC.T.speichernFehlgeschlagen, 6000); });

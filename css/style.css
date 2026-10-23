@@ -67,6 +67,7 @@ input[type=range]{width:100%}
 .ew-gruppe{border-top:1px solid #2e2a6b;padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px}
 .ew-reihe{display:flex;flex-wrap:wrap;gap:6px}
 .ew-reihe button{min-height:38px;padding:4px 10px;font-size:14px}
+.ew-reihe select{font:inherit;padding:6px;background:#0e0b2e;color:#eef2fa;border:2px solid #4a5a8a;max-width:160px}
 .ew-reihe input[type=number]{width:70px;font:inherit;padding:6px;background:#0e0b2e;color:#eef2fa;border:2px solid #4a5a8a}
 .ew-zeile{display:flex;align-items:center;gap:6px}
 

@@ -84,6 +84,7 @@ SC.T = {
   ewBauwerk: { dungeon: "Dungeon", herrenhaus: "Herrenhaus", station: "Station", lager: "Lager" },
   ewFlug: "Fluggeschwindigkeit",
   ewGrenzen: "Chunk-Grenzen anzeigen",
+  ewErscheinen: "Erscheinen", ewGegnerWeg: "Alle Gegner weg", ewErzeugen: "In den Rucksack", ewStufeSetzen: "Stufe setzen", ewBauwerkeReset: "Bauwerke zurücksetzen", ewUnverwundbar: "Unverwundbar",
   brauchtNeuereVersion: "Diese Welt braucht eine neuere Spielversion.",
   importKaputt: "Diese Datei ist keine Spacecraft-Welt oder sie ist beschädigt.",
   importZuNeu: "Diese Welt stammt aus einer neueren Spielversion. Bitte das Spiel aktualisieren.",

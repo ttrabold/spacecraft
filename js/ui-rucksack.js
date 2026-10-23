@@ -77,7 +77,7 @@
       if(s.block !== undefined) return "<h3>" + esc(SC.BLOECKE[s.block].name) + " × " + s.anzahl + "</h3>" + knoepfe(false);
       var g = s.gegenstand, platz = SC.GEGENSTAENDE[g.art].platz, alt = gewaehlt.ausgeruestet ? null : platz === "waffe" ? kampf.waffe() : a[platz];
       return '<h3 style="color:' + SC.SELTENHEIT[g.seltenheit || 0].farbe + '">' + esc(g.name) + "</h3><div>" + esc(SC.T.seltenheitName[g.seltenheit || 0]) + " · " + esc(SC.T.stufe) + " " + g.stufe + "</div>" +
-        wertZeilen(g, alt && alt !== g ? SC.Beute.vergleiche(g, alt) : null) + knoepfe(true, platz);
+        wertZeilen(g, gewaehlt.ausgeruestet || alt === g ? null : SC.Beute.vergleiche(g, alt)) + knoepfe(true, platz);
     }
     function knoepfe(istGegenstand, platz){
       var k = [];

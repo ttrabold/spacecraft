@@ -55,13 +55,20 @@ SC.Entwickler = {};
       '<div class="ew-gruppe"><b>' + esc(T.modus) + '</b><div class="ew-reihe"><button data-ew="m-kreativ">' + esc(T.kreativ) + '</button><button data-ew="m-zuschauer">' + esc(T.zuschauer) + "</button></div></div>" +
       '<div class="ew-gruppe"><label>' + esc(T.sichtweite) + ' <b id="ew-sicht-w">' + s.render.sichtweite + '</b><input type="range" id="ew-sicht" min="2" max="16" step="1" value="' + s.render.sichtweite + '"></label>' +
       '<label>' + esc(T.ewFlug) + ' <b id="ew-flug-w">' + (s.spieler.flugFaktor || 1) + '</b><input type="range" id="ew-flug" min="0.5" max="5" step="0.5" value="' + (s.spieler.flugFaktor || 1) + '"></label>' +
-      '<label class="ew-zeile"><input type="checkbox" id="ew-grenzen"' + (s.render.chunkGrenzen ? " checked" : "") + "> " + esc(T.ewGrenzen) + "</label></div>";
+      '<label class="ew-zeile"><input type="checkbox" id="ew-grenzen"' + (s.render.chunkGrenzen ? " checked" : "") + "> " + esc(T.ewGrenzen) + "</label></div>" +
+      // Survival
+      '<div class="ew-gruppe"><b>' + esc(T.survival) + "</b>" +
+      '<div class="ew-reihe"><select id="ew-art">' + Object.keys(SC.GEGNER).map(function(a){ return '<option value="' + a + '">' + esc(T.gegner[a]) + "</option>"; }).join("") + '</select><input id="ew-gstufe" type="number" min="1" max="30" value="3"><button data-ew="gegner">' + esc(T.ewErscheinen) + '</button><button data-ew="gegner-weg">' + esc(T.ewGegnerWeg) + "</button></div>" +
+      '<div class="ew-reihe"><select id="ew-gart">' + Object.keys(SC.GEGENSTAENDE).map(function(a){ return '<option value="' + a + '">' + esc(T.gegenstand[a][0]) + "</option>"; }).join("") + '</select><select id="ew-selt">' + [0, 1, 2, 3, 4].map(function(i){ return '<option value="' + i + '">' + esc(T.seltenheitName[i]) + "</option>"; }).join("") + '</select><button data-ew="gegenstand">' + esc(T.ewErzeugen) + "</button></div>" +
+      '<div class="ew-reihe"><input id="ew-sstufe" type="number" min="1" max="30" value="' + (s.kampf ? s.kampf.werte.stufe : 1) + '"><button data-ew="stufe">' + esc(T.ewStufeSetzen) + '</button><button data-ew="bauwerke">' + esc(T.ewBauwerkeReset) + "</button></div>" +
+      '<label class="ew-zeile"><input type="checkbox" id="ew-unverwundbar"' + (s.kampf && s.kampf.unverwundbar ? " checked" : "") + "> " + esc(T.ewUnverwundbar) + "</label></div>";
     this.el.hidden = false;
     var q = function(id){ return p.el.querySelector(id); };
     q("#ew-zeit").addEventListener("input", function(){ s.tageszeit = +this.value; });
     q("#ew-sicht").addEventListener("input", function(){ s.render.sichtweite = +this.value; q("#ew-sicht-w").textContent = this.value; });
     q("#ew-flug").addEventListener("input", function(){ s.spieler.flugFaktor = +this.value; q("#ew-flug-w").textContent = this.value; });
     q("#ew-grenzen").addEventListener("change", function(){ s.render.chunkGrenzen = this.checked; });
+    q("#ew-unverwundbar").addEventListener("change", function(){ if(s.kampf) s.kampf.unverwundbar = this.checked; });
     var pos = s.spieler.pos; q("#ew-x").value = Math.floor(pos[0]); q("#ew-y").value = Math.floor(pos[1]); q("#ew-z").value = Math.floor(pos[2]);
     this.aktualisiere();
   };
@@ -79,6 +86,20 @@ SC.Entwickler = {};
       var b = SC.Entwickler.naechstesBauwerk(s.welt.planet, sp.pos[0], sp.pos[2], a.slice(3));
       if(b){ sp.pos = SC.Entwickler.teleportZiel(s.welt, b); sp.geschw = [0, 0, 0]; }
     }
+    if(a === "gegner"){
+      var art = this.el.querySelector("#ew-art").value, st = Math.max(1, +this.el.querySelector("#ew-gstufe").value || 1), def = SC.GEGNER[art];
+      var vx = sp.pos[0] - Math.sin(sp.blick[0]) * 6, vz = sp.pos[2] - Math.cos(sp.blick[0]) * 6, vy = 127;
+      while(vy > 1 && !SC.BLOECKE[s.welt.holeBlock(vx, vy - 1, vz)].fest) vy--;
+      if(vy <= 1) vy = sp.pos[1];
+      SC.Wesen.neu(s.welt, "gegner", { gegnerArt: art, stufe: st, pos: [vx, vy, vz], heim: [vx, vy, vz], lp: def.lp(st), lpMax: def.lp(st), breite: def.breite, hoehe: def.hoehe, boss: !!def.boss, ort: "dungeon" });
+    }
+    if(a === "gegner-weg"){ var w = s.welt; w.wesen.forEach(function(e){ if(e.art === "gegner" || e.art === "geschoss") SC.Wesen.entferne(w, e.id); }); }
+    if(a === "gegenstand" && s.kampf){
+      var sel = +this.el.querySelector("#ew-selt").value, g = SC.Beute.erzeuge(SC.zufall((Math.random() * 4294967296) >>> 0), { stufe: s.kampf.werte.stufe, art: this.el.querySelector("#ew-gart").value, mindest: sel });
+      g.seltenheit = sel; s.kampf.rucksack.lege({ gegenstand: g });
+    }
+    if(a === "stufe" && s.kampf){ s.kampf.werte.stufe = Math.max(1, Math.min(30, +this.el.querySelector("#ew-sstufe").value || 1)); s.kampf.werte.erfahrung = 0; s.kampf.ruestungAnwenden(); s.kampf.werte.lp = s.kampf.werte.lpMax; }
+    if(a === "bauwerke" && s.daten.planeten){ var pl = s.daten.planeten[s.welt.planet.id]; pl.geraeumt = {}; if(s.auftauchen){ s.auftauchen.besiegt = {}; } }
     if(a.indexOf("m-") === 0){ var m = a.slice(2); if(s.modus) s.modus(m); else sp.modus = m; }
     this.aktualisiere();
   };
@@ -92,6 +113,7 @@ SC.Entwickler = {};
       "x " + p[0].toFixed(1) + "  y " + p[1].toFixed(1) + "  z " + p[2].toFixed(1) + "\n" +
       "Chunk " + Math.floor(p[0] / 16) + "," + Math.floor(p[2] / 16) + "   Biom " + g.biom(p[0], p[2]) + "\n" +
       "Blick " + grad + "° / " + neig + "°   " + sp.modus + (sp.fliegt ? " (fliegt)" : "") + "\n" +
+      "Gegner " + SC.Wesen.anzahl(s.welt, "gegner") + "  Geschosse " + SC.Wesen.anzahl(s.welt, "geschoss") + "  Beute " + SC.Wesen.anzahl(s.welt, "kugel") + "\n" +
       "Version " + (window.V || "?") + "   Musik " + (s.audio && s.audio._stueck ? s.audio._stueck.stimmung : "–") + "\n" +
       "Zeit " + SC.Entwickler.uhrzeit(s.tageszeit) + (s.zeitTempo === 0 ? " angehalten" : s.zeitTempo !== 1 ? " ×" + s.zeitTempo : "") + "   Seed " + s.daten.seed;
   };

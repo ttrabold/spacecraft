@@ -72,7 +72,7 @@ SC.KI = {};
       if(!g.seiteZeit || g.zeit > g.seiteZeit){ g.seite = zf() < 0.5 ? -1 : 1; g.seiteZeit = g.zeit + 1.5 + zf() * 1.5; }
       var v = def.verhalten;
       if(v === "fernkampf" || v === "ausweicher" || v === "spucker"){
-        var a = def.abstand, m = abst < a[0] ? -1 : abst > a[1] ? 1 : 0, s = v === "ausweicher" ? 1 : 0.6;
+        var a = def.abstand, m = abst < a[0] ? -1 : abst > a[1] ? 1 : 0, s = v === "ausweicher" ? 0.7 : 0.5;
         vx = (r[0] * m + seit[0] * g.seite * s) * tempo; vz = (r[1] * m + seit[1] * g.seite * s) * tempo;
         if(v === "ausweicher" && g.aufBoden && zf() < 0.02) g.geschw[1] = SPRUNG;
         if(sieht && g.cd <= 0 && abst <= a[1] + 6){ akt.push(schuss(g, def, ziel, d, zf, schw)); g.cd = def.waffe.rate * (0.8 + zf() * 0.4); }

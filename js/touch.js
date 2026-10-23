@@ -13,7 +13,7 @@ SC.Touch = function(eingabe, wurzel){
     '<button class="touch-knopf" data-k="sinken" style="right:24px;bottom:30px">⤓</button>' +
     '<button class="touch-knopf" data-k="abbauen" style="right:120px;bottom:160px">⛏</button>' +
     '<button class="touch-knopf" data-k="setzen" style="right:120px;bottom:70px">■</button>' +
-    '<button class="touch-knopf" data-k="ausweichen" style="right:216px;bottom:30px">⇆</button>' +
+    '<button class="touch-knopf" data-k="ausweichen" style="right:24px;bottom:210px">⇆</button>' +
     '<button class="touch-knopf klein" data-k="blockauswahl" style="right:24px;top:24px">▦</button>' +
     '<button class="touch-knopf klein" data-k="ansicht" style="right:100px;top:24px">👁</button>' +
     '<button class="touch-knopf klein" data-k="menue" style="left:24px;top:24px">☰</button>';

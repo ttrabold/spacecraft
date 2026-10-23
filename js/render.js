@@ -135,6 +135,14 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
       else w.lauf.material.color.set(waffe.seltenheit ? SC.SELTENHEIT[waffe.seltenheit].farbe : "#2a2d36").multiplyScalar(waffe.seltenheit ? 0.6 : 1);
     });
     this._mitWaffe = !!waffe;
+    // Sonderkraft Leuchten: sanfter Lichtschein um die Figur bei Nacht
+    this._leuchtet = !!a && ["helm", "brust"].some(function(p){ return a[p] && a[p].sonder === "leuchten"; });
+    if(!this.schein){
+      var c = document.createElement("canvas"); c.width = c.height = 64; var x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 2, 32, 32, 32);
+      g.addColorStop(0, "rgba(200,240,255,0.55)"); g.addColorStop(1, "rgba(200,240,255,0)"); x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+      this.schein = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      this.schein.scale.set(9, 9, 1); this.schein.visible = false; this.szene.add(this.schein);
+    }
   };
 
   // Chunk-Grenzen (Entwicklerwerkzeuge): Gitter um den Chunk des Spielers
@@ -265,6 +273,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.mond.position.set(k.position.x - sx * 400, k.position.y - sy * 400, k.position.z + 60); this.mond.lookAt(k.position);
     this.sterne.position.copy(k.position); this.sterneMat.opacity = Math.max(0, 1 - h.tageslicht * 1.6);
     this.hand.material.color.setScalar(Math.max(0.35, h.tageslicht));
+    if(this.schein){ this.schein.visible = this._leuchtet && h.tageslicht < 0.6; if(this.schein.visible) this.schein.position.set(px, spieler.pos[1] + 1.2, pz); }
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);
     this.uniforms.nebelNah.value = this.sichtweite * 16 * 0.55; this.uniforms.nebelFern.value = this.sichtweite * 16 * 0.95;
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());

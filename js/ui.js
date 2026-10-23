@@ -1,6 +1,6 @@
 // Oberfläche: Weltliste, Neue Welt, Pause, Einstellungen, Blockauswahl, HUD und Hinweise
 SC.Einstellungen = {
-  standard: function(){ return { sichtweite: matchMedia("(pointer: coarse)").matches ? 6 : 10, empfindlichkeit: 1, touchGroesse: 1, fpsAnzeigen: false }; },
+  standard: function(){ return { sichtweite: matchMedia("(pointer: coarse)").matches ? 6 : 10, empfindlichkeit: 1, touchGroesse: 1, fpsAnzeigen: false, entwickler: false }; },
   lade: function(ns){ var e = SC.Einstellungen.standard(); try { var t = localStorage.getItem("sc-" + ns + ":einstellungen"); if(t) Object.assign(e, JSON.parse(t)); } catch(err){} return e; },
   speichere: function(ns, e){ try { localStorage.setItem("sc-" + ns + ":einstellungen", JSON.stringify(e)); } catch(err){} }
 };
@@ -139,12 +139,14 @@ SC.UI = function(wurzel, o){
       '<button class="modus' + (daten.modus === "zuschauer" ? " an" : "") + '" data-aktion="modus" data-modus="zuschauer">' + esc(SC.T.zuschauer) + "</button>" +
       '<button class="modus" data-modus="survival" disabled>' + esc(SC.T.survival) + " <small>" + esc(SC.T.kommtBald) + "</small></button></div>" +
       '<button data-aktion="einstellungen">' + esc(SC.T.einstellungen) + "</button>" +
+      ((o.einstellungen || {}).entwickler ? '<button data-aktion="entwickler">' + esc(SC.T.entwickler) + "</button>" : "") +
       '<button data-aktion="export">' + esc(SC.T.weltExportieren) + "</button>" +
       '<button data-aktion="verlassen">' + esc(SC.T.zurWeltliste) + "</button></div>",
       {
         weiter: function(){ ui.schliesse(); o.beiWeiter && o.beiWeiter(); },
         modus: function(el){ var m = el.getAttribute("data-modus"); o.beiModus && o.beiModus(m); daten.modus = m; ui.zeigePause(daten); },
         einstellungen: function(){ ui.zeigeEinstellungen(function(){ ui.zeigePause(daten); }); },
+        entwickler: function(){ ui.schliesse(); o.beiEntwickler && o.beiEntwickler(); },
         export: function(){ return Promise.resolve(o.beiExport(daten.id)); },
         verlassen: function(){ return Promise.resolve(o.beiVerlassen && o.beiVerlassen()); }
       });
@@ -160,6 +162,7 @@ SC.UI = function(wurzel, o){
       regler("e-maus", SC.T.empfindlichkeit, 0.3, 3, 0.1, e.empfindlichkeit) +
       regler("e-touch", SC.T.touchGroesse, 0.7, 1.6, 0.1, e.touchGroesse) +
       '<label class="feld zeile"><input type="checkbox" id="e-fps"' + (e.fpsAnzeigen ? " checked" : "") + "> " + esc(SC.T.fpsAnzeigen) + "</label>" +
+      '<label class="feld zeile"><input type="checkbox" id="e-entw"' + (e.entwickler ? " checked" : "") + "> " + esc(SC.T.entwicklerAn) + "</label>" +
       '<div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
       { fertig: function(){ zurueck(); } });
     var ui2 = this;
@@ -171,7 +174,7 @@ SC.UI = function(wurzel, o){
         ui.o.beiEinstellungen && ui.o.beiEinstellungen(e);
       });
     }
-    an("e-sicht", "sichtweite", true); an("e-maus", "empfindlichkeit", true); an("e-touch", "touchGroesse", true); an("e-fps", "fpsAnzeigen", false);
+    an("e-sicht", "sichtweite", true); an("e-maus", "empfindlichkeit", true); an("e-touch", "touchGroesse", true); an("e-fps", "fpsAnzeigen", false); an("e-entw", "entwickler", false);
   };
 
   // --- Blockauswahl ---

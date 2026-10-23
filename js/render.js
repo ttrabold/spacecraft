@@ -54,6 +54,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this._baueRahmen();
     this._baueFigur();
     this._baueHand();
+    this._baueGrenzen();
     this.fps = 60; this._fpsZeit = 0; this._fpsBilder = 0;
     var r = this; this._groesse = function(){ r.renderer.setSize(window.innerWidth, window.innerHeight, false); r.kamera.aspect = window.innerWidth / window.innerHeight; r.kamera.updateProjectionMatrix(); };
     window.addEventListener("resize", this._groesse); this._groesse();
@@ -96,6 +97,16 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.armL = teil(0.2, 0.7, 0.2, 0x2f5bb8, -0.36, 1.12, 0); this.armR = teil(0.2, 0.7, 0.2, 0x2f5bb8, 0.36, 1.12, 0);
     this.beinL = teil(0.22, 0.75, 0.22, 0x2b3f78, -0.13, 0.375, 0); this.beinR = teil(0.22, 0.75, 0.22, 0x2b3f78, 0.13, 0.375, 0);
     f.visible = false; this.figur = f; this.szene.add(f);
+  };
+
+  // Chunk-Grenzen (Entwicklerwerkzeuge): Gitter um den Chunk des Spielers
+  SC.Render.prototype._baueGrenzen = function(){
+    var p = [];
+    for(var i = -2; i <= 3; i++) for(var j = -2; j <= 3; j++) p.push(i * 16, 0, j * 16, i * 16, 128, j * 16);
+    for(var y = 0; y <= 128; y += 16) for(var k = -2; k <= 3; k++){ p.push(-32, y, k * 16, 48, y, k * 16); p.push(k * 16, y, -32, k * 16, y, 48); }
+    var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(p, 3));
+    this.grenzen = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xffd95c, transparent: true, opacity: 0.6 }));
+    this.grenzen.visible = false; this.chunkGrenzen = false; this.szene.add(this.grenzen);
   };
 
   // Gehaltener Block unten rechts in der Ich-Ansicht
@@ -200,6 +211,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.armL.rotation.x = schw; this.armR.rotation.x = -schw; this.beinL.rotation.x = -schw; this.beinR.rotation.x = schw;
     this._handBlock(spieler.modus === "zuschauer" ? -1 : spieler.schnellleiste[spieler.auswahl]);
     this.hand.visible = this.hand.visible && !aussen && spieler.modus !== "zuschauer";
+    this.grenzen.visible = this.chunkGrenzen;
+    if(this.chunkGrenzen) this.grenzen.position.set(Math.floor(px / 16) * 16, 0, Math.floor(pz / 16) * 16);
     // Rahmen um den anvisierten Block
     var z = this._ziel;
     this.rahmen.visible = !!z;

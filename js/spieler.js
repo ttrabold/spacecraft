@@ -58,12 +58,12 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     var vor = (e.vor ? 1 : 0) - (e.zurueck ? 1 : 0), seit = (e.rechts ? 1 : 0) - (e.links ? 1 : 0);
     vx = -Math.sin(g) * vor + Math.cos(g) * seit; vz = -Math.cos(g) * vor - Math.sin(g) * seit;
     var l = Math.hypot(vx, vz); if(l > 0){ vx /= l; vz /= l; }
-    var tempo = this.fliegt ? F.fliegen * (e.sprint ? 1.6 : 1) : e.sprint ? F.sprint : F.laufen;
+    var tempo = this.fliegt ? F.fliegen * (this.flugFaktor || 1) * (e.sprint ? 1.6 : 1) : e.sprint ? F.sprint : F.laufen;
     if(this.imWasser && !this.fliegt) tempo *= 0.6;
     this.geschw[0] = vx * tempo; this.geschw[2] = vz * tempo;
 
     if(this.fliegt){
-      this.geschw[1] = ((e.springen ? 1 : 0) - (e.sinken ? 1 : 0)) * F.fliegen;
+      this.geschw[1] = ((e.springen ? 1 : 0) - (e.sinken ? 1 : 0)) * F.fliegen * (this.flugFaktor || 1);
     } else if(this.imWasser){
       this.geschw[1] -= 8 * dt;
       if(e.springen) this.geschw[1] = 3.5;

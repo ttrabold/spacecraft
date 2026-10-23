@@ -1,8 +1,8 @@
-# Spacecraft 0.1.0 – Die erste Blockwelt
+# Spacecraft 0.2.0 – Die erste Blockwelt
 
 Spacecraft ist ein Blockspiel im Browser, das wir als Familie bauen: erkunden, bauen und später mit selbst gebauten Raumschiffen zu anderen Planeten fliegen.
 
-## Was in 0.1.0 drin ist
+## Was in 0.2.0 drin ist
 
 - **Ein eigener Planet aus einem Seed:** Wiesen, Wälder, Berge mit Schnee, Wüsten, Seen, Höhlen und ein Kristallfeld. Gleicher Seed, gleiche Welt – gute Seeds kann man weitersagen.
 - **Der Planet ist rund:** Läuft man lange genug geradeaus, kommt man wieder am Start an.

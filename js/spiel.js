@@ -10,8 +10,12 @@ SC.Spiel = function(o){
     beiWeiter: function(){ s._weiter(); },
     beiModus: function(m){ s.modus(m); },
     beiVerlassen: function(){ return s.verlasse(); },
-    beiEinstellungen: function(e){ s._einstellungen(e); }
+    beiEinstellungen: function(e){ s._einstellungen(e); },
+    beiEntwickler: function(){ s._entwicklerAuf(); }
   });
+  this.zeitTempo = 1;
+  this.entwickler = new SC.Entwickler.Panel(o.uiWurzel, this);
+  this.beiEntwicklerZu = function(){ s.eingabe.aktiv = true; s.eingabe.sperreMaus(); };
   this.eingabe = new SC.Eingabe(o.leinwand, o.uiWurzel);
   this.eingabe.empfindlichkeit = this.einstellungen.empfindlichkeit;
   this._kette = Promise.resolve();
@@ -60,6 +64,7 @@ SC.Spiel.startpunkt = function(planet){
     var sp = daten.spieler, pos = sp.pos || SC.Spiel.startpunkt(planet);
     this.spieler = new SC.Spieler({ id: "ich", pos: pos, blick: sp.blick, modus: daten.modus, schnellleiste: sp.schnellleiste, ansicht: sp.ansicht });
     this.tageszeit = typeof daten.tageszeit === "number" ? daten.tageszeit : 0.3;
+    this.zeitTempo = 1; this.entwickler.verberge();
     if(this.render){ this.render.renderer.dispose(); }
     this.render = new SC.Render(this.leinwand, planet);
     this.render.sichtweite = this.einstellungen.sichtweite;
@@ -77,10 +82,16 @@ SC.Spiel.startpunkt = function(planet){
 
   SC.Spiel.prototype._bild = function(t){
     var dt = Math.min(0.1, (t - this._t0) / 1000); this._t0 = t;
-    var ui = this.ui, sp = this.spieler, w = this.welt, offen = ui.offen();
+    var ui = this.ui, sp = this.spieler, w = this.welt, ew = this.entwickler;
+    var offen = ui.offen() || ew.offen();
     this.eingabe.aktiv = !offen;
     if(this.eingabe.touch){ this.eingabe.touch.sichtbar(!offen); this.eingabe.touch.setzeGroesse(this.einstellungen.touchGroesse); }
     var e = this.eingabe.zustand();
+    // F3 öffnet und schließt die Entwicklerwerkzeuge (nur wenn in den Einstellungen eingeschaltet)
+    if(e.entwickler && this.einstellungen.entwickler && !ui.offen()){
+      if(ew.offen()){ ew.verberge(); this.beiEntwicklerZu(); } else this._entwicklerAuf();
+      return;
+    }
     if(!offen){
       sp.blick[0] += e.blickDx; sp.blick[1] = Math.max(-1.55, Math.min(1.55, sp.blick[1] + e.blickDy));
       if(e.menue){ this.pause(); return; }
@@ -99,10 +110,13 @@ SC.Spiel.startpunkt = function(planet){
         if(SC.kannSetzen(w, sp, x, y, z)) w.setzeBlock(x, y, z, sp.schnellleiste[sp.auswahl], "spieler");
       }
     }
-    this.tageszeit = (this.tageszeit + dt / 1200) % 1;
+    this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
+    if(ew.offen() && (this._ewZeit = (this._ewZeit || 0) + dt) > 0.25){ this._ewZeit = 0; ew.aktualisiere(); }
     this.render.bild(sp, this.tageszeit, dt);
     ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen });
   };
+
+  SC.Spiel.prototype._entwicklerAuf = function(){ this.eingabe.gebeMausFrei(); this.eingabe.aktiv = false; this.entwickler.zeige(); };
 
   SC.Spiel.prototype.pause = function(){
     this.eingabe.gebeMausFrei();
@@ -158,7 +172,7 @@ SC.Spiel.startpunkt = function(planet){
     var s = this;
     return this.speichere("verlassen").then(function(){
       s._laeuft = false; clearInterval(s._takt); s.lebenszyklusAbmelden(document);
-      s.eingabe.gebeMausFrei(); s.ui.verbergeHud();
+      s.eingabe.gebeMausFrei(); s.ui.verbergeHud(); s.entwickler.verberge();
       if(s.render){ s.render.welt(s.welt); s.render.renderer.clear(); }
       s.daten = null; s.welt = null;
       return s.ui.zeigeWeltliste();

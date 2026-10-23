@@ -18,7 +18,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
   this._maus = { abbauen: false, setzen: false, tAbbauen: 0, tSetzen: 0 };
   this._h = {
     keydown: function(ev){
-      if(ev.code === "F5" || ev.code === "Space" || ev.code === "Tab") ev.preventDefault();
+      if(ev.code === "F5" || ev.code === "F3" || ev.code === "Space" || ev.code === "Tab") ev.preventDefault();
       if(ev.target && /INPUT|TEXTAREA/.test(ev.target.tagName)) return;
       e._druecke(ev.code);
     },
@@ -48,7 +48,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
 };
 
 (function(){
-  var EINMAL = { KeyE: "blockauswahl", Escape: "menue", F5: "ansicht", KeyV: "ansicht" };
+  var EINMAL = { KeyE: "blockauswahl", Escape: "menue", F5: "ansicht", KeyV: "ansicht", F3: "entwickler" };
   SC.Eingabe.prototype._druecke = function(code){
     if(!this.tasten.has(code)){
       if(EINMAL[code]) this._einmal[EINMAL[code]] = true;
@@ -79,7 +79,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
     b.setzen = !!e1.setzen || wiederhole(this._maus, "setzen", "tSetzen", jetzt) || !!(t && t.wiederhole("setzen", jetzt));
     b.auswahl = e1.auswahl === undefined ? null : e1.auswahl;
     b.auswahlRad = this._rad; this._rad = 0;
-    b.menue = !!e1.menue; b.blockauswahl = !!e1.blockauswahl; b.ansicht = !!e1.ansicht;
+    b.menue = !!e1.menue; b.blockauswahl = !!e1.blockauswahl; b.ansicht = !!e1.ansicht; b.entwickler = !!e1.entwickler;
     if(!this.aktiv){ b.abbauen = b.setzen = false; b.blickDx = b.blickDy = 0; b.auswahlRad = 0; }
     return b;
   };

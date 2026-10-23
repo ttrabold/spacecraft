@@ -58,3 +58,14 @@ input[type=range]{width:100%}
 .hinweise{position:absolute;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;pointer-events:none;width:min(560px,90%)}
 .hinweis{background:#151236;border:2px solid #3ef0ff;padding:10px 14px;text-align:center}
 @media (max-width:700px){.leiste-platz{width:40px;height:40px;padding:3px}.leiste-platz img{width:30px;height:30px}}
+
+/* Entwicklerwerkzeuge */
+.entwickler{position:absolute;left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));width:min(380px,calc(100% - 16px));max-height:calc(100% - 16px);overflow:auto;background:rgba(14,11,46,.88);border:2px solid #ffd95c;padding:10px;box-sizing:border-box;pointer-events:auto;font-size:14px}
+.ew-kopf{display:flex;justify-content:space-between;align-items:center;color:#ffd95c;font-weight:bold;margin-bottom:6px}
+.ew-kopf button{min-height:36px;padding:4px 10px}
+.ew-info{margin:0 0 8px;font:12px/1.4 ui-monospace,Menlo,monospace;color:#eef2fa;white-space:pre-wrap}
+.ew-gruppe{border-top:1px solid #2e2a6b;padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.ew-reihe{display:flex;flex-wrap:wrap;gap:6px}
+.ew-reihe button{min-height:38px;padding:4px 10px;font-size:14px}
+.ew-reihe input[type=number]{width:70px;font:inherit;padding:6px;background:#0e0b2e;color:#eef2fa;border:2px solid #4a5a8a}
+.ew-zeile{display:flex;align-items:center;gap:6px}

@@ -13,10 +13,12 @@
 // Gleiche Reihenfolge wie in ../index.html (ohne js/spiel.js), danach die Tests
 var DATEIEN=[
   "js/kern.js",
-  "js/texte.js"
+  "js/texte.js",
+  "js/rauschen.js"
 ];
 var TESTS=[
-  "test-kern.js"
+  "test-kern.js",
+  "test-rauschen.js"
 ];
 (function(){
   var alle=DATEIEN.map(function(d){return "../"+d;}).concat(TESTS);

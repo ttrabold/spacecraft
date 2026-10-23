@@ -39,6 +39,7 @@ Nach Stufe 1 setzen sich Vater und Sohn an ihre Geräte, legen eine Welt mit ein
 - **Repo-Regeln aus AGENTS.md gelten:** reines HTML/CSS/JS, keine ES-Module, kein Bundler, kein npm, läuft per `file://` und auf GitHub Pages, auch auf älteren iOS-Safari-Versionen. Version nur in `index.html` (`var V="X.Y.Z"`), Lader lädt alle Skripte in fester Reihenfolge mit `?v=V`, `sw.js` leitet den Cache-Namen daraus ab. Testseite `tests/index.html` mit derselben Ladereihenfolge. Code, Kommentare, Commits und Docs auf Deutsch.
 - **Die vorhandenen Workflows und `scripts/itch-zip.sh` setzen voraus:** `index.html` mit `var V="X.Y.Z"`, Skriptliste im Lader als `"js/….js"`, `css/style.css`, optional `manifest*.webmanifest` mit Icons, `sw.js`. Daran halten.
 - **Startversion:** `0.1.0` **[Claude]**.
+- **Mindestversion:** iPadOS/iOS 16.7 (Safari 16.6) und entsprechend aktuelle Chrome/Edge/Firefox. Damit dürfen WebGL2, `CompressionStream`, IndexedDB und modernes JavaScript (ES2020) vorausgesetzt werden; keine WebGL1-Rückfallebene nötig. (Nutzer: lieber 16.7; nur falls das zu sehr einschränkt, iOS 26. Es schränkt nicht ein.)
 - **Geräte:** gemischt Laptops/PCs und Tablets (iPad und vermutlich Android). Zielwert **[Claude]**: mindestens 30 FPS auf einem mittleren Tablet (z. B. iPad der 9. Generation), 60 FPS auf einem normalen Laptop. Sichtweite passt sich an oder ist einstellbar.
 - **Spielstände auf Live und Test teilen sich einen Origin** (GitHub Pages). Speicherdaten nie löschen oder überschreiben, Formate nur abwärtskompatibel erweitern.
 
@@ -57,7 +58,8 @@ Nach Stufe 1 setzen sich Vater und Sohn an ihre Geräte, legen eine Welt mit ein
 - **Wichtig für die Generierung:** Alle Rauschfunktionen müssen periodisch über die Kantenlänge sein, sonst entsteht am Umschlagrand eine Kante. Spieler, Kamera, Blockzugriffe und Chunk-Laden müssen die Umschlagkoordinaten durchgängig beherrschen, auch die Darstellung über den Rand hinweg.
 
 ### Seed
-- Jede Welt entsteht aus einem Seed (Zahl oder Wort). Gleicher Seed, gleiche Welt: dieselbe Landschaft und dieselben Bauwerke, auf jedem Gerät und in jeder späteren Version **[Claude: Erzeugung pro Weltformat-Version einfrieren; ändert sich der Generator, bekommen alte Welten weiter den alten]**.
+- Jede Welt entsteht aus einem Seed (Zahl oder Wort). Gleicher Seed, gleiche Welt: dieselbe Landschaft und dieselben Bauwerke, auf jedem Gerät mit derselben Generatorversion.
+- **Generator-Updates (Nutzer, vorerst während 0.x):** Wird der Generator verbessert, dürfen sich unberührte Gegenden bestehender Welten verändern. Alles Gebaute bleibt exakt erhalten: Jeder Chunk, in dem der Spieler etwas verändert hat, wird vollständig gespeichert (nicht nur als Abweichung), und gespeicherte Chunks haben immer Vorrang vor dem Generator. Die Welt merkt sich die Generatorversion; alte Generatoren werden nicht mitgeführt. Übergänge zwischen gespeicherten und neu erzeugten Chunks dürfen dann sichtbar sein.
 - Beim Anlegen einen Seed eingeben oder einen zufälligen nehmen. Der Seed ist in der Weltliste sichtbar, damit man ihn weitersagen kann.
 - Die Generierung darf ausschließlich aus Seed und Koordinaten rechnen (deterministische Zufallszahlen, kein `Math.random`). Voraussetzung für kleine Spielstände und für Mehrspieler.
 
@@ -82,7 +84,7 @@ Nach Stufe 1 setzen sich Vater und Sohn an ihre Geräte, legen eine Welt mit ein
 Blockdefinitionen in einer zentralen Tabelle (ID, Name, Textur je Seite, durchsichtig ja/nein, leuchtet ja/nein mit Farbe, fest/durchlässig), damit spätere Stufen leicht Blöcke ergänzen.
 
 ### Look
-- Pixel-Texturen wie Minecraft, dazu gezieltes Leuchten: Kristalle, Technikblöcke, Leuchtpflanzen und später Laserwaffen und Gegneraugen. Referenz: Entwurf „Mischung aus A und C“ aus dem Brainstorming (Startplanet am Tag, fremder Planet in der Dämmerung, Startplanet bei Nacht).
+- Pixel-Texturen wie Minecraft, dazu gezieltes Leuchten: Kristalle, Technikblöcke, Leuchtpflanzen und später Laserwaffen und Gegneraugen. Referenz: Entwurf „Mischung aus A und C“ aus dem Brainstorming, eingecheckt als `docs/design/look-entwurf.html` (SVG-Skizzen: Startplanet am Tag, fremder Planet in der Dämmerung, Startplanet bei Nacht; im Browser öffnen). Die Farbwerte dort sind Ausgangspunkt, das Ergebnis im Spiel nimmt der Nutzer ab.
 - Jeder Planet hat eine eigene Farbpalette. Der Startplanet ist vertraut grün und braun. Die Palette muss deshalb ein Parameter des Planeten sein, der in die Texturerzeugung, den Himmel und den Nebel eingeht.
 - **Tag-Nacht-Wechsel** **[Claude: ein Tag etwa 20 Minuten]**. Nachts ist es dunkler und spannender, leuchtende Blöcke erhellen sichtbar ihre Umgebung. Es darf aber nie so dunkel werden, dass Kinder sich nicht mehr zurechtfinden.
 - Licht: Leuchtende Blöcke müssen nachts ihre Umgebung erkennbar erhellen; eine Näherung reicht (z. B. Licht pro Ecke beim Erzeugen des Chunk-Meshes, wie in Minecraft).
@@ -118,10 +120,13 @@ Blockdefinitionen in einer zentralen Tabelle (ID, Name, Textur je Seite, durchsi
 ## 6. Spielstände
 
 - **Mehrere Slots:** Weltliste mit Name, Seed, Modus und „zuletzt gespielt“. Anlegen, umbenennen, kopieren, löschen; Löschen nur nach Bestätigung im Spiel (keine Browser-Dialoge nötig).
-- **Gespeichert wird nur, was sich von der erzeugten Welt unterscheidet:** geänderte Blöcke (pro Chunk), Spielerposition und Blickrichtung, Modus, Tageszeit, Schnellleiste, dazu Seed, Planetenparameter und Weltformat-Version. Später auch Inventar und Beute.
+- **Gespeichert wird nur, was der Spieler verändert hat:** jeder veränderte Chunk vollständig (siehe Abschnitt 4, Generator-Updates), Spielerposition und Blickrichtung, Modus, Tageszeit, Schnellleiste, dazu Seed, Planetenparameter und Weltformat-Version. Später auch Inventar und Beute.
 - **Automatisch speichern** **[Claude: etwa alle 30 Sekunden, beim Pausieren und wenn der Tab verborgen wird]**.
 - **Export:** Jede Welt als Datei herunterladen (z. B. `meine-welt.spacecraft`), auf jedem Gerät wieder importieren. Zweck: Sicherung und Austausch, solange es keinen Mehrspieler gibt. **[Claude]:** JSON mit Formatversion, wo verfügbar komprimiert (`CompressionStream`), sonst unkomprimiert; der Import erkennt beides. Import legt immer einen neuen Slot an und überschreibt nichts.
 - **Kompatibilität:** Jede Datei und jeder Speicherstand trägt eine Formatversion. Neuere Spielversionen lesen alle älteren Formate und ziehen fehlende Felder mit Standardwerten nach. Bestehende Spielstände dürfen nie brechen.
+- **Live und Test getrennt [Claude]:** Beide liegen auf demselben Origin. Der Speicher bekommt deshalb einen Namensraum aus dem Pfad (`/spacecraft/` und `/spacecraft-test/` nutzen verschiedene Datenbanken bzw. Schlüssel-Präfixe; `file://` und `localhost` je einen eigenen). Wer Test-Welten auf Live will, nutzt Export und Import.
+- **Keine Rückwärts-Zerstörung [Claude]:** Eine Spielversion öffnet keinen Spielstand mit einer neueren Formatversion, als sie kennt. Sie zeigt ihn in der Liste als „braucht neuere Version“ und lässt ihn unverändert. Vor jeder Migration auf ein neues Format wird eine Kopie des alten Stands aufbewahrt.
+- **Schutz vor Löschung durch den Browser [Claude]:** beim ersten Start `navigator.storage.persist()` anfragen, wo verfügbar. Die Weltliste zeigt pro Welt „zuletzt exportiert“ und erinnert sanft ans Exportieren, wenn lange nicht exportiert wurde. Auf iPad/iPhone einmalig den Hinweis „Zum Home-Bildschirm hinzufügen“ zeigen, weil Safari Website-Daten sonst nach Wochen ohne Nutzung löschen kann. Im privaten Fenster warnen, dass nicht dauerhaft gespeichert wird.
 
 ## 7. Vorbereitung auf spätere Stufen
 

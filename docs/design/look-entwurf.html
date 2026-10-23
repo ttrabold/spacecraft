@@ -1,0 +1,99 @@
+<h2>Mischung aus A und C</h2>
+<p class="subtitle">Pixel-Texturen wie bei A, dazu Leuchten und fremde Farben wie bei C. Jeder Planet bekommt seine eigene Palette, das Leuchten kommt von Kristallen, Technikblöcken, Waffen und Gegneraugen. Hier dieselbe Idee auf drei Planeten.</p>
+
+<div class="cards">
+  <div class="card" data-choice="home" onclick="toggleSelect(this)">
+    <div class="card-image"><svg id="s1" viewBox="0 0 400 260" width="100%"></svg></div>
+    <div class="card-body"><h3>Startplanet am Tag</h3><p>Vertraut wie Minecraft. Nur Technikblöcke und das Laserschwert leuchten leicht.</p></div>
+  </div>
+  <div class="card" data-choice="alien" onclick="toggleSelect(this)">
+    <div class="card-image"><svg id="s2" viewBox="0 0 400 260" width="100%"></svg></div>
+    <div class="card-body"><h3>Fremder Planet in der Dämmerung</h3><p>Lila Moos, türkiser Stein, pinke Kristalle mit Leuchten, zwei Monde.</p></div>
+  </div>
+  <div class="card" data-choice="night" onclick="toggleSelect(this)">
+    <div class="card-image"><svg id="s3" viewBox="0 0 400 260" width="100%"></svg></div>
+    <div class="card-body"><h3>Startplanet bei Nacht</h3><p>Nachts wird es spannender: Leuchtpflanzen, glühende Gegneraugen, das Laserschwert als Lichtquelle.</p></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var NS="http://www.w3.org/2000/svg";
+  function el(svg,tag,a){var e=document.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e;}
+  var W=22,H=22,OX=200,OY=95;
+  function P(x,y,z){return [OX+(x-y)*W, OY+(x+y)*W/2 - z*H];}
+  function poly(svg,pts,fill,st){var a={points:pts.map(function(p){return p.join(",");}).join(" "),fill:fill,stroke:st.s,"stroke-width":st.sw,"stroke-linejoin":"round"};if(st.f)a.filter=st.f;el(svg,"polygon",a);}
+  function cube(svg,x,y,z,c){
+    var st=c.st||{s:"rgba(0,0,0,.25)",sw:.6};
+    poly(svg,[P(x,y+1,z+1),P(x+1,y+1,z+1),P(x+1,y+1,z),P(x,y+1,z)],c.l,st);
+    poly(svg,[P(x+1,y,z+1),P(x+1,y+1,z+1),P(x+1,y+1,z),P(x+1,y,z)],c.r,st);
+    poly(svg,[P(x,y,z+1),P(x+1,y,z+1),P(x+1,y+1,z+1),P(x,y+1,z+1)],c.t,st);
+  }
+  var hmap=[[1,1,1,2,2,2,3],[1,1,1,1,2,2,2],[0,1,1,1,1,2,2],[0,0,1,1,1,1,1],[0,0,0,1,1,1,1],[0,0,0,0,1,1,1],[0,0,0,0,0,1,1]];
+  function world(svg,top,side,extra){
+    var it=[];for(var x=0;x<7;x++)for(var y=0;y<7;y++)for(var z=0;z<=hmap[x][y];z++)it.push([x-3,y-3,z-2,z==hmap[x][y]?top:side]);
+    (extra||[]).forEach(function(e){it.push(e);});
+    it.sort(function(a,b){return (a[0]+a[1])-(b[0]+b[1])||a[2]-b[2];});
+    it.forEach(function(i){cube(svg,i[0],i[1],i[2],i[3]);});
+  }
+  function pat(id,base,dots){var s='<pattern id="'+id+'" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="'+base+'"/>';dots.forEach(function(d){s+='<rect width="2" height="2" x="'+d[0]+'" y="'+d[1]+'" fill="'+d[2]+'"/>';});return s+'</pattern>';}
+  var GLOW='<filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
+  function hero(svg,x,y,c,saber){
+    el(svg,"rect",{x:x-6,y:y-30,width:12,height:18,rx:2,fill:c.body});
+    el(svg,"rect",{x:x-6,y:y-12,width:5,height:12,fill:c.leg});el(svg,"rect",{x:x+1,y:y-12,width:5,height:12,fill:c.leg});
+    el(svg,"rect",{x:x-6,y:y-42,width:12,height:12,rx:3,fill:c.head});
+    el(svg,"rect",{x:x-4,y:y-38,width:8,height:3,fill:c.visor,filter:c.vg?"url(#glow)":""});
+    el(svg,"line",{x1:x+7,y1:y-22,x2:x+26,y2:y-48,stroke:saber,"stroke-width":4,"stroke-linecap":"round",filter:"url(#glow)"});
+    el(svg,"line",{x1:x+5,y1:y-19,x2:x+9,y2:y-25,stroke:"#555","stroke-width":4,"stroke-linecap":"round"});
+  }
+  function blob(svg,x,y,c,eye){
+    el(svg,"ellipse",{cx:x,cy:y-12,rx:13,ry:11,fill:c});
+    el(svg,"circle",{cx:x-4,cy:y-15,r:3,fill:eye,filter:"url(#glow)"});el(svg,"circle",{cx:x+4,cy:y-15,r:3,fill:eye,filter:"url(#glow)"});
+    el(svg,"line",{x1:x-6,y1:y-22,x2:x-10,y2:y-30,stroke:c,"stroke-width":2});el(svg,"line",{x1:x+6,y1:y-22,x2:x+10,y2:y-30,stroke:c,"stroke-width":2});
+  }
+  function stars(svg,n,op){for(var i=0;i<n;i++)el(svg,"rect",{x:(i*97)%400,y:(i*53)%110,width:2,height:2,fill:"#fff",opacity:op});}
+  var glowSt={s:"#ffffff",sw:.6,f:"url(#glow)"};
+
+  // 1: Startplanet Tag
+  var s=document.getElementById("s1");
+  el(s,"defs",{}).innerHTML=GLOW+'<linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ec8ff"/><stop offset="1" stop-color="#cfeaff"/></linearGradient>'+
+    pat("gT","#5cb83a",[[1,1,"#4a9a2e"],[5,4,"#6fd048"],[2,6,"#4a9a2e"]])+pat("dL","#8a5a33",[[1,2,"#6e4526"],[5,5,"#a06b3f"]])+pat("dR","#734a2a",[[3,1,"#5c3a20"],[1,5,"#86593a"]])+
+    pat("tT","#b9c2cc",[[3,3,"#33c4ff"]])+pat("tS","#8a95a1",[[3,3,"#33c4ff"]]);
+  el(s,"rect",{width:400,height:260,fill:"url(#g1)"});
+  el(s,"rect",{x:300,y:22,width:30,height:30,fill:"#fff6b0"});
+  el(s,"rect",{x:40,y:30,width:60,height:14,fill:"#fff"});el(s,"rect",{x:52,y:22,width:30,height:10,fill:"#fff"});
+  var tech={t:"url(#tT)",l:"url(#tS)",r:"url(#tS)",st:{s:"#33c4ff",sw:.6,f:"url(#glow)"}};
+  world(s,{t:"url(#gT)",l:"url(#dL)",r:"url(#dR)"},{t:"url(#dL)",l:"url(#dL)",r:"url(#dR)"},[[2,-2,1,tech],[2,-2,2,tech]]);
+  hero(s,190,150,{body:"#3a6fd8",leg:"#2b3f78",head:"#e8b58a",visor:"#333"},"#45e0ff");
+  blob(s,255,170,"#8bd14a","#ff5050");
+
+  // 2: Fremder Planet Dämmerung
+  s=document.getElementById("s2");
+  el(s,"defs",{}).innerHTML=GLOW+'<linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1d5e"/><stop offset=".6" stop-color="#b0508a"/><stop offset="1" stop-color="#ffb37a"/></linearGradient>'+
+    pat("mT","#7a4fc0",[[1,1,"#6440a3"],[5,4,"#9468dc"],[2,6,"#6440a3"]])+pat("sL","#2f8f8a",[[1,2,"#257570"],[5,5,"#3aa8a2"]])+pat("sR","#257570",[[3,1,"#1c5e5a"],[1,5,"#2f8f8a"]])+
+    pat("cT","#ff6fd8",[[2,2,"#ffd0f3"]])+pat("cS","#d43aa9",[[4,3,"#ff8fe0"]]);
+  el(s,"rect",{width:400,height:260,fill:"url(#g2)"});
+  stars(s,25,.6);
+  el(s,"rect",{x:290,y:30,width:34,height:34,fill:"#ff9a5c"});el(s,"rect",{x:340,y:70,width:14,height:14,fill:"#9ad7ff"});
+  var crys={t:"url(#cT)",l:"url(#cS)",r:"url(#cS)",st:{s:"#ffb8ee",sw:.7,f:"url(#glow)"}};
+  var green={t:"#5fffb0",l:"#2fd48a",r:"#20a86c",st:{s:"#b8ffe0",sw:.7,f:"url(#glow)"}};
+  world(s,{t:"url(#mT)",l:"url(#sL)",r:"url(#sR)"},{t:"url(#sL)",l:"url(#sL)",r:"url(#sR)"},[[2,-2,1,crys],[2,-2,2,crys],[-2,1,1,green]]);
+  hero(s,190,150,{body:"#cfd6e6",leg:"#6b7590",head:"#eef2fa",visor:"#3ef0ff",vg:1},"#ff4f6d");
+  blob(s,255,170,"#ffb02e","#3ef0ff");
+
+  // 3: Startplanet Nacht
+  s=document.getElementById("s3");
+  el(s,"defs",{}).innerHTML=GLOW+'<linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070b24"/><stop offset="1" stop-color="#1b2a55"/></linearGradient>'+
+    pat("nT","#2a5a2a",[[1,1,"#214a21"],[5,4,"#336b33"],[2,6,"#214a21"]])+pat("nL","#3d2a1a",[[1,2,"#2e1f12"],[5,5,"#4a3320"]])+pat("nR","#302014",[[3,1,"#24180e"],[1,5,"#3d2a1a"]])+
+    pat("tT2","#5a6470",[[3,3,"#33c4ff"]])+pat("tS2","#454e58",[[3,3,"#33c4ff"]]);
+  el(s,"rect",{width:400,height:260,fill:"url(#g3)"});
+  stars(s,45,.9);
+  el(s,"rect",{x:300,y:24,width:26,height:26,fill:"#e6ecff"});
+  var tech2={t:"url(#tT2)",l:"url(#tS2)",r:"url(#tS2)",st:{s:"#33c4ff",sw:.8,f:"url(#glow)"}};
+  var shroom={t:"#5fe8ff",l:"#2fb8d4",r:"#2090a8",st:{s:"#c0f6ff",sw:.7,f:"url(#glow)"}};
+  world(s,{t:"url(#nT)",l:"url(#nL)",r:"url(#nR)"},{t:"url(#nL)",l:"url(#nL)",r:"url(#nR)"},[[2,-2,1,tech2],[2,-2,2,tech2],[-2,2,1,shroom],[0,-2,1,shroom]]);
+  el(s,"circle",{cx:212,cy:118,r:34,fill:"#45e0ff",opacity:.12});
+  hero(s,190,150,{body:"#2b4f9a",leg:"#1c2a52",head:"#b88a68",visor:"#222"},"#45e0ff");
+  blob(s,255,170,"#4d7a2a","#ff5050");
+})();
+</script>

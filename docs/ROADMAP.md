@@ -25,7 +25,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 | # | Stufe | Stand | Spec | Plan |
 |---|-------|-------|------|------|
-| 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | Design geschrieben, Prüfung läuft | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | – |
+| 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | Design fertig, Freigabe durch Nutzer ausstehend | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | – |
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | offen | – | – |
 | 3 | Gemeinsam spielen per Raumcode | offen | – | – |
 | 4 | Fahr- und Flugzeuge bauen | offen | – | – |
@@ -39,6 +39,6 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Nächster Schritt
 
-- Design von Stufe 1 ist geschrieben. Ein Prüfer liest es gegen; offene Punkte daraus mit dem Nutzer klären, dann Freigabe holen.
+- Design von Stufe 1 ist geschrieben und geprüft, Rückfragen geklärt (Mindestversion iPadOS 16.7, Generator-Updates dürfen unberührte Gegenden ändern). Freigabe durch den Nutzer holen.
 - Danach: Plan schreiben (superpowers:writing-plans).
 - Nach Freigabe der Spec: Meilensteine, Bereichs-Labels und Board „Spacecraft“ anlegen, Issues aus dem Plan erzeugen.

@@ -47,6 +47,8 @@ SC.T = {
   homeBildschirm: "Tipp: Füge Spacecraft über „Teilen → Zum Home-Bildschirm“ hinzu, damit deine Welten sicher gespeichert bleiben.",
   laedtWelt: "Welt wird erzeugt …",
   entwickler: "Entwickler",
+  musik: "Musik",
+  geraeusche: "Geräusche",
   controllerVerbunden: "Controller verbunden 🎮",
   entwicklerAn: "Entwicklerwerkzeuge (F3)",
   ewZeit: "Tageszeit",

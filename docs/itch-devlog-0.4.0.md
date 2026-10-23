@@ -1,8 +1,8 @@
-# Spacecraft 0.3.0 – Die erste Blockwelt
+# Spacecraft 0.4.0 – Die erste Blockwelt
 
 Spacecraft ist ein Blockspiel im Browser, das wir als Familie bauen: erkunden, bauen und später mit selbst gebauten Raumschiffen zu anderen Planeten fliegen.
 
-## Was in 0.3.0 drin ist
+## Was in 0.4.0 drin ist
 
 - **Ein eigener Planet aus einem Seed:** Wiesen, Wälder, Berge mit Schnee, Wüsten, Seen, Höhlen und ein Kristallfeld. Gleicher Seed, gleiche Welt – gute Seeds kann man weitersagen.
 - **Der Planet ist rund:** Läuft man lange genug geradeaus, kommt man wieder am Start an.
@@ -11,6 +11,7 @@ Spacecraft ist ein Blockspiel im Browser, das wir als Familie bauen: erkunden, b
 - **Tag und Nacht:** Nachts wird es dunkel und spannend, Leuchtpilze, Kristalle und Leuchtblöcke erhellen die Umgebung.
 - **Modi:** Kreativ (fliegen, alle Blöcke) und Zuschauer (durch alles hindurchfliegen). Survival kommt mit der nächsten Version.
 - **Tastatur und Maus, Touch oder Controller:** Am Tablet mit Joystick und Knöpfen oder mit einem Gamepad (Xbox, PlayStation, MFi).
+- **Musik und Geräusche:** eigene, abenteuerliche Orchestermusik – heldenhaft am Tag, geheimnisvoll in der Nacht, spannend in Höhlen. Dazu Geräusche fürs Bauen, Laufen, Springen und Schwimmen.
 - **Mehrere Welten**, automatisch gespeichert, und als Datei exportierbar und importierbar.
 
 ## Steuerung (Tastatur)

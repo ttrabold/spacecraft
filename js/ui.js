@@ -1,6 +1,6 @@
 // Oberfläche: Weltliste, Neue Welt, Pause, Einstellungen, Blockauswahl, HUD und Hinweise
 SC.Einstellungen = {
-  standard: function(){ return { sichtweite: matchMedia("(pointer: coarse)").matches ? 6 : 10, empfindlichkeit: 1, touchGroesse: 1, fpsAnzeigen: false, entwickler: false }; },
+  standard: function(){ return { sichtweite: matchMedia("(pointer: coarse)").matches ? 6 : 10, empfindlichkeit: 1, touchGroesse: 1, fpsAnzeigen: false, entwickler: false, musik: 0.5, geraeusche: 0.8 }; },
   lade: function(ns){ var e = SC.Einstellungen.standard(); try { var t = localStorage.getItem("sc-" + ns + ":einstellungen"); if(t) Object.assign(e, JSON.parse(t)); } catch(err){} return e; },
   speichere: function(ns, e){ try { localStorage.setItem("sc-" + ns + ":einstellungen", JSON.stringify(e)); } catch(err){} }
 };
@@ -191,6 +191,8 @@ SC.UI = function(wurzel, o){
       regler("e-sicht", SC.T.sichtweite, 3, 16, 1, e.sichtweite) +
       regler("e-maus", SC.T.empfindlichkeit, 0.3, 3, 0.1, e.empfindlichkeit) +
       regler("e-touch", SC.T.touchGroesse, 0.7, 1.6, 0.1, e.touchGroesse) +
+      regler("e-musik", SC.T.musik, 0, 1, 0.05, e.musik) +
+      regler("e-geraeusche", SC.T.geraeusche, 0, 1, 0.05, e.geraeusche) +
       '<label class="feld zeile"><input type="checkbox" id="e-fps"' + (e.fpsAnzeigen ? " checked" : "") + "> " + esc(SC.T.fpsAnzeigen) + "</label>" +
       '<label class="feld zeile"><input type="checkbox" id="e-entw"' + (e.entwickler ? " checked" : "") + "> " + esc(SC.T.entwicklerAn) + "</label>" +
       '<div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
@@ -204,7 +206,7 @@ SC.UI = function(wurzel, o){
         ui.o.beiEinstellungen && ui.o.beiEinstellungen(e);
       });
     }
-    an("e-sicht", "sichtweite", true); an("e-maus", "empfindlichkeit", true); an("e-touch", "touchGroesse", true); an("e-fps", "fpsAnzeigen", false); an("e-entw", "entwickler", false);
+    an("e-sicht", "sichtweite", true); an("e-maus", "empfindlichkeit", true); an("e-touch", "touchGroesse", true); an("e-musik", "musik", true); an("e-geraeusche", "geraeusche", true); an("e-fps", "fpsAnzeigen", false); an("e-entw", "entwickler", false);
   };
 
   // --- Blockauswahl ---

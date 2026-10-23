@@ -92,6 +92,7 @@ SC.Entwickler = {};
       "x " + p[0].toFixed(1) + "  y " + p[1].toFixed(1) + "  z " + p[2].toFixed(1) + "\n" +
       "Chunk " + Math.floor(p[0] / 16) + "," + Math.floor(p[2] / 16) + "   Biom " + g.biom(p[0], p[2]) + "\n" +
       "Blick " + grad + "° / " + neig + "°   " + sp.modus + (sp.fliegt ? " (fliegt)" : "") + "\n" +
+      "Version " + (window.V || "?") + "   Musik " + (s.audio && s.audio._stueck ? s.audio._stueck.stimmung : "–") + "\n" +
       "Zeit " + SC.Entwickler.uhrzeit(s.tageszeit) + (s.zeitTempo === 0 ? " angehalten" : s.zeitTempo !== 1 ? " ×" + s.zeitTempo : "") + "   Seed " + s.daten.seed;
   };
 })();

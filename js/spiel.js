@@ -15,6 +15,12 @@ SC.Spiel = function(o){
   });
   this.eingabe = new SC.Eingabe(o.leinwand, o.uiWurzel);
   this.eingabe.empfindlichkeit = this.einstellungen.empfindlichkeit;
+  this.audio = new SC.Audio();
+  this.audio.lautstaerke(this.einstellungen.musik, this.einstellungen.geraeusche);
+  // Audio darf erst nach einer Nutzeraktion starten (iOS); Menü-Klicks klicken hörbar
+  var entsperren = function(){ s.audio.entsperren(); };
+  ["pointerdown", "touchend", "keydown"].forEach(function(n){ window.addEventListener(n, entsperren, true); });
+  o.uiWurzel.addEventListener("click", function(ev){ if(ev.target.closest && ev.target.closest("button")) s.audio.spiele("klick"); }, true);
   this.zeitTempo = 1;
   this.entwickler = new SC.Entwickler.Panel(o.uiWurzel, this);
   this.beiEntwicklerZu = function(){ s.eingabe.aktiv = true; s.eingabe.sperreMaus(); };
@@ -71,6 +77,12 @@ SC.Spiel.startpunkt = function(planet){
     this.daten = daten;
     var pd = daten.planeten[daten.aktuellerPlanet], planet = new SC.Planet(pd);
     this.welt = new SC.Welt(planet, SC.Spielstand.chunksLaden(pd));
+    this.welt.ereignisse.an("block", function(b){
+      if(b.quelle !== "spieler") return;
+      if(b.id === SC.B.LUFT) s.audio.spiele("abbauen", { material: SC.Klang.material(b.alt) });
+      else s.audio.spiele("setzen", { material: SC.Klang.material(b.id) });
+    });
+    this._schritt = 0; this._warBoden = true; this._warWasser = false; this._fall = 0; this._musikZeit = 0;
     var sp = daten.spieler, pos = sp.pos || SC.Spiel.startpunkt(planet);
     this.spieler = new SC.Spieler({ id: "ich", pos: pos, blick: sp.blick, modus: daten.modus, schnellleiste: sp.schnellleiste, ansicht: sp.ansicht });
     this.tageszeit = typeof daten.tageszeit === "number" ? daten.tageszeit : 0.3;
@@ -110,7 +122,9 @@ SC.Spiel.startpunkt = function(planet){
       if(e.auswahl !== null) sp.auswahl = e.auswahl;
       if(e.auswahlRad) sp.auswahl = SC.mod(sp.auswahl + e.auswahlRad, 9);
     }
+    var vorBoden = sp.aufBoden, vy = sp.geschw[1];
     sp.schritt(w, e, dt);
+    this._geraeusche(e, vorBoden, vy, dt);
     var ziel = sp.modus === "zuschauer" ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
     this.render.markiere(ziel);
     if(ziel && !offen){
@@ -124,6 +138,28 @@ SC.Spiel.startpunkt = function(planet){
     if(ew.offen() && (this._ewZeit = (this._ewZeit || 0) + dt) > 0.25){ this._ewZeit = 0; ew.aktualisiere(); }
     this.render.bild(sp, this.tageszeit, dt);
     ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen });
+  };
+
+  // Schritte, Springen, Landen, Wasser; Musik nach Stimmung (Tag, Nacht, unter Tage)
+  SC.Spiel.prototype._geraeusche = function(e, vorBoden, vy, dt){
+    var sp = this.spieler, w = this.welt, a = this.audio, zus = sp.modus === "zuschauer";
+    if(!zus){
+      var tempo = Math.hypot(sp.geschw[0], sp.geschw[2]);
+      if(sp.aufBoden && tempo > 1){
+        this._schritt += dt * tempo;
+        if(this._schritt > 1.8){ this._schritt = 0; a.spiele("schritt", { material: SC.Klang.material(w.holeBlock(sp.pos[0], sp.pos[1] - 0.5, sp.pos[2])) }); }
+      }
+      if(vorBoden && !sp.aufBoden && e.springen && sp.geschw[1] > 0) a.spiele("springen");
+      if(!vorBoden && sp.aufBoden && vy < -6) a.spiele("landen");
+      if(sp.imWasser && !this._warWasser) a.spiele("platsch");
+    }
+    this._warWasser = sp.imWasser;
+    if((this._musikZeit += dt) > 0.5){
+      this._musikZeit = 0;
+      var h = SC.himmelsFarben(SC.PALETTEN[w.planet.palette] || SC.PALETTEN.start, this.tageszeit);
+      var unter = sp.pos[1] < w.generator.hoehe(sp.pos[0], sp.pos[2]) - 6;
+      a.musikTakt(SC.Musik.stimmung({ tageslicht: h.tageslicht, unterTage: unter }), true);
+    }
   };
 
   SC.Spiel.prototype._entwicklerAuf = function(){ this.eingabe.gebeMausFrei(); this.eingabe.aktiv = false; this.entwickler.zeige(); };
@@ -145,6 +181,7 @@ SC.Spiel.startpunkt = function(planet){
     this.einstellungen = e; SC.Einstellungen.speichere(this.ns, e);
     this.eingabe.empfindlichkeit = e.empfindlichkeit;
     if(this.render) this.render.sichtweite = e.sichtweite;
+    this.audio.lautstaerke(e.musik, e.geraeusche);
   };
 
   // Speichern nacheinander; ein Fehlschlag zeigt einen Hinweis, das Spiel läuft weiter
@@ -182,7 +219,7 @@ SC.Spiel.startpunkt = function(planet){
     var s = this;
     return this.speichere("verlassen").then(function(){
       s._laeuft = false; clearInterval(s._takt); s.lebenszyklusAbmelden(document);
-      s.eingabe.gebeMausFrei(); s.ui.verbergeHud(); s.entwickler.verberge();
+      s.eingabe.gebeMausFrei(); s.ui.verbergeHud(); s.entwickler.verberge(); s.audio.musikTakt(null, false);
       if(s.render){ s.render.welt(s.welt); s.render.renderer.clear(); }
       s.daten = null; s.welt = null;
       return s.ui.zeigeWeltliste();

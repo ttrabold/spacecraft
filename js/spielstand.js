@@ -1,5 +1,5 @@
 // Spielstand: Weltformat, Migration alter Formate, Export und Import als .spacecraft-Datei
-SC.FORMAT = 1;
+SC.FORMAT = 2;
 
 SC.ImportFehler = function(text){ this.message = text; this.name = "ImportFehler"; };
 SC.ImportFehler.prototype = Object.create(Error.prototype);
@@ -11,6 +11,8 @@ SC.Spielstand = {};
   var B = SC.B;
   var LEISTE = [B.GRAS, B.ERDE, B.STEIN, B.BRETTER, B.STEINZIEGEL, B.GLAS, B.METALL, B.LEUCHT_CYAN, B.STAMM];
 
+  function leererRucksack(){ var r = []; for(var i = 0; i < 36; i++) r.push(null); return r; }
+  function leereAusruestung(){ return { helm: null, brust: null, handschuhe: null, stiefel: null, schild: null }; }
   function neueId(){ var a = new Uint32Array(2); crypto.getRandomValues(a); return a[0].toString(36) + a[1].toString(36); }
   function zufallsSeed(){ var a = new Uint32Array(1); crypto.getRandomValues(a); return String(a[0] % 1000000000); }
 
@@ -22,12 +24,14 @@ SC.Spielstand = {};
     return {
       format: SC.FORMAT, spielVersion: window.V || "", id: neueId(), name: o.name || SC.T.neueWelt, seed: seed,
       erstellt: jetzt, zuletzt: jetzt, zuletztExport: null, modus: o.modus || "kreativ", tageszeit: 0.3, aktuellerPlanet: "start",
-      planeten: { start: { id: "start", seed: SC.hashText(seed + ":start"), groesse: 2048, palette: "start", generatorVersion: SC.GENERATOR_VERSION, chunks: {} } },
-      spieler: { pos: null, blick: [0, 0], schnellleiste: LEISTE.slice(), ansicht: "ich", lebenspunkte: null, inventar: [] }
+      schwierigkeit: o.schwierigkeit || "leicht", startpunkt: null, spielzeit: 0,
+      planeten: { start: { id: "start", seed: SC.hashText(seed + ":start"), groesse: 2048, palette: "start", generatorVersion: SC.GENERATOR_VERSION, chunks: {}, kisten: {}, geraeumt: {} } },
+      spieler: { pos: null, blick: [0, 0], schnellleiste: LEISTE.slice(), schnellleisteKreativ: LEISTE.slice(), ansicht: "ich",
+        stufe: 1, erfahrung: 0, lebenspunkte: null, schild: null, rucksack: leererRucksack(), ausruestung: leereAusruestung() }
     };
   };
 
-  SC.Spielstand.ausWelt = function(daten, welt, spieler){
+  SC.Spielstand.ausWelt = function(daten, welt, spieler, kampf){
     var pl = daten.planeten[welt.planet.id], chunks = {};
     welt.geaenderte.forEach(function(c, k){ chunks[k] = inBase64(c); });
     pl.chunks = chunks;
@@ -35,6 +39,11 @@ SC.Spielstand = {};
       daten.spieler.pos = spieler.pos.slice(); daten.spieler.blick = spieler.blick.slice();
       daten.spieler.schnellleiste = spieler.schnellleiste.slice(); daten.spieler.ansicht = spieler.ansicht;
       daten.modus = spieler.modus;
+    }
+    if(kampf){
+      var s = daten.spieler, w = kampf.werte;
+      s.stufe = w.stufe; s.erfahrung = w.erfahrung; s.lebenspunkte = w.lp; s.schild = w.schild;
+      s.rucksack = kampf.rucksack.alsDaten(); s.ausruestung = JSON.parse(JSON.stringify(kampf.ausruestung));
     }
     daten.spielVersion = window.V || daten.spielVersion;
     return daten;
@@ -62,8 +71,18 @@ SC.Spielstand = {};
     if(!s.schnellleiste || s.schnellleiste.length !== 9) s.schnellleiste = LEISTE.slice();
     if(!s.ansicht) s.ansicht = "ich";
     if(s.lebenspunkte === undefined) s.lebenspunkte = null;
-    if(!s.inventar) s.inventar = [];
-    for(var id in d.planeten){ var p = d.planeten[id]; if(!p.chunks) p.chunks = {}; if(!p.generatorVersion) p.generatorVersion = 1; if(!p.palette) p.palette = "start"; if(!p.groesse) p.groesse = 2048; }
+    // Format 2: Survival-Felder
+    if(!d.schwierigkeit) d.schwierigkeit = "leicht";
+    if(d.startpunkt === undefined) d.startpunkt = null;
+    if(typeof d.spielzeit !== "number") d.spielzeit = 0;
+    if(!s.schnellleisteKreativ || s.schnellleisteKreativ.length !== 9) s.schnellleisteKreativ = s.schnellleiste.slice();
+    if(typeof s.stufe !== "number") s.stufe = 1;
+    if(typeof s.erfahrung !== "number") s.erfahrung = 0;
+    if(s.schild === undefined) s.schild = null;
+    if(!s.rucksack || s.rucksack.length !== 36) s.rucksack = leererRucksack();
+    if(!s.ausruestung) s.ausruestung = leereAusruestung();
+    delete s.inventar;
+    for(var id in d.planeten){ var p = d.planeten[id]; if(!p.chunks) p.chunks = {}; if(!p.generatorVersion) p.generatorVersion = 1; if(!p.palette) p.palette = "start"; if(!p.groesse) p.groesse = 2048; if(!p.kisten) p.kisten = {}; if(!p.geraeumt) p.geraeumt = {}; }
     d.format = SC.FORMAT;
     return { daten: d, migriert: vorher !== SC.FORMAT };
   };

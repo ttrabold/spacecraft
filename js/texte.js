@@ -77,6 +77,6 @@ SC.T = {
     bretter: "Holzbretter", steinziegel: "Steinziegel", glas: "Glas", wolleRot: "Rote Wolle", wolleBlau: "Blaue Wolle",
     wolleGelb: "Gelbe Wolle", wolleWeiss: "Weiße Wolle", metall: "Metallplatte", metallgitter: "Metallgitter",
     technik: "Technikblock", leuchtCyan: "Leuchtblock Cyan", leuchtPink: "Leuchtblock Pink", leuchtGruen: "Leuchtblock Grün",
-    beton: "Bunkerbeton"
+    beton: "Bunkerbeton", kiste: "Schatzkiste", kisteOffen: "Offene Schatzkiste"
   }
 };

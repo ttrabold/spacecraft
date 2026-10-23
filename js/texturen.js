@@ -38,6 +38,9 @@ SC.Texturen = {};
         case "gitter": var linie = x % 5 === 0 || y % 5 === 0; c = linie ? (zf() < 0.3 ? h : g) : g; a = linie ? 255 : 0; break;
         case "technik": c = x === 0 || y === 0 || x === 15 || y === 15 ? d : (y === 5 || y === 10) && x > 2 && x < 13 ? h : (x === 3 && y === 13) || (x === 6 && y === 13) ? h : g; break;
         case "leucht": var m2 = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5)); c = m2 > 6.5 ? d : m2 < 3 ? h : mische(g, h, 0.3); break;
+        case "kiste": var rk = x === 0 || x === 15 || y === 0 || y === 15 || y === 7; c = rk ? d : (x >= 6 && x <= 9 && y >= 6 && y <= 9) ? h : (y % 4 === 2 ? mische(g, [0, 0, 0], 0.2) : g); break;
+        case "kistedeckel": c = x === 0 || x === 15 || y === 0 || y === 15 ? d : (x === 7 || x === 8) ? d : y % 4 === 1 ? mische(g, [0, 0, 0], 0.2) : g; break;
+        case "kisteoffen": var ro = x === 0 || x === 15 || y === 0 || y === 15; c = ro ? d : h; break;
         case "beton": c = zf() < 0.25 ? d : zf() < 0.1 ? h : g; if(y === 7) c = d; break;
       }
       setze(x, y, c, a);

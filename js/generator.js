@@ -1,5 +1,5 @@
 // Weltgenerator: rechnet jeden Chunk nur aus Seed und Koordinaten (kein Math.random)
-SC.GENERATOR_VERSION = 1;
+SC.GENERATOR_VERSION = 2;
 SC.MEER = 48;
 
 SC.Generator = function(planet){

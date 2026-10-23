@@ -14,7 +14,8 @@ SC.PALETTEN = {};
       wolle_rot: ["#d8443c", "#b5342e", "#ea5d55"], wolle_blau: ["#3a6fd8", "#2b55b0", "#5385ea"], wolle_gelb: ["#f2c53d", "#d9a91f", "#ffd95c"],
       wolle_weiss: ["#e9edf2", "#cfd5dd", "#ffffff"], metall: ["#b9c2cc", "#8a95a1", "#d6dde5"], metallgitter: ["#9aa4b0", "#6f7985", "#c0c8d2"],
       technik: ["#5a6470", "#454e58", "#33c4ff"], leucht_cyan: ["#5ff4ff", "#3ad0e8", "#e0fdff"], leucht_pink: ["#ff6fd8", "#e04cb8", "#ffe0f6"],
-      leucht_gruen: ["#6bffb0", "#3fe08e", "#e0fff0"], beton: ["#9a9a96", "#85857f", "#adada8"]
+      leucht_gruen: ["#6bffb0", "#3fe08e", "#e0fff0"], beton: ["#9a9a96", "#85857f", "#adada8"],
+      kiste_oben: ["#8a5a2b", "#c9a23a", "#ffd95c"], kiste_seite: ["#8a5a2b", "#c9a23a", "#ffd95c"], kiste_offen: ["#5a3a1b", "#c9a23a", "#2a1a0b"]
     },
     himmel: { tag: ["#7ec8ff", "#cfeaff"], daemmerung: ["#3b3a7a", "#ffb37a"], nacht: ["#070b24", "#1b2a55"] },
     sonne: "#fff6b0", mond: "#e6ecff", monde: 1

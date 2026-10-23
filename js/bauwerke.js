@@ -29,7 +29,7 @@ SC.Bauwerke = {};
     r.fuelle(w - 3, f + 4, 3, w - 3, f + 4, 7, B.LUFT);
     r.setze(1, f + 3, 1, B.LEUCHT_GRUEN); r.setze(w - 2, f + 7, d - 2, B.LEUCHT_GRUEN);
     p.push({ typ: "kiste", x: 2, y: f + 5, z: d - 3 }, { typ: "kiste", x: w - 3, y: f, z: d - 3 });
-    p.push({ typ: "gegner", x: 5, y: f, z: 5 }, { typ: "gegner", x: 9, y: f + 5, z: 6 }, { typ: "gegner", x: 4, y: f + 5, z: 3 });
+    p.push({ typ: "gegner", x: 5, y: f, z: 5 }, { typ: "boss", x: 9, y: f + 5, z: 6 }, { typ: "gegner", x: 4, y: f + 5, z: 3 });
     return { raster: r, plaetze: p };
   }
 
@@ -76,7 +76,7 @@ SC.Bauwerke = {};
       p.push({ typ: "gegner", x: x0 + 3, y: 1, z: z0 + 3 });
     }
     r.fuelle(17, 1, 17, 23, 1, 23, B.BETON);                          // Schatzraum
-    p.push({ typ: "kiste", x: 20, y: 2, z: 20 }, { typ: "kiste", x: 18, y: 2, z: 22 });
+    p.push({ typ: "kiste", x: 20, y: 2, z: 20 }, { typ: "kiste", x: 18, y: 2, z: 22 }, { typ: "boss", x: 20, y: 2, z: 18 });
     // Schacht aus dem ersten Raum nach oben
     for(var y = 6; y < h; y++){ r.fuelle(2, y, 2, 4, y, 4, B.STEINZIEGEL); r.setze(3, y, 3, B.LUFT); }
     r.fuelle(3, 5, 3, 3, 5, 3, B.LUFT);
@@ -90,7 +90,10 @@ SC.Bauwerke = {};
 
   function baue(planet, typ, x, y, z, vorlage){
     var v = vorlage, P = planet.groesse;
+    // Kisten stehen im Bauwerk (Generator-Version 2)
+    v.plaetze.forEach(function(q){ if(q.typ === "kiste") v.raster.setze(q.x, q.y, q.z, B.KISTE); });
     var b = { typ: typ, x: SC.mod(x, P), y: y, z: SC.mod(z, P), breite: v.raster.w, hoehe: v.raster.h, tiefe: v.raster.d, plaetze: [] };
+    b.schluessel = typ + "@" + b.x + "," + b.z;
     b.block = function(lx, ly, lz){ return v.raster.hole(lx, ly, lz); };
     v.plaetze.forEach(function(q){ b.plaetze.push({ typ: q.typ, x: SC.mod(b.x + q.x, P), y: b.y + q.y, z: SC.mod(b.z + q.z, P) }); });
     return b;
@@ -114,6 +117,14 @@ SC.Bauwerke = {};
       var dy = 10 + Math.floor(zf() * 14), oben = g.hoehe(dx + 3, dz + 3);
       liste.push(baue(planet, "dungeon", dx, dy, dz, dungeon(Math.max(0, oben - dy))));
     }
+    // Stufe und Boss mit eigenem Zufall, damit die Lage der Bauwerke gleich bleibt
+    var zs = SC.zufall(SC.hash3(planet.seed, rx, rz, 7002));
+    liste.forEach(function(b){
+      var sp = SC.ORTSSTUFE[b.typ], lo = sp[0], hi = sp[1];
+      if(b.typ === "dungeon" && b.y < 16) lo = Math.ceil((lo + hi) / 2);
+      b.stufe = lo + Math.floor(zs() * (hi - lo + 1));
+      b.bossArt = b.typ === "herrenhaus" ? "schattenritter" : b.typ === "dungeon" ? (zs() < 0.5 ? "schattenritter" : "panzerkoloss") : null;
+    });
     cache[k] = liste;
     return liste;
   };

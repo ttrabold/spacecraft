@@ -35,7 +35,13 @@ SC.KI = {};
     // Feststecken erkennen
     var weg = Math.hypot(SC.mod(g.pos[0] - vorher[0] + P / 2, P) - P / 2, SC.mod(g.pos[2] - vorher[1] + P / 2, P) - P / 2);
     if(Math.hypot(vx, vz) > 0.3 && weg < 0.02 * Math.hypot(vx, vz) * dt * 10) g.fest = (g.fest || 0) + dt; else g.fest = 0;
-    if(g.fest > 3 || g.pos[1] < 1) g.entfernen = true;
+    if(g.fest > 3 || g.pos[1] < 1) aufgeben(g);
+  }
+
+  // Feststecken: Bosse kehren geheilt heim (verschwinden nie), andere Gegner werden entfernt
+  function aufgeben(g){
+    if(g.boss){ g.pos = (g.heim || g.pos).slice(); g.geschw = [0, 0, 0]; g.lp = g.lpMax || g.lp; g.fest = 0; g.bemerkt = false; }
+    else g.entfernen = true;
   }
 
   function richtungZu(d){ var l = Math.hypot(d[0], d[2]) || 1; return [d[0] / l, d[2] / l]; }
@@ -53,6 +59,8 @@ SC.KI = {};
   SC.KI.schritt = function(welt, g, ziel, dt, zf, schw){
     var def = SC.GEGNER[g.gegnerArt], akt = [];
     if(!def){ g.entfernen = true; return akt; }
+    var drin = SC.BLOECKE[welt.holeBlock(g.pos[0], g.pos[1] + 0.3, g.pos[2])];
+    if(drin && drin.fest){ aufgeben(g); if(g.entfernen) return akt; }
     g.cd = Math.max(0, (g.cd || 0) - dt); g.cd2 = Math.max(0, (g.cd2 || 0) - dt); g.zeit = (g.zeit || 0) + dt;
     if(g.sturmBis > 0) g.sturmBis -= dt;
     var heim = ring(welt, g.pos, g.heim || g.pos), heimAbst = Math.hypot(heim[0], heim[2]);

@@ -148,7 +148,7 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype.zeigeRucksack = function(){
     var s = this;
     this.ui.zeigeRucksack(this.kampf, {
-      beiWegwerfen: function(sache){ if(sache) s.beuteAuswerfen([s.spieler.pos[0] - Math.sin(s.spieler.blick[0]) * 1.5, s.spieler.pos[1], s.spieler.pos[2] - Math.cos(s.spieler.blick[0]) * 1.5], [sache]); },
+      beiWegwerfen: function(sache){ if(sache) s.beuteAuswerfen([s.spieler.pos[0] - Math.sin(s.spieler.blick[0]) * 1.5, s.spieler.pos[1], s.spieler.pos[2] - Math.cos(s.spieler.blick[0]) * 1.5], [sache], { sperre: 4, weit: true, richtung: Math.atan2(-Math.cos(s.spieler.blick[0]), -Math.sin(s.spieler.blick[0])) }); },
       beiFertig: function(){ s._weiter(); }
     });
   };

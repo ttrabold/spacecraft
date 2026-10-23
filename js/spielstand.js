@@ -11,7 +11,8 @@ SC.Spielstand = {};
   var B = SC.B;
   var LEISTE = [B.GRAS, B.ERDE, B.STEIN, B.BRETTER, B.STEINZIEGEL, B.GLAS, B.METALL, B.LEUCHT_CYAN, B.STAMM];
 
-  function leererRucksack(){ var r = []; for(var i = 0; i < 36; i++) r.push(null); return r; }
+  // Neue Survival-Rucksäcke enthalten ein einfaches Laserschwert, damit man von Anfang an kämpfen kann
+  function leererRucksack(){ var r = []; for(var i = 0; i < 36; i++) r.push(null); r[0] = { gegenstand: { id: "startschwert", art: "laserschwert", stufe: 1, seltenheit: 0, werte: { schaden: 14 }, sonder: null, name: "Einfaches Laserschwert" } }; return r; }
   function leereAusruestung(){ return { helm: null, brust: null, handschuhe: null, stiefel: null, schild: null }; }
   function neueId(){ var a = new Uint32Array(2); crypto.getRandomValues(a); return a[0].toString(36) + a[1].toString(36); }
   function zufallsSeed(){ var a = new Uint32Array(1); crypto.getRandomValues(a); return String(a[0] % 1000000000); }

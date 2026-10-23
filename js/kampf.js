@@ -47,7 +47,13 @@ SC.Kampf = function(welt, spieler, daten, zf){
 
   K.angriff = function(jetzt, richtung){
     this.uhr = jetzt;
-    var w = this.waffe(); if(!w) return null;
+    var w = this.waffe();
+    if(!w){
+      // Ohne Waffe: schwacher Faustschlag
+      if(jetzt - this.letzterAngriff < 500) return null;
+      this.letzterAngriff = jetzt; this.kombo = 0;
+      return { art: "hieb", reichweite: 2, schaden: 3 + this.werte.stufe * 0.5, kombo: 0, faust: true };
+    }
     var def = SC.GEGENSTAENDE[w.art].waffe, schaden = w.werte.schaden * (1 + this.werte.schadenBonus / 100);
     if(jetzt - this.letzterAngriff < def.rate * 1000) return null;
     if(def.typ === "schwert"){
@@ -152,7 +158,12 @@ SC.Kampf = function(welt, spieler, daten, zf){
 
   K.wiederbeleben = function(startpunkt){
     var w = this.werte; w.lp = w.lpMax; w.schild = w.schildMax;
-    this.spieler.pos = startpunkt.slice(); this.spieler.geschw = [0, 0, 0];
+    // Freie Stelle über dem Startpunkt suchen (dort kann inzwischen gebaut worden sein)
+    var p = startpunkt.slice(), welt = this.welt, y = Math.floor(p[1]);
+    function fest(yy){ var b = SC.BLOECKE[welt.holeBlock(p[0], yy, p[2])]; return b && b.fest; }
+    while(y < 126 && (fest(y) || fest(y + 1))) y++;
+    p[1] = y;
+    this.spieler.pos = p; this.spieler.geschw = [0, 0, 0];
     this.zuletztGetroffen = -1e9; this.letzterTreffer = null; this.hitze = 0; this.ueberhitztBis = 0;
     this.welt.wesen.forEach(function(e){ if(e.art === "gegner") e.bemerkt = false; });
   };

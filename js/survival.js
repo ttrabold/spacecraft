@@ -35,11 +35,11 @@
   };
 
   // Gegenstände als Beutekugeln herausspringen lassen
-  S.beuteAuswerfen = function(pos, sachen){
-    var w = this.welt;
+  S.beuteAuswerfen = function(pos, sachen, o){
+    var w = this.welt; o = o || {};
     sachen.forEach(function(s, i){
-      var win = Math.random() * Math.PI * 2;
-      SC.Wesen.neu(w, "kugel", { pos: [pos[0], pos[1] + 0.8, pos[2]], geschw: [Math.cos(win) * 2.5, 5 + i * 0.5, Math.sin(win) * 2.5], sache: s });
+      var win = o.richtung !== undefined ? o.richtung : Math.random() * Math.PI * 2, v = o.weit ? 7 : 2.5;
+      SC.Wesen.neu(w, "kugel", { pos: [pos[0], pos[1] + 0.8, pos[2]], geschw: [Math.cos(win) * v, 5 + i * 0.5, Math.sin(win) * v], sache: s, sperre: o.sperre || 0 });
     });
   };
 
@@ -114,7 +114,7 @@
     var zf = this._zf, schw = this.daten.schwierigkeit, zielSp = survival && lebt ? { pos: sp.pos, sichtbar: true } : null, kampfNah = false, bossNah = false;
     w.wesen.forEach(function(g){
       if(g.art === "gegner"){
-        if(g.entfernen){ SC.Wesen.entferne(w, g.id); return; }
+        if(g.entfernen){ s.auftauchen._entferne(g, false); s.auftauchen.gegnerBesiegt(g, s.daten.spielzeit || 0); return; }
         SC.KI.schritt(w, g, zielSp, dt, zf, schw).forEach(function(akt){
           if(akt.art === "schuss"){ SC.Wesen.neu(w, "geschoss", { pos: akt.pos, richtung: akt.richtung, tempo: akt.tempo, schaden: akt.schaden, team: "gegner", art: akt.geschossArt, lebensdauer: 3, farbe: akt.farbe }); a.spiele(akt.geschossArt === "spucke" ? "spucker" : "blaster"); }
           else { var r = k.gegnerAktion(g, akt); if(r && r.schaden > 0) a.spiele("getroffen"); else if(r && r.abgeprallt) a.spiele("blocken"); }
@@ -140,6 +140,7 @@
         SC.Wesen.entferne(w, g.id);
       } else if(g.art === "kugel" && survival){
         var sache = g.sache, erg = SC.Kugel.schritt(w, g, sp, k.rucksack, dt);
+        if(erg === "voll" && t - (s._vollHinweis || 0) > 3000){ s._vollHinweis = t; s.ui.hinweis(SC.T.rucksackVoll, 1500); }
         if(erg === "aufgesammelt"){ a.spiele("aufsammeln", { seltenheit: sache.gegenstand ? sache.gegenstand.seltenheit : 0 }); if(sache.gegenstand) s.ui.hinweis(sache.gegenstand.name, 2000); }
       }
     });

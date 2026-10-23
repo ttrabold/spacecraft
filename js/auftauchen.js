@@ -39,7 +39,7 @@ SC.Auftauchen = function(welt, daten, zf){
       var d = ring(w, spieler.pos, e.pos[0], e.pos[2]);
       if(Math.hypot(d[0], d[1]) > WEG) a._entferne(e, false);
       else if(e.nacht && tageslicht >= NACHT) a._entferne(e, true);
-      else if(e.entfernen) a._entferne(e, false);
+      else if(e.entfernen){ a._entferne(e, false); a.gegnerBesiegt(e, spielzeit); }
     });
     if(spieler.modus === "zuschauer") return;
     // Bauwerke in der Nähe

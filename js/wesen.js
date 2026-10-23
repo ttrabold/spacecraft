@@ -91,12 +91,15 @@ SC.Kugel.schritt = function(welt, k, spieler, rucksack, dt){
   var p = spieler.pos, P = welt.planet.groesse;
   var dx = SC.mod(k.pos[0] - p[0] + P / 2, P) - P / 2, dz = SC.mod(k.pos[2] - p[2] + P / 2, P) - P / 2, dy = k.pos[1] - (p[1] + 0.9);
   var abst = Math.hypot(dx, dy, dz);
+  // Weggeworfenes bleibt eine Weile liegen
+  if(k.sperre > 0){ k.sperre -= dt; return "liegt"; }
   // Sanfter Magnet: Beute in der Nähe schwebt zum Spieler
   if(abst < 3.5 && abst > 0.01 && k.alter > 0.6){ var f = Math.min(1, 5 * dt / abst); k.pos[0] -= dx * f; k.pos[1] -= dy * f * 0.5; k.pos[2] -= dz * f; }
   if(abst <= 1.5){
     var rest = rucksack.lege(k.sache);
     if(rest === 0){ SC.Wesen.entferne(welt, k.id); return "aufgesammelt"; }
     if(k.sache.block !== undefined) k.sache.anzahl = rest;
+    return "voll";
   }
   return "liegt";
 };

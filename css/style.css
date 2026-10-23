@@ -69,3 +69,7 @@ input[type=range]{width:100%}
 .ew-reihe button{min-height:38px;padding:4px 10px;font-size:14px}
 .ew-reihe input[type=number]{width:70px;font:inherit;padding:6px;background:#0e0b2e;color:#eef2fa;border:2px solid #4a5a8a}
 .ew-zeile{display:flex;align-items:center;gap:6px}
+
+/* Gamepad: sichtbarer Fokus in Menüs */
+button:focus-visible,input:focus-visible,label.knopf:focus-visible,button:focus,label.knopf:focus{outline:3px solid #ffd95c;outline-offset:2px}
+input[type=range].regeln{outline:3px solid #3ef0ff}

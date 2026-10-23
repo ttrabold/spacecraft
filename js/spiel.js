@@ -13,11 +13,21 @@ SC.Spiel = function(o){
     beiEinstellungen: function(e){ s._einstellungen(e); },
     beiEntwickler: function(){ s._entwicklerAuf(); }
   });
+  this.eingabe = new SC.Eingabe(o.leinwand, o.uiWurzel);
+  this.eingabe.empfindlichkeit = this.einstellungen.empfindlichkeit;
   this.zeitTempo = 1;
   this.entwickler = new SC.Entwickler.Panel(o.uiWurzel, this);
   this.beiEntwicklerZu = function(){ s.eingabe.aktiv = true; s.eingabe.sperreMaus(); };
-  this.eingabe = new SC.Eingabe(o.leinwand, o.uiWurzel);
-  this.eingabe.empfindlichkeit = this.einstellungen.empfindlichkeit;
+  // Gamepad in Menüs und in der Weltliste: eigene Schleife, läuft auch ohne Spiel
+  window.addEventListener("gamepadconnected", function(){ s.ui.hinweis(SC.T.controllerVerbunden, 2500); });
+  (function menueSchleife(){
+    var ui = s.ui, imMenue = !s._laeuft || ui.offen() || s.entwickler.offen();
+    if(imMenue){
+      var r = s.eingabe.menueGamepad();
+      if(r === "ok") ui.bestaetige(); else if(r === "zurueck") ui.zurueck(); else if(r) ui.navigiere(r);
+    }
+    requestAnimationFrame(menueSchleife);
+  })();
   this._kette = Promise.resolve();
 };
 

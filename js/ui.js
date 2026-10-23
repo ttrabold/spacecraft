@@ -47,6 +47,36 @@ SC.UI = function(wurzel, o){
   SC.UI.prototype._zeige = function(html, aktionen){
     this.ebene.innerHTML = '<div class="fenster">' + html + "</div>"; this.ebene.hidden = false; this._aktionen = aktionen || {};
   };
+  // Bedienung mit Gamepad: Fokus über die Knöpfe und Eingaben des offenen Fensters bewegen
+  SC.UI.prototype._fokusListe = function(){
+    var r = this.ebene.hidden ? this.wurzel.querySelector(".entwickler:not([hidden])") : this.ebene;
+    if(!r) return [];
+    return Array.prototype.filter.call(r.querySelectorAll("button, input:not([type=file]), label.knopf"), function(el){ return !el.disabled && (el.offsetParent !== null || el.getClientRects().length > 0); });
+  };
+  SC.UI.prototype.navigiere = function(schritt){
+    var l = this._fokusListe(); if(!l.length) return;
+    var a = document.activeElement;
+    // Regler mit links/rechts verstellen, solange sie den Fokus haben
+    if(a && a.type === "range" && l.indexOf(a) >= 0 && this._reglerModus){ a.value = +a.value + schritt * (+a.step || 1); a.dispatchEvent(new Event("input", { bubbles: true })); return; }
+    var i = l.indexOf(a), n = i < 0 ? (schritt > 0 ? 0 : l.length - 1) : SC.mod(i + schritt, l.length);
+    l[n].focus(); this._reglerModus = false;
+  };
+  SC.UI.prototype.bestaetige = function(){
+    var a = document.activeElement, l = this._fokusListe();
+    if(!a || l.indexOf(a) < 0){ if(l.length) l[0].focus(); return; }
+    if(a.type === "range"){ this._reglerModus = !this._reglerModus; a.classList.toggle("regeln", this._reglerModus); return; }
+    if(a.type === "checkbox"){ a.click(); return; }
+    if(a.tagName === "LABEL"){ var inp = a.querySelector("input"); if(inp) inp.click(); return; }
+    if(a.tagName === "INPUT") return;
+    a.click();
+  };
+  SC.UI.prototype.zurueck = function(){
+    var r = this.ebene.hidden ? this.wurzel.querySelector(".entwickler:not([hidden])") : this.ebene;
+    if(!r) return;
+    var k = r.querySelector('[data-aktion="weiter"], [data-aktion="fertig"], [data-aktion="zurueck"], [data-ew="zu"]');
+    if(k) k.click();
+  };
+
   SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden; };
 
@@ -78,7 +108,7 @@ SC.UI = function(wurzel, o){
         '<h1 class="titel">Spacecraft</h1>' +
         '<div class="welten">' + (zeilen || '<p class="leer">' + esc(SC.T.nochKeineWelt) + "</p>") + "</div>" +
         '<div class="reihe"><button class="haupt" data-aktion="neu">' + esc(SC.T.neueWelt) + '</button>' +
-        '<label class="knopf">' + esc(SC.T.importieren) + '<input type="file" accept=".spacecraft,application/json,application/octet-stream" hidden></label></div>' +
+        '<label class="knopf" tabindex="0">' + esc(SC.T.importieren) + '<input type="file" accept=".spacecraft,application/json,application/octet-stream" hidden></label></div>' +
         '<div class="version">Version ' + esc(window.V || "") + "</div>",
         {
           spielen: function(el, id){ return ui.slots.lade(id).then(function(d){ ui.schliesse(); ui.o.beiStart(d); }, function(f){ ui.hinweis(f.message || String(f)); }); },

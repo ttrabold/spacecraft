@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <title>Spacecraft – Tests</title>
 <style>body{font:14px system-ui,sans-serif;background:#111;color:#ddd;padding:16px}.fehl{color:#ff7070}.ende{margin-top:8px;font-weight:bold}</style>
-<script>var V="test";</script>
+<script>var V="test"; var SC_TEST=true;</script>
 </head>
 <body>
 <div id="ausgabe"></div>
 <script src="helfer.js"></script>
 <script>
-// Gleiche Reihenfolge wie in ../index.html (ohne js/spiel.js), danach die Tests
+// Gleiche Reihenfolge wie in ../index.html (SC_TEST verhindert den Spielstart), danach die Tests
 var DATEIEN=[
   "js/lib/three.min.js",
   "js/kern.js",
@@ -31,7 +31,8 @@ var DATEIEN=[
   "js/render.js",
   "js/eingabe.js",
   "js/touch.js",
-  "js/ui.js"
+  "js/ui.js",
+  "js/spiel.js"
 ];
 var TESTS=[
   "test-kern.js",
@@ -45,7 +46,8 @@ var TESTS=[
   "test-mesher.js",
   "test-render.js",
   "test-eingabe.js",
-  "test-ui.js"
+  "test-ui.js",
+  "test-spiel.js"
 ];
 (function(){
   var alle=DATEIEN.map(function(d){return "../"+d;}).concat(TESTS);

@@ -100,8 +100,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
 
   // Gehaltener Block unten rechts in der Ich-Ansicht
   SC.Render.prototype._baueHand = function(){
-    this.hand = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshBasicMaterial({ map: this.atlas, transparent: true, alphaTest: 0.1 }));
-    this.hand.position.set(0.55, -0.5, -0.9); this.hand.rotation.set(0.2, -0.6, 0);
+    this.hand = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), new THREE.MeshBasicMaterial({ map: this.atlas, transparent: true, alphaTest: 0.1 }));
+    this.hand.position.set(0.42, -0.36, -0.7); this.hand.rotation.set(0.2, -0.6, 0);
     this.kamera.add(this.hand); this._handId = -1;
   };
   SC.Render.prototype._handBlock = function(id){
@@ -212,6 +212,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.sonne.position.set(k.position.x + sx * 400, k.position.y + sy * 400, k.position.z - 60); this.sonne.lookAt(k.position);
     this.mond.position.set(k.position.x - sx * 400, k.position.y - sy * 400, k.position.z + 60); this.mond.lookAt(k.position);
     this.sterne.position.copy(k.position); this.sterneMat.opacity = Math.max(0, 1 - h.tageslicht * 1.6);
+    this.hand.material.color.setScalar(Math.max(0.35, h.tageslicht));
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);
     this.uniforms.nebelNah.value = this.sichtweite * 16 * 0.55; this.uniforms.nebelFern.value = this.sichtweite * 16 * 0.95;
     this.renderer.setClearColor(h.unten);

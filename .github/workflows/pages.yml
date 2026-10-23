@@ -1,0 +1,57 @@
+name: Pages (Spiel veröffentlichen)
+
+# Veröffentlicht das Spiel auf GitHub Pages, sobald sich ausgelieferte Dateien auf main ändern.
+# Ersetzt den alten „Deploy from a branch“-Bau (pages-build-deployment), dessen Sperren bei GitHub hängen blieben.
+# Pages-Einstellung des Repos: Source = „GitHub Actions“.
+on:
+  push:
+    branches: [main]
+    # Reine Doku-, Test- und Werkzeug-Änderungen lösen keine Veröffentlichung aus
+    paths-ignore:
+      - "docs/**"
+      - "tests/**"
+      - "scripts/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Veröffentlichungen laufen nacheinander, nie gegeneinander; eine laufende wird nicht abgebrochen
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Seite zusammenstellen (nur was das Spiel zur Laufzeit braucht)
+        run: |
+          mkdir -p _site
+          rsync -a \
+            --exclude '.git' --exclude '.github' --exclude '.claude' --exclude '_site' \
+            --exclude 'docs' --exclude 'tests' --exclude 'scripts' --exclude 'dist' \
+            --exclude 'AGENTS.md' --exclude 'CLAUDE.md' --exclude '.gitignore' --exclude '.nojekyll' \
+            ./ _site/
+          echo "Dateien: $(find _site -type f | wc -l), Größe: $(du -sh _site | cut -f1)"
+          test -f _site/index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v5

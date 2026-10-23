@@ -1,0 +1,63 @@
+name: Release (itch.io-Artefakt)
+
+# Nur manuell startbar (GitHub → Actions → „Release (itch.io-Artefakt)" → Run workflow).
+# Baut das itch.io-ZIP und legt ein GitHub-Release damit an (standardmäßig als „Latest release“).
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Nur als Vorabversion (Pre-release) veröffentlichen"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+# Nie zwei Releases gleichzeitig bauen
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Feste Image-Version statt ubuntu-latest (das wechselt ab 19.10.2026 auf Ubuntu 26)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # v5 läuft auf Node 24 (v4 nutzt das abgekündigte Node 20)
+      - uses: actions/checkout@v5
+
+      - name: Version bestimmen
+        id: ver
+        run: |
+          # Semantic Versioning: Version V="MAJOR.MINOR.PATCH" steht nur in index.html
+          VER=$(grep -oE 'var V="[^"]+"' index.html | sed 's/.*="//; s/"$//')
+          [[ "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Version in index.html ist kein X.Y.Z: '$VER'"; exit 1; }
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VER}" >> "$GITHUB_OUTPUT"
+          echo "zip=dist/spacecraft-v${VER}.zip" >> "$GITHUB_OUTPUT"
+
+      - name: ZIP bauen (prüft vorher die Übersetzungen)
+        run: bash scripts/itch-zip.sh "${{ steps.ver.outputs.zip }}"
+
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VER: ${{ steps.ver.outputs.ver }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          ZIP: ${{ steps.ver.outputs.zip }}
+          PRE: ${{ inputs.prerelease }}
+        run: |
+          SHORT="${GITHUB_SHA::7}"
+          # Ein Release pro Version: gibt es den Tag schon, zuerst die Version erhöhen
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "::error::Release $TAG gibt es schon – Version in index.html und sw.js erhöhen"; exit 1; fi
+          if [ "$PRE" = "true" ]; then FLAG=--prerelease; else FLAG=--latest; fi
+          URL=$(gh release create "$TAG" "$ZIP" \
+            --target "$GITHUB_SHA" \
+            --title "Spacecraft ${TAG}" \
+            --notes "HTML5-ZIP für itch.io aus Commit ${SHORT}. Auf itch.io hochladen und „This file will be played in the browser“ anhaken." \
+            --generate-notes \
+            $FLAG)
+          echo "$URL"
+          echo "### Release angelegt: [$TAG]($URL)" >> "$GITHUB_STEP_SUMMARY"
+          echo "ZIP: \`$(basename "$ZIP")\` ($(du -h "$ZIP" | cut -f1))" >> "$GITHUB_STEP_SUMMARY"

@@ -25,7 +25,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 | # | Stufe | Stand | Spec | Plan |
 |---|-------|-------|------|------|
-| 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | Design fertig, Freigabe durch Nutzer ausstehend | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | – |
+| 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | Plan fertig, Umsetzung steht an (Issues #1–#14) | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | offen | – | – |
 | 3 | Gemeinsam spielen per Raumcode | offen | – | – |
 | 4 | Fahr- und Flugzeuge bauen | offen | – | – |
@@ -36,9 +36,9 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 - 2026-10-23: Vision und Reihenfolge der Stufen mit dem Nutzer abgestimmt. Repo enthält nur das Gerüst (Workflows, AGENTS.md), noch keinen Spielcode. Auf GitHub noch keine Commits, Issues, Meilensteine oder Board. `gh` hat jetzt den Scope `project`.
 - 2026-10-23: Brainstorming zu Stufe 1 abgeschlossen (Look, Planeten, Seed, Slots, Export), Design geschrieben. Wünsche dazu: Spielstände gut exportierbar, mehrere Slots, Welt prozedural aus Seed.
+- 2026-10-23: Design freigegeben, Plan geschrieben. Auf GitHub angelegt: Meilensteine Stufe 1–5 und „Später“, Bereichs-Labels, Board „Spacecraft“, Issues #1–#14 (Stufe 1) und #15 (Crafting, später).
 
 ## Nächster Schritt
 
-- Design von Stufe 1 ist geschrieben und geprüft, Rückfragen geklärt (Mindestversion iPadOS 16.7, Generator-Updates dürfen unberührte Gegenden ändern). Freigabe durch den Nutzer holen.
-- Danach: Plan schreiben (superpowers:writing-plans).
-- Nach Freigabe der Spec: Meilensteine, Bereichs-Labels und Board „Spacecraft“ anlegen, Issues aus dem Plan erzeugen.
+- Umsetzung von Stufe 1 nach Plan, beginnend mit Task 1 (Issue #1). Task N = Issue #N. Ausführungsart (Subagenten oder direkt) wählt der Nutzer.
+- Board: https://github.com/users/ttrabold/projects/1

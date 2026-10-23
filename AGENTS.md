@@ -55,8 +55,8 @@ Das Projekt läuft über viele Sessions. Jede Session muss ohne Vorwissen weiter
 
 - **Meilensteine** = Stufen der Roadmap, z. B. „Stufe 1: Blockwelt“. Jedes Issue gehört zu genau einem Meilenstein.
 - **Issues** = einzelne Aufgaben, typischerweise eine pro Aufgabe im Plan. Titel auf Deutsch, kurz und konkret.
-- **Labels nach Bereich:** `welt`, `multiplayer`, `kampf`, `fahrzeuge`, `weltraum`, `steuerung`, `ui`, dazu die Standard-Labels `bug`, `enhancement`, `documentation`.
-- **Projektboard** „Spacecraft“ (GitHub Projects, Owner `ttrabold`) mit Status Todo / In Progress / Done. Neue Issues dort eintragen (`gh project item-add`), Status beim Arbeiten mitziehen.
+- **Labels nach Bereich:** `welt`, `multiplayer`, `kampf`, `fahrzeuge`, `weltraum`, `steuerung`, `ui`, `technik`, dazu die Standard-Labels `bug`, `enhancement`, `documentation`.
+- **Projektboard** „Spacecraft“ (https://github.com/users/ttrabold/projects/1, Nummer `1`, Owner `ttrabold`) mit Status Todo / In Progress / Done. Neue Issues dort eintragen (`gh project item-add`), Status beim Arbeiten mitziehen.
 
 **Ablauf pro Stufe:**
 

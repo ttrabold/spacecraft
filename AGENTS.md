@@ -20,6 +20,7 @@ tests/index.html    Testseite (Browser), lädt dieselbe Skriptliste; SC_TEST ver
 scripts/tests.sh    führt die Testseite in Chrome ohne Fenster aus (Node ≥ 22, kein npm)
 scripts/itch-zip.sh baut das itch.io-ZIP aus den in index.html referenzierten Dateien
 docs/ROADMAP.md     Vision, Stufen, aktueller Stand – Einstieg jeder Session
+Survival (Stufe 2)  js/werte, gegenstaende, rucksack, wesen, gegner, ki, kampf, auftauchen, render-wesen, ui-rucksack, survival
 docs/OFFENE-PUNKTE.md   Verweis auf die GitHub Issues
 docs/superpowers/   Specs und Pläne zu größeren Features
 ```

@@ -23,7 +23,7 @@
 - Schwierigkeit "friedlich"|"leicht"|"normal"|"schwer", Standard "leicht"; Schadensfaktor 0/0,5/1/1,5; Nacht-Obergrenze 0/3/6/9.
 - Ortsstufen: lager 1–5, station 5–12, herrenhaus 10–20, dungeon 15–25; Boss +2.
 - Prüfen: `bash scripts/tests.sh` → `Fertig: N ok, 0 fehlgeschlagen` (ohne Sandbox ausführen); Sichtprüfung per Chrome DevTools MCP.
-- Commits mit `Fixes #N`: Task N entspricht Issue #(20+N) im Meilenstein „Stufe 2: Survival“.
+- Commits mit `Fixes #N`: Task N entspricht Issue #(21+N) im Meilenstein „Stufe 2: Survival“.
 
 ## Review Focus
 
@@ -77,7 +77,7 @@ test("Schwierigkeiten", function(){ gleich(SC.SCHWIERIGKEIT.friedlich.nachtMax,0
 - [ ] **Step 2:** `bash scripts/tests.sh` → neue ❌
 - [ ] **Step 3:** umsetzen
 - [ ] **Step 4:** `bash scripts/tests.sh` → `0 fehlgeschlagen`
-- [ ] **Step 5:** `git commit -m "Werte und Schwierigkeit (Fixes #21)"`
+- [ ] **Step 5:** `git commit -m "Werte und Schwierigkeit (Fixes #22)"`
 
 ---
 
@@ -102,7 +102,7 @@ test("Sonderkraft erst ab Lila und passend zum Platz", function(){ var zf=SC.zuf
 test("Namen sind deutsch und kindgerecht", function(){ var g=SC.Beute.erzeuge(SC.zufall(5),{stufe:3,art:"helm",mindest:1}); wahr(/Helm/.test(g.name)); wahr(!/töt|blut/i.test(g.name)); });
 test("Vergleich", function(){ var a={werte:{schutz:10,lp:5}},b={werte:{schutz:7}}; var v=SC.Beute.vergleiche(a,b); gleich(v.schutz,3); gleich(v.lp,5); gleich(SC.Beute.vergleiche(a,null).schutz,10); });
 ```
-- [ ] Steps 2–5 wie Task 1; Commit `"Gegenstände und Beute (Fixes #22)"`.
+- [ ] Steps 2–5 wie Task 1; Commit `"Gegenstände und Beute (Fixes #23)"`.
 
 ---
 
@@ -124,7 +124,7 @@ test("Abbauzeiten", function(){ gleich(SC.Abbau.zeit(SC.B.ERDE,null),0.4); gleic
 test("Was ein Block ergibt", function(){ gleich(SC.Abbau.ergibt(SC.B.GRAS),SC.B.ERDE); gleich(SC.Abbau.ergibt(SC.B.GLAS),null); gleich(SC.Abbau.ergibt(SC.B.STAMM),SC.B.STAMM); });
 ```
 (Kisten-IDs kommen in Task 4; der Abbau-Test für Kisten gehört dorthin.)
-- [ ] Steps 2–5; Commit `"Rucksack und Abbauzeiten (Fixes #23)"`.
+- [ ] Steps 2–5; Commit `"Rucksack und Abbauzeiten (Fixes #24)"`.
 
 ---
 
@@ -141,7 +141,7 @@ test("Herrenhaus und Dungeon haben einen Boss, Lager und Station nicht", functio
 test("Bauwerksstufe liegt in der Ortsspanne", function(){ var p=new SC.Planet({id:"start",seed:77}); for(var rx=0;rx<16;rx++) SC.Bauwerke.inRegion(p,rx,5).forEach(function(b){ var s=SC.ORTSSTUFE[b.typ]; wahr(b.stufe>=s[0]&&b.stufe<=s[1],b.typ+" "+b.stufe); }); });
 test("Kisten sind nicht abbaubar", function(){ gleich(SC.Abbau.zeit(SC.B.KISTE,null),Infinity); wahr(!SC.BLOECKE[SC.B.KISTE].zerstoerbar); });
 ```
-- [ ] Steps 2–5; Commit `"Kisten, Boss-Plätze, Generator-Version 2 (Fixes #24)"`.
+- [ ] Steps 2–5; Commit `"Kisten, Boss-Plätze, Generator-Version 2 (Fixes #25)"`.
 
 ---
 
@@ -156,7 +156,7 @@ test("Kisten sind nicht abbaubar", function(){ gleich(SC.Abbau.zeit(SC.B.KISTE,n
 test("Format 1 → 2 behält Kreativ-Leiste und startet Survival leer", function(){ var alt={format:1,name:"A",seed:"s",modus:"kreativ",planeten:{start:{id:"start",seed:1,chunks:{}}},spieler:{pos:[1,2,3],blick:[0,0],schnellleiste:[4,3,2,13,14,15,20,23,9],ansicht:"ich"}}; var d=SC.Spielstand.migriere(alt).daten; gleich(d.format,2); gleich(d.spieler.schnellleisteKreativ.join(),"4,3,2,13,14,15,20,23,9"); gleich(d.spieler.stufe,1); gleich(d.spieler.rucksack.length,36); gleich(d.schwierigkeit,"leicht"); wahr(d.planeten.start.kisten&&d.planeten.start.geraeumt); });
 test("Rundlauf mit Ausrüstung", function(){ var d=SC.Spielstand.neu({name:"R",seedText:"r",modus:"survival"}); d.spieler.ausruestung.helm={id:"h",art:"helm",stufe:3,seltenheit:2,werte:{schutz:9},sonder:null,name:"Blauer Helm"}; d.spieler.rucksack[0]={block:SC.B.STEIN,anzahl:12}; return SC.Spielstand.exportiere(d).then(SC.Spielstand.importiere).then(function(e){ gleich(e.spieler.ausruestung.helm.name,"Blauer Helm"); gleich(e.spieler.rucksack[0].anzahl,12); }); });
 ```
-- [ ] Steps 2–5; Commit `"Spielstand-Format 2 (Fixes #25)"`.
+- [ ] Steps 2–5; Commit `"Spielstand-Format 2 (Fixes #26)"`.
 
 ---
 
@@ -180,7 +180,7 @@ test("Geschoss trifft Gegner, nicht das eigene Team", function(){ var w=leer(),e
 test("Obergrenze für Gegner", function(){ var w=leer(),n=0; for(var i=0;i<20;i++) if(SC.Wesen.neu(w,"gegner",{pos:[4,61,4]})) n++; gleich(n,12); });
 test("Kugel wird aufgesammelt", function(){ var w=leer(),r=new SC.Rucksack(),s=new SC.Spieler({id:"a",pos:[4.5,61,4.5],modus:"survival"}),k=SC.Wesen.neu(w,"kugel",{pos:[4.5,61.5,5],sache:{gegenstand:{id:"g"}}}); gleich(SC.Kugel.schritt(w,k,s,r,1/60),"aufgesammelt"); gleich(r.plaetze[0].gegenstand.id,"g"); });
 ```
-- [ ] Steps 2–5; Commit `"Wesen, Geschosse, Beutekugeln (Fixes #26)"`.
+- [ ] Steps 2–5; Commit `"Wesen, Geschosse, Beutekugeln (Fixes #27)"`.
 
 ---
 
@@ -205,7 +205,7 @@ test("Krabbler läuft zum Spieler", function(){ var w=boden(),g=gegner(w,"krabbl
 test("Gegner bleibt an der Leine", function(){ var w=boden(),g=gegner(w,"weltraumbandit",[4.5,61,4.5]),zf=SC.zufall(3); g.heim=[4.5,61,4.5]; for(var i=0;i<400;i++) SC.KI.schritt(w,g,{pos:[60,61,60],sichtbar:true},1/10,zf,"normal"); wahr(Math.hypot(g.pos[0]-4.5,g.pos[2]-4.5)<=31); });
 test("feststeckender Gegner wird entfernt", function(){ var w=boden(),g=gegner(w,"krabbler",[4.5,61,4.5]),zf=SC.zufall(4); for(var x=3;x<7;x++)for(var z=3;z<7;z++) for(var y=61;y<64;y++) if(x===3||x===6||z===3||z===6) w.setzeBlock(x,y,z,SC.B.STEIN,"system"); w.setzeBlock(4,63,4,SC.B.STEIN,"system"); w.setzeBlock(5,63,4,SC.B.STEIN,"system"); w.setzeBlock(4,63,5,SC.B.STEIN,"system"); w.setzeBlock(5,63,5,SC.B.STEIN,"system"); for(var i=0;i<50;i++) SC.KI.schritt(w,g,{pos:[20,61,20],sichtbar:true},1/10,zf,"normal"); wahr(g.entfernen); });
 ```
-- [ ] Steps 2–5; Commit `"Gegnertabelle und KI (Fixes #27)"`.
+- [ ] Steps 2–5; Commit `"Gegnertabelle und KI (Fixes #28)"`.
 
 ---
 
@@ -241,7 +241,7 @@ test("besiegt behält alles und setzt zurück", function(){ var k=kampf(); k.aus
 test("Erholung nach fünf Sekunden", function(){ var k=kampf(); k.trifftSpieler(50,[0,0,1]); var lp=k.werte.lp; k.schritt(3000,1); gleich(k.werte.lp,lp); k.schritt(9000,1); wahr(k.werte.lp>lp); });
 test("Kiste öffnen gibt Beute und wird offen", function(){ var k=kampf(); k.welt.setzeBlock(8,61,8,SC.B.KISTE,"system"); var b=SC.Kampf.oeffneKiste(k.welt,k,8,61,8,{typ:"lager",stufe:2},SC.zufall(1)); wahr(b.length>=2&&b.length<=4); gleich(k.welt.holeBlock(8,61,8),SC.B.KISTE_OFFEN); wahr(k.daten.planeten.start.kisten["8,61,8"]); });
 ```
-- [ ] Steps 2–5; Commit `"Kampf: Waffen, Treffer, Schild, Erfahrung, Besiegt (Fixes #28)"`.
+- [ ] Steps 2–5; Commit `"Kampf: Waffen, Treffer, Schild, Erfahrung, Besiegt (Fixes #29)"`.
 
 ---
 
@@ -264,7 +264,7 @@ test("Friedlich entfernt Gegner", function(){ var u=umgebung(); u.a.schritt(spie
 test("Nachtgegner bis zur Obergrenze, nie zu nah", function(){ var u=umgebung("leicht"),s=new SC.Spieler({id:"s",pos:[1024.5,90,1024.5],modus:"survival"}); for(var i=0;i<30;i++) u.a.schritt(s,0.28,i); var n=0; u.w.wesen.forEach(function(e){ if(e.art==="gegner"&&e.nacht){ n++; wahr(Math.hypot(e.pos[0]-1024.5,e.pos[2]-1024.5)>=24); } }); wahr(n<=3); });
 test("weit entfernte Gegner verschwinden", function(){ var u=umgebung(); u.a.schritt(spielerBei(u.b,10),1,1); u.a.schritt(spielerBei(u.b,300),1,2); gleich(gegnerZahl(u.w),0); });
 ```
-- [ ] Steps 2–5; Commit `"Gegner auftauchen und verschwinden (Fixes #29)"`.
+- [ ] Steps 2–5; Commit `"Gegner auftauchen und verschwinden (Fixes #30)"`.
 
 ---
 
@@ -286,7 +286,7 @@ test("Seltenheitsfarbe der Klinge", function(){ gleich(SC.RenderWesen.klingenFar
 ```
 - [ ] Steps 2–4
 - [ ] **Step 5: Sichtprüfung:** Entwicklerwerkzeuge (Task 14 noch nicht da) → per Konsole `SC.Wesen.neu` je Art vor dem Spieler, Screenshot; Erwartet: alle sechs Modelle erkennbar, kein Grusel.
-- [ ] **Step 6:** Commit `"Darstellung von Gegnern, Geschossen, Beute (Fixes #30)"`.
+- [ ] **Step 6:** Commit `"Darstellung von Gegnern, Geschossen, Beute (Fixes #31)"`.
 
 ---
 
@@ -303,7 +303,7 @@ test("Gehaltene Maustaste bleibt gedrückt", function(){ var e=new SC.Eingabe(do
 test("Gamepad B weicht aus", function(){ var z=SC.Gamepad.neuerZustand(); wahr(SC.Gamepad.zuEingabe(pad([0,0,0,0],[1]),z,1/60).einmal.ausweichen); });
 test("Zielhilfe rastet nur nahe der Mitte ein", function(){ var s=new SC.Spieler({id:"a",pos:[0,60,0],blick:[0,0]}),nah=[{pos:[0.8,60,-10],hoehe:1.8}],weit=[{pos:[8,60,-10],hoehe:1.8}]; var r=SC.zielhilfe(s,nah,s.richtung(),1); wahr(r[0]>0); var q=SC.zielhilfe(s,weit,s.richtung(),1); gleich(q[0],s.richtung()[0]); });
 ```
-- [ ] Steps 2–5; Commit `"Eingabe für Kampf: Ausweichen, Halten, Zielhilfe (Fixes #31)"`.
+- [ ] Steps 2–5; Commit `"Eingabe für Kampf: Ausweichen, Halten, Zielhilfe (Fixes #32)"`.
 
 ---
 
@@ -327,7 +327,7 @@ test("Anlegen tauscht mit dem Ausrüstungsplatz", function(){ var w=document.cre
 test("Besiegt-Bildschirm ist freundlich", function(){ var w=document.createElement("div"),ui=new SC.UI(w,{slots:null,beiStart:function(){},beiImport:function(){},beiExport:function(){}}),weiter=false; ui.zeigeBesiegt(function(){weiter=true;}); wahr(w.textContent.indexOf(SC.T.besiegt)>=0); wahr(!/tot|gestorben/i.test(w.textContent)); w.querySelector('[data-aktion="weiter"]').click(); wahr(weiter); });
 test("Kampf-HUD zeigt Balken", function(){ var w=document.createElement("div"),ui=new SC.UI(w,{slots:null,beiStart:function(){},beiImport:function(){},beiExport:function(){}}),k=k2(); ui.kampfHud(k,[]); wahr(w.querySelector(".balken-lp")&&w.querySelector(".balken-xp")); });
 ```
-- [ ] Steps 2–5; Commit `"Oberfläche für Survival: HUD, Rucksack, Besiegt, Schwierigkeit (Fixes #32)"`.
+- [ ] Steps 2–5; Commit `"Oberfläche für Survival: HUD, Rucksack, Besiegt, Schwierigkeit (Fixes #33)"`.
 
 ---
 
@@ -343,7 +343,7 @@ test("Kampf und Boss haben Vorrang", function(){ gleich(SC.Musik.stimmung({tages
 test("Kampfmusik ist schnell und treibend", function(){ var k=SC.Musik.komponiere(1,"kampf"),b=SC.Musik.komponiere(1,"boss"); wahr(k.tempo>=120); wahr(b.tempo>=128); wahr(k.moll); var pauken=k.events.filter(function(e){return e.instrument==="pauke"&&e.t<4;}).length; wahr(pauken>=4); });
 test("Kampfgeräusche erzeugen Klang", function(){ var ctx=new OfflineAudioContext(1,22050,44100),z=ctx.createGain(); z.connect(ctx.destination); ["blaster","schwert","abprall","zerfall","aufstieg"].forEach(function(n,i){ SC.Klang.erzeuge(ctx,z,n,{seltenheit:3},0.8); }); return ctx.startRendering().then(function(b){ var d=b.getChannelData(0),s=0; for(var i=0;i<d.length;i++) s+=d[i]*d[i]; wahr(Math.sqrt(s/d.length)>0.005); }); });
 ```
-- [ ] Steps 2–5; Commit `"Klang und Musik für den Kampf (Fixes #33)"`.
+- [ ] Steps 2–5; Commit `"Klang und Musik für den Kampf (Fixes #34)"`.
 
 ---
 
@@ -370,7 +370,7 @@ test("Entwickler: Gegner erscheinen lassen", function(){ var w=document.createEl
 ```
 - [ ] Steps 2–4
 - [ ] **Step 5: Spieltest per DevTools** (Prüfliste, jeweils mit Screenshot oder Werten belegt): Welt aus 0.4.0 auf Survival umstellen (Stufe 1, leerer Rucksack); Lager per Teleport: Banditen bemerken, Kampf mit Pistole, Besiegen → Funken, Erfahrung, Beute aufsammeln; Kiste öffnen; Helm anlegen, an der Figur sichtbar; Station mit Droiden und Deckung; Herrenhaus-Boss: Schwert blockt, Abprall; Dungeon-Boss Koloss von hinten; nachts Krabbler/Spucker, Spucke ausweichen; Besiegt → Wiedereinstieg mit allem; Schwierigkeit Friedlich → Gegner weg; Touch (⚔/🛡/⇆) und Gamepad (RT/LT/B) im Kampf; 12 Gegner + Dauerfeuer bei CPU × 4 ≥ 30 FPS; Kampfmusik setzt ein und endet; Konsole ohne Fehler.
-- [ ] **Step 6:** Commit `"Survival im Spiel verdrahtet, Entwicklerwerkzeuge erweitert (Fixes #34)"`.
+- [ ] **Step 6:** Commit `"Survival im Spiel verdrahtet, Entwicklerwerkzeuge erweitert (Fixes #35)"`.
 
 ---
 
@@ -380,4 +380,4 @@ test("Entwickler: Gegner erscheinen lassen", function(){ var w=document.createEl
 
 - [ ] **Step 1:** `bash scripts/tests.sh` → `0 fehlgeschlagen`; `bash scripts/itch-zip.sh` → ZIP enthält alle neuen `js/`-Dateien.
 - [ ] **Step 2:** Roadmap (Stufe 2 umgesetzt, nächster Schritt: Abnahme, dann Stufe 3), Devlog-Entwurf.
-- [ ] **Step 3:** Commit `"Version 0.5.0: Survival (Fixes #35)"`; mit Zustimmung `git push test <branch>:main`, Vorschau prüfen lassen; nach Abnahme Fast-Forward nach `main`, live.
+- [ ] **Step 3:** Commit `"Version 0.5.0: Survival (Fixes #36)"`; mit Zustimmung `git push test <branch>:main`, Vorschau prüfen lassen; nach Abnahme Fast-Forward nach `main`, live.

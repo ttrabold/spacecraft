@@ -1,0 +1,3 @@
+test("Modellmaße passen zur Körpergröße der Gegner", function(){ Object.keys(SC.GEGNER).forEach(function(a){ var m=SC.RenderWesen.modellMasse(a),g=SC.GEGNER[a]; wahr(Math.abs(m.hoehe-g.hoehe)<0.35,a+" Höhe "+m.hoehe); wahr(Math.abs(m.breite-g.breite)<0.5,a+" Breite "+m.breite); }); });
+test("Seltenheitsfarbe der Klinge", function(){ gleich(SC.RenderWesen.klingenFarbe(4),SC.SELTENHEIT[4].farbe); wahr(SC.RenderWesen.klingenFarbe(0)!==SC.SELTENHEIT[0].farbe,"grau leuchtet weiß-blau"); });
+test("nächste Kopie am Planetenrand", function(){ gleich(SC.RenderWesen.nah(2047,1,2048),-1); gleich(SC.RenderWesen.nah(5,2040,2048),2053); });

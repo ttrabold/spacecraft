@@ -47,6 +47,15 @@ SC.T = {
   homeBildschirm: "Tipp: Füge Spacecraft über „Teilen → Zum Home-Bildschirm“ hinzu, damit deine Welten sicher gespeichert bleiben.",
   laedtWelt: "Welt wird erzeugt …",
   entwickler: "Entwickler",
+  gegenstand: {
+    laserschwert: ["Laserschwert", "n"], blasterpistole: ["Blasterpistole", "f"], blastergewehr: ["Blastergewehr", "n"],
+    helm: ["Helm", "m"], brust: ["Brustpanzer", "m"], handschuhe: ["Handschuhe", "pl"], stiefel: ["Stiefel", "pl"], schildgenerator: ["Schildgenerator", "m"]
+  },
+  seltenheitWort: ["Einfach", "Grün", "Blau", "Violett", ""],
+  seltenheitName: ["Gewöhnlich", "Ungewöhnlich", "Selten", "Episch", "Legendär"],
+  legendaereNamen: ["Sternenfeuer", "Kometenschweif", "Nebelglanz", "Polarlicht", "Supernova", "Sonnenwind", "Mondsplitter", "Galaxienherz"],
+  werteName: { schaden: "Schaden", schutz: "Schutz", schild: "Schild", lp: "Lebenspunkte", tempo: "Tempo %", schadenProzent: "Schaden %", erholung: "Erholung %" },
+  sonderName: { doppelsprung: "Doppelsprung", abprall: "Abprall-Schüsse", funkenhieb: "Funkenhieb", leuchten: "Leuchten", schnellladen: "Schnellladen" },
   musik: "Musik",
   geraeusche: "Geräusche",
   controllerVerbunden: "Controller verbunden 🎮",

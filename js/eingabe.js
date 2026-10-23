@@ -40,7 +40,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
     contextmenu: function(ev){ ev.preventDefault(); },
     wheel: function(ev){ if(document.pointerLockElement === leinwand){ e._rad += ev.deltaY > 0 ? 1 : -1; ev.preventDefault(); } },
     sperre: function(){ if(document.pointerLockElement !== leinwand && e.aktiv && !e.touchAktiv) e._einmal.menue = true; },
-    touchstart: function(){ if(!e.touchAktiv){ e.touchAktiv = true; e.touch = new SC.Touch(e, uiWurzel); } }
+    touchstart: function(){ e.gamepadAktiv = false; if(!e.touchAktiv){ e.touchAktiv = true; e.touch = new SC.Touch(e, uiWurzel); } }
   };
   window.addEventListener("keydown", this._h.keydown); window.addEventListener("keyup", this._h.keyup); window.addEventListener("blur", this._h.blur);
   document.addEventListener("mousemove", this._h.mousemove); leinwand.addEventListener("mousedown", this._h.mousedown);
@@ -50,7 +50,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
 };
 
 (function(){
-  var EINMAL = { KeyE: "blockauswahl", Escape: "menue", F5: "ansicht", KeyV: "ansicht", F3: "entwickler" };
+  var EINMAL = { KeyE: "blockauswahl", Escape: "menue", F5: "ansicht", KeyV: "ansicht", F3: "entwickler", KeyQ: "ausweichen" };
   SC.Eingabe.prototype._druecke = function(code){
     if(!this.tasten.has(code)){
       if(EINMAL[code]) this._einmal[EINMAL[code]] = true;
@@ -65,6 +65,10 @@ SC.Eingabe = function(leinwand, uiWurzel){
     try { var p = this.leinwand.requestPointerLock(); if(p && p.catch) p.catch(function(){}); } catch(err){}
   };
   SC.Eingabe.prototype.gebeMausFrei = function(){ if(document.pointerLockElement === this.leinwand) document.exitPointerLock(); };
+
+  function gpBenutzt(p){ for(var i = 0; i < p.buttons.length; i++) if(p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > 0.5)) return true; return (p.axes || []).some(function(a){ return Math.abs(a) > 0.3; }); }
+  // Touch-Knöpfe nur, solange nicht mit dem Controller gespielt wird (Issue #21)
+  SC.Eingabe.prototype.touchSichtbar = function(){ return this.touchAktiv && !this.gamepadAktiv; };
 
   // Gedrückt gehaltene Aktion alle 0,25 s wiederholen
   function wiederhole(m, feld, zeit, jetzt){ if(m[feld] && jetzt - m[zeit] > 250){ m[zeit] = jetzt; return true; } return false; }
@@ -83,20 +87,22 @@ SC.Eingabe = function(leinwand, uiWurzel){
       var h = this._gpHalten;
       if(gpe.einmal.abbauen) h.tAbbauen = jetzt; if(gpe.einmal.setzen) h.tSetzen = jetzt;
       h.abbauen = gpe.gehalten.abbauen; h.setzen = gpe.gehalten.setzen;
-      this.gamepadAktiv = true;
+      if(gpBenutzt(gp)) this.gamepadAktiv = true;
     }
     if(!this.aktiv){ for(var k2 in b) b[k2] = false; }
     b.springenNeu = b.springen && !this._springenVorher; this._springenVorher = b.springen;
     var e1 = this._einmal; this._einmal = {};
-    if(gpe){ var ge = gpe.einmal; ["abbauen", "setzen", "blockauswahl", "ansicht", "menue", "entwickler"].forEach(function(k){ if(ge[k]) e1[k] = true; }); if(ge.auswahlRad) this._rad += ge.auswahlRad; }
+    if(gpe){ var ge = gpe.einmal; ["abbauen", "setzen", "blockauswahl", "ansicht", "menue", "entwickler", "ausweichen"].forEach(function(k){ if(ge[k]) e1[k] = true; }); if(ge.auswahlRad) this._rad += ge.auswahlRad; }
     if(t){ var te = t.einmal(); for(var k3 in te) e1[k3] = e1[k3] || te[k3]; t.blick(this._blick, this.empfindlichkeit); }
     b.blickDx = this._blick[0]; b.blickDy = this._blick[1]; this._blick = [0, 0];
     b.abbauen = !!e1.abbauen || wiederhole(this._maus, "abbauen", "tAbbauen", jetzt) || wiederhole(this._gpHalten, "abbauen", "tAbbauen", jetzt) || !!(t && t.wiederhole("abbauen", jetzt));
     b.setzen = !!e1.setzen || wiederhole(this._maus, "setzen", "tSetzen", jetzt) || wiederhole(this._gpHalten, "setzen", "tSetzen", jetzt) || !!(t && t.wiederhole("setzen", jetzt));
     b.auswahl = e1.auswahl === undefined ? null : e1.auswahl;
     b.auswahlRad = this._rad; this._rad = 0;
-    b.menue = !!e1.menue; b.blockauswahl = !!e1.blockauswahl; b.ansicht = !!e1.ansicht; b.entwickler = !!e1.entwickler;
-    if(!this.aktiv){ b.abbauen = b.setzen = false; b.blickDx = b.blickDy = 0; b.auswahlRad = 0; }
+    b.menue = !!e1.menue; b.blockauswahl = !!e1.blockauswahl; b.ansicht = !!e1.ansicht; b.entwickler = !!e1.entwickler; b.ausweichen = !!e1.ausweichen;
+    b.abbauenGehalten = this._maus.abbauen || this._gpHalten.abbauen || !!(t && t._knopf.abbauen);
+    b.setzenGehalten = this._maus.setzen || this._gpHalten.setzen || !!(t && t._knopf.setzen);
+    if(!this.aktiv){ b.abbauen = b.setzen = b.abbauenGehalten = b.setzenGehalten = b.ausweichen = false; b.blickDx = b.blickDy = 0; b.auswahlRad = 0; }
     return b;
   };
 
@@ -104,8 +110,9 @@ SC.Eingabe = function(leinwand, uiWurzel){
   SC.Eingabe.prototype.menueGamepad = function(){
     var gp = SC.Gamepad.erstes(); if(!gp) return null;
     if(this._gpModus !== "menue"){ SC.Gamepad.vorbereiten(gp, this._gpm); this._gpModus = "menue"; this._gpm.menueAchse = 0; return null; }
-    this.gamepadAktiv = true;
-    return SC.Gamepad.zuMenue(gp, this._gpm, performance.now());
+    var r = SC.Gamepad.zuMenue(gp, this._gpm, performance.now());
+    if(r !== null) this.gamepadAktiv = true;
+    return r;
   };
 
   SC.Eingabe.prototype.entferne = function(){
@@ -118,3 +125,18 @@ SC.Eingabe = function(leinwand, uiWurzel){
     if(this.touch) this.touch.entferne();
   };
 })();
+
+// Zielhilfe für Touch und Gamepad: dreht bis zu 4° auf den nächsten Gegner innerhalb 12° um die Bildmitte
+SC.zielhilfe = function(spieler, gegner, richtung, staerke){
+  var a = spieler.augen(), best = null, bw = 12 * Math.PI / 180;
+  gegner.forEach(function(g){
+    var d = [g.pos[0] - a[0], g.pos[1] + (g.hoehe || 1.8) * 0.6 - a[1], g.pos[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]);
+    if(l < 1 || l > 40) return;
+    var w = Math.acos(Math.max(-1, Math.min(1, (d[0] * richtung[0] + d[1] * richtung[1] + d[2] * richtung[2]) / l)));
+    if(w < bw){ bw = w; best = [d[0] / l, d[1] / l, d[2] / l]; }
+  });
+  if(!best) return richtung.slice();
+  var max = 4 * Math.PI / 180 * (staerke || 1), t = Math.min(1, max / Math.max(bw, 1e-6));
+  var r = [richtung[0] + (best[0] - richtung[0]) * t, richtung[1] + (best[1] - richtung[1]) * t, richtung[2] + (best[2] - richtung[2]) * t], l2 = Math.hypot(r[0], r[1], r[2]);
+  return [r[0] / l2, r[1] / l2, r[2] / l2];
+};

@@ -23,7 +23,7 @@ SC.Gamepad = {};
       blickDx: -rx * Math.abs(rx) * BLICK * dt, blickDy: -ry * Math.abs(ry) * BLICK * dt,
       einmal: {
         springenNeu: neu(K.A), abbauen: neu(K.RT), setzen: neu(K.LT), blockauswahl: neu(K.X), ansicht: neu(K.Y),
-        menue: neu(K.START), entwickler: neu(K.SELECT),
+        menue: neu(K.START), entwickler: neu(K.SELECT), ausweichen: neu(K.B),
         auswahlRad: neu(K.RB) || neu(K.RECHTS) ? 1 : neu(K.LB) || neu(K.LINKS) ? -1 : 0
       },
       gehalten: { abbauen: gedrueckt(p, K.RT), setzen: gedrueckt(p, K.LT) }

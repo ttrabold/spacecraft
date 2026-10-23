@@ -76,6 +76,41 @@ SC.Klang = {};
     } else if(name === "platsch"){
       var g = huelle(ctx, z, t, 0.01, 0.05, 0.5, v * 0.5), bp = filter(ctx, "bandpass", 1200, 0.8, g);
       bp.frequency.setValueAtTime(2500, t); bp.frequency.exponentialRampToValueAtTime(400, t + 0.5); rausch(ctx, bp, t, 0.6);
+    } else if(name === "blaster"){
+      var gb = huelle(ctx, z, t, 0.002, 0.03, 0.12, v * 0.35), ob = osz(ctx, "sawtooth", 1400, filter(ctx, "lowpass", 3000, 1, gb), t, t + 0.2);
+      ob.frequency.setValueAtTime(1400, t); ob.frequency.exponentialRampToValueAtTime(260, t + 0.16);
+    } else if(name === "schwert"){
+      var gs = huelle(ctx, z, t, 0.02, 0.05, 0.15, v * 0.4), bs = filter(ctx, "bandpass", 600, 2, gs);
+      bs.frequency.setValueAtTime(400, t); bs.frequency.exponentialRampToValueAtTime(2400, t + 0.18); rausch(ctx, bs, t, 0.25);
+      osz(ctx, "sawtooth", 110, filter(ctx, "lowpass", 400, 1, huelle(ctx, z, t, 0.01, 0.1, 0.15, v * 0.25)), t, t + 0.3);
+    } else if(name === "blocken" || name === "abprall"){
+      [1200, 1650, 2300].forEach(function(f2, i){ osz(ctx, "square", f2 * (name === "abprall" ? 1.3 : 1), filter(ctx, "bandpass", f2, 6, huelle(ctx, z, t + i * 0.01, 0.002, 0, 0.25, v * 0.12)), t, t + 0.35); });
+      if(name === "abprall"){ var oa = osz(ctx, "sine", 800, huelle(ctx, z, t, 0.002, 0.05, 0.1, v * 0.25), t, t + 0.2); oa.frequency.exponentialRampToValueAtTime(2400, t + 0.15); }
+    } else if(name === "treffer" || name === "getroffen"){
+      var ot = osz(ctx, "sine", name === "treffer" ? 180 : 110, huelle(ctx, z, t, 0.002, 0, 0.18, v * 0.6), t, t + 0.25); ot.frequency.exponentialRampToValueAtTime(60, t + 0.18);
+      rausch(ctx, filter(ctx, "lowpass", 1800, 0.7, huelle(ctx, z, t, 0.002, 0, 0.08, v * 0.35)), t, 0.1);
+    } else if(name === "zerfall"){
+      [1568, 1319, 1047, 784, 659].forEach(function(f3, i){ osz(ctx, "triangle", f3, huelle(ctx, z, t + i * 0.05, 0.002, 0, 0.2, v * 0.12), t + i * 0.05, t + i * 0.05 + 0.25); });
+      rausch(ctx, filter(ctx, "highpass", 3000, 0.7, huelle(ctx, z, t, 0.01, 0.1, 0.3, v * 0.15)), t, 0.45);
+    } else if(name === "aufsammeln"){
+      var sel = (o && o.seltenheit) || 0, basis = 880 * Math.pow(1.12, sel);
+      [1, 1.25, 1.5].forEach(function(f4, i){ osz(ctx, "sine", basis * f4, huelle(ctx, z, t + i * 0.06, 0.003, 0, 0.25 + sel * 0.08, v * 0.2), t + i * 0.06, t + i * 0.06 + 0.5); });
+    } else if(name === "kiste"){
+      var ok = osz(ctx, "sawtooth", 140, filter(ctx, "lowpass", 600, 4, huelle(ctx, z, t, 0.02, 0.2, 0.1, v * 0.15)), t, t + 0.35); ok.frequency.linearRampToValueAtTime(220, t + 0.3);
+      [1047, 1319, 1568, 2093].forEach(function(f5, i){ osz(ctx, "sine", f5, huelle(ctx, z, t + 0.3 + i * 0.07, 0.003, 0, 0.4, v * 0.15), t + 0.3 + i * 0.07, t + 0.9 + i * 0.07); });
+    } else if(name === "aufstieg"){
+      [60, 64, 67, 72].forEach(function(m, i){ SC.Instrumente.blech(ctx, z, t + i * 0.13, m, i === 3 ? 0.7 : 0.15, v * 0.9); });
+    } else if(name === "besiegt"){
+      [67, 64, 60, 55].forEach(function(m, i){ SC.Instrumente.horn(ctx, z, t + i * 0.25, m, 0.4, v * 0.7); });
+    } else if(name === "droide"){
+      [1300, 900, 1600].forEach(function(f6, i){ osz(ctx, "square", f6, filter(ctx, "lowpass", 2500, 1, huelle(ctx, z, t + i * 0.07, 0.002, 0.03, 0.02, v * 0.08)), t + i * 0.07, t + i * 0.07 + 0.08); });
+    } else if(name === "krabbler"){
+      for(var c = 0; c < 4; c++) rausch(ctx, filter(ctx, "bandpass", 3500, 5, huelle(ctx, z, t + c * 0.04, 0.001, 0, 0.02, v * 0.3)), t + c * 0.04, 0.03);
+    } else if(name === "spucker"){
+      rausch(ctx, filter(ctx, "highpass", 2500, 0.7, huelle(ctx, z, t, 0.05, 0.1, 0.2, v * 0.25)), t, 0.4);
+      var og = osz(ctx, "sine", 300, huelle(ctx, z, t + 0.3, 0.005, 0, 0.1, v * 0.3), t + 0.3, t + 0.45); og.frequency.exponentialRampToValueAtTime(120, t + 0.42);
+    } else if(name === "ueberhitzt"){
+      rausch(ctx, filter(ctx, "highpass", 4000, 0.7, huelle(ctx, z, t, 0.01, 0.3, 0.4, v * 0.2)), t, 0.8);
     } else if(name === "klick"){
       osz(ctx, "square", 880, filter(ctx, "lowpass", 3000, 0.7, huelle(ctx, z, t, 0.002, 0, 0.05, v * 0.12)), t, t + 0.07);
     }
@@ -116,7 +151,9 @@ SC.Klang = {};
     var c = this.ctx; if(!c || c.state !== "running") return;
     var jetzt = c.currentTime;
     if(!aktiv || this.musikLaut <= 0){ this._ausblenden(jetzt); return; }
-    if(this._stueck && stimmung !== this._stueck.stimmung && !this._stueck.blendetAus){ this._ausblenden(jetzt); this._pauseBis = jetzt + 4; }
+    var kampfig = stimmung === "kampf" || stimmung === "boss";
+    if(this._stueck && stimmung !== this._stueck.stimmung && !this._stueck.blendetAus){ this._ausblenden(jetzt, kampfig ? 1 : 2.5); this._pauseBis = jetzt + (kampfig ? 0.3 : 4); }
+    if(!this._stueck && kampfig && this._pauseBis > jetzt + 0.5) this._pauseBis = jetzt + 0.3;   // Kampf wartet nicht auf die Pause
     if(!this._stueck){
       if(jetzt < this._pauseBis) return;
       var st = SC.Musik.komponiere(this._seed++, stimmung), bus = c.createGain(); bus.gain.value = 1; bus.connect(this.musikTrocken);
@@ -127,13 +164,13 @@ SC.Klang = {};
       var e = ev[s.i++], f = SC.Instrumente[e.instrument];
       if(f && !s.blendetAus) f(c, s.bus, s.start + e.t * s.sek, e.midi, e.dauer * s.sek, e.vel);
     }
-    if(s.i >= ev.length && jetzt > s.start + s.daten.schlaege * s.sek + 2){
-      this._stueck = null; this._pauseBis = jetzt + 20 + Math.random() * 25;
+    if(s.i >= ev.length && jetzt > s.start + s.daten.schlaege * s.sek + (kampfig ? -0.05 : 2)){
+      this._stueck = null; this._pauseBis = kampfig ? jetzt : jetzt + 20 + Math.random() * 25;
     }
   };
-  SC.Audio.prototype._ausblenden = function(jetzt){
+  SC.Audio.prototype._ausblenden = function(jetzt, dauer){
     var s = this._stueck; if(!s || s.blendetAus) return;
-    s.blendetAus = true; s.bus.gain.setValueAtTime(s.bus.gain.value, jetzt); s.bus.gain.linearRampToValueAtTime(0.0001, jetzt + 2.5);
+    s.blendetAus = true; s.bus.gain.setValueAtTime(s.bus.gain.value, jetzt); s.bus.gain.linearRampToValueAtTime(0.0001, jetzt + (dauer || 2.5));
     var a = this; setTimeout(function(){ s.bus.disconnect(); if(a._stueck === s) a._stueck = null; }, 3000);
   };
 })();

@@ -6,9 +6,9 @@
 SC.Musik = {};
 (function(){
   var DUR = [0, 2, 4, 5, 7, 9, 11], MOLL = [0, 2, 3, 5, 7, 8, 10];
-  var CODE = { tag: 1, nacht: 2, tief: 3 };
+  var CODE = { tag: 1, nacht: 2, tief: 3, kampf: 4, boss: 5 };
 
-  SC.Musik.stimmung = function(o){ return o.unterTage ? "tief" : o.tageslicht < 0.55 ? "nacht" : "tag"; };
+  SC.Musik.stimmung = function(o){ return o.boss ? "boss" : o.kampf ? "kampf" : o.unterTage ? "tief" : o.tageslicht < 0.55 ? "nacht" : "tag"; };
 
   // Alle Tonleitertöne im Bereich [von, bis]
   function leiter(grund, moll, von, bis){ var l = moll ? MOLL : DUR, a = []; for(var m = von; m <= bis; m++) if(l.indexOf(SC.mod(m - grund, 12)) >= 0) a.push(m); return a; }
@@ -19,28 +19,34 @@ SC.Musik = {};
   var FOLGEN = {
     tag: [[[0, "dur"], [10, "dur"], [5, "dur"], [0, "dur"]], [[0, "dur"], [7, "dur"], [9, "moll"], [5, "dur"]], [[0, "dur"], [5, "dur"], [10, "dur"], [7, "dur"]], [[9, "moll"], [5, "dur"], [7, "dur"], [0, "dur"]]],
     nacht: [[[0, "moll"], [8, "dur"], [3, "dur"], [10, "dur"]], [[0, "moll"], [5, "moll"], [8, "dur"], [7, "moll"]], [[0, "moll"], [10, "dur"], [8, "dur"], [7, "moll"]]],
-    tief: [[[0, "moll"], [0, "moll"], [8, "dur"], [7, "moll"]], [[0, "moll"], [5, "moll"], [0, "moll"], [8, "dur"]]]
+    tief: [[[0, "moll"], [0, "moll"], [8, "dur"], [7, "moll"]], [[0, "moll"], [5, "moll"], [0, "moll"], [8, "dur"]]],
+    kampf: [[[0, "moll"], [8, "dur"], [10, "dur"], [0, "moll"]], [[0, "moll"], [5, "moll"], [8, "dur"], [7, "moll"]], [[0, "moll"], [10, "dur"], [8, "dur"], [10, "dur"]]],
+    boss: [[[0, "moll"], [1, "dur"], [0, "moll"], [8, "dur"]], [[0, "moll"], [8, "dur"], [5, "moll"], [7, "moll"]]]
   };
   var RHYTHMEN = {
     tag: [[[0, 1.5], [1.5, 0.5], [2, 2]], [[0, 1 / 3], [1 / 3, 1 / 3], [2 / 3, 1 / 3], [1, 3]], [[0, 1], [1, 1], [2, 1], [3, 1]], [[0, 3], [3, 1]], [[0, 0.5], [0.5, 0.5], [1, 1], [2, 2]]],
     nacht: [[[0, 4]], [[0, 2], [2, 2]], [[0, 3], [3, 1]], [[1, 3]]],
-    tief: [[[0, 4]], [[2, 2]], []]
+    tief: [[[0, 4]], [[2, 2]], []],
+    kampf: [[[0, 0.5], [0.5, 0.5], [1, 1], [2, 0.5], [2.5, 0.5], [3, 1]], [[0, 1.5], [1.5, 0.5], [2, 2]], [[0, 0.25], [0.25, 0.25], [0.5, 0.5], [1, 3]], [[0, 1], [1, 1], [2, 1], [3, 1]]],
+    boss: [[[0, 2], [2, 1], [3, 1]], [[0, 0.5], [0.5, 0.5], [1, 0.5], [1.5, 0.5], [2, 2]], [[0, 3], [3, 1]]]
   };
 
   SC.Musik.komponiere = function(seed, stimmung){
     var zf = SC.zufall(SC.hash3(seed >>> 0, CODE[stimmung] || 1, 4711)), w = function(l){ return l[Math.floor(zf() * l.length)]; };
     var moll = stimmung !== "tag";
-    var grund = stimmung === "tag" ? w([62, 60, 58]) : stimmung === "nacht" ? w([57, 62, 55]) : w([52, 55]);
-    var tempo = stimmung === "tag" ? 100 + Math.floor(zf() * 14) : stimmung === "nacht" ? 66 + Math.floor(zf() * 8) : 58 + Math.floor(zf() * 6);
+    var kampfig = stimmung === "kampf" || stimmung === "boss";
+    var grund = stimmung === "tag" ? w([62, 60, 58]) : stimmung === "nacht" ? w([57, 62, 55]) : kampfig ? w([57, 55, 52]) : w([52, 55]);
+    var tempo = stimmung === "tag" ? 100 + Math.floor(zf() * 14) : stimmung === "nacht" ? 66 + Math.floor(zf() * 8) : stimmung === "kampf" ? 122 + Math.floor(zf() * 8) : stimmung === "boss" ? 130 + Math.floor(zf() * 8) : 58 + Math.floor(zf() * 6);
     var takte = 16, ev = [], folge = [];
     for(var f = 0; f < takte / 4; f++){ var p = w(FOLGEN[stimmung]); folge = folge.concat(p); }
     if(stimmung === "tag"){ folge[takte - 2] = [7, "dur"]; folge[takte - 1] = [0, "dur"]; }
+    else if(kampfig){ /* Kampfmusik läuft in Schleife und endet nicht auf einer Kadenz */ }
     else folge[takte - 1] = [0, "moll"];
     function n(t, dauer, instrument, midi, vel, stimme){ ev.push({ t: t, dauer: dauer, instrument: instrument, midi: midi, vel: vel, stimme: stimme || "begleitung" }); }
 
-    var melBereich = stimmung === "tag" ? [67, 86] : stimmung === "nacht" ? [60, 79] : [45, 60];
+    var melBereich = stimmung === "tag" ? [67, 86] : stimmung === "nacht" ? [60, 79] : kampfig ? [62, 81] : [45, 60];
     var mLeiter = leiter(grund, moll, melBereich[0], melBereich[1]), ton = naechster(mLeiter, melBereich[0] + 7);
-    var melInstr = stimmung === "tag" ? "blech" : stimmung === "nacht" ? "horn" : "horn";
+    var melInstr = stimmung === "tag" || kampfig ? "blech" : "horn";
 
     for(var k = 0; k < takte; k++){
       var t0 = k * 4, a = folge[k], akk = akkordTon(grund, a[0], a[1]), letzter = k === takte - 1;
@@ -58,6 +64,13 @@ SC.Musik = {};
         n(t0, 4, "streicher", bass, 0.3);
         for(var h = 0; h < 8; h++) n(t0 + h * 0.5, 1.2, "harfe", lage[h % 3] + (h >= 3 && h < 6 ? 12 : 0), 0.3);
         if(k % 2 === 0) n(t0, 1.5, "pauke", inOktave(akk[0], 38), 0.25);
+      } else if(kampfig){
+        // Treibend: Streicher-Achtel, Pauke auf jedem Schlag, Trommel in Achteln
+        for(var q = 0; q < 8; q++) n(t0 + q * 0.5, 0.42, "streicher", q % 4 === 3 ? bass + 7 : bass, q % 2 ? 0.3 : 0.45);
+        lage.forEach(function(m){ n(t0, 2, "streicher", m, 0.22); n(t0 + 2, 2, "streicher", m, 0.22); });
+        for(var pk = 0; pk < 4; pk++) n(t0 + pk, 0.6, "pauke", inOktave(akk[0], 36), pk === 0 ? 0.7 : 0.45);
+        for(var tr = 0; tr < 8; tr++) n(t0 + tr * 0.5, 0.15, "trommel", 60, tr % 2 ? 0.15 : 0.25);
+        if(stimmung === "boss"){ n(t0, 1, "blech", inOktave(akk[0], 43), 0.4); n(t0 + 2, 1, "blech", inOktave(akk[0], 43), 0.35); if(k % 4 === 3) for(var r2 = 0; r2 < 8; r2++) n(t0 + 2 + r2 * 0.25, 0.3, "pauke", inOktave(akk[0], 36), 0.3 + r2 * 0.05); }
       } else {
         for(var o = 0; o < 8; o++) n(t0 + o * 0.5, 0.45, "streicher", o === 7 ? bass + 1 : bass, o % 2 ? 0.3 : 0.42);
         n(t0, 4, "streicher", inOktave(akk[0] + 7, 40), 0.18);
@@ -71,13 +84,13 @@ SC.Musik = {};
       if(!akkTon.length) akkTon = mLeiter;
       rh.forEach(function(r, i){
         if(i === 0){
-          var ziel = stimmung === "tag" && zf() < 0.3 ? ton + w([5, 7]) : ton + w([-2, 0, 2]);
+          var ziel = (stimmung === "tag" || kampfig) && zf() < 0.3 ? ton + w([5, 7]) : ton + w([-2, 0, 2]);
           ton = letzter ? naechster(mLeiter.filter(function(m){ return SC.mod(m - grund, 12) === 0; }), ton) : naechster(akkTon, ziel);
         } else {
           var idx = mLeiter.indexOf(ton), sch = w([-2, -1, 1, 1, 2]);
           ton = mLeiter[Math.max(0, Math.min(mLeiter.length - 1, idx + sch))];
         }
-        n(t0 + r[0], r[1], melInstr, ton, stimmung === "tag" ? 0.55 : 0.4, "melodie");
+        n(t0 + r[0], r[1], melInstr, ton, stimmung === "tag" || kampfig ? 0.55 : 0.4, "melodie");
       });
     }
     return { stimmung: stimmung, tempo: tempo, grundton: grund, moll: moll, schlaege: takte * 4, events: ev };

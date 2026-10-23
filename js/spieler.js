@@ -43,7 +43,10 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     var l = Math.hypot(vx, vz); if(l > 0){ vx /= l; vz /= l; }
     var tempo = this.fliegt ? F.fliegen * (this.flugFaktor || 1) * (e.sprint ? 1.6 : 1) : e.sprint ? F.sprint : F.laufen;
     if(this.imWasser && !this.fliegt) tempo *= 0.6;
+    tempo *= this.tempoFaktor || 1;
     this.geschw[0] = vx * tempo; this.geschw[2] = vz * tempo;
+    // Ausweichen: kurzer Schub zusätzlich zur Laufrichtung
+    if(this.schub && this.schub.t > 0){ this.geschw[0] += this.schub.v[0]; this.geschw[2] += this.schub.v[1]; this.schub.t -= dt; }
 
     if(this.fliegt){
       this.geschw[1] = ((e.springen ? 1 : 0) - (e.sinken ? 1 : 0)) * F.fliegen * (this.flugFaktor || 1);
@@ -53,7 +56,8 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
       if(this.geschw[1] < -3) this.geschw[1] = -3;
     } else {
       this.geschw[1] -= F.schwerkraft * dt;
-      if(e.springen && this.aufBoden) this.geschw[1] = F.sprung;
+      if(e.springen && this.aufBoden){ this.geschw[1] = F.sprung; this._zweiterSprung = true; }
+      else if(e.springenNeu && !this.aufBoden && this.doppelsprung && this._zweiterSprung){ this.geschw[1] = F.sprung; this._zweiterSprung = false; }
       if(this.geschw[1] < -60) this.geschw[1] = -60;
     }
 

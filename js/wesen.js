@@ -25,6 +25,9 @@ SC.Wesen.neu = function(welt, art, daten){
   if(SC.Wesen.anzahl(welt, art) >= (SC.Wesen.GRENZE[art] || Infinity)) return null;
   var e = { id: welt.naechsteId++, art: art, pos: [0, 0, 0], geschw: [0, 0, 0], breite: 0.8, hoehe: 1.8, alter: 0 };
   for(var k in daten) e[k] = daten[k];
+  // Bei Geschossen heißt die Geschossart "typ"; "art" bleibt die Kategorie
+  if(daten && daten.art){ e.typ = daten.art; }
+  e.art = art;
   e.pos = e.pos.slice(); e.geschw = e.geschw.slice();
   welt.wesen.set(e.id, e);
   return e;
@@ -49,7 +52,8 @@ SC.Geschoss = {};
 // Bewegt ein Geschoss um dt; Treffer gegen Blöcke, Gegner (Team Spieler) oder den Spieler (Team Gegner)
 SC.Geschoss.schritt = function(welt, g, dt, spieler){
   if(!g.geschw) g.geschw = [g.richtung[0] * g.tempo, g.richtung[1] * g.tempo, g.richtung[2] * g.tempo];
-  if(g.art === "spucke") g.geschw[1] -= 12 * dt;
+  var typ = g.typ || g.art;
+  if(typ === "spucke") g.geschw[1] -= 12 * dt;
   g.lebensdauer -= dt;
   if(g.lebensdauer <= 0) return { treffer: "ende" };
   var a = g.pos, b = [a[0] + g.geschw[0] * dt, a[1] + g.geschw[1] * dt, a[2] + g.geschw[2] * dt];

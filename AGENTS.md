@@ -14,9 +14,12 @@ Code-Kommentare, Commit-Nachrichten und Docs sind Deutsch.
 ```
 index.html          Version `var V="X.Y.Z"` (einzige Stelle) und Lader, der alle Skripte in fester Reihenfolge mit ?v=V lädt
 sw.js               Service-Worker, Cache-Name aus der Version
-css/, js/           Spiel (klassische Skripte, keine ES-Module)
-tests/index.html    Testseite (Browser)
+css/, js/           Spiel (klassische Skripte unter dem Namensraum SC, keine ES-Module)
+js/lib/three.min.js three.js r158 (UMD-Build, unverändert eingecheckt)
+tests/index.html    Testseite (Browser), lädt dieselbe Skriptliste; SC_TEST verhindert den Spielstart
+scripts/tests.sh    führt die Testseite in Chrome ohne Fenster aus (Node ≥ 22, kein npm)
 scripts/itch-zip.sh baut das itch.io-ZIP aus den in index.html referenzierten Dateien
+docs/ROADMAP.md     Vision, Stufen, aktueller Stand – Einstieg jeder Session
 docs/OFFENE-PUNKTE.md   Verweis auf die GitHub Issues
 docs/superpowers/   Specs und Pläne zu größeren Features
 ```
@@ -29,7 +32,7 @@ docs/superpowers/   Specs und Pläne zu größeren Features
 
 ## Prüfen
 
-Die Tests laufen im Browser: `tests/index.html` öffnen, erwartet: keine ❌-Zeilen. Behaupte nie, etwas funktioniere, ohne die Testseite wirklich geladen zu haben. Wenn du keinen Browser steuern kannst, sag das offen.
+Die Tests laufen im Browser: `tests/index.html` öffnen, erwartet: keine ❌-Zeilen und `Fertig: N ok, 0 fehlgeschlagen`. Kurzform auf der Kommandozeile: `bash scripts/tests.sh` (braucht Chrome; in der Claude-Sandbox ohne Sandbox ausführen). Behaupte nie, etwas funktioniere, ohne die Testseite wirklich geladen zu haben. Wenn du keinen Browser steuern kannst, sag das offen.
 
 ## Veröffentlichen
 

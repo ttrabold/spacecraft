@@ -25,7 +25,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 | # | Stufe | Stand | Spec | Plan |
 |---|-------|-------|------|------|
-| 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | Plan fertig, Umsetzung steht an (Issues #1–#14) | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
+| 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | umgesetzt (Version 0.1.0, Branch `stufe-1`), Abnahme in der Test-Vorschau ausstehend | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | offen | – | – |
 | 3 | Gemeinsam spielen per Raumcode | offen | – | – |
 | 4 | Fahr- und Flugzeuge bauen | offen | – | – |
@@ -36,9 +36,11 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 - 2026-10-23: Vision und Reihenfolge der Stufen mit dem Nutzer abgestimmt. Repo enthält nur das Gerüst (Workflows, AGENTS.md), noch keinen Spielcode. Auf GitHub noch keine Commits, Issues, Meilensteine oder Board. `gh` hat jetzt den Scope `project`.
 - 2026-10-23: Brainstorming zu Stufe 1 abgeschlossen (Look, Planeten, Seed, Slots, Export), Design geschrieben. Wünsche dazu: Spielstände gut exportierbar, mehrere Slots, Welt prozedural aus Seed.
+- 2026-10-23: Stufe 1 umgesetzt auf Branch `stufe-1` (85 Tests grün, Spieltest per DevTools auf Laptop- und Tablet-Größe). Entscheidungen während der Umsetzung stehen in den Commit-Nachrichten und im Abschlussbericht der Session.
 - 2026-10-23: Design freigegeben, Plan geschrieben. Auf GitHub angelegt: Meilensteine Stufe 1–5 und „Später“, Bereichs-Labels, Board „Spacecraft“, Issues #1–#14 (Stufe 1) und #15 (Crafting, später).
 
 ## Nächster Schritt
 
-- Umsetzung von Stufe 1 nach Plan, beginnend mit Task 1 (Issue #1). Task N = Issue #N. Ausführungsart (Subagenten oder direkt) wählt der Nutzer.
-- Board: https://github.com/users/ttrabold/projects/1
+- Stufe 1 ins Test-Repo pushen (`git push test stufe-1:main`, nur mit Zustimmung), auf Laptop und iPad prüfen lassen, dann nach `main` und live.
+- Danach: Design für Stufe 2 (Survival: Gegner, Laserwaffen, Beute) mit dem Nutzer klären.
+- Bekannte offene Punkte stehen als Issues (siehe Board): https://github.com/users/ttrabold/projects/1

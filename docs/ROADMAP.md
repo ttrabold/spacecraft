@@ -27,7 +27,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 | # | Stufe | Stand | Spec | Plan |
 |---|-------|-------|------|------|
 | 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | live als 0.4.0 (inkl. Entwicklerwerkzeuge, Gamepad, Musik und Geräusche); offen nur noch #18 (Test auf echtem iPad) | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
-| 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | offen | – | – |
+| 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | Design geschrieben, Freigabe ausstehend | [Design](superpowers/specs/2026-10-23-stufe-2-survival-design.md) | – |
 | 3 | Gemeinsam spielen per Raumcode | offen | – | – |
 | 4 | Fahr- und Flugzeuge bauen | offen | – | – |
 | 5 | Raumschiffe, nahtloser Flug zu anderen Planeten | offen | – | – |

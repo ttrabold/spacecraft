@@ -12,26 +12,9 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
 (function(){
   var F = SC.PHYSIK, HB = F.breite / 2, EPS = 1e-4;
 
-  function fest(welt, x, y, z){ var b = SC.BLOECKE[welt.holeBlock(x, y, z)]; return b && b.fest; }
 
-  // Achsenweise bewegen; liefert true, wenn eine Kollision die Bewegung gestoppt hat
-  function bewege(welt, pos, achse, d){
-    if(d === 0) return false;
-    var neu = pos.slice(); neu[achse] += d;
-    var x0 = Math.floor(neu[0] - HB), x1 = Math.floor(neu[0] + HB - EPS);
-    var y0 = Math.floor(neu[1]), y1 = Math.floor(neu[1] + F.hoehe - EPS);
-    var z0 = Math.floor(neu[2] - HB), z1 = Math.floor(neu[2] + HB - EPS);
-    for(var x = x0; x <= x1; x++) for(var y = y0; y <= y1; y++) for(var z = z0; z <= z1; z++){
-      if(!fest(welt, x, y, z)) continue;
-      // An die Blockkante setzen
-      if(achse === 0) pos[0] = d > 0 ? x - HB : x + 1 + HB;
-      else if(achse === 1) pos[1] = d > 0 ? y - F.hoehe : y + 1;
-      else pos[2] = d > 0 ? z - HB : z + 1 + HB;
-      return true;
-    }
-    pos[achse] = neu[achse];
-    return false;
-  }
+  // Achsenweise bewegen (gemeinsame Körperphysik aus wesen.js)
+  function bewege(welt, pos, achse, d){ return SC.bewegeKoerper(welt, pos, achse, d, F.breite, F.hoehe); }
 
   SC.Spieler.prototype.richtung = function(){
     var g = this.blick[0], n = this.blick[1];

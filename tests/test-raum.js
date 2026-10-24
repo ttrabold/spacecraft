@@ -7,8 +7,8 @@ function aufbau(o){
   o = o || {};
   var netz = SC.Netz.speicherNetz(), p = new SC.Planet({ id: "start", seed: 1234 }), w = new SC.Welt(p), d = SC.Spielstand.neu({ name: "Mias Welt", seedText: "a", modus: "survival", figurName: "Mia" });
   d.planeten.start.seed = p.seed; d.startpunkt = [1, 80, 2]; w.setzeBlock(3, 60, 3, SC.B.STEIN);
-  var u = { netz: netz, welt: w, daten: d, anfragen: [], spielerListen: [], nachrichten: [] };
-  u.h = new SC.Gastgeber({ adapter: netz.adapter(), daten: d, welt: w, zf: SC.zufall(7), warte: function(ms, fn){ fn(); },
+  var u = { netz: netz, welt: w, daten: d, anfragen: [], anfragenWeg: [], spielerListen: [], nachrichten: [], uhr: raumUhr() };
+  u.h = new SC.Gastgeber({ adapter: netz.adapter(), daten: d, welt: w, zf: SC.zufall(7), warte: u.uhr.warte, beiAnfrageWeg: function(info){ u.anfragenWeg.push(info); },
     beiAnfrage: function(info, antwort){ u.anfragen.push(info); if(o.antwort !== undefined) antwort(o.antwort); else u.antwort = antwort; },
     beiSpieler: function(l){ u.spielerListen.push(l); }, beiNachricht: function(id, n){ u.nachrichten.push({ id: id, n: n }); } });
   return u;
@@ -71,7 +71,7 @@ test("Raum: Bestätigte Figur kommt ohne Rückfrage zurück", function(){
   return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Ben"); return raumBeitritt(u, r); }).then(function(e){
     wahr(e.erfolg); gleich(u.anfragen.length, 1); u.netz.trenne(r.g.verb); return raumLauf(u.netz);
   }).then(function(){
-    gleich(letzter(r.status), "neuverbinden"); gleich(u.h.spieler.length, 0, "Gastgeber hat den Abgang bemerkt");
+    gleich(letzter(r.status), "neuverbinden"); gleich(u.h.spieler.length, 1, "Platz bleibt frei"); gleich(u.h.spieler[0].verbunden, false, "Gastgeber hat den Abgang bemerkt");
     r.uhr.vor(2000); return raumLauf(u.netz);
   }).then(function(){
     gleich(u.anfragen.length, 1, "keine neue Rückfrage"); gleich(r.status.slice(-2).join(" "), "neuverbinden verbunden");
@@ -102,7 +102,7 @@ test("Raum: Position wird gemerkt", function(){
     gleich(u.daten.mitspieler[id].pos[0], 5); gleich(u.daten.mitspieler[id].blick[0], 1); gleich(u.daten.mitspieler[id].name, "Ben"); gleich(u.h.spieler[0].pos[2], 5); gleich(u.h.spieler[0].stufe, 2);
     r.g.trenne(); return raumLauf(u.netz);
   }).then(function(){
-    gleich(u.h.spieler.length, 0); var r2 = raumGast(u, "Ben", { figur: r.figur }); return raumBeitritt(u, r2).then(function(e){ wahr(e.erfolg); gleich(u.anfragen.length, 1); gleich(r2.willkommen[0].pos.join(","), "5,70,5"); gleich(r2.willkommen[0].blick[0], 1); });
+    gleich(u.h.spieler[0].verbunden, false); var r2 = raumGast(u, "Ben", { figur: r.figur }); return raumBeitritt(u, r2).then(function(e){ wahr(e.erfolg); gleich(u.anfragen.length, 1); gleich(r2.willkommen[0].pos.join(","), "5,70,5"); gleich(r2.willkommen[0].blick[0], 1); });
   });
 });
 
@@ -121,7 +121,7 @@ test("Raum: Hinauswerfen", function(){
 test("Raum: Ende", function(){
   var u, r;
   return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Ben"); return raumBeitritt(u, r); }).then(function(){
-    u.h.schliesse(); return raumLauf(u.netz);
+    u.h.schliesse(); u.uhr.vor(SC.RAUM_NACHLAUF_MS); return raumLauf(u.netz);
   }).then(function(){
     gleich(letzter(r.status), "getrennt"); gleich(letzter(r.infos).grund, "ende"); r.uhr.vor(20000); return raumLauf(u.netz);
   }).then(function(){ wahr(r.status.indexOf("neuverbinden") < 0, "kein Neuverbinden"); var r2 = raumGast(u, "Ben"); return raumBeitritt(u, r2); }).then(function(e){ gleich(e.fehler && e.fehler.art, "kein-raum"); });
@@ -140,6 +140,53 @@ test("Raum: Gastgeber verteilt Spielerliste und reicht Nachrichten weiter", func
     gleich(letzter(listen), 3, "A erfährt von B (mit Gastgeber)"); b.g.sende({ t: "etwas", x: 1 }); return raumLauf(u.netz);
   }).then(function(){
     var n = letzter(u.nachrichten); gleich(n.id, b.figur.figurId); gleich(n.n.t, "etwas");
-    b.g.trenne(); return raumLauf(u.netz);
+    b.g.trenne(); return raumLauf(u.netz).then(function(){ u.uhr.vor(SC.RAUM_PLATZ_MS); return raumLauf(u.netz); });
   }).then(function(){ gleich(letzter(listen), 2, "A erfährt von Bs Abgang"); gleich(u.h.spieler.length, 1); });
+});
+
+test("Raum: Wartender Gast geht vor der Antwort", function(){
+  var u, r;
+  return raumOffen().then(function(x){ u = x; r = raumGast(u, "Ben"); return raumBeitritt(u, r); }).then(function(){
+    gleich(u.anfragen.length, 1); r.g.trenne(); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.anfragenWeg.length, 1); gleich(u.anfragenWeg[0].id, r.figur.figurId); gleich(u.anfragenWeg[0].name, "Ben");
+    u.antwort(true); return raumLauf(u.netz);
+  }).then(function(){ gleich(u.h.spieler.length, 0, "kein Geisterspieler"); gleich(Object.keys(u.h._verb).length, 0); gleich(u.anfragenWeg.length, 1); });
+});
+
+test("Raum: Platz bleibt 20 s frei", function(){
+  var u, gs = [], neu;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; var p = Promise.resolve(); ["A", "B", "C"].forEach(function(n){ p = p.then(function(){ var r = raumGast(u, n); gs.push(r); return raumBeitritt(u, r); }); }); return p; }).then(function(){
+    gs[1].g.trenne(); return raumLauf(u.netz); // B geht
+  }).then(function(){
+    gleich(u.h.spieler.length, 3); gleich(u.h.spieler[1].verbunden, false); gleich(u.h.spieler[1].farbe, "#2fae5a");
+    u.uhr.vor(SC.RAUM_PLATZ_MS - 1000); var d = raumGast(u, "D"); return raumBeitritt(u, d);
+  }).then(function(e){
+    gleich(e.fehler && e.fehler.art, "voll", "Platz von B ist noch belegt");
+    neu = raumGast(u, "B", { figur: gs[1].figur }); return raumBeitritt(u, neu); // B kommt zurück
+  }).then(function(e){
+    wahr(e.erfolg); gleich(u.anfragen.length, 3, "ohne Rückfrage"); gleich(neu.willkommen[0].farbe, "#2fae5a"); gleich(u.h.spieler.length, 3); gleich(u.h.spieler[1].verbunden, true);
+    u.uhr.vor(SC.RAUM_PLATZ_MS); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.h.spieler.length, 3, "alter Zeitgeber räumt den Zurückgekehrten nicht ab");
+    neu.g.trenne(); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.h.spieler.length, 3); u.uhr.vor(SC.RAUM_PLATZ_MS); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.h.spieler.length, 2, "nach 20 s weg"); wahr(u.h.spieler.every(function(e){ return e.name !== "B"; }));
+    gleich(letzter(gs[0].g.spieler.map(function(x){ return x.name; })), "C"); gleich(gs[0].g.spieler.length, 3, "A hat die neue Liste (mit Gastgeber)");
+  });
+});
+
+test("Raum: Zweite Verbindung derselben Figur ersetzt die alte", function(){
+  var u, r, r2;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Ben"); return raumBeitritt(u, r); }).then(function(){
+    r2 = raumGast(u, "Ben", { figur: r.figur }); return raumBeitritt(u, r2); // alte Verbindung noch offen
+  }).then(function(e){
+    wahr(e.erfolg); gleich(u.anfragen.length, 1); gleich(u.h.spieler.length, 1); gleich(u.h.spieler[0].verbunden, true); gleich(r2.willkommen[0].farbe, "#e0533a");
+    wahr(r.g.verb === null, "alte Verbindung ist zu"); u.uhr.vor(SC.RAUM_PLATZ_MS); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.h.spieler.length, 1); gleich(u.h.spieler[0].verbunden, true, "zu der alten Verbindung ändert nichts");
+    r2.g.sende({ t: "zustand", pos: [9, 70, 9] }); return raumLauf(u.netz);
+  }).then(function(){ gleich(u.h.spieler[0].pos[0], 9, "neue Verbindung ist die gültige"); });
 });

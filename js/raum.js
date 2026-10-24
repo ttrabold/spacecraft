@@ -5,9 +5,11 @@ SC.RAUM_FARBEN = ["#3a6fd8", "#e0533a", "#2fae5a", "#c9a227"]; // Gastgeber zuer
 SC.RAUM_MAX = 4;                // Spieler insgesamt (Gastgeber + 3 Gäste)
 SC.RAUM_NEU_ALLE_MS = 2000;     // Gast: Neuverbinden alle 2 s …
 SC.RAUM_NEU_HOECHSTENS_MS = 15000; // … höchstens 15 s lang
+SC.RAUM_PLATZ_MS = 20000;       // Gastgeber: Platz und Farbe eines abgerissenen Gastes so lange frei halten
 SC.RAUM_NACHLAUF_MS = 500;      // Gastgeber: Raum erst kurz nach „ende“ schließen, damit die Nachricht noch ankommt
 
 // --- Gastgeber ---
+// Rückrufe: beiAnfrage(info, antwort), beiAnfrageWeg(info) (Wartender ging vor der Antwort), beiSpieler(liste), beiNachricht(id, n)
 SC.Gastgeber = function(o){
   this.o = o; this.daten = o.daten; this.welt = o.welt; this.zf = o.zf || Math.random; this.warte = o.warte || function(ms, fn){ return setTimeout(fn, ms); };
   this.farbe = SC.RAUM_FARBEN[0]; this.spieler = []; this.pvp = false; this.code = null; this.raum = null;
@@ -38,7 +40,11 @@ SC.Gastgeber = function(o){
       var f = SC.Gastgeber.NACHRICHTEN[n.t];
       if(f) f.call(s, c, n); else ruf(s.o.beiNachricht, c.id, n);
     });
-    v.an("zu", function(){ s._weg(c); });
+    v.an("zu", function(){
+      // Wartender Gast geht, bevor der Gastgeber antwortet: Anfrage verfällt, das Spiel schließt seinen Dialog
+      if(!c.drin){ var fragte = c.gefragt; c.weg = true; c.gefragt = false; if(fragte) ruf(s.o.beiAnfrageWeg, { id: c.id, name: c.name }); return; }
+      s._weg(c);
+    });
   };
   G._eintrag = function(id){ for(var i = 0; i < this.spieler.length; i++) if(this.spieler[i].id === id) return this.spieler[i]; return null; };
   G._entferne = function(id){ this.spieler = this.spieler.filter(function(e){ return e.id !== id; }); };
@@ -64,7 +70,7 @@ SC.Gastgeber = function(o){
     d.mitspieler[id] = { name: c.name, pos: pos, blick: blick.slice() };
     var e = s._eintrag(id);
     if(!e){ e = { id: id, name: c.name, farbe: s._freieFarbe(), pos: pos, blick: blick, modus: d.modus, stufe: 1, ausr: null, menue: false, lebt: true, verbunden: true }; s.spieler.push(e); }
-    else { e.name = c.name; e.verbunden = true; }
+    else { e.name = c.name; e.verbunden = true; e._marke = null; }
     c.verb.sende({ t: "willkommen", farbe: e.farbe, welt: s._weltInfo(), pos: pos, blick: blick, pvp: s.pvp, spieler: s.liste(), chunkAnzahl: s.welt.geaenderte.size });
     s.welt.geaenderte.forEach(function(u8, k){ c.verb.sende({ t: "chunk", k: k, daten: u8 }); });
     c.verb.sende({ t: "bereit" });
@@ -72,16 +78,22 @@ SC.Gastgeber = function(o){
   };
   G._weg = function(c){
     if(!c.drin || this._verb[c.id] !== c) return;
-    c.drin = false; delete this._verb[c.id]; this._entferne(c.id); this._listeGeaendert();
+    // Platz bleibt frei: Eintrag mit verbunden=false (zählt für „voll“, behält die Farbe), erst nach SC.RAUM_PLATZ_MS weg
+    var s = this, id = c.id, e = s._eintrag(id), marke = {};
+    c.drin = false; delete s._verb[id];
+    if(!e) return;
+    e.verbunden = false; e._marke = marke; ruf(s.o.beiSpieler, s.spieler);
+    s.warte(SC.RAUM_PLATZ_MS, function(){ var x = s._eintrag(id); if(x && !x.verbunden && x._marke === marke){ s._entferne(id); s._listeGeaendert(); } });
   };
 
   G.sende = function(id, n){ var c = this._verb[id]; if(c) c.verb.sende(n); };
   G.sendeAlle = function(n, ausserId){ for(var id in this._verb) if(id !== ausserId) this._verb[id].verb.sende(n); };
   G.hinauswerfen = function(id){
     delete this._bestaetigt[id];
-    var c = this._verb[id]; if(!c) return;
-    c.drin = false; delete this._verb[id]; this._entferne(id);
-    this._ablehnen(c, "hinausgeworfen"); this._listeGeaendert();
+    var c = this._verb[id], war = !!this._eintrag(id);
+    this._entferne(id);
+    if(c){ c.drin = false; delete this._verb[id]; this._ablehnen(c, "hinausgeworfen"); }
+    if(c || war) this._listeGeaendert();
   };
   G.schliesse = function(){
     var s = this; if(s._zu) return;
@@ -100,9 +112,9 @@ SC.Gastgeber = function(o){
       if(s._voll(c.id)) return s._ablehnen(c, "voll");
       if(s._bestaetigt[c.id]) return s._annehmen(c);
       c.verb.sende({ t: "warte" });
-      var beantwortet = false;
+      var beantwortet = false; c.gefragt = true;
       ruf(s.o.beiAnfrage, { id: c.id, name: c.name }, function(ja){
-        if(beantwortet || c.weg || s._zu) return; beantwortet = true;
+        if(beantwortet || c.weg || s._zu) return; beantwortet = true; c.gefragt = false;
         if(!ja) return s._ablehnen(c, "nein");
         if(s._voll(c.id)) return s._ablehnen(c, "voll");
         s._annehmen(c);

@@ -58,6 +58,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this._baueHand();
     this._baueGrenzen();
     this.wesen = new SC.RenderWesen(this.szene, planet);
+    this.mitspieler = new SC.RenderMitspieler(this.szene, planet);
     this._baueAusruestung();
     this.fps = 60; this._fpsZeit = 0; this._fpsBilder = 0;
     var r = this; this._groesse = function(){ r.renderer.setSize(window.innerWidth, window.innerHeight, false); r.kamera.aspect = window.innerWidth / window.innerHeight; r.kamera.updateProjectionMatrix(); };
@@ -91,49 +92,21 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.rahmen.visible = false; this.szene.add(this.rahmen);
   };
 
-  // Einfache Blockfigur für die Ansicht von außen
+  // Einfache Blockfigur für die Ansicht von außen (Fabrik: SC.Figur in render-mitspieler.js)
   SC.Render.prototype._baueFigur = function(){
-    var f = new THREE.Group();
-    function teil(w, h, d, farbe, x, y, z){ var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ color: farbe })); m.position.set(x, y, z); f.add(m); return m; }
-    teil(0.5, 0.75, 0.28, 0x3a6fd8, 0, 1.125, 0);          // Körper
-    this.kopf = teil(0.45, 0.45, 0.45, 0xe8b58a, 0, 1.6, 0);
-    teil(0.36, 0.08, 0.02, 0x333333, 0, 1.64, -0.23);      // Visier
-    this.armL = teil(0.2, 0.7, 0.2, 0x2f5bb8, -0.36, 1.12, 0); this.armR = teil(0.2, 0.7, 0.2, 0x2f5bb8, 0.36, 1.12, 0);
-    this.beinL = teil(0.22, 0.75, 0.22, 0x2b3f78, -0.13, 0.375, 0); this.beinR = teil(0.22, 0.75, 0.22, 0x2b3f78, 0.13, 0.375, 0);
-    f.visible = false; this.figur = f; this.szene.add(f);
+    var f = SC.Figur.baue("#3a6fd8");
+    f.gruppe.visible = false; this.figur = f.gruppe; this._fig = f; this.szene.add(f.gruppe);
+    this.kopf = f.kopf; this.armL = f.armL; this.armR = f.armR; this.beinL = f.beinL; this.beinR = f.beinR;
+    this.ruestung = f.ruestung; this.figurWaffe = f.waffe;
   };
 
-  // Rüstungsteile an der Figur und Waffe in der Hand (Seltenheitsfarbe)
+  // Waffe in der Ich-Ansicht (Rüstung und Figurwaffe baut SC.Figur)
   SC.Render.prototype._baueAusruestung = function(){
-    var f = this.figur, b = new THREE.BoxGeometry(1, 1, 1), r = this;
-    function teil(eltern, w, h, d, x, y, z){ var m = new THREE.Mesh(b, new THREE.MeshBasicMaterial({ color: 0xffffff })); m.scale.set(w, h, d); m.position.set(x, y, z); m.visible = false; eltern.add(m); return m; }
-    this.ruestung = {
-      helm: [teil(f, 0.52, 0.3, 0.52, 0, 1.78, 0)],
-      brust: [teil(f, 0.56, 0.6, 0.34, 0, 1.2, 0)],
-      handschuhe: [teil(this.armL, 0.24, 0.2, 0.24, 0, -0.3, 0), teil(this.armR, 0.24, 0.2, 0.24, 0, -0.3, 0)],
-      stiefel: [teil(this.beinL, 0.26, 0.22, 0.28, 0, -0.28, -0.02), teil(this.beinR, 0.26, 0.22, 0.28, 0, -0.28, -0.02)],
-      schild: [teil(f, 0.56, 0.1, 0.34, 0, 0.78, 0)]
-    };
-    // Waffe an der Figur (rechter Arm) und in der Ich-Ansicht
-    function waffe(){
-      var g = new THREE.Group(), griff = new THREE.Mesh(b, new THREE.MeshBasicMaterial({ color: 0x555a66 })), klinge = new THREE.Mesh(b, new THREE.MeshBasicMaterial({ color: 0xffffff })), lauf = new THREE.Mesh(b, new THREE.MeshBasicMaterial({ color: 0x2a2d36 }));
-      griff.scale.set(0.06, 0.22, 0.06); klinge.scale.set(0.045, 0.9, 0.045); klinge.position.y = 0.56; lauf.scale.set(0.08, 0.12, 0.42); lauf.position.set(0, 0.08, -0.16);
-      g.add(griff); g.add(klinge); g.add(lauf); g.klinge = klinge; g.lauf = lauf; g.visible = false; return g;
-    }
-    this.figurWaffe = waffe(); this.figurWaffe.position.set(0, -0.35, -0.1); this.figurWaffe.rotation.x = -1.2; this.armR.add(this.figurWaffe);
-    this.handWaffe = waffe(); this.handWaffe.position.set(0.38, -0.42, -0.75); this.handWaffe.rotation.set(-0.5, -0.25, 0); this.kamera.add(this.handWaffe);
+    this.handWaffe = SC.Figur.waffe(); this.handWaffe.position.set(0.38, -0.42, -0.75); this.handWaffe.rotation.set(-0.5, -0.25, 0); this.kamera.add(this.handWaffe);
   };
   SC.Render.prototype.ausruestung = function(a, waffe){
-    var r = this;
-    Object.keys(this.ruestung).forEach(function(p){ var g = a && a[p]; r.ruestung[p].forEach(function(m){ m.visible = !!g; if(g) m.material.color.set(SC.SELTENHEIT[g.seltenheit || 0].farbe); }); });
-    [this.figurWaffe, this.handWaffe].forEach(function(w){
-      w.visible = !!waffe;
-      if(!waffe) return;
-      var schwert = waffe.art === "laserschwert";
-      w.klinge.visible = schwert; w.lauf.visible = !schwert;
-      if(schwert) w.klinge.material.color.set(SC.RenderWesen.klingenFarbe(waffe.seltenheit || 0));
-      else w.lauf.material.color.set(waffe.seltenheit ? SC.SELTENHEIT[waffe.seltenheit].farbe : "#2a2d36").multiplyScalar(waffe.seltenheit ? 0.6 : 1);
-    });
+    SC.Figur.ausruestung(this._fig, a, waffe);
+    SC.Figur.waffeStil(this.handWaffe, waffe);
     this._mitWaffe = !!waffe;
     // Sonderkraft Leuchten: sanfter Lichtschein um die Figur bei Nacht
     this._leuchtet = !!a && ["helm", "brust"].some(function(p){ return a[p] && a[p].sonder === "leuchten"; });
@@ -233,6 +206,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     });
   };
 
+  SC.Render.prototype.setzeMitspieler = function(liste){ this._mitspieler = liste; };
+
   SC.Render.prototype.markiere = function(z){
     this._ziel = z;
   };
@@ -277,6 +252,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);
     this.uniforms.nebelNah.value = this.sichtweite * 16 * 0.55; this.uniforms.nebelFern.value = this.sichtweite * 16 * 0.95;
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());
+    this.mitspieler.aktualisiere(this._mitspieler || [], spieler.pos, dt, k.position);
     this.renderer.setClearColor(h.unten);
     this.renderer.render(this.szene, k);
     // FPS

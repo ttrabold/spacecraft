@@ -479,3 +479,138 @@ test("Mehrspieler: Gast-Schuss trifft andern Gast bei PvP (über den Gastgeber)"
     s = mspSpiel(u.welt, u.daten, u.h, u.hk); s._survival(MSP_E, 0.3, false, 1000); return raumLauf(u.netz);
   }).then(function(){ wahr(b.k.werte.lp < b.k.werte.lpMax, "Gast B getroffen"); gleich(b.treffer[0].n.pvpVon, a.id); gleich(a.k.werte.lp, a.k.werte.lpMax); });
 });
+
+// --- Spiel verdrahtet: Rollen, Speichern, Abbrüche (zwei SC.Spiel ohne Leinwand) ---
+function mspSlots(){ var b = { art: "speicher", m: {}, hole: function(k){ return Promise.resolve(this.m[k] === undefined ? undefined : JSON.parse(JSON.stringify(this.m[k]))); }, lege: function(k, v){ this.m[k] = JSON.parse(JSON.stringify(v)); return Promise.resolve(); }, loesche: function(k){ delete this.m[k]; return Promise.resolve(); } }; var sl = new SC.Slots(b); sl.b = b; return sl; }
+function mspSpielVoll(slots){
+  var s = Object.create(SC.Spiel.prototype); s.slots = slots; s.hinweise = []; s.weltliste = 0; s.toene = [];
+  s.ui = { hinweis: function(t){ s.hinweise.push(t); }, zeigeWeltliste: function(){ s.weltliste++; return Promise.resolve(); }, verbergeHud: function(){}, offen: function(){ return false; }, hud: function(){}, kampfHud: function(){}, zeigeBesiegt: function(){}, schliesse: function(){} };
+  s.audio = { spiele: function(n){ s.toene.push(n); }, musikTakt: function(){} }; s.eingabe = { gebeMausFrei: function(){}, touchAktiv: false, gamepadAktiv: false }; s.entwickler = { verberge: function(){} }; s.einstellungen = { fpsAnzeigen: false };
+  s._anzeigen = function(){ var r = this.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, fps: 60, welt: function(){}, renderer: { clear: function(){} }, setzeMitspieler: function(l){ r.mitspieler = l; } }; this._laeuft = true; };
+  return s;
+}
+function mspLauf(netz, n){ var p = Promise.resolve(); for(var i = 0; i < (n || 3); i++) p = p.then(function(){ return raumLauf(netz); }); return p; }
+// Gastgeber-Spiel mit offenem Raum (antwortet Ja) und Gast-Spiel mit eigener Welt
+function mspZwei(o){
+  o = o || {};
+  var netz = SC.Netz.speicherNetz(), u = { netz: netz, sH: mspSlots(), sG: mspSlots(), anfragen: 0 };
+  SC.Spiel.adapter = function(){ return netz.adapter(); };
+  u.h = mspSpielVoll(u.sH); u.g = mspSpielVoll(u.sG);
+  var hd = SC.Spielstand.neu({ name: "Mias Welt", seedText: "a", modus: "survival", figurName: "Mia" });
+  hd.spieler.pos = [8.5, 100, 8.5]; hd.startpunkt = [8.5, 100, 8.5];
+  u.h.raumRueckrufe = { anfrage: function(info, antwort){ u.anfragen++; antwort(true); } };
+  u.eigen = SC.Spielstand.neu({ name: "Bens Welt", seedText: "b", modus: "survival", figurName: "Ben" }); u.eigen.spieler.pos = [3.5, 90, 4.5];
+  return u.sH.speichere(hd).then(function(){ u.h.starte(hd); u.h.welt.setzeBlock(9, 99, 9, SC.B.GLAS, "system"); return u.sG.speichere(u.eigen); })
+    .then(function(){ return u.h.raumOeffnen(); }).then(function(code){ u.code = code;
+      if(o.ohneBeitritt) return u;
+      var e = {}; u.g.beitreten(code, o.neu ? null : u.eigen.id, "Ben").then(function(){ e.ok = true; }, function(f){ e.fehler = f; }); u.beitritt = e;
+      return mspLauf(netz, 4).then(function(){ return u; });
+    });
+}
+var MSP_ADAPTER = SC.Spiel.adapter;
+function mspFertig(){ SC.Spiel.adapter = MSP_ADAPTER; }
+function mspFehler(f){ SC.Spiel.adapter = MSP_ADAPTER; throw f; }
+
+test("Mehrspieler: Spiel: Gast tritt bei, bekommt die Welt und eine eigene Kugel-ID-Spanne", function(){
+  var u;
+  return mspZwei().then(function(x){ u = x;
+    wahr(u.beitritt.ok, "beitreten erfüllt: " + (u.beitritt.fehler && u.beitritt.fehler.art)); gleich(u.h.rolle, "gastgeber"); gleich(u.g.rolle, "gast"); wahr(u.g.raum instanceof SC.Gast);
+    gleich(u.g.welt.holeBlock(9, 99, 9), SC.B.GLAS, "Chunks vom Gastgeber"); wahr(u.g.welt.naechsteId >= 1e9);
+    gleich(u.g.daten.id, "gast"); gleich(u.g.kampf.rucksack.plaetze[0].gegenstand.id, "startschwert");
+    u.g.welt.setzeBlock(10, 99, 9, SC.B.STEIN, "spieler"); return mspLauf(u.netz);
+  }).then(function(){ gleich(u.h.welt.holeBlock(10, 99, 9), SC.B.STEIN, "Welt gebunden: Block kommt an"); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Gast speichert nur seine Figur", function(){
+  var u, chunks0;
+  return mspZwei().then(function(x){ u = x; chunks0 = JSON.stringify(u.eigen.planeten);
+    u.g.kampf.rucksack.lege({ block: SC.B.STEIN, anzahl: 5 }); u.g.spieler.pos = [50, 90, 50];
+    return u.g.speichere("auto");
+  }).then(function(){ return u.sG.lade(u.eigen.id); }).then(function(d){
+    var n = 0; d.spieler.rucksack.forEach(function(p){ if(p && p.block === SC.B.STEIN) n += p.anzahl; }); gleich(n, 5, "Fund in der eigenen Welt");
+    gleich(JSON.stringify(d.planeten), chunks0, "Chunks unverändert"); gleich(d.spieler.pos[0], 3.5, "Position unverändert"); gleich(d.spieler.name, "Ben");
+    gleich(u.sG.b.m["welt:gast"], undefined, "keine Gastwelt gespeichert"); return u.sG.liste();
+  }).then(function(l){ wahr(l.every(function(m){ return m.id !== "gast"; })); gleich(l.length, 1); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Neue Figur legt Survival-Welt an", function(){
+  var u;
+  return mspZwei({ neu: true }).then(function(x){ u = x; wahr(u.beitritt.ok); return u.sG.liste(); }).then(function(l){
+    var neu = l.filter(function(m){ return m.name === "Bens Welt" && m.id !== u.eigen.id; })[0]; wahr(!!neu, "Bens Welt angelegt"); gleich(neu.modus, "survival");
+    return u.sG.lade(neu.id);
+  }).then(function(d){ gleich(d.spieler.name, "Ben"); gleich(u.g.raum.figur.figurId, d.spieler.figurId); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: ende speichert Figur und meldet", function(){
+  var u;
+  return mspZwei().then(function(x){ u = x; u.g.kampf.rucksack.lege({ block: SC.B.KIES, anzahl: 2 }); return u.h.verlasse();
+  }).then(function(){ return mspLauf(u.netz); }).then(function(){ return new Promise(function(ok){ setTimeout(ok, 20); }); }).then(function(){
+    wahr(u.g.hinweise.indexOf(SC.T.raumEnde) >= 0, "Hinweis raumEnde: " + u.g.hinweise.join("|")); gleich(u.g.weltliste, 1); gleich(u.g.rolle, "allein"); gleich(u.g.raum, null); gleich(u.g.daten, null);
+    gleich(u.h.rolle, "allein"); gleich(u.h.raum, null);
+    return u.sG.lade(u.eigen.id);
+  }).then(function(d){ var n = 0; d.spieler.rucksack.forEach(function(p){ if(p && p.block === SC.B.KIES) n += p.anzahl; }); gleich(n, 2); gleich(u.sG.b.m["welt:gast"], undefined); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Gastgeber speichert bei Beitritt", function(){
+  var u, n = 0, gesehen = null;
+  return mspZwei({ ohneBeitritt: true }).then(function(x){ u = x;
+    var alt = u.sH.speichere; u.sH.speichere = function(d){ n++; gesehen = JSON.parse(JSON.stringify(d.mitspieler)); return alt.call(this, d); };
+    u.g.beitreten(u.code, u.eigen.id, "Ben"); return mspLauf(u.netz, 4);
+  }).then(function(){ gleich(u.anfragen, 1); wahr(n >= 1, "speichere beim Annehmen"); wahr(!!gesehen[u.g.raum.figur.figurId], "Gastfigur gemerkt"); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Hinauswerfen meldet, Neuverbinden sperrt Blöcke", function(){
+  var u, gid;
+  return mspZwei().then(function(x){ u = x; gid = u.g.raum.figur.figurId;
+    u.g.raum.status = "neuverbinden"; wahr(!u.g._blockErlaubt(), "Blöcke gesperrt"); u.g.raum.status = "verbunden"; wahr(u.g._blockErlaubt());
+    u.h.raum.hinauswerfen(gid); return mspLauf(u.netz);
+  }).then(function(){ return new Promise(function(ok){ setTimeout(ok, 20); }); }).then(function(){
+    wahr(u.g.hinweise.indexOf(SC.T.raumHinausgeworfen) >= 0, u.g.hinweise.join("|")); gleich(u.g.rolle, "allein"); gleich(u.h.rolle, "gastgeber");
+  }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Abgelehnter Block bei vollem Rucksack fliegt als Kugel heraus", function(){
+  var u;
+  return mspZwei().then(function(x){ u = x; var rs = u.g.kampf.rucksack;
+    for(var i = 0; i < 36; i++) rs.plaetze[i] = { gegenstand: { id: "x" + i } };
+    u.g.raum.o.beiBlockZurueck(5, 99, 5, SC.B.STEIN, { id: SC.B.BRETTER, alt: SC.B.LUFT });
+    var k = []; u.g.welt.wesen.forEach(function(e){ if(e.art === "kugel") k.push(e); }); gleich(k.length, 1); gleich(k[0].sache.block, SC.B.BRETTER); wahr(k[0].id >= 1e9);
+    rs.plaetze[3] = null; u.g.raum.o.beiBlockZurueck(5, 99, 5, SC.B.STEIN, { id: SC.B.BRETTER, alt: SC.B.LUFT }); gleich(rs.hat(SC.B.BRETTER), 1, "passt: zurück in den Rucksack");
+    u.g.modus("kreativ"); u.g.raum.o.beiBlockZurueck(5, 99, 5, SC.B.STEIN, { id: SC.B.BRETTER, alt: SC.B.LUFT }); gleich(rs.hat(SC.B.BRETTER), 1, "Kreativ: Rucksack unberührt");
+  }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Bild-Takt: Mitspieler, Zeit, Modus, eigener Schuss nur einmal", function(){
+  var u, gid, hid;
+  return mspZwei().then(function(x){ u = x; gid = u.g.raum.figur.figurId; hid = u.h.daten.spieler.figurId;
+    u.h.tageszeit = 0.8; u.h.modus("kreativ"); u.h.daten.schwierigkeit = "schwer";
+    // Schuss des Gastes beim Gastgeber (mit Schütze) und ein Gegnerschuss
+    SC.Wesen.neu(u.h.welt, "geschoss", { pos: [8, 101, 8], richtung: [1, 0, 0], tempo: 1, schaden: 1, team: "spieler", schuetze: gid, art: "laser", lebensdauer: 3 });
+    SC.Wesen.neu(u.h.welt, "geschoss", { pos: [8, 102, 8], richtung: [1, 0, 0], tempo: 1, schaden: 1, team: "gegner", art: "laser", lebensdauer: 3 });
+    u.g._raumBild(0.1, false); u.h._raumBild(1.1, false); return mspLauf(u.netz);
+  }).then(function(){
+    u.g._raumBild(0.1, false); u.h._raumBild(0.1, false);
+    var gs = []; u.g.welt.wesen.forEach(function(e){ if(e.art === "geschoss") gs.push(e); }); gleich(gs.length, 1, "eigener gespiegelter Schuss ausgeblendet"); gleich(gs[0].team, "gegner");
+    gleich(u.g.tageszeit, 0.8); gleich(u.g.spieler.modus, "kreativ"); gleich(u.g.daten.schwierigkeit, "schwer");
+    var lg = u.g.render.mitspieler, lh = u.h.render.mitspieler;
+    gleich(lg.length, 1); gleich(lg[0].id, hid); gleich(lg[0].name, "Mia"); gleich(lg[0].farbe, "#3a6fd8"); wahr(!!lg[0].pos);
+    gleich(lh.length, 1); gleich(lh[0].id, gid); gleich(lh[0].name, "Ben"); gleich(lh[0].farbe, "#e0533a"); gleich(lh[0].verbunden, true); wahr(lh[0].ausr && "ruestung" in lh[0].ausr, "ausr im Zustand");
+  }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Anfrage offen, Gastgeber schließt: Dialog-Rückruf", function(){
+  var u, weg = [];
+  return mspZwei({ ohneBeitritt: true }).then(function(x){ u = x;
+    u.h.raumRueckrufe = { anfrage: function(){}, anfrageWeg: function(info){ weg.push(info); } };
+    u.g.beitreten(u.code, u.eigen.id, "Ben").catch(function(){}); return mspLauf(u.netz, 4);
+  }).then(function(){ gleich(weg.length, 0); return u.h.verlasse(); }).then(function(){ gleich(weg.length, 1); gleich(weg[0].name, "Ben"); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Warten abbrechen setzt zurück", function(){
+  var u, e = {};
+  return mspZwei({ ohneBeitritt: true }).then(function(x){ u = x; u.h.raumRueckrufe = { anfrage: function(){} };
+    u.g.beitreten(u.code, u.eigen.id, "Ben").then(function(){ e.ok = true; }, function(f){ e.f = f; }); return mspLauf(u.netz, 4);
+  }).then(function(){ gleich(u.g.rolle, "gast"); gleich(u.g.raum.status, "warte"); u.g.beitretenAbbrechen(); return mspLauf(u.netz); }).then(function(){
+    gleich(e.f && e.f.art, "abbruch"); gleich(u.g.rolle, "allein"); gleich(u.g.raum, null);
+  }).then(mspFertig, mspFehler);
+});

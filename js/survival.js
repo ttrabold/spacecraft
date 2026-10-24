@@ -56,7 +56,10 @@
   };
 
   // Eigener Zustand für den Raum (Ziele der Gegner, „in der Nähe“, zustand-Nachricht)
-  S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf; return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, menue: !!offen, lebt: !k.besiegt(), tageszeit: this.tageszeit }; };
+  S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf, surv = sp.modus === "survival";
+    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), tageszeit: this.tageszeit }; };
+  // Gast: Blöcke nur ändern, solange die Verbindung steht (sonst ginge der Wunsch verloren)
+  S._blockErlaubt = function(){ return !(this.raum instanceof SC.Gast) || this.raum.status === "verbunden"; };
 
   // Eigenes Spieler-Geschoss: als Gast nur optisch (der Schuss geht an den Gastgeber), als Gastgeber mit Schütze
   S._spielerSchuss = function(d){
@@ -72,7 +75,7 @@
     var survival = sp.modus === "survival", lebt = !k.besiegt();
     this.daten.spielzeit = (this.daten.spielzeit || 0) + dt;
     var waffe = survival ? k.waffe() : null, wdef = waffe && SC.GEGENSTAENDE[waffe.art].waffe;
-    var ziel = sp.modus === "zuschauer" ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
+    var ziel = sp.modus === "zuschauer" || !this._blockErlaubt() ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
     this.render.markiere(ziel);
     if(survival && !offen && lebt){
       if(e.ausweichen && !sp.fliegt){
@@ -158,7 +161,7 @@
       } else if(g.art === "kugel" && survival){
         var sache = g.sache, erg = SC.Kugel.schritt(w, g, sp, k.rucksack, dt);
         if(erg === "voll" && t - (s._vollHinweis || 0) > 3000){ s._vollHinweis = t; s.ui.hinweis(SC.T.rucksackVoll, 1500); }
-        if(erg === "aufgesammelt"){ a.spiele("aufsammeln", { seltenheit: sache.gegenstand ? sache.gegenstand.seltenheit : 0 }); if(sache.gegenstand) s.ui.hinweis(sache.gegenstand.name, 2000); }
+        if(erg === "aufgesammelt"){ a.spiele("aufsammeln", { seltenheit: sache.gegenstand ? sache.gegenstand.seltenheit : 0 }); if(sache.gegenstand) s.ui.hinweis(sache.gegenstand.name, 2000); if(gast) s.speichere("fund"); }
       }
     });
     k.schritt(t, dt);

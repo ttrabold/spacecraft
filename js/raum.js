@@ -339,12 +339,14 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
         l.push(n);
       } else if(e.art === "geschoss"){
         var r = e._fliegt && e.geschw ? e.geschw : e.richtung || [0, 0, 1];
-        l.push({ id: e.id, art: "geschoss", typ: e.typ, pos: r3(e.pos), blick: r3(r), farbe: e.farbe, team: e.team });
+        var gs = { id: e.id, art: "geschoss", typ: e.typ, pos: r3(e.pos), blick: r3(r), farbe: e.farbe, team: e.team };
+        if(e.schuetze) gs.schuetze = e.schuetze; // der Gast blendet seine eigenen Schüsse aus (er zeigt sie schon selbst)
+        l.push(gs);
       }
     });
     return l;
   };
-  var FELDER = ["typ", "gegnerArt", "stufe", "lp", "lpMax", "boss", "bemerkt", "blockt", "farbe", "team"];
+  var FELDER = ["typ", "gegnerArt", "stufe", "lp", "lpMax", "boss", "bemerkt", "blockt", "farbe", "team", "schuetze"];
   // Gast, pro Bild: Gegner und Geschosse unter den IDs des Gastgebers setzen und aktualisieren, fehlende entfernen, eigene (≥ SC.RAUM_GAST_ID)
   // in Ruhe lassen. Felder werden nur bei einer neuen Liste übernommen; die Position läuft jedes Bild zum Ziel (Sprung bei > 8 Blöcken).
   // uhr (optional): Spieluhr des Gastes für getroffenBis.

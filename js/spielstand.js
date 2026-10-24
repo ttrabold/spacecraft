@@ -37,6 +37,12 @@ SC.Spielstand = {};
     var pl = daten.planeten[welt.planet.id], chunks = {};
     welt.geaenderte.forEach(function(c, k){ chunks[k] = inBase64(c); });
     pl.chunks = chunks;
+    SC.Spielstand.ausSpieler(daten, spieler, kampf);
+    daten.spielVersion = window.V || daten.spielVersion;
+    return daten;
+  };
+  // Nur Spieler und Figur (ohne Chunks) in daten übernehmen; der Gast sammelt so seine Figur ein
+  SC.Spielstand.ausSpieler = function(daten, spieler, kampf){
     if(spieler){
       daten.spieler.pos = spieler.pos.slice(); daten.spieler.blick = spieler.blick.slice();
       daten.spieler.schnellleiste = spieler.schnellleiste.slice(); daten.spieler.ansicht = spieler.ansicht;
@@ -47,7 +53,6 @@ SC.Spielstand = {};
       s.stufe = w.stufe; s.erfahrung = w.erfahrung; s.lebenspunkte = w.lp; s.schild = w.schild;
       s.rucksack = kampf.rucksack.alsDaten(); s.ausruestung = JSON.parse(JSON.stringify(kampf.ausruestung));
     }
-    daten.spielVersion = window.V || daten.spielVersion;
     return daten;
   };
 

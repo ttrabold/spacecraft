@@ -39,6 +39,11 @@ SC.Spiel = function(o){
 };
 
 SC.Spiel.autoSpeicherIntervall = 30000;
+SC.Spiel.gastSpeicherIntervall = 5000; // Gast: Figur in die eigene Welt zurückspeichern
+SC.Spiel.prototype.rolle = "allein";   // "allein" | "gastgeber" | "gast"
+SC.Spiel.prototype.raum = null;        // SC.Gastgeber, SC.Gast oder null
+// Netz-Adapter für Räume (in Tests ersetzbar, z. B. durch SC.Netz.speicherNetz().adapter())
+SC.Spiel.adapter = function(){ return SC.Netz.peerjs(); };
 
 // Startpunkt neuer Welten: Spalte über Land, spiralförmig um die Planetenmitte gesucht
 SC.Spiel.startpunkt = function(planet){
@@ -73,11 +78,18 @@ SC.Spiel.startpunkt = function(planet){
     this._lz = null;
   };
 
-  SC.Spiel.prototype.starte = function(daten){
+  // chunks (optional): Chunks als Uint8Array je Schlüssel statt der gespeicherten (Gast: vom Gastgeber übertragen)
+  SC.Spiel.prototype.starte = function(daten, chunks){
+    this._baue(daten, chunks);
+    this._anzeigen();
+  };
+
+  // Spielzustand ohne Darstellung: Welt, Spieler, Kampf, Gegner
+  SC.Spiel.prototype._baue = function(daten, chunks){
     var s = this;
     this.daten = daten;
     var pd = daten.planeten[daten.aktuellerPlanet], planet = new SC.Planet(pd);
-    this.welt = new SC.Welt(planet, SC.Spielstand.chunksLaden(pd));
+    this.welt = new SC.Welt(planet, chunks || SC.Spielstand.chunksLaden(pd));
     this.welt.ereignisse.an("block", function(b){
       if(b.quelle !== "spieler") return;
       if(b.id === SC.B.LUFT) s.audio.spiele("abbauen", { material: SC.Klang.material(b.alt) });
@@ -93,15 +105,20 @@ SC.Spiel.startpunkt = function(planet){
     this.auftauchen = new SC.Auftauchen(this.welt, daten, this._zf);
     this._besiegtOffen = false; this._ausrKey = null; this._kampfBis = 0; this._bossBis = 0; this.musikKampf = { kampf: false, boss: false };
     this.tageszeit = typeof daten.tageszeit === "number" ? daten.tageszeit : 0.3;
+  };
+
+  // Darstellung, Eingabe, Lebenszyklus, automatisches Speichern und Bildschleife
+  SC.Spiel.prototype._anzeigen = function(){
+    var s = this, daten = this.daten;
     this.zeitTempo = 1; this.entwickler.verberge();
     if(this.render){ this.render.renderer.dispose(); }
-    this.render = new SC.Render(this.leinwand, planet);
+    this.render = new SC.Render(this.leinwand, this.welt.planet);
     this.render.sichtweite = this.einstellungen.sichtweite;
     this.render.welt(this.welt);
     if(this.eingabe.touch) this.eingabe.touch.setzeGroesse(this.einstellungen.touchGroesse);
     this.lebenszyklusAnmelden(document);
     clearInterval(this._takt);
-    this._takt = setInterval(function(){ s.speichere("auto"); }, SC.Spiel.autoSpeicherIntervall);
+    this._takt = setInterval(function(){ s.speichere("auto"); }, this.rolle === "gast" ? SC.Spiel.gastSpeicherIntervall : SC.Spiel.autoSpeicherIntervall);
     this.eingabe.aktiv = true;
     this.eingabe.sperreMaus();
     this._laeuft = true; this._t0 = performance.now();
@@ -113,6 +130,7 @@ SC.Spiel.startpunkt = function(planet){
     var dt = Math.min(0.1, (t - this._t0) / 1000); this._t0 = t;
     var ui = this.ui, sp = this.spieler, w = this.welt, ew = this.entwickler;
     var offen = ui.offen() || ew.offen();
+    this._menueOffen = offen;
     this.eingabe.aktiv = !offen;
     if(this.eingabe.touch){ this.eingabe.touch.sichtbar(!offen); this.eingabe.touch.setzeGroesse(this.einstellungen.touchGroesse); }
     var e = this.eingabe.zustand();
@@ -141,6 +159,7 @@ SC.Spiel.startpunkt = function(planet){
     this._geraeusche(e, vorBoden, vy, dt);
     this._survival(e, dt, offen, t);
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
+    if(this.raum) this._raumBild(dt, offen);
     if(ew.offen() && (this._ewZeit = (this._ewZeit || 0) + dt) > 0.25){ this._ewZeit = 0; ew.aktualisiere(); }
     this.render.bild(sp, this.tageszeit, dt);
   };
@@ -203,6 +222,7 @@ SC.Spiel.startpunkt = function(planet){
     var s = this;
     if(!this.daten || !this.welt) return Promise.resolve();
     this._kette = (this._kette || Promise.resolve()).then(function(){
+      if(s.rolle === "gast") return s._figurSpeichern();
       SC.Spielstand.ausWelt(s.daten, s.welt, s.spieler, s.kampf);
       s.daten.spieler.schnellleisteKreativ = s.spieler.schnellleiste.slice();
       s.daten.tageszeit = s.tageszeit;
@@ -230,15 +250,183 @@ SC.Spiel.startpunkt = function(planet){
     }).catch(function(f){ s.ui.hinweis(f && f.message || SC.T.speichernFehlgeschlagen); });
   };
 
+  // Als Gastgeber: nach dem Speichern den Raum schließen (sendet „ende“); als Gast: Figur speichern und trennen
   SC.Spiel.prototype.verlasse = function(){
     var s = this;
-    return this.speichere("verlassen").then(function(){
+    if(this._verlaesst) return this._verlaesst;
+    return this._verlaesst = this.speichere("verlassen").then(function(){
+      var r = s.raum;
+      if(r instanceof SC.Gastgeber){ s._anfragenSchliessen(); r.schliesse(); } else if(r instanceof SC.Gast) r.trenne();
+      s.raum = null; s.rolle = "allein"; s._eigen = null; s._wesenRoh = null; s._verlaesst = null;
       s._laeuft = false; clearInterval(s._takt); s.lebenszyklusAbmelden(document);
       s.eingabe.gebeMausFrei(); s.ui.verbergeHud(); s.entwickler.verberge(); s.audio.musikTakt(null, false);
       if(s.render){ s.render.welt(s.welt); s.render.renderer.clear(); }
       s.daten = null; s.welt = null;
       return s.ui.zeigeWeltliste();
     });
+  };
+
+  // --- Gemeinsam spielen: Rollen Gastgeber und Gast ---
+  // Rückrufe an die Oberfläche (setzt die UI): this.raumRueckrufe = { anfrage(info {id, name}, antwort(ja)), anfrageWeg(info) (Wartender ging
+  // oder der Raum wurde geschlossen → Dialog zu), spieler(liste), status(st, info) (Gast: "warte" | "neuverbinden" | "verbunden" | "getrennt"), pvp(an) }
+  function rueck(s, name){ var r = s.raumRueckrufe, f = r && r[name]; if(typeof f === "function") return f.apply(null, Array.prototype.slice.call(arguments, 2)); }
+
+  // Laufende Welt als Raum öffnen → Promise<code> ({wort, zahl, text, peerId}); figurName füllt einen leeren Figurnamen
+  SC.Spiel.prototype.raumOeffnen = function(figurName){
+    var s = this, d = this.daten;
+    if(!d || !this.welt || this.rolle === "gast") return Promise.reject(new Error("kein eigenes Spiel"));
+    if(this.raum) return Promise.resolve(this.raum.code);
+    if(figurName && !d.spieler.name) d.spieler.name = figurName;
+    if(!d.startpunkt) d.startpunkt = this.spieler.pos.slice(); // willkommen.pos braucht einen Startpunkt
+    this._anfragen = [];
+    var gg = new SC.Gastgeber({ adapter: SC.Spiel.adapter(), daten: d, welt: this.welt, uhr: function(){ return s.kampf.uhr; },
+      beiAnfrage: function(info, antwort){ s._anfrage(info, antwort); },
+      beiAnfrageWeg: function(info){ s._anfrageWeg(info); },
+      beiSpieler: function(l){ rueck(s, "spieler", l); s.speichere("mitspieler"); }, // Beitritt und Abgang: speichern (Position der Gastfigur)
+      beiNachricht: function(){} });
+    gg.bindeKampf(this.kampf, {
+      ich: function(){ return s.raumIch(s._menueOffen); },
+      beiBeute: function(pos, l){ s.beuteAuswerfen(pos, l.map(function(b){ return { gegenstand: b }; })); },
+      besiege: function(g){ s.besiege(g); },
+      beiGetroffen: function(g, r){ s._zahl(g, r.schaden); s.audio.spiele("treffer"); },
+      beiPvpGetroffen: function(){ s.audio.spiele("getroffen"); },
+      beiPvpBesiegt: function(name){ s._pvpBesiegt(name); }
+    });
+    this.raum = gg; this.rolle = "gastgeber";
+    return gg.oeffne().catch(function(f){ if(s.raum === gg){ s.raum = null; s.rolle = "allein"; } throw f; });
+  };
+  // Beitrittsanfrage: ohne Oberfläche kommt niemand herein; jede Anfrage wird höchstens einmal beantwortet
+  SC.Spiel.prototype._anfrage = function(info, antwort){
+    var s = this, e = { info: info, offen: true };
+    (this._anfragen = this._anfragen || []).push(e);
+    function ant(ja){ if(!e.offen) return; e.offen = false; s._anfragen = s._anfragen.filter(function(x){ return x !== e; }); antwort(!!ja); }
+    if(!this.raumRueckrufe || typeof this.raumRueckrufe.anfrage !== "function") return ant(false);
+    rueck(this, "anfrage", info, ant);
+  };
+  SC.Spiel.prototype._anfrageWeg = function(info){
+    var l = this._anfragen || [], e = null;
+    for(var i = 0; i < l.length; i++) if(l[i].offen && l[i].info.id === info.id){ e = l[i]; break; }
+    if(!e) return;
+    e.offen = false; this._anfragen = l.filter(function(x){ return x !== e; });
+    rueck(this, "anfrageWeg", e.info);
+  };
+  // Raum geht zu: offene Anfragen verfallen, die Oberfläche schließt ihre Dialoge
+  SC.Spiel.prototype._anfragenSchliessen = function(){ var s = this; (this._anfragen || []).slice().forEach(function(e){ s._anfrageWeg(e.info); }); this._anfragen = []; };
+
+  // Einem Raum beitreten. eigeneWeltId: Welt, deren Figur mitkommt; null → neue Survival-Welt „<figurName>s Welt“.
+  // figurName: Name für die neue Figur bzw. für eine Figur ohne Namen. → Promise (erfüllt nach dem Eintritt, sonst SC.Netz.Fehler)
+  SC.Spiel.prototype.beitreten = function(code, eigeneWeltId, figurName){
+    var s = this, laden;
+    if(this.daten || this.raum) return Promise.reject(new Error("Spiel läuft noch")); // nur aus der Weltliste
+    if(eigeneWeltId === null || eigeneWeltId === undefined){
+      var neu = SC.Spielstand.neu({ name: figurName + "s Welt", figurName: figurName, modus: "survival" });
+      laden = this.slots.speichere(neu).then(function(){ return neu; });
+    } else laden = this.slots.lade(eigeneWeltId).then(function(d){
+      if(d.spieler.name || !figurName) return d;
+      d.spieler.name = figurName; return s.slots.speichere(d).then(function(){ return d; });
+    });
+    return laden.then(function(eigen){
+      var chunks = {}, gast = new SC.Gast({ adapter: SC.Spiel.adapter(), figur: SC.Spielstand.figur(eigen),
+        beiWillkommen: function(){ chunks = {}; },
+        beiChunk: function(k, u8){ chunks[k] = u8; },
+        beiBereit: function(){ var c = chunks; chunks = {}; s._gastBereit(gast, c); },
+        beiStatus: function(st, info){ s._gastStatus(gast, st, info || {}); },
+        beiBlockZurueck: function(x, y, z, id, wunsch){ if(s.raum === gast) s._blockZurueck(id, wunsch); },
+        beiNachricht: function(n){ s._gastNachricht(gast, n); },
+        beiPvp: function(an){ rueck(s, "pvp", an); } });
+      s._eigen = eigen; s.raum = gast; s.rolle = "gast";
+      return gast.verbinde(code).catch(function(f){ if(s.raum === gast){ s.raum = null; s.rolle = "allein"; s._eigen = null; } throw f; });
+    });
+  };
+  // Warten auf den Gastgeber abbrechen: beitreten wird mit SC.Netz.Fehler("abbruch") abgelehnt
+  SC.Spiel.prototype.beitretenAbbrechen = function(){ if(this.raum instanceof SC.Gast && !this.daten) this.raum.trenne(); };
+  // bereit: beim ersten Mal Spiel starten (Welt binden, bevor Block-Tatsachen kommen); beim Neuverbinden Welt behalten, nur Chunks übernehmen
+  SC.Spiel.prototype._gastBereit = function(gast, chunks){
+    var s = this;
+    if(this.raum !== gast) return;
+    if(this.daten && this.daten.id === "gast" && this.welt){
+      var w = this.welt;
+      for(var k in chunks){ w.geaenderte.set(k, chunks[k]); if(w.chunks.has(k)) w.chunks.set(k, chunks[k]); w.neuZuZeichnen.add(k); }
+      return;
+    }
+    var will = gast.willkommen, wk = will;
+    if(!will.pos){ wk = {}; for(var x in will) wk[x] = will[x]; wk.pos = will.welt.startpunkt || [0, 0, 0]; }
+    var d = SC.Spielstand.gastDaten(wk, SC.Spielstand.figur(this._eigen));
+    if(!will.pos && !will.welt.startpunkt) d.spieler.pos = null;
+    this.starte(d, chunks);
+    gast.bindeWelt(this.welt);
+    this._raumModus = d.modus; this._ausrSpeicher = JSON.stringify(this.kampf.ausruestung);
+    gast.bindeKampf(this.kampf, {
+      beiBeute: function(pos, l){ s.beuteAuswerfen(pos, l.map(function(b){ return { gegenstand: b }; })); },
+      beiTreffer: function(r){ s.audio.spiele(r.abgeprallt ? "abprall" : r.schaden > 0 ? "getroffen" : "blocken"); },
+      beiBesiegt: function(n, auf){
+        if(n.kiste) s.audio.spiele("kiste");
+        if(n.erfahrung > 0 && n.pos && s.render && s.render.wesen) s.render.wesen.zahl([n.pos[0], n.pos[1] + 2, n.pos[2]], "+" + n.erfahrung + " EP", "#ffd95c", s.spieler.pos);
+        if(auf){ s.audio.spiele("aufstieg"); s.ui.hinweis(SC.T.stufeAuf + " " + SC.T.stufe + " " + s.kampf.werte.stufe, 3000); s.speichere("stufe"); }
+      },
+      beiPvpBesiegt: function(name){ s._pvpBesiegt(name); }
+    });
+  };
+  SC.Spiel.prototype._gastStatus = function(gast, st, info){
+    if(this.raum !== gast) return;
+    rueck(this, "status", st, info);
+    if(st === "neuverbinden") this.ui.hinweis(SC.T.raumNeuverbinden, 4000);
+    else if(st === "getrennt" && this.daten) this._gastGetrennt(info);
+  };
+  // Verbindung endgültig weg: Figur speichern, Meldung, zurück zur Weltliste (die Gastwelt wird nie gespeichert)
+  SC.Spiel.prototype._gastGetrennt = function(info){
+    var s = this, t = info.grund === "ende" ? SC.T.raumEnde : info.grund === "hinausgeworfen" ? SC.T.raumHinausgeworfen : SC.T.raumVerloren;
+    return this.verlasse().then(function(){ s.ui.hinweis(t, 8000); });
+  };
+  SC.Spiel.prototype._gastNachricht = function(gast, n){
+    if(this.raum !== gast) return;
+    if(n.t === "zeit"){
+      if(typeof n.tageszeit === "number") this.tageszeit = n.tageszeit;
+      if(this.daten && n.schwierigkeit) this.daten.schwierigkeit = n.schwierigkeit;
+      if(n.modus && n.modus !== this._raumModus && this.spieler){ this._raumModus = n.modus; this.modus(n.modus); } // Modus legt der Gastgeber fest
+    } else if(n.t === "spieler") rueck(this, "spieler", gast.spieler);
+  };
+  // Gast, Survival: abgelehnter Block-Wunsch zurück in den Rucksack; passt ein gesetzter Block nicht mehr hinein, fliegt er als Kugel heraus
+  SC.Spiel.prototype._blockZurueck = function(id, wunsch){
+    if(!this.kampf || this.spieler.modus !== "survival") return;
+    var B = SC.B, r = SC.Raum.blockZurueck(this.kampf.rucksack, wunsch, id);
+    if(wunsch && wunsch.id !== B.LUFT && (wunsch.alt === B.LUFT || wunsch.alt === B.WASSER) && !r.zurueck) this.beuteAuswerfen(this.spieler.pos.slice(), [{ block: wunsch.id, anzahl: 1 }]);
+  };
+  SC.Spiel.prototype._figurSpeichern = function(){
+    var e = this._eigen; if(!e || !this.kampf) return;
+    SC.Spielstand.ausSpieler(this.daten, this.spieler, this.kampf);
+    this.daten.spieler.schnellleisteKreativ = this.spieler.schnellleiste.slice();
+    SC.Spielstand.figurUebernehmen(e, SC.Spielstand.figur(this.daten));
+    return this.slots.speichere(e);
+  };
+  SC.Spiel.prototype._pvpBesiegt = function(name){ this.ui.hinweis(SC.T.pvpBesiegt.replace("{name}", name || ""), 3500); this.audio.spiele("besiegt"); };
+
+  // Pro Bild im Raum: Takt senden, gespiegelte Wesen (Gast), Mitspieler an die Darstellung
+  SC.Spiel.prototype._raumBild = function(dt, offen){
+    var r = this.raum, ich = this.raumIch(offen);
+    if(r instanceof SC.Gastgeber) r.takt(dt, ich);
+    else if(r instanceof SC.Gast){
+      if(r.wesen !== this._wesenRoh){ var mein = r.figur.figurId; this._wesenRoh = r.wesen; this._wesenListe = (r.wesen || []).filter(function(n){ return !n || n.schuetze !== mein; }); } // eigene Schüsse zeigt der Gast schon selbst
+      SC.Raum.spiegleWesen(this.welt, this._wesenListe, dt, this.kampf.uhr);
+      r.takt(dt, ich);
+      var a = JSON.stringify(this.kampf.ausruestung);
+      if(a !== this._ausrSpeicher){ this._ausrSpeicher = a; this.speichere("ausruestung"); }
+    }
+    if(this.render && this.render.setzeMitspieler) this.render.setzeMitspieler(this._mitspielerListe());
+  };
+  // Die anderen Spieler für SC.Render#setzeMitspieler: {id, name, farbe, pos, blick, modus, ausr, lebt, menue, verbunden}
+  SC.Spiel.prototype._mitspielerListe = function(){
+    var r = this.raum, l = [];
+    if(r instanceof SC.Gastgeber) r.spieler.forEach(function(e){ if(e.pos) l.push(e); });
+    else if(r instanceof SC.Gast){
+      var mein = r.figur.figurId;
+      for(var id in r.mitspieler){
+        var m = r.mitspieler[id], e = null; if(id === mein || !m.pos) continue;
+        r.spieler.forEach(function(x){ if(x.id === id) e = x; });
+        l.push({ id: id, name: e ? e.name : "", farbe: e ? e.farbe : SC.RAUM_FARBEN[0], pos: m.pos, blick: m.blick, modus: m.modus, ausr: m.ausr, lebt: m.lebt, menue: m.menue, verbunden: true });
+      }
+    }
+    return l;
   };
 
   // Start beim Laden (nicht auf der Testseite)

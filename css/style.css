@@ -102,3 +102,29 @@ input[type=range].regeln{outline:3px solid #3ef0ff}
 .rs-platz.leiste{background:#2b2766}.rs-platz.gewaehlt{outline:3px solid #ffd95c}
 .besiegt{text-align:center}.besiegt h1{color:#ffd95c;font-size:44px;margin:4px 0 10px}
 .reiter{margin:0 0 10px}
+
+/* Gemeinsam spielen: Raumcode, Wort- und Zifferknöpfe, Mitspieler, Beitrittsanfrage */
+.raumcode{font-size:44px;font-weight:bold;letter-spacing:4px;color:#ffd95c;text-align:center;margin:6px 0 10px;font-variant-numeric:tabular-nums;text-shadow:0 0 10px rgba(255,217,92,.4)}
+.raum-schritt{font-size:20px;margin:6px 0 10px;text-align:center}
+.raum-status{font-size:18px;text-align:center;margin:12px 0}
+.raum-status.fehler{color:#ff9a9a}
+.raum-status.fehler:empty{display:none}
+.raum-tipp{font-size:14px;color:#aab3d6;text-align:center;margin:0 0 12px}
+.woerter{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.woerter button{min-height:56px;justify-content:center;font-size:18px;font-weight:bold;letter-spacing:1px}
+.ziffern{display:grid;grid-template-columns:repeat(3,minmax(64px,96px));gap:8px;justify-content:center}
+.ziffern button{min-height:64px;justify-content:center;font-size:26px;font-weight:bold}
+.ziffern [data-aktion="zifferWeg"]{font-size:15px;font-weight:normal}
+.figuren button{justify-content:flex-start;text-align:left;min-height:52px}
+.pvp{align-self:flex-start;margin-bottom:6px}
+h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
+.mitspieler-zeile{display:flex;align-items:center;gap:10px;border:2px solid #2e2a6b;background:#1b1845;padding:6px 10px}
+.mitspieler-zeile.getrennt{opacity:.55}
+.mitspieler-zeile .farbe{width:22px;height:22px;flex:none;border:2px solid #eef2fa}
+.mitspieler-name{flex:1;font-size:18px;font-weight:bold}
+.spielt-bei{margin:4px 0;font-size:17px;color:#ffd95c}
+.anfrage-ebene{z-index:5}
+.anfrage{max-width:520px}
+.anfrage h2{text-align:center;font-size:24px}
+.anfrage .reihe{justify-content:center}
+.anfrage button{min-width:120px;justify-content:center;font-size:20px}

@@ -12,8 +12,23 @@ SC.Spiel = function(o){
     beiVerlassen: function(){ return s.verlasse(); },
     beiEinstellungen: function(e){ s._einstellungen(e); },
     beiEntwickler: function(){ s._entwicklerAuf(); },
-    beiSchwierigkeit: function(n){ if(s.daten) s.daten.schwierigkeit = n; }
+    beiSchwierigkeit: function(n){ if(s.daten) s.daten.schwierigkeit = n; },
+    // Gemeinsam spielen
+    raumInfo: function(){ return s.raumInfo(); },
+    beiEinladen: function(name){ return s.raumOeffnen(name).then(function(c){ if(name) s.speichere("name"); return c; }); },
+    beiPvp: function(an){ if(s.raum instanceof SC.Gastgeber) s.raum.setzePvp(an); },
+    beiHinauswerfen: function(id){ if(s.raum instanceof SC.Gastgeber) s.raum.hinauswerfen(id); },
+    beiBeitreten: function(code, id, name){ return s.beitreten(code, id, name); },
+    beiBeitretenAbbrechen: function(){ s.beitretenAbbrechen(); }
   });
+  var ui = this.ui;
+  this.raumRueckrufe = {
+    anfrage: function(info, antwort){ s.eingabe.gebeMausFrei(); ui.zeigeAnfrage(info.name, antwort, info.id); },
+    anfrageWeg: function(info){ ui.anfrageWeg(info.id); },
+    spieler: function(){ ui.raumAktualisieren(); },
+    status: function(st, info){ ui.raumStatus(st, info); },
+    pvp: function(an){ ui.hinweis(SC.T.pvp + ": " + (an ? SC.T.an : SC.T.aus), 3000); }
+  };
   this.eingabe = new SC.Eingabe(o.leinwand, o.uiWurzel);
   this.eingabe.empfindlichkeit = this.einstellungen.empfindlichkeit;
   this.audio = new SC.Audio();
@@ -348,6 +363,13 @@ SC.Spiel.startpunkt = function(planet){
       s._eigen = eigen; s.raum = gast; s.rolle = "gast";
       return gast.verbinde(code).catch(function(f){ if(s.raum === gast){ s.raum = null; s.rolle = "allein"; s._eigen = null; } throw f; });
     });
+  };
+  // Für die Oberfläche: Rolle, Code, Spaßkampf, die anderen Spieler (Gastgeber) bzw. Name des Gastgebers (Gast)
+  SC.Spiel.prototype.raumInfo = function(){
+    var r = this.raum;
+    if(r instanceof SC.Gastgeber) return { rolle: "gastgeber", code: r.code ? r.code.text : "", pvp: !!r.pvp, spieler: r.spieler.map(function(e){ return { id: e.id, name: e.name, farbe: e.farbe, verbunden: e.verbunden }; }) };
+    if(r instanceof SC.Gast){ var g = r.spieler[0], w = r.willkommen && r.willkommen.welt; return { rolle: "gast", gastgeber: (g && g.name) || (w && w.name) || "", pvp: !!r.pvp, spieler: r.spieler }; }
+    return { rolle: "allein" };
   };
   // Warten auf den Gastgeber abbrechen: beitreten wird mit SC.Netz.Fehler("abbruch") abgelehnt
   SC.Spiel.prototype.beitretenAbbrechen = function(){ if(this.raum instanceof SC.Gast && !this.daten) this.raum.trenne(); };

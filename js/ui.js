@@ -41,15 +41,18 @@ SC.UI = function(wurzel, o){
   SC.UI.istEigenstaendig = function(){ return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || (matchMedia && matchMedia("(display-mode: fullscreen)").matches) || navigator.standalone === true; };
 
   SC.UI.prototype._klick = function(el){
-    var a = el.getAttribute("data-aktion"), f = this._aktionen[a] || (this._hudAktionen || {})[a];
+    var a = el.getAttribute("data-aktion"), m = this._modal && this._modal.contains(el), f = m ? (this._modalAktionen || {})[a] : this._aktionen[a] || (this._hudAktionen || {})[a];
     return Promise.resolve(f ? f.call(this, el, el.getAttribute("data-id")) : null);
   };
   SC.UI.prototype._zeige = function(html, aktionen){
     this.ebene.innerHTML = '<div class="fenster">' + html + "</div>"; this.ebene.hidden = false; this._aktionen = aktionen || {};
   };
   // Bedienung mit Gamepad: Fokus über die Knöpfe und Eingaben des offenen Fensters bewegen
+  // Ein offener Dialog (Beitrittsanfrage) liegt über allem und bekommt den Fokus
+  SC.UI.prototype._fenster = function(){ return this.modalOffen() ? this._modal : this.ebene.hidden ? this.wurzel.querySelector(".entwickler:not([hidden])") : this.ebene; };
+  SC.UI.prototype.modalOffen = function(){ return !!(this._modal && !this._modal.hidden); };
   SC.UI.prototype._fokusListe = function(){
-    var r = this.ebene.hidden ? this.wurzel.querySelector(".entwickler:not([hidden])") : this.ebene;
+    var r = this._fenster();
     if(!r) return [];
     return Array.prototype.filter.call(r.querySelectorAll("button, input:not([type=file]), label.knopf"), function(el){ return !el.disabled && (el.offsetParent !== null || el.getClientRects().length > 0); });
   };
@@ -71,14 +74,14 @@ SC.UI = function(wurzel, o){
     a.click();
   };
   SC.UI.prototype.zurueck = function(){
-    var r = this.ebene.hidden ? this.wurzel.querySelector(".entwickler:not([hidden])") : this.ebene;
-    if(!r) return;
+    var r = this._fenster();
+    if(!r || r === this._modal) return; // Anfrage nur mit Ja oder Nein beantworten
     var k = r.querySelector('[data-aktion="weiter"], [data-aktion="fertig"], [data-aktion="zurueck"], [data-ew="zu"]');
     if(k) k.click();
   };
 
   SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; };
-  SC.UI.prototype.offen = function(){ return !this.ebene.hidden; };
+  SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
 
   SC.UI.prototype.hinweis = function(text, dauer){
     var d = document.createElement("div"); d.className = "hinweis"; d.textContent = text; this.hinweisEl.appendChild(d);
@@ -108,11 +111,13 @@ SC.UI = function(wurzel, o){
         '<h1 class="titel">Spacecraft</h1>' +
         '<div class="welten">' + (zeilen || '<p class="leer">' + esc(SC.T.nochKeineWelt) + "</p>") + "</div>" +
         '<div class="reihe"><button class="haupt" data-aktion="neu">' + esc(SC.T.neueWelt) + '</button>' +
+        '<button class="haupt" data-aktion="mitspielen">' + esc(SC.T.mitspielen) + "</button>" +
         '<label class="knopf" tabindex="0">' + esc(SC.T.importieren) + '<input type="file" accept=".spacecraft,application/json,application/octet-stream" hidden></label></div>' +
         '<div class="version">Version ' + esc(window.V || "") + "</div>",
         {
           spielen: function(el, id){ return ui.slots.lade(id).then(function(d){ ui.schliesse(); ui.o.beiStart(d); }, function(f){ ui.hinweis(f.message || String(f)); }); },
           neu: function(){ ui.zeigeNeueWelt(); },
+          mitspielen: function(){ ui.zeigeBeitreten(); },
           kopieren: function(el, id){ return ui.slots.kopiere(id).then(function(){ return ui.zeigeWeltliste(); }); },
           exportieren: function(el, id){ return Promise.resolve(ui.o.beiExport(id)).then(function(){ return ui.zeigeWeltliste(); }); },
           umbenennen: function(el, id){
@@ -166,16 +171,20 @@ SC.UI = function(wurzel, o){
 
   // --- Pause ---
   SC.UI.prototype.zeigePause = function(daten){
-    var ui = this, o = this.o;
+    var ui = this, o = this.o, raum = (o.raumInfo && o.raumInfo()) || { rolle: "allein" }, gast = raum.rolle === "gast";
+    this._pauseDaten = daten;
     this._zeige(
       "<h2>" + esc(daten.name) + "</h2>" +
       '<div class="spalte">' +
       '<button class="haupt" data-aktion="weiter">' + esc(SC.T.weiterspielen) + "</button>" +
+      // Gast: Modus und Schwierigkeit legt der Gastgeber fest
+      (gast ? '<p class="spielt-bei">' + esc(SC.T.spieltBei.replace("{name}", raum.gastgeber || "")) + "</p>" :
+      (o.beiEinladen ? '<button data-aktion="einladen">' + esc(SC.T.einladen) + "</button>" : "") +
       '<div class="reihe modi"><span>' + esc(SC.T.modus) + ":</span>" +
       '<button class="modus' + (daten.modus === "kreativ" ? " an" : "") + '" data-aktion="modus" data-modus="kreativ">' + esc(SC.T.kreativ) + "</button>" +
       '<button class="modus' + (daten.modus === "zuschauer" ? " an" : "") + '" data-aktion="modus" data-modus="zuschauer">' + esc(SC.T.zuschauer) + "</button>" +
       '<button class="modus' + (daten.modus === "survival" ? " an" : "") + '" data-aktion="modus" data-modus="survival">' + esc(SC.T.survival) + "</button></div>" +
-      '<div class="reihe modi"><span>' + esc(SC.T.schwierigkeit) + ":</span>" + schwierigkeitsKnoepfe(daten.schwierigkeit || "leicht") + "</div>" +
+      '<div class="reihe modi"><span>' + esc(SC.T.schwierigkeit) + ":</span>" + schwierigkeitsKnoepfe(daten.schwierigkeit || "leicht") + "</div>") +
       '<button data-aktion="einstellungen">' + esc(SC.T.einstellungen) + "</button>" +
       ((o.einstellungen || {}).entwickler ? '<button data-aktion="entwickler">' + esc(SC.T.entwickler) + "</button>" : "") +
       '<button data-aktion="export">' + esc(SC.T.weltExportieren) + "</button>" +
@@ -184,6 +193,7 @@ SC.UI = function(wurzel, o){
         weiter: function(){ ui.schliesse(); o.beiWeiter && o.beiWeiter(); },
         modus: function(el){ var m = el.getAttribute("data-modus"); o.beiModus && o.beiModus(m); daten.modus = m; ui.zeigePause(daten); },
         schwierigkeit: function(el){ var n = el.getAttribute("data-schwierigkeit"); daten.schwierigkeit = n; o.beiSchwierigkeit && o.beiSchwierigkeit(n); ui.zeigePause(daten); },
+        einladen: function(){ return ui._einladen(daten); },
         einstellungen: function(){ ui.zeigeEinstellungen(function(){ ui.zeigePause(daten); }); },
         entwickler: function(){ ui.schliesse(); o.beiEntwickler && o.beiEntwickler(); },
         export: function(){ return Promise.resolve(o.beiExport(daten.id)); },

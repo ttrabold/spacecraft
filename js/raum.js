@@ -193,7 +193,7 @@ SC.Gastgeber = function(o){
 SC.Gast = function(o){
   this.o = o; this.figur = o.figur; this.protokoll = o.protokoll === undefined ? SC.NETZ_PROTOKOLL : o.protokoll;
   this.jetzt = o.jetzt || Date.now; this.warte = o.warte || function(ms, fn){ return setTimeout(fn, ms); };
-  this.status = null; this.verb = null; this.code = null; this.farbe = null; this.spieler = []; this.willkommen = null;
+  this.status = null; this.verb = null; this.code = null; this.farbe = null; this.spieler = []; this.willkommen = null; this.pvp = false;
   this._fertig = true; this._ende = true; this._runde = 0; this._start = 0;
   this.welt = null; this.mitspieler = {}; this.wesen = []; this.tageszeit = null; // mitspieler: id → letzter zustand (ohne Gast selbst)
   this._wuensche = {}; this._nr = 0; this._takt = 0; this._ausr = undefined;
@@ -484,8 +484,37 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
     this.treffer(id, g.schaden, von, g);
     return null;
   };
+  // --- Spaßkampf (PvP): Schalter des Gastgebers, pro Raum, nicht gespeichert ---
+  H.setzePvp = function(an){ this.pvp = !!an; if(!this._zu) this.sendeAlle({ t: "pvpAn", an: this.pvp }); };
+  H._name = function(id){ if(id === this.daten.spieler.figurId) return this.daten.spieler.name; for(var i = 0; i < this.spieler.length; i++) if(this.spieler[i].id === id) return this.spieler[i].name; return ""; };
+  // Treffer auf Spieler ziel durch Spieler vonId (Hieb oder Geschoss); nur mit pvp. Gastgeber selbst → kampf.trifftSpieler (Ergebnis),
+  // Gast → treffer mit pvpVon. Fällt der Getroffene auf 0 LP: kein Besiegt-Bildschirm, wiederbeleben am Startpunkt, Rückruf beiPvpBesiegt(name).
+  // Der Schaden ist der Waffenschaden des Angreifers; kampf.trifftSpieler wendet wie sonst die Schwierigkeit des Getroffenen an.
+  H.pvpTrifft = function(ziel, schaden, von, vonId, geschoss){
+    if(!this.pvp || !this._k || ziel === vonId) return null;
+    if(ziel !== this.daten.spieler.figurId){ this.treffer(ziel, schaden, von, geschoss || null, vonId); return null; }
+    var k = this._k.kampf, r = k.trifftSpieler(schaden, von, geschoss || null);
+    if(k.besiegt()){ k.wiederbeleben(this.daten.startpunkt || SC.Spiel.startpunkt(this.welt.planet)); ruf(this._k.o.beiPvpBesiegt, this._name(vonId)); }
+    return r;
+  };
+  // Mögliche Spieler-Ziele für Hiebe und Geschosse des Spielers selbst (leer ohne Spaßkampf). raum: Gastgeber oder Gast; ich: eigener Zustand (Gastgeber).
+  SC.Raum.pvpZiele = function(raum, ich){
+    if(!raum || !raum.pvp) return [];
+    if(raum instanceof SC.Gastgeber){ var me = raum.daten.spieler.figurId; return SC.Raum.trefferZiele(SC.Raum.mitspielerZiele(raum, ich)).filter(function(z){ return z.id !== me; }); }
+    var l = []; for(var id in raum.mitspieler) l.push(raum.mitspieler[id]);
+    return SC.Raum.trefferZiele(l.map(function(m){ return { id: m.id || "", pos: m.pos, blick: m.blick, modus: m.modus, stufe: m.stufe, menue: m.menue, lebt: m.lebt }; }));
+  };
   function spielerGeschoss(w, d){ return SC.Wesen.neu(w, "geschoss", d); }
   var HN = SC.Gastgeber.NACHRICHTEN;
+  // Hieb eines Gastes auf einen Mitspieler (nur im Spaßkampf, nur in Reichweite, nur wenn beide kämpfen können)
+  HN.pvp = function(c, n){
+    var k = this._k, e = this._eintrag(c.id);
+    if(!this.pvp || !k || !e || !e.pos || e.modus !== "survival" || e.lebt === false || e.menue || !zahl(n.schaden) || n.schaden <= 0 || n.ziel === c.id) return;
+    var z = SC.Raum.trefferZiele(SC.Raum.mitspielerZiele(this, this._ich())).filter(function(m){ return m.id === n.ziel; })[0];
+    if(!z || abstand(this.welt, e.pos, z.pos) > 12) return;
+    var von = vek(n.von) || [0, 0, 1], r = this.pvpTrifft(n.ziel, n.schaden, von, c.id, null);
+    if(r && r.schaden > 0) ruf(k.o.beiPvpGetroffen, r);
+  };
   // Hieb eines Gastes auf einen Gegner
   HN.angriff = function(c, n){
     var w = this.welt, g = w && w.wesen.get(n.ziel), k = this._k;
@@ -516,6 +545,7 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
   // o: { beiBeute(pos, gegenstaende) (Beute als eigene Kugeln auswerfen), beiTreffer(ergebnis, n)? (für Ton/Anzeige), beiBesiegt(n, aufstiege)? }
   G.bindeKampf = function(kampf, o){ this._k = { kampf: kampf, o: o || {} }; this._gesehen = this._gesehen || {}; };
   G.angriff = function(ziel, schaden, von){ this.sende({ t: "angriff", ziel: ziel, schaden: schaden, von: von.slice() }); };
+  G.pvpAngriff = function(ziel, schaden, von){ if(this.pvp) this.sende({ t: "pvp", ziel: ziel, schaden: schaden, von: von.slice() }); };
   G.schuss = function(d){ this.sende({ t: "schuss", pos: d.pos.slice(), richtung: d.richtung.slice(), tempo: d.tempo, schaden: d.schaden, farbe: d.farbe, abprall: !!d.abprall, lebensdauer: d.lebensdauer }); };
   G.kiste = function(x, y, z){ this.sende({ t: "kiste", x: x, y: y, z: z }); };
   var GN = SC.Gast.NACHRICHTEN;
@@ -528,8 +558,14 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
       if(w) for(var id = vorher; id < w.naechsteId; id++){ var e = w.wesen.get(id); if(e) e.optisch = true; }
       this.sende({ t: "abprall", geschossId: n.geschoss.id });
     }
+    if(n.pvpVon && kampf.besiegt()){
+      var sp = this.willkommen && this.willkommen.welt && this.willkommen.welt.startpunkt, nm = "";
+      this.spieler.forEach(function(e){ if(e.id === n.pvpVon) nm = e.name; });
+      kampf.wiederbeleben(sp || SC.Spiel.startpunkt(kampf.welt.planet)); ruf(k.o.beiPvpBesiegt, nm, n);
+    }
     ruf(k.o.beiTreffer, r, n);
   };
+  GN.pvpAn = function(n){ this.pvp = !!n.an; ruf(this.o.beiPvp, this.pvp); };
   GN.besiegt = function(n){
     var k = this._k; if(!k){ ruf(this.o.beiNachricht, n); return; }
     if(n.nr !== undefined){ if(this._gesehen[n.nr]) return; this._gesehen[n.nr] = true; }

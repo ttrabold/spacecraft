@@ -379,3 +379,103 @@ test("Mehrspieler: Gast-Bild: gespiegelte Wesen laufen nicht lokal, Kiste geht a
     gleich(a.welt.holeBlock(5, 62, 5), SC.B.KISTE, "Gast öffnet nicht selbst"); return raumLauf(u.netz);
   }).then(function(){ gleich(u.welt.holeBlock(5, 62, 5), SC.B.KISTE_OFFEN); gleich(a.welt.holeBlock(5, 62, 5), SC.B.KISTE_OFFEN); gleich(a.beute.length, 1); });
 });
+
+// --- Spaßkampf (PvP) ---
+function mspPvpSetup(n, pvp){
+  return mspRaum(n).then(function(x){
+    var u = x; mspHostKampf(u); u.hint = []; u.hk.daten.spieler.name = "Gast0";
+    u.gs.forEach(function(r){ mspGastKampf(r); r.pvpB = []; r.g._k.o.beiPvpBesiegt = function(name){ r.pvpB.push(name); }; });
+    u.h.bindeKampf(u.hk, { ich: function(){ return u.hIch; }, beiBeute: function(){}, beiPvpBesiegt: function(name){ u.hint.push(name); } });
+    if(pvp) u.h.setzePvp(true);
+    return raumLauf(u.netz).then(function(){ return u; });
+  });
+}
+var MSP_HIEB = { reichweite: 3, schaden: 10 };
+
+test("Mehrspieler: PvP aus: Hieb trifft Mitspieler nicht", function(){
+  var u, a, hid;
+  return mspPvpSetup(1, false).then(function(x){ u = x; a = u.gs[0]; hid = u.daten.spieler.figurId; gleich(u.h.pvp, false); gleich(a.g.pvp, false);
+    a.g.takt(0.1, mspIch({ pos: [1, 80, 2] })); u.h.takt(0.1, u.hIch); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(SC.Raum.pvpZiele(a.g, mspIch()).length, 0, "Gast sieht keine Ziele"); gleich(SC.Raum.pvpZiele(u.h, u.hIch).length, 0, "Gastgeber sieht keine Ziele");
+    a.g.sende({ t: "pvp", ziel: hid, schaden: 10, von: [1, 0, 0] }); return raumLauf(u.netz);
+  }).then(function(){ gleich(u.hk.werte.lp, u.hk.werte.lpMax, "Nachricht ohne PvP wird ignoriert"); });
+});
+
+test("Mehrspieler: PvP an: Hieb trifft Mitspieler", function(){
+  var u, a, b, hid, lpB;
+  return mspPvpSetup(2, true).then(function(x){ u = x; a = u.gs[0]; b = u.gs[1]; hid = u.daten.spieler.figurId; gleich(u.h.pvp, true); gleich(a.g.pvp, true, "pvpAn erreicht den Gast"); gleich(b.g.pvp, true);
+    a.g.takt(0.1, mspIch({ pos: [1, 80, 2], blick: [0, 0] })); b.g.takt(0.1, mspIch({ pos: [1, 80, 0] })); u.hIch.pos = [30, 80, 2]; u.h.takt(0.1, u.hIch); return raumLauf(u.netz);
+  }).then(function(){
+    a.k.spieler.pos = [1, 80, 2]; a.k.spieler.blick = [0, 0]; lpB = b.k.werte.lp;
+    var z = SC.Raum.pvpZiele(a.g, mspIch({ pos: [1, 80, 2] })); gleich(z.length, 2, "Gastgeber und anderer Gast"); wahr(z.every(function(m){ return m.id !== a.id; }));
+    var tr = a.k.hiebZiele(MSP_HIEB, z); gleich(tr.length, 1, "nur wer im Bogen steht"); gleich(tr[0].art, "spieler"); gleich(tr[0].id, b.id);
+    a.g.pvpAngriff(b.id, 10, [0, 0, -1]); u.h.takt(0.1, u.hIch); return raumLauf(u.netz);
+  }).then(function(){
+    wahr(b.k.werte.lp < lpB, "Mitspieler verliert LP"); gleich(b.treffer.length, 1); gleich(b.treffer[0].n.pvpVon, a.id); gleich(u.hk.werte.lp, u.hk.werte.lpMax);
+    u.hIch.pos = [2, 80, 2]; u.h.takt(0.1, u.hIch); a.g.pvpAngriff(hid, 10, [1, 0, 0]); return raumLauf(u.netz);
+  }).then(function(){ wahr(u.hk.werte.lp < u.hk.werte.lpMax, "auch der Gastgeber"); });
+});
+
+test("Mehrspieler: Gastgeber schaltet PvP wieder aus, Beitretende bekommen den Stand", function(){
+  var u, a;
+  return mspPvpSetup(1, true).then(function(x){ u = x; a = u.gs[0]; gleich(a.g.pvp, true); u.h.setzePvp(false); return raumLauf(u.netz);
+  }).then(function(){ gleich(a.g.pvp, false); gleich(u.h.pvp, false); });
+});
+
+test("Mehrspieler: PvP-besiegt (Gast) verliert nichts und steht am Startpunkt", function(){
+  var u, a, b, rs;
+  return mspPvpSetup(2, true).then(function(x){ u = x; a = u.gs[0]; b = u.gs[1];
+    b.k.rucksack.lege({ block: SC.B.STEIN, anzahl: 5 }); b.k.werte.lp = 1; rs = JSON.stringify(b.k.rucksack.plaetze); var aus0 = JSON.stringify(b.k.ausruestung), xp0 = b.k.werte.erfahrung;
+    b.k.spieler.pos = [40, 80, 40]; b.xp = [aus0, xp0];
+    a.g.takt(0.1, mspIch({ pos: [1, 80, 2] })); b.g.takt(0.1, mspIch({ pos: [1, 80, 0] })); u.h.takt(0.1, u.hIch); return raumLauf(u.netz);
+  }).then(function(){
+    a.g.pvpAngriff(b.id, 50, [0, 0, -1]); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(b.k.werte.lp, b.k.werte.lpMax, "wiederbelebt"); gleich(JSON.stringify(b.k.rucksack.plaetze), rs, "Rucksack gleich"); gleich(JSON.stringify(b.k.ausruestung), b.xp[0]); gleich(b.k.werte.erfahrung, b.xp[1]);
+    var sp = u.daten.startpunkt || SC.Spiel.startpunkt(u.welt.planet); gleich(Math.floor(b.k.spieler.pos[0]), Math.floor(sp[0])); gleich(Math.floor(b.k.spieler.pos[2]), Math.floor(sp[2]));
+    gleich(b.pvpB.length, 1); gleich(b.pvpB[0], "G0");
+  });
+});
+
+test("Mehrspieler: PvP-besiegt (Gastgeber): Hinweis, Startpunkt, kein Besiegt-Bildschirm", function(){
+  var u, a, s, rs, besiegtZeigt = 0;
+  return mspPvpSetup(1, true).then(function(x){ u = x; a = u.gs[0];
+    u.hk.rucksack.lege({ block: SC.B.STEIN, anzahl: 3 }); rs = JSON.stringify(u.hk.rucksack.plaetze); u.hk.werte.lp = 1; u.hk.spieler.pos = [40, 80, 40]; u.hIch.pos = [40, 80, 40];
+    a.g.takt(0.1, mspIch({ pos: [41, 80, 40] })); u.h.takt(0.1, u.hIch); return raumLauf(u.netz);
+  }).then(function(){
+    a.g.pvpAngriff(u.daten.spieler.figurId, 50, [1, 0, 0]); return raumLauf(u.netz);
+  }).then(function(){
+    s = mspSpiel(u.welt, u.daten, u.h, u.hk); s.ui.zeigeBesiegt = function(){ besiegtZeigt++; }; s._survival(MSP_E, 0.016, false, 1000);
+    gleich(besiegtZeigt, 0, "kein zeigeBesiegt"); gleich(u.hk.werte.lp, u.hk.werte.lpMax); gleich(JSON.stringify(u.hk.rucksack.plaetze), rs);
+    gleich(u.hint.length, 1); wahr(u.hint[0] === a.figur.name, "Name des Angreifers: " + u.hint[0]);
+    wahr(Math.abs(u.hk.spieler.pos[0] - 40) > 5, "am Startpunkt");
+  });
+});
+
+test("Mehrspieler: eigener Schuss trifft den Schützen nicht, fremder Schuss nur bei PvP", function(){
+  var u, a, s, hid;
+  return mspPvpSetup(1, true).then(function(x){ u = x; a = u.gs[0]; hid = u.daten.spieler.figurId;
+    a.g.takt(0.1, mspIch({ pos: [30, 80, 30] })); u.hIch.pos = [1, 80, 2]; u.h.takt(0.1, u.hIch); return raumLauf(u.netz);
+  }).then(function(){
+    s = mspSpiel(u.welt, u.daten, u.h, u.hk); u.hk.spieler.pos = [1, 80, 2];
+    SC.Wesen.neu(u.welt, "geschoss", { pos: [-2, 80.8, 2], richtung: [1, 0, 0], tempo: 30, schaden: 10, team: "spieler", schuetze: hid, art: "laser", lebensdauer: 3 });
+    s._survival(MSP_E, 0.2, false, 1000); gleich(u.hk.werte.lp, u.hk.werte.lpMax, "Schütze bleibt heil");
+    SC.Wesen.neu(u.welt, "geschoss", { pos: [-2, 80.8, 2], richtung: [1, 0, 0], tempo: 30, schaden: 10, team: "spieler", schuetze: a.id, art: "laser", lebensdauer: 3 });
+    s._survival(MSP_E, 0.2, false, 1200); wahr(u.hk.werte.lp < u.hk.werte.lpMax, "fremder Schuss trifft bei PvP");
+    var lp = u.hk.werte.lp; u.h.setzePvp(false);
+    SC.Wesen.neu(u.welt, "geschoss", { pos: [-2, 80.8, 2], richtung: [1, 0, 0], tempo: 30, schaden: 10, team: "spieler", schuetze: a.id, art: "laser", lebensdauer: 3 });
+    s._survival(MSP_E, 0.2, false, 1400); gleich(u.hk.werte.lp, lp, "ohne PvP geht er durch");
+  });
+});
+
+test("Mehrspieler: Gast-Schuss trifft andern Gast bei PvP (über den Gastgeber)", function(){
+  var u, a, b, s;
+  return mspPvpSetup(2, true).then(function(x){ u = x; a = u.gs[0]; b = u.gs[1];
+    a.g.takt(0.1, mspIch({ pos: [1, 80, 2] })); b.g.takt(0.1, mspIch({ pos: [10, 80, 2] })); u.hIch.pos = [30, 80, 30]; u.hk.spieler.pos = [30, 80, 30]; u.h.takt(0.1, u.hIch); return raumLauf(u.netz);
+  }).then(function(){
+    a.g.schuss({ pos: [2, 80.8, 2], richtung: [1, 0, 0], tempo: 30, schaden: 10, farbe: "#f00", abprall: false, lebensdauer: 2 }); return raumLauf(u.netz);
+  }).then(function(){
+    s = mspSpiel(u.welt, u.daten, u.h, u.hk); s._survival(MSP_E, 0.3, false, 1000); return raumLauf(u.netz);
+  }).then(function(){ wahr(b.k.werte.lp < b.k.werte.lpMax, "Gast B getroffen"); gleich(b.treffer[0].n.pvpVon, a.id); gleich(a.k.werte.lp, a.k.werte.lpMax); });
+});

@@ -72,6 +72,12 @@ SC.Geschoss.schritt = function(welt, g, dt, spieler){
       var t = SC.Wesen.strecke(a, b, [e.pos[0], e.pos[1] - 0.1, e.pos[2]], e.breite + 0.5, e.hoehe + 0.3);
       if(t >= 0 && t < bestT){ bestT = t; best = { treffer: "wesen", id: e.id }; }
     });
+    // Spaßkampf: mit Spieler-Array (nur dann übergeben) treffen Spieler-Geschosse alle außer dem Schützen
+    if(Array.isArray(spieler)) spieler.forEach(function(p){
+      if(p.id === g.schuetze) return;
+      var tp = SC.Wesen.strecke(a, b, p.pos, SC.PHYSIK.breite, SC.PHYSIK.hoehe);
+      if(tp >= 0 && tp < bestT){ bestT = tp; best = { treffer: "spieler", id: p.id }; }
+    });
   } else if(Array.isArray(spieler)){
     // Im Raum: mehrere Spieler {id, pos}; Treffer nennt die ID
     spieler.forEach(function(p){

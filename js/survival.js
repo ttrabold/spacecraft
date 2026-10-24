@@ -94,7 +94,9 @@
           a.spiele("schwert");
           // Funkenhieb: der dritte Hieb der Kombo schleudert eine Welle nach vorn
           if(akt.funkenhieb){ var fr = sp.richtung(); s._spielerSchuss({ pos: sp.augen(), richtung: fr, tempo: 22, schaden: akt.schaden, team: "spieler", art: "laser", lebensdauer: 0.8, farbe: SC.RenderWesen.klingenFarbe(waffe.seltenheit) }); }
-          k.hiebZiele(akt).forEach(function(g){ var d = ring(w, sp.pos, g.pos);
+          var pz = SC.Raum.pvpZiele(raum, raum && !gast ? s.raumIch(offen) : null); // Spaßkampf: Mitspieler im Bogen
+          k.hiebZiele(akt, pz).forEach(function(g){ var d = ring(w, sp.pos, g.pos);
+            if(g.art === "spieler"){ if(gast) gast.pvpAngriff(g.id, akt.schaden, [d[0], 0, d[2]]); else gastgeber.pvpTrifft(g.id, akt.schaden, [d[0], 0, d[2]], s.daten.spieler.figurId, null); a.spiele("treffer"); return; }
             if(gast){ gast.angriff(g.id, akt.schaden, [d[0], 0, d[2]]); s._zahl(g, akt.schaden); a.spiele("treffer"); return; } // rechnet der Gastgeber
             var r = k.trifftGegner(g, akt.schaden, [d[0], 0, d[2]]); s._zahl(g, r.schaden); if(r.besiegt) s.besiege(g); else a.spiele("treffer"); });
         }
@@ -137,7 +139,7 @@
         if(def && def.laut && g.bemerkt && Math.random() < dt * 0.4) a.spiele(def.laut);
       } else if(g.art === "geschoss"){
         if(gast && SC.Raum.istGespiegelt(g)) return; // Geschosse des Gastgebers nur gespiegelt
-        var r2 = SC.Geschoss.schritt(w, g, dt, g.optisch ? null : tz ? tz : survival && lebt ? sp : null);
+        var r2 = SC.Geschoss.schritt(w, g, dt, g.optisch ? null : tz ? (g.team === "spieler" && !gastgeber.pvp ? null : tz) : survival && lebt ? sp : null);
         if(!r2) return;
         if(r2.treffer === "wesen" && g.optisch){ SC.Wesen.entferne(w, g.id); return; } // optisch: verschwindet am Gegner
         if(r2.treffer === "wesen"){
@@ -145,7 +147,7 @@
           if(tg.abgeprallt){ g.team = "gegner"; g.geschw = [-g.geschw[0], -g.geschw[1], -g.geschw[2]]; g.lebensdauer = 2; a.spiele("abprall"); return; }
           s._zahl(ziel2, tg.schaden); if(tg.besiegt) s.besiege(ziel2); else a.spiele("treffer");
         } else if(r2.treffer === "spieler"){
-          var ts = gastgeber ? gastgeber.geschossTrifft(g, r2.id) : k.trifftSpieler(g.schaden, g.geschw || g.richtung, g);
+          var ts = gastgeber && g.team === "spieler" ? gastgeber.pvpTrifft(r2.id, g.schaden, g.geschw || g.richtung, g.schuetze, g) : gastgeber ? gastgeber.geschossTrifft(g, r2.id) : k.trifftSpieler(g.schaden, g.geschw || g.richtung, g);
           if(ts) a.spiele(ts.abgeprallt ? "abprall" : ts.schaden > 0 ? "getroffen" : "blocken");
         } else if(r2.treffer === "block" && g.abprall && !g.abgeprallt){
           // Abprall-Schüsse prallen einmal von der Wand ab

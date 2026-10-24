@@ -86,7 +86,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
     if(sp.modus !== "survival" || this.unverwundbar || this.uhr < this.ausweichenBis) return { abgeprallt: false, schaden: 0 };
     if(this.blockt && vonVorn(sp, von)){
       if(geschoss && (geschoss.typ || geschoss.art) === "laser"){
-        SC.Wesen.neu(this.welt, "geschoss", { pos: geschoss.pos.slice(), richtung: [-geschoss.richtung[0], -geschoss.richtung[1], -geschoss.richtung[2]], tempo: 35, schaden: schaden, team: "spieler", art: "laser", lebensdauer: 2, farbe: "#7cf3ff" });
+        SC.Wesen.neu(this.welt, "geschoss", { pos: geschoss.pos.slice(), richtung: [-geschoss.richtung[0], -geschoss.richtung[1], -geschoss.richtung[2]], tempo: 35, schaden: schaden, team: "spieler", schuetze: this.daten.spieler && this.daten.spieler.figurId, art: "laser", lebensdauer: 2, farbe: "#7cf3ff" });
         return { abgeprallt: true, schaden: 0 };
       }
       schaden *= 0.5;
@@ -116,8 +116,14 @@ SC.Kampf = function(welt, spieler, daten, zf){
   };
 
   // Gegner im Bogen vor dem Spieler (für Laserschwert-Hiebe)
-  K.hiebZiele = function(hieb){
+  // spieler (optional, nur im Spaßkampf): Mitspieler [{id, pos}] → kommen als {art: "spieler", id, pos, breite} dazu
+  K.hiebZiele = function(hieb, spieler){
     var sp = this.spieler, b = blickFlach(sp), aus = [], welt = this.welt;
+    (spieler || []).forEach(function(m){
+      var d = ring(welt, sp.pos, m.pos), l = Math.hypot(d[0], d[2]), br = SC.PHYSIK.breite;
+      if(l > hieb.reichweite + br / 2 || Math.abs(d[1]) > 2.5) return;
+      if(l < 0.5 || (b[0] * d[0] + b[1] * d[2]) / l > 0.3) aus.push({ art: "spieler", id: m.id, pos: m.pos, breite: br });
+    });
     welt.wesen.forEach(function(e){
       if(e.art !== "gegner") return;
       var d = ring(welt, sp.pos, e.pos), l = Math.hypot(d[0], d[2]);

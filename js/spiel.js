@@ -374,20 +374,15 @@ SC.Spiel.startpunkt = function(planet){
       beiPvpBesiegt: function(name){ s._pvpBesiegt(name); }
     });
   };
-  // Neuverbinden: Welt behalten, Stand des Gastgebers übernehmen (nicht gesendete Chunks wieder wie erzeugt). Wünsche, die nie ankamen
-  // oder deren Antwort verloren ging, je Stelle vom neuesten rückwärts im Rucksack rückgängig machen, bis der Block des Gastgebers erreicht ist.
+  // Neuverbinden: Welt behalten, Stand des Gastgebers übernehmen (nicht gesendete Chunks wieder wie erzeugt). Noch offene Wünsche hat der
+  // Gastgeber nie bekommen oder abgelehnt (willkommen hat die bestätigten schon gestrichen): vom neuesten rückwärts im Rucksack rückgängig machen.
   SC.Spiel.prototype._gastWiederkehr = function(gast, chunks){
-    var w = this.welt, k, s = this;
+    var w = this.welt, k, s = this, l = [];
     w.geaenderte.forEach(function(c, key){ if(!chunks[key]){ w.geaenderte.delete(key); w.chunks.delete(key); w.neuZuZeichnen.add(key); } });
     for(k in chunks){ w.geaenderte.set(k, chunks[k]); if(w.chunks.has(k)) w.chunks.set(k, chunks[k]); w.neuZuZeichnen.add(k); }
-    var orte = {}, l = [];
     for(k in gast._wuensche) l.push(gast._wuensche[k]);
-    l.sort(function(a, b){ return a.nr - b.nr; }).forEach(function(wu){ if(wu.x === undefined) return; var o = wu.x + "," + wu.y + "," + wu.z; (orte[o] = orte[o] || []).push(wu); });
     gast._wuensche = {};
-    for(k in orte){
-      var reihe = orte[k], a = w.holeBlock(reihe[0].x, reihe[0].y, reihe[0].z), stand = reihe[reihe.length - 1].id;
-      for(var i = reihe.length - 1; i >= 0 && stand !== a; i--){ s._blockZurueck(a, { id: reihe[i].id, alt: reihe[i].alt }); stand = reihe[i].alt; }
-    }
+    l.sort(function(a, b){ return b.nr - a.nr; }).forEach(function(wu){ s._blockZurueck(null, { id: wu.id, alt: wu.alt }); });
   };
   SC.Spiel.prototype._gastStatus = function(gast, st, info){
     if(this.raum !== gast) return;

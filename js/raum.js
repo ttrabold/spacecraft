@@ -10,7 +10,8 @@ SC.RAUM_NACHLAUF_MS = 500;      // Gastgeber: Raum erst kurz nach „ende“ sch
 SC.RAUM_TAKT = 1 / 15;          // zustand und wesen 15-mal pro Sekunde …
 SC.RAUM_ZEIT_TAKT = 1;          // … zeit einmal pro Sekunde
 SC.RAUM_GAST_ID = 1e9;          // Gast: eigene Wesen (Beutekugeln) ab dieser ID, darunter liegen die gespiegelten des Gastgebers
-SC.RAUM_WUNSCH_MS = 10000;      // Gast: unbeantworteter Block-Wunsch gilt danach als angenommen
+SC.RAUM_WUNSCH_MAX = 512;       // Gast: höchstens so viele unbestätigte Block-Wünsche (älteste fallen weg); bestätigt wird über wunschNr
+SC.RAUM_ABGELEHNT_MERKEN = 128; // Gastgeber: so viele abgelehnte Wunsch-Nummern je Gast (für willkommen nach Neuverbinden)
 SC.Raum = {};
 
 // --- Gastgeber ---
@@ -23,6 +24,7 @@ SC.Gastgeber = function(o){
   this._zu = false;
   this.uhr = o.uhr || function(){ return typeof performance !== "undefined" ? performance.now() : Date.now(); }; // Spieluhr für getroffenBis
   this._takt = 0; this._zeitTakt = 0;
+  this._wunschNr = {}; this._abgelehnt = {}; // figurId → höchste verarbeitete Wunsch-Nummer bzw. zuletzt abgelehnte Nummern
   var s = this;
   if(this.welt) this.welt.ereignisse.an("block", function(b){ s._blockGeaendert(b); });
 };
@@ -75,13 +77,15 @@ SC.Gastgeber = function(o){
     var s = this, d = s.daten, id = c.id, alt = s._verb[id];
     if(alt && alt !== c){ alt.weg = true; alt.verb.schliesse(); } // alte, noch nicht bemerkt abgerissene Verbindung derselben Figur
     c.drin = true; s._verb[id] = c; s._bestaetigt[id] = true;
+    if(!c.wiederkehr){ s._wunschNr[id] = 0; s._abgelehnt[id] = []; } // neuer Gast zählt seine Wünsche von vorn
     var m = d.mitspieler[id], pos = (m && m.pos) || d.startpunkt || d.spieler.pos, blick = (m && m.blick) || [0, 0];
     pos = pos ? pos.slice() : null; blick = blick.slice();
     d.mitspieler[id] = { name: c.name, pos: pos, blick: blick.slice() };
     var e = s._eintrag(id);
     if(!e){ e = { id: id, name: c.name, farbe: s._freieFarbe(), pos: pos, blick: blick, modus: d.modus, stufe: 1, ausr: null, menue: false, lebt: true, verbunden: true }; s.spieler.push(e); }
     else { e.name = c.name; e.verbunden = true; e._marke = null; }
-    c.verb.sende({ t: "willkommen", farbe: e.farbe, welt: s._weltInfo(), pos: pos, blick: blick, pvp: s.pvp, spieler: s.liste(), chunkAnzahl: s.welt.geaenderte.size });
+    c.verb.sende({ t: "willkommen", farbe: e.farbe, welt: s._weltInfo(), pos: pos, blick: blick, pvp: s.pvp, spieler: s.liste(), chunkAnzahl: s.welt.geaenderte.size,
+      wunschNr: s._wunschNr[id] || 0, abgelehnt: (s._abgelehnt[id] || []).slice() });
     s.welt.geaenderte.forEach(function(u8, k){ c.verb.sende({ t: "chunk", k: k, daten: u8 }); });
     c.verb.sende({ t: "bereit" });
     s._listeGeaendert(id);
@@ -134,7 +138,8 @@ SC.Gastgeber = function(o){
         c.verb.sende(wesen);
       });
     }
-    if(zeit) s.sendeAlle({ t: "zeit", tageszeit: ich && typeof ich.tageszeit === "number" ? ich.tageszeit : d.tageszeit, modus: d.modus, schwierigkeit: d.schwierigkeit });
+    if(zeit){ var tz = ich && typeof ich.tageszeit === "number" ? ich.tageszeit : d.tageszeit; // je Gast mit seiner bestätigten Wunsch-Nummer
+      ids.forEach(function(id){ s._verb[id].verb.sende({ t: "zeit", tageszeit: tz, modus: d.modus, schwierigkeit: d.schwierigkeit, wunschNr: s._wunschNr[id] || 0 }); }); }
   };
 
   G.sende = function(id, n){ var c = this._verb[id]; if(c) c.verb.sende(n); };
@@ -159,7 +164,7 @@ SC.Gastgeber = function(o){
       var s = this;
       if(c.id) return;
       if(n.protokoll !== SC.NETZ_PROTOKOLL || !n.figurId) return s._ablehnen(c, "version");
-      c.id = String(n.figurId); c.name = String(n.name || "");
+      c.id = String(n.figurId); c.name = String(n.name || ""); c.wiederkehr = !!n.wiederkehr;
       if(s._voll(c.id)) return s._ablehnen(c, "voll");
       if(s._bestaetigt[c.id]) return s._annehmen(c);
       c.verb.sende({ t: "warte" });
@@ -179,10 +184,13 @@ SC.Gastgeber = function(o){
       if(typeof this.o.beiNachricht === "function") this.o.beiNachricht(c.id, n);
     },
     // Block-Wunsch eines Gastes {x, y, z, id, alt, nr}: gilt nur, wenn hier noch `alt` steht; sonst bekommt der Urheber den tatsächlichen Block zurück
+    // Jede Nummer gilt als verarbeitet (wunschNr); abgelehnte werden zusätzlich gemerkt
     block: function(c, n){
       var w = this.welt;
+      if(zahl(n.nr) && n.nr > (this._wunschNr[c.id] || 0)) this._wunschNr[c.id] = n.nr;
       if(!w || !zahl(n.x) || !zahl(n.y) || !zahl(n.z) || !SC.BLOECKE[n.id]) return;
       if((n.alt === undefined || w.holeBlock(n.x, n.y, n.z) === n.alt) && w.setzeBlock(n.x, n.y, n.z, n.id, "netz:" + c.id)) return;
+      if(zahl(n.nr)){ var ab = this._abgelehnt[c.id] || (this._abgelehnt[c.id] = []); ab.push(n.nr); if(ab.length > SC.RAUM_ABGELEHNT_MERKEN) ab.shift(); }
       c.verb.sende({ t: "block", x: w.planet.wickel(n.x), y: Math.floor(n.y), z: w.planet.wickel(n.z), id: w.holeBlock(n.x, n.y, n.z), zurueck: true, nr: n.nr });
     }
   };
@@ -259,6 +267,7 @@ SC.Gast = function(o){
     welt.ereignisse.an("block", function(b){
       if(s.welt !== welt || !s.verb || String(b.quelle || "").indexOf("netz") === 0) return;
       var nr = ++s._nr; s._wuensche[nr] = { id: b.id, alt: b.alt, nr: nr, zeit: s.jetzt(), x: b.x, y: b.y, z: b.z };
+      if(nr - SC.RAUM_WUNSCH_MAX > 0) delete s._wuensche[nr - SC.RAUM_WUNSCH_MAX];
       s.verb.sende({ t: "block", x: b.x, y: b.y, z: b.z, id: b.id, alt: b.alt, nr: nr });
     });
   };
@@ -267,12 +276,18 @@ SC.Gast = function(o){
     var s = this; s._takt += dt;
     if(s._takt < SC.RAUM_TAKT) return;
     s._takt -= SC.RAUM_TAKT; if(s._takt >= SC.RAUM_TAKT) s._takt = 0;
-    var alt = s.jetzt() - SC.RAUM_WUNSCH_MS; if(s.status === "verbunden") for(var k in s._wuensche) if(s._wuensche[k].zeit < alt) delete s._wuensche[k]; // beim Neuverbinden behalten (Abgleich danach)
     if(!s.verb || !ich || s.status !== "verbunden") return;
     var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false },
       j = JSON.stringify(ich.ausr === undefined ? null : ich.ausr);
     if(j !== s._ausr){ s._ausr = j; n.ausr = ich.ausr; }
     s.verb.sende(n);
+  };
+  // Gastgeber hat alle Wünsche bis nr verarbeitet: angenommene vergessen; abgelehnte (Liste, nur bei willkommen) bleiben
+  // für den Abgleich nach dem Neuverbinden, falls ihre Ablehnung unterwegs verloren ging
+  G._bestaetige = function(nr, abgelehnt){
+    if(typeof nr !== "number") return;
+    var ab = {}; (abgelehnt || []).forEach(function(x){ ab[x] = true; });
+    for(var k in this._wuensche) if(+k <= nr && !ab[k]) delete this._wuensche[k];
   };
   // Selbst gehen: kein Neuverbinden, kein Status-Rückruf
   G.trenne = function(){ this._ende = true; this._loese(); this._abschluss(new SC.Netz.Fehler("abbruch")); };
@@ -284,7 +299,7 @@ SC.Gast = function(o){
       if(!this._fertig) this._abschluss(new SC.Netz.Fehler(g));
       else this._status("getrennt", { grund: g === "hinausgeworfen" ? g : "abbruch", art: g });
     },
-    willkommen: function(n){ this.willkommen = n; this.farbe = n.farbe; this.spieler = n.spieler || []; this.pvp = !!n.pvp; ruf(this.o.beiWillkommen, n); },
+    willkommen: function(n){ this.willkommen = n; this._bestaetige(n.wunschNr, n.abgelehnt); this.farbe = n.farbe; this.spieler = n.spieler || []; this.pvp = !!n.pvp; ruf(this.o.beiWillkommen, n); },
     chunk: function(n){ ruf(this.o.beiChunk, n.k, n.daten); },
     bereit: function(){
       this._runde++; this._ausr = undefined; ruf(this.o.beiBereit); // nach (Wieder-)Eintritt die Ausrüstung neu schicken
@@ -301,7 +316,7 @@ SC.Gast = function(o){
       for(var k in n) if(k !== "t") m[k] = n[k];
     },
     wesen: function(n){ this.wesen = n.liste || []; },
-    zeit: function(n){ if(typeof n.tageszeit === "number") this.tageszeit = n.tageszeit; ruf(this.o.beiNachricht, n); },
+    zeit: function(n){ this._bestaetige(n.wunschNr); if(typeof n.tageszeit === "number") this.tageszeit = n.tageszeit; ruf(this.o.beiNachricht, n); },
     // Tatsache vom Gastgeber; mit zurueck:true wurde ein eigener Wunsch abgelehnt → beiBlockZurueck(x, y, z, id, wunsch {id, alt} | null)
     block: function(n){
       var w = this.welt; if(!w) return;

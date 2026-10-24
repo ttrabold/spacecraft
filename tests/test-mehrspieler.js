@@ -661,3 +661,31 @@ test("Mehrspieler: Spiel: Neue Figur ohne Namen wird abgelehnt", function(){
   return s.beitreten(SC.Netz.code("MOND", 47), null, undefined).then(function(){ wahr(false, "darf nicht klappen"); }, function(f){ wahr(/Namen/.test(f.message)); gleich(s.rolle, "allein"); return s.slots.liste(); })
     .then(function(l){ gleich(l.length, 0); });
 });
+
+function mspSetze(a, x, y, z){ var rs = a.kampf.rucksack, i; for(i = 0; i < 36; i++) if(rs.plaetze[i] && rs.plaetze[i].block === SC.B.BRETTER) break; wahr(a.welt.setzeBlock(x, y, z, SC.B.BRETTER, "spieler")); rs.verbrauche(i); }
+function mspNeuverbinden(u, v){ u.netz.trenne(v); return mspLauf(u.netz).then(function(){ return new Promise(function(ok){ setTimeout(ok, SC.RAUM_NEU_ALLE_MS + 100); }); }).then(function(){ return mspLauf(u.netz, 4); }); }
+
+test("Mehrspieler: Spiel: Stiller Abbruch: Wünsche in die tote Verbindung kommen nach dem Neuverbinden zurück", function(){
+  var u, a, rs, v;
+  return mspZwei().then(function(x){ u = x; a = u.g; rs = a.kampf.rucksack; rs.lege({ block: SC.B.BRETTER, anzahl: 5 });
+    v = a.raum.verb; var echt = v.sende; v.sende = function(n){ if(n && n.t === "block") return; return echt.call(v, n); }; // Blöcke gehen unbemerkt verloren
+    mspSetze(a, 30, 99, 30); mspSetze(a, 31, 99, 30); mspSetze(a, 32, 99, 30); gleich(rs.hat(SC.B.BRETTER), 2);
+    a.raum.jetzt = function(){ return Date.now() + 20000; }; a._raumBild(0.1, false); u.h._raumBild(1.1, false); return mspLauf(u.netz); // > 10 s später, zeit kommt an
+  }).then(function(){ gleich(Object.keys(a.raum._wuensche).length, 3, "unbestätigt bleiben sie"); return mspNeuverbinden(u, v);
+  }).then(function(){ gleich(a.raum.status, "verbunden"); gleich(rs.hat(SC.B.BRETTER), 5, "alle 3 zurück"); gleich(a.welt.holeBlock(31, 99, 30), u.h.welt.holeBlock(31, 99, 30)); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Angekommener Wunsch, danach von anderem geändert: keine Erstattung", function(){
+  var u, a, rs;
+  return mspZwei().then(function(x){ u = x; a = u.g; rs = a.kampf.rucksack; rs.lege({ block: SC.B.BRETTER, anzahl: 2 });
+    mspSetze(a, 30, 99, 30); return mspLauf(u.netz);
+  }).then(function(){ gleich(u.h.welt.holeBlock(30, 99, 30), SC.B.BRETTER); u.h.welt.setzeBlock(30, 99, 30, SC.B.LUFT, "netz:jemand"); gleich(rs.hat(SC.B.BRETTER), 1); return mspNeuverbinden(u, a.raum.verb);
+  }).then(function(){ gleich(a.raum.status, "verbunden"); gleich(rs.hat(SC.B.BRETTER), 1, "Rucksack unverändert"); gleich(a.welt.holeBlock(30, 99, 30), SC.B.LUFT); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Bestätigung über zeit leert die Wünsche", function(){
+  var u, a;
+  return mspZwei().then(function(x){ u = x; a = u.g; a.kampf.rucksack.lege({ block: SC.B.BRETTER, anzahl: 2 }); mspSetze(a, 30, 99, 30); mspSetze(a, 31, 99, 30); return mspLauf(u.netz);
+  }).then(function(){ gleich(Object.keys(a.raum._wuensche).length, 2); u.h._raumBild(1.1, false); return mspLauf(u.netz);
+  }).then(function(){ gleich(Object.keys(a.raum._wuensche).length, 0); }).then(mspFertig, mspFehler);
+});

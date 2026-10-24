@@ -49,7 +49,8 @@ SC.Wesen.strecke = function(a, b, pos, breite, hoehe){
 };
 
 SC.Geschoss = {};
-// Bewegt ein Geschoss um dt; Treffer gegen Blöcke, Gegner (Team Spieler) oder den Spieler (Team Gegner)
+// Bewegt ein Geschoss um dt; Treffer gegen Blöcke, Gegner (Team Spieler) oder den Spieler (Team Gegner).
+// spieler: eine Figur oder (im Raum) ein Array [{id, pos}]
 SC.Geschoss.schritt = function(welt, g, dt, spieler){
   if(!g._fliegt){ g.geschw = [g.richtung[0] * g.tempo, g.richtung[1] * g.tempo, g.richtung[2] * g.tempo]; g._fliegt = true; }
   var typ = g.typ || g.art;
@@ -70,6 +71,12 @@ SC.Geschoss.schritt = function(welt, g, dt, spieler){
       if(e.art !== "gegner") return;
       var t = SC.Wesen.strecke(a, b, [e.pos[0], e.pos[1] - 0.1, e.pos[2]], e.breite + 0.5, e.hoehe + 0.3);
       if(t >= 0 && t < bestT){ bestT = t; best = { treffer: "wesen", id: e.id }; }
+    });
+  } else if(Array.isArray(spieler)){
+    // Im Raum: mehrere Spieler {id, pos}; Treffer nennt die ID
+    spieler.forEach(function(p){
+      var tp = SC.Wesen.strecke(a, b, p.pos, SC.PHYSIK.breite, SC.PHYSIK.hoehe);
+      if(tp >= 0 && tp < bestT){ bestT = tp; best = { treffer: "spieler", id: p.id }; }
     });
   } else if(spieler){
     var ts = SC.Wesen.strecke(a, b, spieler.pos, SC.PHYSIK.breite, SC.PHYSIK.hoehe);

@@ -387,6 +387,154 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
   };
   // Gastgeber: alle Spieler als mögliche Ziele für Gegner (Gastgeber mit figurId zuerst, getrennte Gäste nicht)
   SC.Raum.mitspielerZiele = function(gastgeber, ich){
-    return gastgeber._zustaende(ich).map(function(z){ return { id: z.id, pos: z.pos, blick: z.blick, modus: z.modus, menue: z.menue, lebt: z.lebt }; });
+    return gastgeber._zustaende(ich).map(function(z){ return { id: z.id, pos: z.pos, blick: z.blick, modus: z.modus, stufe: z.stufe, menue: z.menue, lebt: z.lebt }; });
+  };
+})();
+
+// --- Gemeinsam kämpfen ---
+// Der Gastgeber rechnet Gegner, Treffer auf Gegner, Beute und Kisten; jeder Gast verrechnet Treffer an sich selbst mit seiner Ausrüstung.
+// Beute und Erfahrung: einmal gewürfelt, identisch an jeden Spieler in SC.RAUM_NAH Blöcken (waagerechter Ringabstand), Gastgeber eingeschlossen.
+// Nachrichten: angriff G→H {ziel, schaden, von}, schuss G→H {pos, richtung, tempo, schaden, farbe, abprall, lebensdauer}, kiste G→H {x, y, z},
+// abprall G→H {geschossId}, treffer H→G {schaden, von, geschoss {id, typ, pos, richtung} | null, pvpVon}, besiegt H→G {nr, pos, erfahrung, beute, boss, kiste?}.
+// besiegt geht nur live hinaus (nie nachgeholt); der Gast verwirft eine schon gesehene Nummer.
+SC.RAUM_NAH = 40;
+SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss-Treffer bleiben für „abprall“ gemerkt
+(function(){
+  var H = SC.Gastgeber.prototype, G = SC.Gast.prototype;
+  function ruf(f){ if(typeof f === "function") return f.apply(null, Array.prototype.slice.call(arguments, 1)); }
+  function zahl(v){ return typeof v === "number" && isFinite(v); }
+  function vek(v){ return Array.isArray(v) && v.length === 3 && zahl(v[0]) && zahl(v[1]) && zahl(v[2]) ? v.slice() : null; }
+  function abstand(welt, a, b){ var P = welt.planet.groesse; return Math.hypot(SC.mod(b[0] - a[0] + P / 2, P) - P / 2, SC.mod(b[2] - a[2] + P / 2, P) - P / 2); }
+  function laenge1(v){ var l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; }
+
+  // Wer kann getroffen werden bzw. ist Ziel: Survival, nicht besiegt, kein Menü offen
+  SC.Raum.trefferZiele = function(ziele){ return (ziele || []).filter(function(z){ return z && z.pos && z.modus === "survival" && z.lebt !== false && !z.menue; }); };
+  // Nächster mögliches Ziel für einen Gegner (für SC.KI.schritt) → {pos, sichtbar: true, id} oder null
+  SC.Raum.zielFuer = function(welt, g, ziele){
+    var best = null, bd = Infinity;
+    SC.Raum.trefferZiele(ziele).forEach(function(z){ var d = abstand(welt, g.pos, z.pos); if(d < bd){ bd = d; best = z; } });
+    return best ? { pos: best.pos, sichtbar: true, id: best.id } : null;
+  };
+  // Gast: vom Gastgeber gespiegeltes Wesen (nicht lokal rechnen)
+  SC.Raum.istGespiegelt = function(e){ return !!e && e.id < SC.RAUM_GAST_ID; };
+
+  // --- Gastgeber ---
+  // o: { ich() → eigener Zustand {pos, modus, menue, lebt, …} (für „in der Nähe“), beiBeute(pos, gegenstaende) (eigener Anteil auswerfen),
+  //      besiege(g)? (Gegner durch Gast besiegt; Standard: this.besiege(g)), beiGetroffen(g, ergebnis)? (Gegner durch Gast getroffen, für Funken/Zahl) }
+  H.bindeKampf = function(kampf, o){ this._k = { kampf: kampf, o: o || {} }; this._ereignis = this._ereignis || 0; this._geschosse = this._geschosse || {}; };
+  H._ich = function(){ return this._k ? ruf(this._k.o.ich) || null : null; };
+  // Beute und Erfahrung an alle in der Nähe von pos; der eigene Anteil geht an beiBeute. → {nah, an: [Gast-IDs]}
+  H._verteile = function(pos, erfahrung, beute, boss, kiste){
+    var s = this, w = s.welt, nr = ++s._ereignis, ich = s.daten.spieler.figurId, aus = { nah: false, an: [] };
+    SC.Raum.mitspielerZiele(s, s._ich()).forEach(function(z){
+      if(!z.pos || abstand(w, pos, z.pos) > SC.RAUM_NAH) return;
+      if(z.id === ich){ aus.nah = true; return; }
+      var n = { t: "besiegt", nr: nr, pos: pos.slice(), erfahrung: erfahrung, beute: beute, boss: !!boss };
+      if(kiste) n.kiste = true;
+      s.sende(z.id, n); aus.an.push(z.id);
+    });
+    return aus;
+  };
+  // Gegner besiegt: einmal würfeln, aus der Welt nehmen, an alle in der Nähe verteilen; Gastgeber verbucht sich selbst, wenn er nah ist.
+  // → {erfahrung, beute, boss, nah, aufstiege, an}
+  H.besiege = function(g){
+    var k = this._k.kampf, r = SC.Kampf.beuteFuer(g, this.daten, k.zf);
+    SC.Wesen.entferne(this.welt, g.id);
+    var v = this._verteile(g.pos, r.erfahrung, r.beute, r.boss, false);
+    r.nah = v.nah; r.an = v.an; r.aufstiege = 0;
+    if(v.nah){ r.aufstiege = k.gibErfahrung(r.erfahrung); if(r.beute.length) ruf(this._k.o.beiBeute, g.pos.slice(), r.beute); }
+    return r;
+  };
+  // Kiste öffnen (eigene oder vom Gast): Beute einmal würfeln, für alle in der Nähe; danach ist sie für alle offen. → Beute (leer, wenn schon offen)
+  H.oeffneKiste = function(x, y, z){
+    var w = this.welt, k = this._k.kampf;
+    var beute = SC.Kampf.oeffneKiste(w, k, x, y, z, SC.Kampf.bauwerkZuKiste(w, x, y, z), SC.zufall((this.zf() * 4294967296) >>> 0));
+    if(!beute.length) return beute;
+    var pos = [x + 0.5, y + 0.5, z + 0.5], v = this._verteile(pos, 0, beute, false, true);
+    if(v.nah) ruf(this._k.o.beiBeute, pos, beute);
+    return beute;
+  };
+  // Treffer an einen Gast melden (Hieb, Stampfen oder Geschoss); der Gast verrechnet ihn selbst
+  H.treffer = function(id, schaden, von, geschoss, pvpVon){
+    var gs = null;
+    if(geschoss){
+      gs = { id: geschoss.id, typ: geschoss.typ || geschoss.art, pos: geschoss.pos.slice(), richtung: (geschoss.richtung || geschoss.geschw).slice() };
+      var m = this._geschosse || (this._geschosse = {}), ks = Object.keys(m);
+      if(ks.length >= SC.RAUM_ABPRALL_MERKEN) delete m[ks[0]];
+      m[gs.id] = { an: id, pos: gs.pos, richtung: gs.richtung, schaden: schaden };
+    }
+    this.sende(id, { t: "treffer", schaden: schaden, von: von.slice(), geschoss: gs, pvpVon: pvpVon || null });
+  };
+  // Hieb oder Stampfen eines Gegners gegen alle Ziele: der Gastgeber verrechnet sich selbst (kampf.gegnerAktion), Gäste bekommen treffer.
+  // ziele aus SC.Raum.mitspielerZiele. → Ergebnis für den Gastgeber selbst oder null
+  H.gegnerAktion = function(g, akt, ziele){
+    var s = this, ich = s.daten.spieler.figurId, eigen = null;
+    SC.Raum.trefferZiele(ziele).forEach(function(z){
+      if(z.id === ich){ eigen = s._k.kampf.gegnerAktion(g, akt); return; }
+      var t = SC.Kampf.aktionTrifft(s.welt, g, akt, z.pos, true);
+      if(t) s.treffer(z.id, t.schaden, t.von, null);
+    });
+    return eigen;
+  };
+  // Gegner-Geschoss hat Spieler id getroffen (SC.Geschoss.schritt mit Array): Gastgeber selbst → kampf.trifftSpieler, sonst treffer an den Gast.
+  // → Ergebnis für den Gastgeber selbst oder null
+  H.geschossTrifft = function(g, id){
+    var von = g.geschw || g.richtung;
+    if(id === this.daten.spieler.figurId) return this._k.kampf.trifftSpieler(g.schaden, von, g);
+    this.treffer(id, g.schaden, von, g);
+    return null;
+  };
+  function spielerGeschoss(w, d){ return SC.Wesen.neu(w, "geschoss", d); }
+  var HN = SC.Gastgeber.NACHRICHTEN;
+  // Hieb eines Gastes auf einen Gegner
+  HN.angriff = function(c, n){
+    var w = this.welt, g = w && w.wesen.get(n.ziel), k = this._k;
+    if(!k || !g || g.art !== "gegner" || !zahl(n.schaden) || n.schaden <= 0) return;
+    var von = vek(n.von), e = this._eintrag(c.id);
+    if(!von && e && e.pos){ var P = w.planet.groesse; von = [SC.mod(g.pos[0] - e.pos[0] + P / 2, P) - P / 2, 0, SC.mod(g.pos[2] - e.pos[2] + P / 2, P) - P / 2]; }
+    var r = k.kampf.trifftGegner(g, n.schaden, von || [0, 0, 1]);
+    if(r.besiegt){ if(typeof k.o.besiege === "function") k.o.besiege(g); else this.besiege(g); }
+    else ruf(k.o.beiGetroffen, g, r);
+  };
+  // Schuss eines Gastes: hier ein echtes Spieler-Geschoss mit Schütze
+  HN.schuss = function(c, n){
+    var pos = vek(n.pos), r = vek(n.richtung);
+    if(!this.welt || !pos || !r || !zahl(n.tempo) || !zahl(n.schaden)) return;
+    spielerGeschoss(this.welt, { pos: pos, richtung: laenge1(r), tempo: n.tempo, schaden: n.schaden, team: "spieler", schuetze: c.id, art: "laser",
+      lebensdauer: Math.min(3, zahl(n.lebensdauer) ? n.lebensdauer : 1), farbe: n.farbe, abprall: !!n.abprall });
+  };
+  HN.kiste = function(c, n){ if(this._k && this.welt && zahl(n.x) && zahl(n.y) && zahl(n.z) && this.welt.holeBlock(n.x, n.y, n.z) === SC.B.KISTE) this.oeffneKiste(Math.floor(n.x), Math.floor(n.y), Math.floor(n.z)); };
+  // Gast hat einen gemeldeten Laser mit dem Schwert abgewehrt: zurückgeworfen als Spieler-Geschoss (wie im Einzelspiel, nur einmal je Geschoss)
+  HN.abprall = function(c, n){
+    var m = this._geschosse && this._geschosse[n.geschossId];
+    if(!m || m.an !== c.id || !this.welt) return;
+    delete this._geschosse[n.geschossId];
+    spielerGeschoss(this.welt, { pos: m.pos.slice(), richtung: [-m.richtung[0], -m.richtung[1], -m.richtung[2]], tempo: 35, schaden: m.schaden, team: "spieler", schuetze: c.id, art: "laser", lebensdauer: 2, farbe: "#7cf3ff" });
+  };
+
+  // --- Gast ---
+  // o: { beiBeute(pos, gegenstaende) (Beute als eigene Kugeln auswerfen), beiTreffer(ergebnis, n)? (für Ton/Anzeige), beiBesiegt(n, aufstiege)? }
+  G.bindeKampf = function(kampf, o){ this._k = { kampf: kampf, o: o || {} }; this._gesehen = this._gesehen || {}; };
+  G.angriff = function(ziel, schaden, von){ this.sende({ t: "angriff", ziel: ziel, schaden: schaden, von: von.slice() }); };
+  G.schuss = function(d){ this.sende({ t: "schuss", pos: d.pos.slice(), richtung: d.richtung.slice(), tempo: d.tempo, schaden: d.schaden, farbe: d.farbe, abprall: !!d.abprall, lebensdauer: d.lebensdauer }); };
+  G.kiste = function(x, y, z){ this.sende({ t: "kiste", x: x, y: y, z: z }); };
+  var GN = SC.Gast.NACHRICHTEN;
+  GN.treffer = function(n){
+    var k = this._k; if(!k){ ruf(this.o.beiNachricht, n); return; }
+    var kampf = k.kampf, w = kampf.welt, vorher = w ? w.naechsteId : 0;
+    var r = kampf.trifftSpieler(n.schaden, vek(n.von) || [0, 0, 1], n.geschoss || null);
+    if(r.abgeprallt && n.geschoss){
+      // Der zurückgeworfene Laser zählt nur beim Gastgeber; hier ist er rein optisch
+      if(w) for(var id = vorher; id < w.naechsteId; id++){ var e = w.wesen.get(id); if(e) e.optisch = true; }
+      this.sende({ t: "abprall", geschossId: n.geschoss.id });
+    }
+    ruf(k.o.beiTreffer, r, n);
+  };
+  GN.besiegt = function(n){
+    var k = this._k; if(!k){ ruf(this.o.beiNachricht, n); return; }
+    if(n.nr !== undefined){ if(this._gesehen[n.nr]) return; this._gesehen[n.nr] = true; }
+    var auf = zahl(n.erfahrung) && n.erfahrung > 0 ? k.kampf.gibErfahrung(n.erfahrung) : 0;
+    if(n.beute && n.beute.length && n.pos) ruf(k.o.beiBeute, n.pos.slice(), n.beute);
+    ruf(k.o.beiBesiegt, n, auf);
   };
 })();

@@ -29,20 +29,42 @@ SC.Auftauchen = function(welt, daten, zf){
     return SC.Wesen.neu(this.welt, "gegner", d);
   };
 
+  // spieler: eine Figur oder (im Raum) ein Array [{id, pos, blick, modus, stufe}] aller Spieler
   A.schritt = function(spieler, tageslicht, spielzeit){
     var a = this, w = this.welt, schw = SC.SCHWIERIGKEIT[this.daten.schwierigkeit] || SC.SCHWIERIGKEIT.normal, zf = this.zf;
+    var mehr = Array.isArray(spieler), alle = mehr ? spieler : [spieler];
     // Friedlich: alle weg
     if(!schw.gegner){ w.wesen.forEach(function(e){ if(e.art === "gegner") a._entferne(e, true); }); return; }
-    // Weit weg, morgens oder feststeckend: entfernen
+    // Weit weg (von allen Spielern), morgens oder feststeckend: entfernen
     w.wesen.forEach(function(e){
       if(e.art !== "gegner") return;
-      var d = ring(w, spieler.pos, e.pos[0], e.pos[2]);
-      if(Math.hypot(d[0], d[1]) > WEG) a._entferne(e, false);
+      var weit = alle.every(function(sp){ var d = ring(w, sp.pos, e.pos[0], e.pos[2]); return Math.hypot(d[0], d[1]) > WEG; });
+      if(weit) a._entferne(e, false);
       else if(e.nacht && tageslicht >= NACHT) a._entferne(e, true);
       else if(e.entfernen){ a._entferne(e, false); a.gegnerBesiegt(e, spielzeit); }
     });
-    if(spieler.modus === "zuschauer") return;
-    // Bauwerke in der Nähe
+    // Bauwerke wachen bei jedem Spieler auf (außer Zuschauern)
+    alle.forEach(function(sp){ if(sp.modus !== "zuschauer") a._bauwerke(sp, spielzeit, schw); });
+    // Nachts an der Oberfläche (nur Survival), um zufällig gewählte Survival-Spieler, gemeinsame Obergrenze
+    var surv = alle.filter(function(sp){ return sp.modus === "survival"; });
+    if(!surv.length || tageslicht >= NACHT) return;
+    var nacht = 0; w.wesen.forEach(function(e){ if(e.nacht) nacht++; });
+    for(var v = 0; v < 3 && nacht < schw.nachtMax; v++){
+      var sp = surv.length === 1 ? surv[0] : surv[Math.floor(zf() * surv.length)];
+      var blick = [-Math.sin(sp.blick[0]), -Math.cos(sp.blick[0])], ss = (mehr ? sp.stufe : this.daten.spieler.stufe) || 1;
+      var win = zf() * Math.PI * 2, ab = 24 + zf() * 24, dx = Math.sin(win), dz = Math.cos(win);
+      if(dx * blick[0] + dz * blick[1] > 0.5) continue;               // nicht direkt im Blickfeld
+      var x = Math.floor(SC.mod(sp.pos[0] + dx * ab, w.planet.groesse)), z = Math.floor(SC.mod(sp.pos[2] + dz * ab, w.planet.groesse));
+      var y = w.generator.hoehe(x, z) + 1;
+      if(y <= SC.MEER + 1 || SC.BLOECKE[w.holeBlock(x, y, z)].fest || SC.BLOECKE[w.holeBlock(x, y + 1, z)].fest || !SC.BLOECKE[w.holeBlock(x, y - 1, z)].fest) continue;
+      var art2 = zf() < 0.6 ? "krabbler" : "spucker", st = Math.max(1, Math.min(12, ss + Math.floor(zf() * 3) - 1));
+      if(this._neu(art2, st, [x + 0.5, y, z + 0.5], { nacht: true, ort: "dungeon" })) nacht++;
+    }
+  };
+
+  // Bauwerke in der Nähe eines Spielers wecken
+  A._bauwerke = function(spieler, spielzeit, schw){
+    var a = this, w = this.welt, zf = this.zf;
     var R = 128, n = w.planet.groesse / R, rx = Math.floor(SC.mod(spieler.pos[0], w.planet.groesse) / R), rz = Math.floor(SC.mod(spieler.pos[2], w.planet.groesse) / R), pl = planet(this);
     pl.geraeumt = pl.geraeumt || {};
     for(var i = -1; i <= 1; i++) for(var j = -1; j <= 1; j++) SC.Bauwerke.inRegion(w.planet, SC.mod(rx + i, n), SC.mod(rz + j, n)).forEach(function(b){
@@ -66,19 +88,6 @@ SC.Auftauchen = function(welt, daten, zf){
         if(e) a.platzGegner[key] = e.id;
       });
     });
-    // Nachts an der Oberfläche (nur Survival)
-    if(spieler.modus !== "survival" || tageslicht >= NACHT) return;
-    var nacht = 0; w.wesen.forEach(function(e){ if(e.nacht) nacht++; });
-    var blick = [-Math.sin(spieler.blick[0]), -Math.cos(spieler.blick[0])], ss = this.daten.spieler.stufe || 1;
-    for(var v = 0; v < 3 && nacht < schw.nachtMax; v++){
-      var win = zf() * Math.PI * 2, ab = 24 + zf() * 24, dx = Math.sin(win), dz = Math.cos(win);
-      if(dx * blick[0] + dz * blick[1] > 0.5) continue;               // nicht direkt im Blickfeld
-      var x = Math.floor(SC.mod(spieler.pos[0] + dx * ab, w.planet.groesse)), z = Math.floor(SC.mod(spieler.pos[2] + dz * ab, w.planet.groesse));
-      var y = w.generator.hoehe(x, z) + 1;
-      if(y <= SC.MEER + 1 || SC.BLOECKE[w.holeBlock(x, y, z)].fest || SC.BLOECKE[w.holeBlock(x, y + 1, z)].fest || !SC.BLOECKE[w.holeBlock(x, y - 1, z)].fest) continue;
-      var art2 = zf() < 0.6 ? "krabbler" : "spucker", st = Math.max(1, Math.min(12, ss + Math.floor(zf() * 3) - 1));
-      if(this._neu(art2, st, [x + 0.5, y, z + 0.5], { nacht: true, ort: "dungeon" })) nacht++;
-    }
   };
 
   A.gegnerBesiegt = function(g, spielzeit){

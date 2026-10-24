@@ -43,26 +43,32 @@
     });
   };
 
+  // Im Raum als Gastgeber würfelt und verteilt SC.Gastgeber#besiege (eigener Anteil über den Rückruf beiBeute)
   S.besiege = function(g){
-    var k = this.kampf, r = k.besiegtGegner(g), def = SC.GEGNER[g.gegnerArt] || {};
-    SC.Wesen.entferne(this.welt, g.id);
+    var k = this.kampf, gg = this.raum instanceof SC.Gastgeber ? this.raum : null, r = gg ? gg.besiege(g) : k.besiegtGegner(g), def = SC.GEGNER[g.gegnerArt] || {};
+    if(!gg) SC.Wesen.entferne(this.welt, g.id);
     if(this.auftauchen) this.auftauchen.gegnerBesiegt(g, this.daten.spielzeit || 0);
-    if(this.render){ this.render.wesen.funken(g.pos, def.boss ? "#ffad47" : "#ffd95c", def.boss ? 60 : 24, this.spieler.pos); this.render.wesen.zahl([g.pos[0], g.pos[1] + g.hoehe + 0.6, g.pos[2]], "+" + r.erfahrung + " EP", "#ffd95c", this.spieler.pos); }
+    if(this.render){ this.render.wesen.funken(g.pos, def.boss ? "#ffad47" : "#ffd95c", def.boss ? 60 : 24, this.spieler.pos); if(!gg || r.nah) this.render.wesen.zahl([g.pos[0], g.pos[1] + g.hoehe + 0.6, g.pos[2]], "+" + r.erfahrung + " EP", "#ffd95c", this.spieler.pos); }
     this.audio.spiele("zerfall");
-    this.beuteAuswerfen(g.pos, r.beute.map(function(b){ return { gegenstand: b }; }));
+    if(!gg) this.beuteAuswerfen(g.pos, r.beute.map(function(b){ return { gegenstand: b }; }));
     if(r.aufstiege){ this.audio.spiele("aufstieg"); this.ui.hinweis(SC.T.stufeAuf + " " + SC.T.stufe + " " + k.werte.stufe, 3000); }
     return r;
   };
 
-  // Bauwerk zu einer Kiste finden (für Stufe und Ort der Beute)
-  function bauwerkZuKiste(w, x, y, z){
-    var l = SC.Bauwerke.imChunk(w.planet, x >> 4, z >> 4);
-    for(var i = 0; i < l.length; i++) if(l[i].plaetze.some(function(q){ return q.typ === "kiste" && q.x === x && q.y === y && q.z === z; })) return l[i];
-    return null;
-  }
+  // Eigener Zustand für den Raum (Ziele der Gegner, „in der Nähe“, zustand-Nachricht)
+  S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf; return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, menue: !!offen, lebt: !k.besiegt(), tageszeit: this.tageszeit }; };
+
+  // Eigenes Spieler-Geschoss: als Gast nur optisch (der Schuss geht an den Gastgeber), als Gastgeber mit Schütze
+  S._spielerSchuss = function(d){
+    if(this.raum instanceof SC.Gast){ this.raum.schuss(d); d.optisch = true; }
+    else if(this.raum instanceof SC.Gastgeber) d.schuetze = this.daten.spieler.figurId;
+    return SC.Wesen.neu(this.welt, "geschoss", d);
+  };
 
   S._survival = function(e, dt, offen, t){
     var s = this, w = this.welt, sp = this.spieler, k = this.kampf, a = this.audio, ein = this.eingabe;
+    // Im Raum: Gastgeber rechnet Gegner für alle Spieler, Gast rechnet keine Gegner (gespiegelt) und meldet eigene Angriffe
+    var raum = this.raum, gastgeber = raum instanceof SC.Gastgeber ? raum : null, gast = raum instanceof SC.Gast ? raum : null;
     var survival = sp.modus === "survival", lebt = !k.besiegt();
     this.daten.spielzeit = (this.daten.spielzeit || 0) + dt;
     var waffe = survival ? k.waffe() : null, wdef = waffe && SC.GEGENSTAENDE[waffe.art].waffe;
@@ -81,14 +87,16 @@
         if(ein.touchAktiv || ein.gamepadAktiv){ var gl = []; w.wesen.forEach(function(x){ if(x.art === "gegner") gl.push({ pos: [sp.pos[0] + ring(w, sp.pos, x.pos)[0], x.pos[1], sp.pos[2] + ring(w, sp.pos, x.pos)[2]], hoehe: x.hoehe }); }); richtung = SC.zielhilfe(sp, gl, richtung, 1); }
         var akt = k.angriff(t, richtung);
         if(akt && akt.art === "schuss"){
-          SC.Wesen.neu(w, "geschoss", { pos: akt.pos, richtung: akt.richtung, tempo: akt.tempo, schaden: akt.schaden, team: "spieler", art: "laser", lebensdauer: akt.reichweite / akt.tempo, farbe: akt.farbe, abprall: akt.abprall });
+          s._spielerSchuss({ pos: akt.pos, richtung: akt.richtung, tempo: akt.tempo, schaden: akt.schaden, team: "spieler", art: "laser", lebensdauer: akt.reichweite / akt.tempo, farbe: akt.farbe, abprall: akt.abprall });
           a.spiele("blaster");
           if(k.ueberhitztBis > t && !this._heiss){ this._heiss = true; a.spiele("ueberhitzt"); s.ui.hinweis(SC.T.ueberhitzt, 1200); }
         } else if(akt && akt.art === "hieb"){
           a.spiele("schwert");
           // Funkenhieb: der dritte Hieb der Kombo schleudert eine Welle nach vorn
-          if(akt.funkenhieb){ var fr = sp.richtung(); SC.Wesen.neu(w, "geschoss", { pos: sp.augen(), richtung: fr, tempo: 22, schaden: akt.schaden, team: "spieler", art: "laser", lebensdauer: 0.8, farbe: SC.RenderWesen.klingenFarbe(waffe.seltenheit) }); }
-          k.hiebZiele(akt).forEach(function(g){ var d = ring(w, sp.pos, g.pos), r = k.trifftGegner(g, akt.schaden, [d[0], 0, d[2]]); s._zahl(g, r.schaden); if(r.besiegt) s.besiege(g); else a.spiele("treffer"); });
+          if(akt.funkenhieb){ var fr = sp.richtung(); s._spielerSchuss({ pos: sp.augen(), richtung: fr, tempo: 22, schaden: akt.schaden, team: "spieler", art: "laser", lebensdauer: 0.8, farbe: SC.RenderWesen.klingenFarbe(waffe.seltenheit) }); }
+          k.hiebZiele(akt).forEach(function(g){ var d = ring(w, sp.pos, g.pos);
+            if(gast){ gast.angriff(g.id, akt.schaden, [d[0], 0, d[2]]); s._zahl(g, akt.schaden); a.spiele("treffer"); return; } // rechnet der Gastgeber
+            var r = k.trifftGegner(g, akt.schaden, [d[0], 0, d[2]]); s._zahl(g, r.schaden); if(r.besiegt) s.besiege(g); else a.spiele("treffer"); });
         }
         if(k.ueberhitztBis <= t) this._heiss = false;
         if(wdef.typ === "schwert" && ziel && e.abbauenGehalten) this.abbauFortschritt(ziel, dt);
@@ -96,8 +104,10 @@
       else this._abbau = null;
       // Setzen, Kiste öffnen
       if(e.setzen && ziel){
-        if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE){
-          var bw2 = bauwerkZuKiste(w, ziel.x, ziel.y, ziel.z), beute = SC.Kampf.oeffneKiste(w, k, ziel.x, ziel.y, ziel.z, bw2, SC.zufall((Math.random() * 4294967296) >>> 0));
+        if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gast) gast.kiste(ziel.x, ziel.y, ziel.z);
+        else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gastgeber){ if(gastgeber.oeffneKiste(ziel.x, ziel.y, ziel.z).length) a.spiele("kiste"); }
+        else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE){
+          var bw2 = SC.Kampf.bauwerkZuKiste(w, ziel.x, ziel.y, ziel.z), beute = SC.Kampf.oeffneKiste(w, k, ziel.x, ziel.y, ziel.z, bw2, SC.zufall((Math.random() * 4294967296) >>> 0));
           if(beute.length){ a.spiele("kiste"); this.beuteAuswerfen([ziel.x + 0.5, ziel.y + 0.5, ziel.z + 0.5], beute.map(function(b){ return { gegenstand: b }; })); }
         } else if(!(wdef && wdef.typ === "schwert")) this.setzeAusRucksack(ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz);
       }
@@ -108,30 +118,35 @@
     }
     this.render.wesen.risse(survival ? ziel : null, survival ? this.abbauAnteil(ziel) : 0, sp.pos);
 
-    // Ist ein Menü offen, steht die Welt still (Gegner, Geschosse, Beute, Erholung)
-    if(offen){ this.render.wesen.risse(null, 0, sp.pos); this._hudSurvival(survival, waffe, wdef); return; }
+    // Ist ein Menü offen, steht die Welt still (Gegner, Geschosse, Beute, Erholung) – im Raum läuft sie weiter
+    if(offen){ this.render.wesen.risse(null, 0, sp.pos); if(!raum){ this._hudSurvival(survival, waffe, wdef); return; } }
     // Gegner, Geschosse, Beutekugeln
     var zf = this._zf, schw = this.daten.schwierigkeit, zielSp = survival && lebt ? { pos: sp.pos, sichtbar: true } : null, kampfNah = false, bossNah = false;
+    var ziele = gastgeber ? SC.Raum.mitspielerZiele(gastgeber, this.raumIch(offen)) : null, tz = ziele && SC.Raum.trefferZiele(ziele);
     w.wesen.forEach(function(g){
       if(g.art === "gegner"){
-        if(g.entfernen){ s.auftauchen._entferne(g, false); s.auftauchen.gegnerBesiegt(g, s.daten.spielzeit || 0); return; }
-        SC.KI.schritt(w, g, zielSp, dt, zf, schw).forEach(function(akt){
-          if(akt.art === "schuss"){ SC.Wesen.neu(w, "geschoss", { pos: akt.pos, richtung: akt.richtung, tempo: akt.tempo, schaden: akt.schaden, team: "gegner", art: akt.geschossArt, lebensdauer: 3, farbe: akt.farbe }); a.spiele(akt.geschossArt === "spucke" ? "spucker" : "blaster"); }
-          else { var r = k.gegnerAktion(g, akt); if(r && r.schaden > 0) a.spiele("getroffen"); else if(r && r.abgeprallt) a.spiele("blocken"); }
-        });
+        if(!gast){
+          if(g.entfernen){ s.auftauchen._entferne(g, false); s.auftauchen.gegnerBesiegt(g, s.daten.spielzeit || 0); return; }
+          SC.KI.schritt(w, g, ziele ? SC.Raum.zielFuer(w, g, ziele) : zielSp, dt, zf, schw).forEach(function(akt){
+            if(akt.art === "schuss"){ SC.Wesen.neu(w, "geschoss", { pos: akt.pos, richtung: akt.richtung, tempo: akt.tempo, schaden: akt.schaden, team: "gegner", art: akt.geschossArt, lebensdauer: 3, farbe: akt.farbe }); a.spiele(akt.geschossArt === "spucke" ? "spucker" : "blaster"); }
+            else { var r = gastgeber ? gastgeber.gegnerAktion(g, akt, ziele) : k.gegnerAktion(g, akt); if(r && r.schaden > 0) a.spiele("getroffen"); else if(r && r.abgeprallt) a.spiele("blocken"); }
+          });
+        }
         if(g.bemerkt){ var dd = ring(w, sp.pos, g.pos); if(Math.hypot(dd[0], dd[2]) < 32){ kampfNah = true; if(g.boss) bossNah = true; } }
         var def = SC.GEGNER[g.gegnerArt];
         if(def && def.laut && g.bemerkt && Math.random() < dt * 0.4) a.spiele(def.laut);
       } else if(g.art === "geschoss"){
-        var r2 = SC.Geschoss.schritt(w, g, dt, survival && lebt ? sp : null);
+        if(gast && SC.Raum.istGespiegelt(g)) return; // Geschosse des Gastgebers nur gespiegelt
+        var r2 = SC.Geschoss.schritt(w, g, dt, g.optisch ? null : tz ? tz : survival && lebt ? sp : null);
         if(!r2) return;
+        if(r2.treffer === "wesen" && g.optisch){ SC.Wesen.entferne(w, g.id); return; } // optisch: verschwindet am Gegner
         if(r2.treffer === "wesen"){
           var ziel2 = w.wesen.get(r2.id), tg = k.trifftGegner(ziel2, g.schaden, g.geschw || g.richtung, g);
           if(tg.abgeprallt){ g.team = "gegner"; g.geschw = [-g.geschw[0], -g.geschw[1], -g.geschw[2]]; g.lebensdauer = 2; a.spiele("abprall"); return; }
           s._zahl(ziel2, tg.schaden); if(tg.besiegt) s.besiege(ziel2); else a.spiele("treffer");
         } else if(r2.treffer === "spieler"){
-          var ts = k.trifftSpieler(g.schaden, g.geschw || g.richtung, g);
-          a.spiele(ts.abgeprallt ? "abprall" : ts.schaden > 0 ? "getroffen" : "blocken");
+          var ts = gastgeber ? gastgeber.geschossTrifft(g, r2.id) : k.trifftSpieler(g.schaden, g.geschw || g.richtung, g);
+          if(ts) a.spiele(ts.abgeprallt ? "abprall" : ts.schaden > 0 ? "getroffen" : "blocken");
         } else if(r2.treffer === "block" && g.abprall && !g.abgeprallt){
           // Abprall-Schüsse prallen einmal von der Wand ab
           var gv = g.geschw, m = Math.abs(gv[0]) > Math.abs(gv[1]) ? (Math.abs(gv[0]) > Math.abs(gv[2]) ? 0 : 2) : (Math.abs(gv[1]) > Math.abs(gv[2]) ? 1 : 2);
@@ -145,10 +160,10 @@
       }
     });
     k.schritt(t, dt);
-    if((this._auftZeit = (this._auftZeit || 0) + dt) >= 1){
+    if(!gast && (this._auftZeit = (this._auftZeit || 0) + dt) >= 1){
       this._auftZeit = 0;
       var h = SC.himmelsFarben(SC.PALETTEN[w.planet.palette] || SC.PALETTEN.start, this.tageszeit);
-      this.auftauchen.schritt(sp, h.tageslicht, this.daten.spielzeit);
+      this.auftauchen.schritt(ziele || sp, h.tageslicht, this.daten.spielzeit);
       this.auftauchen.zerfallen.forEach(function(z){ s.render.wesen.funken(z.pos, "#b9c2cc", 14, sp.pos); }); this.auftauchen.zerfallen = [];
     }
     if(kampfNah) this._kampfBis = t + 8000;

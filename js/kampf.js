@@ -129,21 +129,36 @@ SC.Kampf = function(welt, spieler, daten, zf){
 
   // Hieb oder Stampfen eines Gegners gegen den Spieler (Schüsse laufen über Geschosse)
   K.gegnerAktion = function(g, a){
-    var d = ring(this.welt, g.pos, this.spieler.pos), l = Math.hypot(d[0], d[2]), von = [d[0] / (l || 1), 0, d[2] / (l || 1)];
-    if(a.art === "hieb" && l <= a.reichweite + 0.6 && Math.abs(d[1]) < 2) return this.trifftSpieler(a.schaden, von, null);
-    if(a.art === "stampf" && l <= a.radius && this.spieler.aufBoden !== false) return this.trifftSpieler(a.schaden, von, null);
+    var t = SC.Kampf.aktionTrifft(this.welt, g, a, this.spieler.pos, this.spieler.aufBoden);
+    return t ? this.trifftSpieler(t.schaden, t.von, null) : null;
+  };
+  // Reine Geometrie: trifft Hieb oder Stampfen eines Gegners einen Spieler an pos? → {schaden, von} oder null
+  SC.Kampf.aktionTrifft = function(welt, g, a, pos, aufBoden){
+    var d = ring(welt, g.pos, pos), l = Math.hypot(d[0], d[2]), von = [d[0] / (l || 1), 0, d[2] / (l || 1)];
+    if(a.art === "hieb" && l <= a.reichweite + 0.6 && Math.abs(d[1]) < 2) return { schaden: a.schaden, von: von };
+    if(a.art === "stampf" && l <= a.radius && aufBoden !== false) return { schaden: a.schaden, von: von };
     return null;
   };
 
   K.besiegtGegner = function(g){
-    var def = SC.GEGNER[g.gegnerArt] || {}, boss = !!(def.boss || g.boss), zf = this.zf;
-    var xp = SC.Werte.erfahrungFuerGegner(g.stufe, boss), auf = SC.Werte.gibErfahrung(this.werte, xp);
+    var r = SC.Kampf.beuteFuer(g, this.daten, this.zf);
+    return { erfahrung: r.erfahrung, aufstiege: this.gibErfahrung(r.erfahrung), beute: r.beute };
+  };
+  // Erfahrung verbuchen; bei Aufstieg Werte neu und voll aufgefüllt. Liefert die Zahl der Aufstiege.
+  K.gibErfahrung = function(xp){
+    var auf = SC.Werte.gibErfahrung(this.werte, xp);
     if(auf){ this.ruestungAnwenden(); this.werte.lp = this.werte.lpMax; this.werte.schild = this.werte.schildMax; }
-    var beute = [], bonus = (SC.SCHWIERIGKEIT[this.daten.schwierigkeit] || {}).seltenheitBonus || 0;
+    return auf;
+  };
+  // Erfahrung und Beute für einen besiegten Gegner würfeln (ohne sie zu verbuchen); im Raum einmal für alle
+  SC.Kampf.beuteFuer = function(g, daten, zf){
+    var def = SC.GEGNER[g.gegnerArt] || {}, boss = !!(def.boss || g.boss);
+    var xp = SC.Werte.erfahrungFuerGegner(g.stufe, boss);
+    var beute = [], bonus = (SC.SCHWIERIGKEIT[daten.schwierigkeit] || {}).seltenheitBonus || 0;
     if(zf() < ((def.beute && def.beute.chance) || 0.3)){
       for(var i = 0; i < (boss ? 2 : 1); i++) beute.push(SC.Beute.erzeuge(zf, { stufe: g.stufe, ort: g.ort, mindest: boss ? 2 : 0, bonus: bonus }));
     }
-    return { erfahrung: xp, aufstiege: auf, beute: beute };
+    return { erfahrung: xp, beute: beute, boss: boss };
   };
 
   K.schritt = function(jetzt, dt){
@@ -166,6 +181,13 @@ SC.Kampf = function(welt, spieler, daten, zf){
     this.spieler.pos = p; this.spieler.geschw = [0, 0, 0];
     this.zuletztGetroffen = -1e9; this.letzterTreffer = null; this.hitze = 0; this.ueberhitztBis = 0;
     this.welt.wesen.forEach(function(e){ if(e.art === "gegner") e.bemerkt = false; });
+  };
+
+  // Bauwerk zu einer Kiste finden (für Stufe und Ort der Beute)
+  SC.Kampf.bauwerkZuKiste = function(w, x, y, z){
+    var l = SC.Bauwerke.imChunk(w.planet, x >> 4, z >> 4);
+    for(var i = 0; i < l.length; i++) if(l[i].plaetze.some(function(q){ return q.typ === "kiste" && q.x === x && q.y === y && q.z === z; })) return l[i];
+    return null;
   };
 
   SC.Kampf.oeffneKiste = function(welt, kampf, x, y, z, bauwerk, zf){

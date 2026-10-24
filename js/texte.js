@@ -8,6 +8,8 @@ SC.T = {
   nie: "nie",
   seed: "Seed",
   seedLeer: "leer = zufällig",
+  figurName: "Name deiner Figur",
+  figurNameLeer: "z. B. Ben",
   name: "Name",
   modus: "Modus",
   kreativ: "Kreativ",

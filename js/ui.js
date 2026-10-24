@@ -141,6 +141,7 @@ SC.UI = function(wurzel, o){
     this._zeige(
       "<h2>" + esc(SC.T.neueWelt) + "</h2>" +
       '<label class="feld">' + esc(SC.T.name) + '<input class="eingabe" id="nw-name" maxlength="40" value="' + esc(SC.T.meineWelt) + '"></label>' +
+      '<label class="feld">' + esc(SC.T.figurName) + '<input class="eingabe" id="nw-figur" maxlength="16" placeholder="' + esc(SC.T.figurNameLeer) + '"></label>' +
       '<label class="feld">' + esc(SC.T.seed) + '<input class="eingabe" id="nw-seed" maxlength="40" placeholder="' + esc(SC.T.seedLeer) + '"></label>' +
       '<div class="feld">' + esc(SC.T.modus) + '<div class="reihe modi">' +
       '<button class="modus an" data-aktion="modus" data-modus="kreativ">' + esc(SC.T.kreativ) + "</button>" +
@@ -153,7 +154,7 @@ SC.UI = function(wurzel, o){
         schwierigkeit: function(el){ schw = el.getAttribute("data-schwierigkeit"); Array.prototype.forEach.call(ui.ebene.querySelectorAll("[data-schwierigkeit]"), function(b){ b.classList.toggle("an", b === el); }); },
         zurueck: function(){ return ui.zeigeWeltliste(); },
         los: function(){
-          var d = SC.Spielstand.neu({ name: ui.ebene.querySelector("#nw-name").value.trim() || SC.T.meineWelt, seedText: ui.ebene.querySelector("#nw-seed").value, modus: modus, schwierigkeit: schw });
+          var d = SC.Spielstand.neu({ name: ui.ebene.querySelector("#nw-name").value.trim() || SC.T.meineWelt, seedText: ui.ebene.querySelector("#nw-seed").value, figurName: ui.ebene.querySelector("#nw-figur").value.trim(), modus: modus, schwierigkeit: schw });
           return ui.slots.speichere(d).then(function(){ ui.schliesse(); ui.o.beiStart(d); }, function(f){ ui.hinweis(SC.T.speichernFehlgeschlagen); });
         }
       });

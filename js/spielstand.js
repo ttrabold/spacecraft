@@ -27,7 +27,8 @@ SC.Spielstand = {};
       erstellt: jetzt, zuletzt: jetzt, zuletztExport: null, modus: o.modus || "kreativ", tageszeit: 0.3, aktuellerPlanet: "start",
       schwierigkeit: o.schwierigkeit || "leicht", startpunkt: null, spielzeit: 0,
       planeten: { start: { id: "start", seed: SC.hashText(seed + ":start"), groesse: 2048, palette: "start", generatorVersion: SC.GENERATOR_VERSION, chunks: {}, kisten: {}, geraeumt: {} } },
-      spieler: { pos: null, blick: [0, 0], schnellleiste: LEISTE.slice(), schnellleisteKreativ: LEISTE.slice(), ansicht: "ich",
+      mitspieler: {},
+      spieler: { name: o.figurName || "", figurId: neueId(), pos: null, blick: [0, 0], schnellleiste: LEISTE.slice(), schnellleisteKreativ: LEISTE.slice(), ansicht: "ich",
         stufe: 1, erfahrung: 0, lebenspunkte: null, schild: null, rucksack: leererRucksack(), ausruestung: leereAusruestung() }
     };
   };
@@ -48,6 +49,30 @@ SC.Spielstand = {};
     }
     daten.spielVersion = window.V || daten.spielVersion;
     return daten;
+  };
+
+  // Figur = alles, was ein Spieler zwischen Welten mitnimmt
+  SC.Spielstand.FIGUR_FELDER = ["name", "figurId", "stufe", "erfahrung", "lebenspunkte", "schild", "rucksack", "ausruestung", "schnellleiste", "schnellleisteKreativ"];
+  SC.Spielstand.figur = function(daten){
+    var f = {}; SC.Spielstand.FIGUR_FELDER.forEach(function(k){ f[k] = JSON.parse(JSON.stringify(daten.spieler[k] === undefined ? null : daten.spieler[k])); });
+    return f;
+  };
+  SC.Spielstand.figurUebernehmen = function(eigeneDaten, figur){
+    SC.Spielstand.FIGUR_FELDER.forEach(function(k){ if(figur[k] !== undefined) eigeneDaten.spieler[k] = JSON.parse(JSON.stringify(figur[k])); });
+    return eigeneDaten;
+  };
+  // Weltobjekt für den Gast: Welt-Eckdaten vom Gastgeber, Chunks kommen später per Netz
+  SC.Spielstand.gastDaten = function(willkommen, figur){
+    var w = willkommen.welt, p = w.planet, jetzt = Date.now(), d = {
+      format: SC.FORMAT, spielVersion: window.V || "", id: "gast", name: w.name, seed: w.seed,
+      erstellt: jetzt, zuletzt: jetzt, zuletztExport: null, modus: w.modus, tageszeit: w.tageszeit, aktuellerPlanet: p.id,
+      schwierigkeit: w.schwierigkeit, startpunkt: w.startpunkt ? w.startpunkt.slice() : null, spielzeit: 0, mitspieler: {},
+      planeten: {},
+      spieler: { pos: willkommen.pos.slice(), blick: willkommen.blick.slice(), ansicht: "ich" }
+    };
+    d.planeten[p.id] = { id: p.id, seed: p.seed, groesse: p.groesse, palette: p.palette, generatorVersion: p.generatorVersion, chunks: {}, kisten: {}, geraeumt: {} };
+    SC.Spielstand.figurUebernehmen(d, figur);
+    return SC.Spielstand.migriere(d).daten;
   };
 
   SC.Spielstand.chunksLaden = function(planetDaten){
@@ -82,6 +107,10 @@ SC.Spielstand = {};
     if(s.schild === undefined) s.schild = null;
     if(!s.rucksack || s.rucksack.length !== 36) s.rucksack = leererRucksack();
     if(!s.ausruestung) s.ausruestung = leereAusruestung();
+    // Stufe 3: Figurname, Figur-ID, Mitspieler
+    if(typeof s.name !== "string") s.name = "";
+    if(!s.figurId) s.figurId = neueId();
+    if(!d.mitspieler || typeof d.mitspieler !== "object") d.mitspieler = {};
     delete s.inventar;
     for(var id in d.planeten){ var p = d.planeten[id]; if(!p.chunks) p.chunks = {}; if(!p.generatorVersion) p.generatorVersion = 1; if(!p.palette) p.palette = "start"; if(!p.groesse) p.groesse = 2048; if(!p.kisten) p.kisten = {}; if(!p.geraeumt) p.geraeumt = {}; }
     d.format = SC.FORMAT;

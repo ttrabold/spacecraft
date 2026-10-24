@@ -113,7 +113,7 @@ SC.Gastgeber = function(o){
     this.spieler.forEach(function(e){ if(e.verbunden && e.pos) l.push(zustand(e.id, e)); });
     return l;
   };
-  function zustand(id, q){ return { id: id, pos: q.pos, blick: q.blick, modus: q.modus, stufe: q.stufe, ausr: q.ausr, menue: !!q.menue, lebt: q.lebt !== false }; }
+  function zustand(id, q){ return { id: id, pos: q.pos, blick: q.blick, modus: q.modus, stufe: q.stufe, ausr: q.ausr, menue: !!q.menue, lebt: q.lebt !== false, hieb: q.hieb, blockt: !!q.blockt }; }
   // Pro Bild aufrufen. ich: {pos, blick, modus, stufe, ausr, menue, lebt, tageszeit?} des Gastgebers.
   // 15 Hz: jedem Gast den Zustand der anderen Spieler (ausr nur, wenn sie sich für diesen Empfänger geändert hat) und die Wesen-Liste;
   // 1 Hz: zeit {tageszeit (aus ich.tageszeit, sonst daten.tageszeit), modus, schwierigkeit}
@@ -179,7 +179,7 @@ SC.Gastgeber = function(o){
     // Position und Anzeige-Zustand des Gastes; Position wird pro Figur in der Welt des Gastgebers gemerkt
     zustand: function(c, n){
       var e = this._eintrag(c.id), m = this.daten.mitspieler[c.id];
-      if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
+      if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt", "hieb", "blockt"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
       if(m){ if(n.pos) m.pos = n.pos.slice(); if(n.blick) m.blick = n.blick.slice(); }
       if(typeof this.o.beiNachricht === "function") this.o.beiNachricht(c.id, n);
     },
@@ -277,7 +277,7 @@ SC.Gast = function(o){
     if(s._takt < SC.RAUM_TAKT) return;
     s._takt -= SC.RAUM_TAKT; if(s._takt >= SC.RAUM_TAKT) s._takt = 0;
     if(!s.verb || !ich || s.status !== "verbunden") return;
-    var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false },
+    var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false, hieb: ich.hieb, blockt: !!ich.blockt },
       j = JSON.stringify(ich.ausr === undefined ? null : ich.ausr);
     if(j !== s._ausr){ s._ausr = j; n.ausr = ich.ausr; }
     s.verb.sende(n);

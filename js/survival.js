@@ -57,7 +57,7 @@
 
   // Eigener Zustand für den Raum (Ziele der Gegner, „in der Nähe“, zustand-Nachricht)
   S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf, surv = sp.modus === "survival";
-    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), tageszeit: this.tageszeit }; };
+    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, tageszeit: this.tageszeit }; };
   // Gast: Blöcke nur ändern, solange die Verbindung steht (sonst ginge der Wunsch verloren)
   S._blockErlaubt = function(){ return !(this.raum instanceof SC.Gast) || this.raum.status === "verbunden"; };
 
@@ -83,7 +83,7 @@
         var dir = bw[0] || bw[1] ? [Math.cos(g0) * bw[0] + Math.sin(g0) * bw[1], 0, -Math.sin(g0) * bw[0] + Math.cos(g0) * bw[1]] : [-Math.sin(g0), 0, -Math.cos(g0)];
         if(k.ausweichen(t, dir)) a.spiele("springen");
       }
-      k.blocken(e.setzenGehalten && wdef && wdef.typ === "schwert");
+      k.blocken(e.setzenGehalten && wdef && wdef.typ === "schwert"); s.render.blocke(k.blockt);
       // Angreifen bzw. Abbauen
       if(waffe && (e.abbauen || e.abbauenGehalten)){
         var richtung = sp.richtung();
@@ -95,6 +95,7 @@
           if(k.ueberhitztBis > t && !this._heiss){ this._heiss = true; a.spiele("ueberhitzt"); s.ui.hinweis(SC.T.ueberhitzt, 1200); }
         } else if(akt && akt.art === "hieb"){
           a.spiele("schwert");
+          s._hiebN = (s._hiebN || 0) + 1; s._hiebKombo = akt.faust ? 3 : akt.kombo; s.render.hieb(s._hiebKombo); // sichtbarer Schwung, im Raum als hieb {n, kombo} an die anderen
           // Funkenhieb: der dritte Hieb der Kombo schleudert eine Welle nach vorn
           if(akt.funkenhieb){ var fr = sp.richtung(); s._spielerSchuss({ pos: sp.augen(), richtung: fr, tempo: 22, schaden: akt.schaden, team: "spieler", art: "laser", lebensdauer: 0.8, farbe: SC.RenderWesen.klingenFarbe(waffe.seltenheit) }); }
           var pz = SC.Raum.pvpZiele(raum, raum && !gast ? s.raumIch(offen) : null); // Spaßkampf: Mitspieler im Bogen

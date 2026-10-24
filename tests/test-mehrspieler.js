@@ -341,7 +341,7 @@ test("Mehrspieler: Neuverbinden schickt keine Beute doppelt", function(){
 // Durchstich durch SC.Spiel#_survival mit einem echten Raum
 function mspSpiel(welt, daten, raum, kampf){
   var s = Object.create(SC.Spiel.prototype); s.welt = welt; s.daten = daten; s.kampf = kampf; s.spieler = kampf.spieler; s.raum = raum;
-  s.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, fps: 60 };
+  s.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, hieb: function(){}, blocke: function(){}, fps: 60 };
   s.eingabe = { touchAktiv: false, gamepadAktiv: false }; s.auftauchen = { schritt: function(l){ s._auftArg = l; }, zerfallen: [], gegnerBesiegt: function(){} }; s.einstellungen = { fpsAnzeigen: false };
   s.ui = { hinweis: function(){}, hud: function(){}, kampfHud: function(){}, zeigeBesiegt: function(){} }; s.audio = { spiele: function(){} }; s._zf = SC.zufall(1); s.tageszeit = 0.5;
   return s;
@@ -486,7 +486,7 @@ function mspSpielVoll(slots){
   var s = Object.create(SC.Spiel.prototype); s.slots = slots; s.hinweise = []; s.weltliste = 0; s.toene = [];
   s.ui = { hinweis: function(t){ s.hinweise.push(t); }, zeigeWeltliste: function(){ s.weltliste++; return Promise.resolve(); }, verbergeHud: function(){}, offen: function(){ return false; }, hud: function(){}, kampfHud: function(){}, zeigeBesiegt: function(){}, schliesse: function(){} };
   s.audio = { spiele: function(n){ s.toene.push(n); }, musikTakt: function(){} }; s.eingabe = { gebeMausFrei: function(){}, touchAktiv: false, gamepadAktiv: false }; s.entwickler = { verberge: function(){} }; s.einstellungen = { fpsAnzeigen: false };
-  s._anzeigen = function(){ var r = this.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, fps: 60, welt: function(){}, renderer: { clear: function(){} }, setzeMitspieler: function(l){ r.mitspieler = l; } }; this._laeuft = true; };
+  s._anzeigen = function(){ var r = this.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, hieb: function(){}, blocke: function(){}, fps: 60, welt: function(){}, renderer: { clear: function(){} }, setzeMitspieler: function(l){ r.mitspieler = l; } }; this._laeuft = true; };
   return s;
 }
 function mspLauf(netz, n){ var p = Promise.resolve(); for(var i = 0; i < (n || 3); i++) p = p.then(function(){ return raumLauf(netz); }); return p; }
@@ -688,4 +688,17 @@ test("Mehrspieler: Spiel: Bestätigung über zeit leert die Wünsche", function(
   return mspZwei().then(function(x){ u = x; a = u.g; a.kampf.rucksack.lege({ block: SC.B.BRETTER, anzahl: 2 }); mspSetze(a, 30, 99, 30); mspSetze(a, 31, 99, 30); return mspLauf(u.netz);
   }).then(function(){ gleich(Object.keys(a.raum._wuensche).length, 2); u.h._raumBild(1.1, false); return mspLauf(u.netz);
   }).then(function(){ gleich(Object.keys(a.raum._wuensche).length, 0); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: hieb und blockt erreichen Gastgeber und anderen Gast", function(){
+  var u, a, b;
+  return mspRaum(2).then(function(x){ u = x; a = u.gs[0]; b = u.gs[1];
+    a.g.takt(0.1, mspIch({ hieb: { n: 4, kombo: 2 }, blockt: true })); return raumLauf(u.netz);
+  }).then(function(){
+    u.h.takt(0.1, mspIch({ hieb: { n: 7, kombo: 1 }, blockt: false })); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.h.spieler[0].hieb.n, 4); gleich(u.h.spieler[0].hieb.kombo, 2); gleich(u.h.spieler[0].blockt, true);
+    var m = b.g.mitspieler[a.id]; gleich(m.hieb.n, 4); gleich(m.blockt, true);
+    gleich(b.g.mitspieler[u.daten.spieler.figurId].hieb.kombo, 1);
+  });
 });

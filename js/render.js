@@ -103,10 +103,27 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
   // Waffe in der Ich-Ansicht (Rüstung und Figurwaffe baut SC.Figur)
   SC.Render.prototype._baueAusruestung = function(){
     this.handWaffe = SC.Figur.waffe(); this.handWaffe.position.set(0.38, -0.42, -0.75); this.handWaffe.rotation.set(-0.5, -0.25, 0); this.kamera.add(this.handWaffe);
+    // Leuchtschweif des Hiebs (Klingenfarbe, blendet nach dem Schwung aus)
+    this.schweif = new THREE.Mesh(SC.Figur._box, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    this.schweif.scale.set(0.16, 0.95, 0.03); this.schweif.position.y = 0.56; this.schweif.visible = false; this.handWaffe.add(this.schweif);
+    this._hiebK = -1; this._hiebT = 0; this._blockW = 0; this._blockAn = false; this._sw = { x: 0, y: 0, z: 0 };
+  };
+  // Hieb starten (kombo 0..2, 3 = Faust) bzw. Blockhaltung ein/aus (Ich-Ansicht und Figur von außen)
+  SC.Render.prototype.hieb = function(kombo){ this._hiebK = kombo; this._hiebT = 0; };
+  SC.Render.prototype.blocke = function(an){ this._blockAn = !!an; };
+  // Pro Bild: Schwung und Blockhaltung auf Waffe in der Hand, Schweif und rechten Arm der Figur anwenden (walk = Gehschwung des Arms)
+  SC.Render.prototype._schwungBild = function(dt, walk){
+    var sw = null;
+    if(this._hiebK >= 0){ this._hiebT += dt || 0; sw = SC.Figur.schwung(this._hiebK, this._hiebT, this._sw); if(!sw) this._hiebK = -1; }
+    var z = this._blockAn ? 1 : 0, d = (dt || 0) * 8; this._blockW = Math.abs(z - this._blockW) <= d ? z : this._blockW + (z > this._blockW ? d : -d);
+    SC.Figur.haltungIch(this.handWaffe, sw, this._blockW); SC.Figur.haltungArm(this.armR, walk, sw, this._blockW);
+    var s = this.schweif, t = this._hiebT;
+    s.visible = !!sw && this._hiebK !== 3 && this.handWaffe.klinge.visible; if(s.visible) s.material.opacity = t < 0.1 ? 0.6 : Math.max(0, 0.6 * (1 - (t - 0.1) / 0.15));
   };
   SC.Render.prototype.ausruestung = function(a, waffe){
     SC.Figur.ausruestung(this._fig, a, waffe);
     SC.Figur.waffeStil(this.handWaffe, waffe);
+    if(waffe && waffe.art === "laserschwert") this.schweif.material.color.copy(this.handWaffe.klinge.material.color);
     this._mitWaffe = !!waffe;
     // Sonderkraft Leuchten: sanfter Lichtschein um die Figur bei Nacht
     this._leuchtet = !!a && ["helm", "brust"].some(function(p){ return a[p] && a[p].sonder === "leuchten"; });
@@ -229,7 +246,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.figur.position.set(px, spieler.pos[1], pz); this.figur.rotation.y = spieler.blick[0];
     this.kopf.rotation.x = spieler.blick[1];
     var gehen = Math.hypot(spieler.geschw[0], spieler.geschw[2]) > 0.5 && spieler.aufBoden, schw = gehen ? Math.sin(performance.now() / 120) * 0.6 : 0;
-    this.armL.rotation.x = schw; this.armR.rotation.x = -schw; this.beinL.rotation.x = -schw; this.beinR.rotation.x = schw;
+    this.armL.rotation.x = schw; this.beinL.rotation.x = -schw; this.beinR.rotation.x = schw;
+    this._schwungBild(dt, -schw);
     this._handBlock(spieler.modus === "zuschauer" ? -1 : spieler.schnellleiste[spieler.auswahl]);
     this.hand.visible = this.hand.visible && !aussen && spieler.modus !== "zuschauer" && !this._mitWaffe;
     this.handWaffe.visible = !!this._mitWaffe && !aussen && spieler.modus !== "zuschauer";

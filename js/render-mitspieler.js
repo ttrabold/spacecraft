@@ -40,6 +40,27 @@ SC.Figur = {
     var waffe = SC.Figur.waffe(); waffe.position.set(0, -0.35, -0.1); waffe.rotation.x = -1.2; armR.add(waffe);
     return { gruppe: f, koerper: koerper, kopf: kopf, armL: armL, armR: armR, beinL: beinL, beinR: beinR, ruestung: ruestung, waffe: waffe };
   },
+  // Hieb-Schwung: Drehung (x = Arm nach vorn, z = zur Seite, +z = nach rechts außen) zum Zeitpunkt t (s) seit Hiebbeginn; nach SCHWUNG_DAUER null.
+  // kombo 0 rechts nach links, 1 links nach rechts, 2 von oben nach unten, 3 Faust-Stoß. aus (optional) wird wiederverwendet (keine Zuweisung pro Bild).
+  SCHWUNG_DAUER: 0.24,
+  SCHWUNG: [[0.4, 1.0, 0.5, -1.1], [0.4, -1.1, 0.5, 1.0], [-0.9, 0, 1.3, 0], [-0.3, 0, 1.5, 0]], // je kombo: x0, z0 (Ausholen), x1, z1 (Ende des Hiebs)
+  schwung: function(kombo, t, aus){
+    var k = SC.Figur.SCHWUNG[kombo], D = SC.Figur.SCHWUNG_DAUER; if(!k || !(t >= 0) || t >= D) return null;
+    var u = t / D, a, b, f;
+    if(u < 0.2){ a = null; b = k; f = u / 0.2; } else if(u < 0.7){ a = k; b = k; f = (u - 0.2) / 0.5; } else { a = k; b = null; f = (u - 0.7) / 0.3; }
+    f = f * f * (3 - 2 * f);
+    var o = aus || {}, x0, z0, x1, z1;
+    if(u < 0.2){ x0 = 0; z0 = 0; x1 = k[0]; z1 = k[1]; } else if(u < 0.7){ x0 = k[0]; z0 = k[1]; x1 = k[2]; z1 = k[3]; } else { x0 = k[2]; z0 = k[3]; x1 = 0; z1 = 0; }
+    o.x = x0 + (x1 - x0) * f; o.y = 0; o.z = z0 + (z1 - z0) * f; return o;
+  },
+  // Rechter Arm: Gehschwung walk, Hiebschwung sw (oder null), Blockhaltung b (0..1: Arm quer vor den Körper)
+  haltungArm: function(arm, walk, sw, b){
+    arm.rotation.x = walk * (1 - b) + 1.1 * b + (sw ? sw.x : 0); arm.rotation.z = -0.8 * b + (sw ? sw.z : 0);
+  },
+  // Waffe in der Ich-Ansicht: Ruhelage, Hiebschwung sw (oder null), Blockhaltung b (0..1: Schwert quer vor dem Körper)
+  haltungIch: function(w, sw, b){
+    w.position.set(0.38 - 0.33 * b, -0.42 + 0.06 * b, -0.75); w.rotation.set(-0.5 + 0.35 * b - (sw ? sw.x : 0), -0.25 * (1 - b), 1.3 * b - (sw ? sw.z : 0));
+  },
   // Rüstung (Platz -> Gegenstand oder null) und Waffe in Seltenheitsfarben zeigen
   ausruestung: function(figur, ruestung, waffe){
     Object.keys(figur.ruestung).forEach(function(p){ var g = ruestung && ruestung[p]; figur.ruestung[p].forEach(function(m){ m.visible = !!g; if(g) m.material.color.set(SC.SELTENHEIT[g.seltenheit || 0].farbe); }); });
@@ -65,7 +86,7 @@ SC.RenderMitspieler = function(szene, planet){
   RM.prototype._neu = function(e){
     var f = SC.Figur.baue(e.farbe), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(RM.schildBild(e.name, e.farbe)), transparent: true, depthWrite: false }));
     sp.userData.name = e.name; sp.position.y = 2.0 + 0.5 + 0.2; f.gruppe.add(sp); this.gruppe.add(f.gruppe);
-    var o = { f: f, schild: sp, name: e.name, farbe: e.farbe, p: null, schlag: 0, ausr: null };
+    var o = { f: f, schild: sp, name: e.name, farbe: e.farbe, p: null, schlag: 0, ausr: null, hN: undefined, hK: -1, hT: 0, sw: { x: 0, y: 0, z: 0 } };
     f.schild = sp; return o;
   };
   RM.prototype._weg = function(o){
@@ -87,7 +108,11 @@ SC.RenderMitspieler = function(szene, planet){
       g.position.set(x, o.p[1], z); g.rotation.y = blick[0]; o.f.kopf.rotation.x = blick[1];
       var tempo = alt && dt > 0 ? Math.hypot(nah(o.p[0], alt[0], P) - alt[0], nah(o.p[2], alt[2], P) - alt[2]) / dt : 0;
       if(tempo > 0.5) o.schlag += dt * 8.3; var sw = tempo > 0.5 ? Math.sin(o.schlag) * 0.6 : 0;
-      o.f.armL.rotation.x = sw; o.f.armR.rotation.x = -sw; o.f.beinL.rotation.x = -sw; o.f.beinR.rotation.x = sw;
+      o.f.armL.rotation.x = sw; o.f.beinL.rotation.x = -sw; o.f.beinR.rotation.x = sw;
+      // Hieb: neuer Zähler hieb.n startet den Armschwung (beim ersten Sehen nur merken); blockt hält das Schwert quer
+      if(e.hieb){ if(o.hN !== undefined && e.hieb.n !== o.hN){ o.hK = e.hieb.kombo; o.hT = 0; } o.hN = e.hieb.n; }
+      var hs = null; if(o.hK >= 0){ o.hT += dt || 0; hs = SC.Figur.schwung(o.hK, o.hT, o.sw); if(!hs) o.hK = -1; }
+      SC.Figur.haltungArm(o.f.armR, -sw, hs, e.blockt ? 1 : 0);
       g.visible = e.modus !== "zuschauer" && e.lebt !== false;
       var a = e.ausr || {}, key = JSON.stringify([a.ruestung || null, a.waffe || null]);
       if(key !== o.ausr){ o.ausr = key; SC.Figur.ausruestung(o.f, a.ruestung || null, a.waffe || null); }

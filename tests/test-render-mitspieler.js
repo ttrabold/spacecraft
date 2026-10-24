@@ -10,3 +10,17 @@ test("Zuschauer ist unsichtbar", function(){ var m = _ms(); m.r.aktualisiere([_e
 test("Ausrüstung der Mitspieler wird gezeigt", function(){ var m = _ms(); m.r.aktualisiere([_e(1, { ausr: { ruestung: { helm: { seltenheit: 2 } }, waffe: { art: "laserschwert", seltenheit: 1 } } })], [0, 0, 0], 0.1); var f = m.r.figuren.get(1).f; wahr(f.ruestung.helm[0].visible && f.waffe.visible); });
 test("Mitspieler über die Planetenkante: nächste Kopie", function(){ var m = _ms(); m.r.aktualisiere([_e(1, { pos: [2040, 5, 10] })], [5, 0, 10], 0.1); gleich(m.r.figuren.get(1).f.gruppe.position.x, -8); });
 test("Position wird geglättet", function(){ var m = _ms(); m.r.aktualisiere([_e(1, { pos: [10, 5, 10] })], [0, 0, 0], 0.1); m.r.aktualisiere([_e(1, { pos: [12, 5, 10] })], [0, 0, 0], 0.016); var x = m.r.figuren.get(1).f.gruppe.position.x; wahr(x > 10 && x < 12, "x=" + x); });
+test("Mitspieler: neuer hieb.n startet den Armschwung, gleicher n nicht erneut", function(){
+  var m = _ms(), arm = function(){ return m.r.figuren.get(1).f.armR.rotation; };
+  m.r.aktualisiere([_e(1, { hieb: { n: 1, kombo: 2 } })], [0, 0, 0], 0.016); gleich(arm().x, 0, "beim ersten Sehen kein Nachspielen");
+  m.r.aktualisiere([_e(1, { hieb: { n: 2, kombo: 2 } })], [0, 0, 0], 0.06); wahr(Math.abs(arm().x) > 0.3, "Schwung läuft");
+  m.r.aktualisiere([_e(1, { hieb: { n: 2, kombo: 2 } })], [0, 0, 0], 0.3); gleich(arm().x, 0, "vorbei");
+  m.r.aktualisiere([_e(1, { hieb: { n: 2, kombo: 2 } })], [0, 0, 0], 0.1); gleich(arm().x, 0, "gleicher Zähler startet nicht neu");
+  m.r.aktualisiere([_e(1, { hieb: { n: 3, kombo: 0 } })], [0, 0, 0], 0.06); wahr(Math.abs(arm().z) > 0.3, "neuer Zähler, Kombo 0 seitlich");
+});
+test("Mitspieler: ohne hieb-Feld bleibt der Arm ruhig; blockt hält den Arm quer", function(){
+  var m = _ms(), arm = function(){ return m.r.figuren.get(1).f.armR.rotation; };
+  m.r.aktualisiere([_e(1)], [0, 0, 0], 0.1); gleich(arm().x, 0); gleich(arm().z, 0);
+  m.r.aktualisiere([_e(1, { blockt: true })], [0, 0, 0], 0.1); wahr(arm().x > 1 && arm().z < -0.5, "Block");
+  m.r.aktualisiere([_e(1, { blockt: false })], [0, 0, 0], 0.1); gleich(arm().x, 0); gleich(arm().z, 0);
+});

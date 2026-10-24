@@ -122,6 +122,7 @@
       if(e.abbauen && SC.BLOECKE[w.holeBlock(ziel.x, ziel.y, ziel.z)].zerstoerbar) w.setzeBlock(ziel.x, ziel.y, ziel.z, SC.B.LUFT, "spieler");
       else if(e.setzen){ var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz; if(SC.kannSetzen(w, sp, x, y, z)) w.setzeBlock(x, y, z, sp.schnellleiste[sp.auswahl], "spieler"); }
     }
+    if(!(survival && !offen && lebt)){ k.blocken(false); this.render.blocke(false); } // Blockhaltung löst sich bei Menü oder Niederlage
     this.render.wesen.risse(survival ? ziel : null, survival ? this.abbauAnteil(ziel) : 0, sp.pos);
 
     // Ist ein Menü offen, steht die Welt still (Gegner, Geschosse, Beute, Erholung) – im Raum läuft sie weiter

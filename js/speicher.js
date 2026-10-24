@@ -76,7 +76,7 @@ SC.Speicher = {};
 })();
 
 // Slots: Liste der Welten ("welten") und je Welt die Daten ("welt:<id>")
-SC.Slots = function(backend){ this.b = backend; };
+SC.Slots = function(backend){ this.b = backend; this._kette = Promise.resolve(); };
 (function(){
   function meta(d){ return { id: d.id, name: d.name, seed: d.seed, modus: d.modus, erstellt: d.erstellt, zuletzt: d.zuletzt, zuletztExport: d.zuletztExport, format: d.format }; }
 
@@ -97,15 +97,25 @@ SC.Slots = function(backend){ this.b = backend; };
     });
   };
 
+  // Listenverändernde Vorgänge laufen nacheinander, sonst überschreibt ein überlappender Vorgang den Eintrag des anderen.
+  // Ein Fehlschlag geht nur an den Aufrufer und blockiert die Kette nicht.
+  SC.Slots.prototype._nacheinander = function(fn){
+    var p = this._kette.then(fn);
+    this._kette = p.then(function(){}, function(){});
+    return p;
+  };
+
   // Erst Daten, dann Liste: schlägt das Schreiben fehl, bleibt alles beim Alten
   SC.Slots.prototype.speichere = function(daten){
     var b = this.b;
     if(daten && daten.id === "gast") return Promise.reject(new Error("Gastwelt wird nicht gespeichert")); // gehört dem Gastgeber
     daten.zuletzt = Date.now();
-    return b.lege("welt:" + daten.id, daten).then(function(){ return b.hole("welten"); }).then(function(l){
-      l = (l || []).filter(function(m){ return m.id !== daten.id; });
-      l.push(meta(daten));
-      return b.lege("welten", l);
+    return this._nacheinander(function(){
+      return b.lege("welt:" + daten.id, daten).then(function(){ return b.hole("welten"); }).then(function(l){
+        l = (l || []).filter(function(m){ return m.id !== daten.id; });
+        l.push(meta(daten));
+        return b.lege("welten", l);
+      });
     });
   };
 
@@ -125,7 +135,9 @@ SC.Slots = function(backend){ this.b = backend; };
 
   SC.Slots.prototype.loesche = function(id){
     var b = this.b;
-    return b.hole("welten").then(function(l){ return b.lege("welten", (l || []).filter(function(m){ return m.id !== id; })); })
-      .then(function(){ return b.loesche("welt:" + id); });
+    return this._nacheinander(function(){
+      return b.hole("welten").then(function(l){ return b.lege("welten", (l || []).filter(function(m){ return m.id !== id; })); })
+        .then(function(){ return b.loesche("welt:" + id); });
+    });
   };
 })();

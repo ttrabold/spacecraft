@@ -64,15 +64,15 @@ SC.Netz.speicherNetz = function(){
 };
 
 // --- PeerJS-Adapter (dünn, nur über echtes Netz prüfbar) ---
-SC.Netz.peerjsFehler = function(e, standard){
+SC.Netz._peerjsFehler = function(e, standard){
   var t = e && e.type;
   if(t === "unavailable-id") return new SC.Netz.Fehler("vergeben");
   if(t === "peer-unavailable") return new SC.Netz.Fehler("kein-raum");
-  if(t === "network" || t === "server-error" || t === "socket-error") return new SC.Netz.Fehler("vermittlung");
+  if(t === "network" || t === "disconnected" || t === "server-error" || t === "socket-error") return new SC.Netz.Fehler("vermittlung");
   return new SC.Netz.Fehler(standard || "unbekannt", e && e.message);
 };
 SC.Netz.peerjs = function(){
-  var peer = null;
+  var gast = null; // eigener Peer für ausgehende Verbindungen, getrennt vom Gastgeber-Peer aus oeffne
   function umhuelle(c){
     var v = SC.Netz._ereignisse({}); v.id = c.peer;
     c.on("data", function(d){ v._aus("daten", d); });
@@ -85,29 +85,34 @@ SC.Netz.peerjs = function(){
   return {
     oeffne: function(peerId){
       return new Promise(function(ok, nein){
-        var p; try{ p = new Peer(peerId, { debug: 0 }); }catch(e){ return nein(SC.Netz.peerjsFehler(e)); }
+        var p; try{ p = new Peer(peerId, { debug: 0 }); }catch(e){ return nein(SC.Netz._peerjsFehler(e)); }
         var offen = false, r = SC.Netz._ereignisse({});
         r.schliesse = function(){ try{ p.destroy(); }catch(e){} };
         p.on("connection", function(c){ r._aus("verbindung", umhuelle(c)); });
-        p.on("open", function(){ offen = true; peer = p; ok(r); });
-        p.on("error", function(e){ if(!offen){ try{ p.destroy(); }catch(x){} nein(SC.Netz.peerjsFehler(e)); } });
+        p.on("open", function(){ offen = true; ok(r); });
+        p.on("error", function(e){ if(!offen){ try{ p.destroy(); }catch(x){} nein(SC.Netz._peerjsFehler(e)); } });
       });
     },
     verbinde: function(peerId){
       return new Promise(function(ok, nein){
-        var erledigt = false, timer = null, c = null;
-        function fertig(f, v){ if(erledigt) return; erledigt = true; clearTimeout(timer); if(f) nein(f); else ok(v); }
-        function los(p){
-          try{ c = p.connect(peerId, { serialization: "binary", reliable: true }); }catch(e){ return fertig(SC.Netz.peerjsFehler(e)); }
+        var erledigt = false, timer = null, c = null, fehlerFn = null, p = null;
+        function vernichte(){ try{ p.destroy(); }catch(e){} if(gast === p) gast = null; }
+        function fertig(f, v){ if(erledigt) return; erledigt = true; clearTimeout(timer); if(p && fehlerFn) try{ p.off("error", fehlerFn); }catch(e){} if(f) nein(f); else ok(v); }
+        function los(){
+          try{ c = p.connect(peerId, { serialization: "binary", reliable: true }); }catch(e){ c = null; }
+          if(!c){ vernichte(); return fertig(new SC.Netz.Fehler("vermittlung")); }
           timer = setTimeout(function(){ try{ c.close(); }catch(e){} fertig(new SC.Netz.Fehler("keine-direkte")); }, SC.Netz.KEINE_DIREKTE_MS);
+          fehlerFn = function(e){ fertig(SC.Netz._peerjsFehler(e)); };
+          p.on("error", fehlerFn);
           c.on("open", function(){ fertig(null, umhuelle(c)); });
-          p.on("error", function(e){ fertig(SC.Netz.peerjsFehler(e)); });
         }
-        if(peer && !peer.destroyed){ return los(peer); }
-        var p; try{ p = new Peer({ debug: 0 }); }catch(e){ return nein(SC.Netz.peerjsFehler(e)); }
+        // Getrennter oder zerstörter Gast-Peer (z. B. nach WLAN-Aussetzer) wird verworfen und neu angelegt
+        if(gast && (gast.destroyed || gast.disconnected)){ try{ gast.destroy(); }catch(e){} gast = null; }
+        if(gast){ p = gast; return los(); }
+        try{ p = new Peer({ debug: 0 }); }catch(e){ return nein(SC.Netz._peerjsFehler(e)); }
         var offen = false;
-        p.on("open", function(){ offen = true; peer = p; los(p); });
-        p.on("error", function(e){ if(!offen) fertig(new SC.Netz.Fehler("vermittlung")); });
+        p.on("open", function(){ offen = true; gast = p; los(); });
+        p.on("error", function(e){ if(!offen){ vernichte(); fertig(new SC.Netz.Fehler("vermittlung")); } });
       });
     }
   };

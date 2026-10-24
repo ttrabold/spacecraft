@@ -28,13 +28,14 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 |---|-------|-------|------|------|
 | 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | live als 0.4.0 (inkl. Entwicklerwerkzeuge, Gamepad, Musik und Geräusche); offen nur noch #18 (Test auf echtem iPad) | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | live als 0.5.1; offen: kleinere Punkte #38–#42 und Balance nach Feedback | [Design](superpowers/specs/2026-10-23-stufe-2-survival-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-2-survival.md) |
-| 3 | Gemeinsam spielen per Raumcode | offen | – | – |
+| 3 | Gemeinsam spielen per Raumcode | umgesetzt als 0.6.0 auf Branch `stufe-3`, in der Test-Vorschau; Abschluss-Review offen | [Design](superpowers/specs/2026-10-24-stufe-3-gemeinsam-spielen-design.md) | [Plan](superpowers/plans/2026-10-24-stufe-3-gemeinsam-spielen.md) |
 | 4 | Fahr- und Flugzeuge bauen | offen | – | – |
 | 5 | Raumschiffe, nahtloser Flug zu anderen Planeten | offen | – | – |
 | später | Crafting: aus Rohstoffen Dinge herstellen (gewünscht, Zeitpunkt offen) | offen | – | – |
 
 ## Aktueller Stand
 
+- 2026-10-24: Stufe 3 umgesetzt (Branch `stufe-3`, Version 0.6.0, 332 Tests grün): Raumcode „WORT ZAHL“, Gastgeber bestätigt Gäste, gemeinsames Bauen/Kämpfen, Beute für alle in 40 Blöcken, Spaßkampf (PvP), Figur der Gäste wird in ihrer eigenen Welt gespeichert, Neuverbinden mit Quittung der Bauwünsche, Namensschilder. Dazu #54 (Schwung-Animation Laserschwert) und #56 (Weltliste beim Speichern). Echte Verbindung mit zwei Browserfenstern geprüft (PeerJS-Cloud). Das abschließende Gesamt-Review wurde auf Wunsch abgebrochen und steht noch aus. Nach `test` gepusht.
 - 2026-10-23: Vision und Reihenfolge der Stufen mit dem Nutzer abgestimmt. Repo enthält nur das Gerüst (Workflows, AGENTS.md), noch keinen Spielcode. Auf GitHub noch keine Commits, Issues, Meilensteine oder Board. `gh` hat jetzt den Scope `project`.
 - 2026-10-23: Brainstorming zu Stufe 1 abgeschlossen (Look, Planeten, Seed, Slots, Export), Design geschrieben. Wünsche dazu: Spielstände gut exportierbar, mehrere Slots, Welt prozedural aus Seed.
 - 2026-10-24: Live als 0.5.1: Funde der Gesamtprüfung behoben (Startwaffe, feststeckende Bosse, Wegwerfen, Wiedereinstieg, Hinweis bei vollem Rucksack); kleinere Punkte als #38–#42.
@@ -45,6 +46,20 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Nächster Schritt
 
-- Optional: itch.io-Release 0.4.0 über GitHub Actions („Release (itch.io-Artefakt)“) und Devlog `docs/itch-devlog-0.4.0.md` veröffentlichen.
-- Feedback der Kinder zu Kampf und Balance einholen (Werte in js/gegner.js, js/gegenstaende.js). Danach: Design für Stufe 3 (gemeinsam spielen).
+- **Abschluss-Review Stufe 3 fortsetzen:** ganzer Branch `stufe-3` gegen Spec/Plan (Basis 813b873). Offene Kleinpunkte und Rulings stehen im Abschnitt „Offene Punkte Stufe 3“ unten. Danach Funde beheben.
+- Gerätetest durch den Nutzer: iPad, Handy, Laptop im selben WLAN über die Test-Vorschau (https://ttrabold.github.io/spacecraft-test/). Achtung: gleicher Speicher wie die Live-Seite, nichts löschen.
+- Nach Bestätigung: Fast-Forward `stufe-3` → `main`, `git push origin main` (schließt #43–#54, #56 über „Fixes“), Meilenstein Stufe 3 schließen, itch.io-Release 0.6.0 und Devlog `docs/itch-devlog-0.6.0.md` anbieten.
+- Weiterhin: Feedback der Kinder zu Kampf und Balance (Werte in js/gegner.js, js/gegenstaende.js).
+- Lokales Protokoll der Umsetzung (nicht eingecheckt): `.superpowers/sdd/2026-10-24-stufe-3-gemeinsam-spielen/progress.md`.
+- Offene Frage an den Nutzer: #55 („Leuchten“ zu hell, beleuchtet Umgebung nicht) noch vor 0.6.0 live oder danach?
+
+## Offene Punkte Stufe 3 (für das Abschluss-Review)
+
+- Fehler in Netzwerk-Rückrufen (z. B. Ausnahme in `_gastBereit`) können den Beitritt auf „Verbinde …“ hängen lassen – prüfen.
+- Gastgeber-Peer reagiert nicht auf Verlust der Vermittlung (neue Beitritte scheitern dann; `peer.reconnect`).
+- Endgültiger Abbruch: offene Bauwünsche werden nicht mehr abgeglichen.
+- Eingehende Nachrichten (angriff, pvp, kiste) nur grob geprüft (Schaden/Reichweite nicht geklemmt).
+- Bandbreite des Gegner-/Geschoss-Abgleichs (~150 KB/s pro Gast), Glättung der Geschosse.
+- Figurwahl lädt jede Welt komplett; Mitspieler beim Gast immer „verbunden“; Zeigersperre nach Dialog ohne Geste; Gast kann per Entwicklerpanel lokal den Modus ändern; `benenneUm` liest vor der Speicherkette.
+
 - Bekannte offene Punkte stehen als Issues (siehe Board): https://github.com/users/ttrabold/projects/1

@@ -137,3 +137,43 @@ test("Mehrspieler: Tageszeit folgt dem Gastgeber", function(){
     gleich(a.g.tageszeit, 0.75);
   });
 });
+
+test("Mehrspieler: Setzen und gleich wieder Abbauen bei Konflikt: Rucksack bleibt gleich", function(){
+  var u, a, rs = new SC.Rucksack([{ block: SC.B.BRETTER, anzahl: 3 }]);
+  return mspRaum(1).then(function(x){ u = x; a = u.gs[0];
+    a.g.o.beiBlockZurueck = function(x, y, z, id, w){ a.zurueck.push({ id: id, wunsch: w }); SC.Raum.blockZurueck(rs, w, id); };
+    u.welt.setzeBlock(5, 62, 5, SC.B.STEIN, "spieler");
+    // innerhalb einer Runde: Bretter setzen (nr1) und wieder abbauen (nr2), beides sieht der Gastgeber anders
+    a.welt.setzeBlock(5, 62, 5, SC.B.BRETTER, "spieler"); rs.verbrauche(0);
+    a.welt.setzeBlock(5, 62, 5, SC.B.LUFT, "spieler"); rs.lege({ block: SC.B.BRETTER, anzahl: 1 });
+    return raumLauf(u.netz);
+  }).then(function(){
+    gleich(a.zurueck.length, 2); wahr(a.zurueck.every(function(z){ return !!z.wunsch; }), "beide Wünsche erkannt");
+    gleich(rs.hat(SC.B.BRETTER), 3); gleich(a.welt.holeBlock(5, 62, 5), SC.B.STEIN); gleich(u.welt.holeBlock(5, 62, 5), SC.B.STEIN);
+  });
+});
+
+test("Mehrspieler: blockZurueck legt nur aus Luft oder Wasser gesetzte Blöcke zurück", function(){
+  var rs = new SC.Rucksack();
+  gleich(SC.Raum.blockZurueck(rs, { id: SC.B.BRETTER, alt: SC.B.STEIN }, SC.B.STEIN).zurueck, 0); gleich(rs.hat(SC.B.BRETTER), 0);
+  gleich(SC.Raum.blockZurueck(rs, { id: SC.B.BRETTER, alt: SC.B.WASSER }, SC.B.STEIN).zurueck, 1); gleich(rs.hat(SC.B.BRETTER), 1);
+});
+
+test("Mehrspieler: Ausrüstung kommt nach erneutem Beitritt wieder an", function(){
+  var u, a, b, b2, ausr = { ruestung: null, waffe: { art: "blaster" } };
+  return mspRaum(2).then(function(x){ u = x; a = u.gs[0]; b = u.gs[1];
+    b.g.takt(0.1, mspIch({ ausr: ausr })); return raumLauf(u.netz);
+  }).then(function(){
+    u.h.takt(0.1, mspIch()); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(a.g.mitspieler[b.id].ausr.waffe.art, "blaster");
+    b.g.trenne(); return raumLauf(u.netz).then(function(){ u.uhr.vor(SC.RAUM_PLATZ_MS); return raumLauf(u.netz); });
+  }).then(function(){
+    gleich(a.g.mitspieler[b.id], undefined, "A hat B vergessen");
+    b2 = raumGast(u, "G1", { figur: b.figur }); return raumBeitritt(u, b2);
+  }).then(function(){
+    b2.g.takt(0.1, mspIch({ ausr: ausr })); return raumLauf(u.netz);
+  }).then(function(){
+    u.h.takt(0.1, mspIch()); return raumLauf(u.netz);
+  }).then(function(){ var m = a.g.mitspieler[b.id]; wahr(!!m, "A kennt B wieder"); gleich(m.ausr && m.ausr.waffe.art, "blaster"); });
+});

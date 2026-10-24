@@ -56,7 +56,8 @@ SC.Gastgeber = function(o){
     });
   };
   G._eintrag = function(id){ for(var i = 0; i < this.spieler.length; i++) if(this.spieler[i].id === id) return this.spieler[i]; return null; };
-  G._entferne = function(id){ this.spieler = this.spieler.filter(function(e){ return e.id !== id; }); };
+  // Eintrag weg: auch die je Empfänger gemerkte Ausrüstung dieses Spielers vergessen (die Gäste löschen ihn aus mitspieler)
+  G._entferne = function(id){ this.spieler = this.spieler.filter(function(e){ return e.id !== id; }); for(var v in this._verb){ var c = this._verb[v]; if(c.ausr) delete c.ausr[id]; } };
   G._voll = function(id){ return this.spieler.filter(function(e){ return e.id !== id; }).length >= SC.RAUM_MAX - 1; };
   G._freieFarbe = function(){ var benutzt = this.spieler.map(function(e){ return e.farbe; }); for(var i = 1; i < SC.RAUM_FARBEN.length; i++) if(benutzt.indexOf(SC.RAUM_FARBEN[i]) < 0) return SC.RAUM_FARBEN[i]; return SC.RAUM_FARBEN[1]; };
   G._ablehnen = function(c, grund){ c.weg = true; c.verb.sende({ t: "ablehnen", grund: grund }); c.verb.schliesse(); };
@@ -252,12 +253,12 @@ SC.Gast = function(o){
   G._aufgeben = function(){ this._ende = true; this._loese(); this._status("getrennt", { grund: "abbruch" }); };
 
   G.sende = function(n){ if(this.verb) this.verb.sende(n); };
-  // Welt des Gastes anbinden: eigene Blockänderungen (Quelle nicht "netz") gehen als Wunsch an den Gastgeber und werden je Position gemerkt
+  // Welt des Gastes anbinden: eigene Blockänderungen (Quelle nicht "netz") gehen als Wunsch an den Gastgeber und werden je Nummer (nr) gemerkt
   G.bindeWelt = function(welt){
     var s = this; s.welt = welt; s._wuensche = {}; SC.Raum.gastWelt(welt);
     welt.ereignisse.an("block", function(b){
       if(s.welt !== welt || !s.verb || String(b.quelle || "").indexOf("netz") === 0) return;
-      var nr = ++s._nr; s._wuensche[b.x + "," + b.y + "," + b.z] = { id: b.id, alt: b.alt, nr: nr, zeit: s.jetzt() };
+      var nr = ++s._nr; s._wuensche[nr] = { id: b.id, alt: b.alt, nr: nr, zeit: s.jetzt() };
       s.verb.sende({ t: "block", x: b.x, y: b.y, z: b.z, id: b.id, alt: b.alt, nr: nr });
     });
   };
@@ -306,9 +307,9 @@ SC.Gast = function(o){
       var w = this.welt; if(!w) return;
       w.setzeBlock(n.x, n.y, n.z, n.id, "netz");
       if(!n.zurueck) return;
-      var k = n.x + "," + n.y + "," + n.z, wu = this._wuensche[k];
-      if(wu && n.nr !== undefined && wu.nr !== n.nr) wu = null; // abgelehnt wurde ein älterer Wunsch an derselben Stelle
-      else delete this._wuensche[k];
+      // je Nummer: mehrere Wünsche an derselben Stelle werden einzeln rückgängig gemacht
+      var wu = n.nr !== undefined ? this._wuensche[n.nr] : null;
+      if(wu) delete this._wuensche[n.nr];
       ruf(this.o.beiBlockZurueck, n.x, n.y, n.z, n.id, wu ? { id: wu.id, alt: wu.alt } : null);
     },
     ende: function(){
@@ -373,12 +374,12 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
     });
     welt.wesen.forEach(function(e, id){ if(id < SC.RAUM_GAST_ID && !da[id]) welt.wesen.delete(id); });
   };
-  // Gast, Survival: ein abgelehnter Block-Wunsch {id, alt} wird im Rucksack rückgängig gemacht – gesetzter Block kommt zurück,
+  // Gast, Survival: ein abgelehnter Block-Wunsch {id, alt} wird im Rucksack rückgängig gemacht – gesetzter Block (nur in Luft oder Wasser) kommt zurück,
   // ein abgebauter (was er ergibt) wird wieder herausgenommen, soweit noch vorhanden. Liefert {zurueck, heraus} (Anzahl).
   SC.Raum.blockZurueck = function(rucksack, wunsch, tatsaechlicheId){
     var r = { zurueck: 0, heraus: 0 }, B = SC.B;
     if(!rucksack || !wunsch) return r;
-    if(wunsch.id !== B.LUFT){ if(rucksack.lege({ block: wunsch.id, anzahl: 1 }) === 0) r.zurueck = 1; return r; }
+    if(wunsch.id !== B.LUFT){ if(wunsch.alt !== B.LUFT && wunsch.alt !== B.WASSER) return r; if(rucksack.lege({ block: wunsch.id, anzahl: 1 }) === 0) r.zurueck = 1; return r; }
     var g = wunsch.alt === undefined || wunsch.alt === B.LUFT ? null : SC.Abbau.ergibt(wunsch.alt);
     if(g === null) return r;
     for(var i = rucksack.plaetze.length - 1; i >= 0; i--){ var p = rucksack.plaetze[i]; if(p && p.block === g){ rucksack.nimm(i, 1); r.heraus = 1; break; } }

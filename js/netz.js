@@ -79,7 +79,7 @@ SC.Netz.peerjs = function(){
     c.on("close", function(){ v._aus("zu"); });
     c.on("error", function(){ v._aus("zu"); });
     v.sende = function(n){ try{ c.send(n); }catch(e){} };
-    v.schliesse = function(){ try{ c.close(); }catch(e){} };
+    v.schliesse = function(){ try{ c.close({ flush: true }); }catch(e){} }; // flush: zuletzt gesendete Nachricht (ablehnen, ende) kommt noch an
     return v;
   }
   return {

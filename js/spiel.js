@@ -401,6 +401,7 @@ SC.Spiel.startpunkt = function(planet){
     var d = SC.Spielstand.gastDaten(wk, SC.Spielstand.figur(this._eigen));
     if(!will.pos && !will.welt.startpunkt) d.spieler.pos = null;
     this.starte(d, chunks);
+    if(this.render && this.render.figurFarbe && gast.farbe) this.render.figurFarbe(gast.farbe); // eigene Figur in Raumfarbe (beim Verlassen entsteht mit dem Spielstart ein neues Render)
     gast.bindeWelt(this.welt);
     this._raumModus = d.modus; this._ausrSpeicher = JSON.stringify(this.kampf.ausruestung);
     gast.bindeKampf(this.kampf, {

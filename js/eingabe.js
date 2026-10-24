@@ -20,8 +20,8 @@ SC.Eingabe = function(leinwand, uiWurzel){
   this._gpHalten = { abbauen: false, setzen: false, tAbbauen: 0, tSetzen: 0 };
   this._h = {
     keydown: function(ev){
+      if(ev.target && (/INPUT|TEXTAREA|SELECT/.test(ev.target.tagName) || ev.target.isContentEditable)) return; // in Textfeldern nichts abfangen (Leertaste!)
       if(ev.code === "F5" || ev.code === "F3" || ev.code === "Space" || ev.code === "Tab") ev.preventDefault();
-      if(ev.target && /INPUT|TEXTAREA/.test(ev.target.tagName)) return;
       e._druecke(ev.code);
     },
     keyup: function(ev){ e._los(ev.code); },

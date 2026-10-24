@@ -24,3 +24,10 @@ test("Mitspieler: ohne hieb-Feld bleibt der Arm ruhig; blockt hält den Arm quer
   m.r.aktualisiere([_e(1, { blockt: true })], [0, 0, 0], 0.1); wahr(arm().x > 1 && arm().z < -0.5, "Block");
   m.r.aktualisiere([_e(1, { blockt: false })], [0, 0, 0], 0.1); gleich(arm().x, 0); gleich(arm().z, 0);
 });
+test("Namensschild wird nach dem Laub gezeichnet (renderOrder über durchsichtigen Blöcken)", function(){ var m = _ms(); m.r.aktualisiere([_e(1)], [0, 0, 0], 0.1); wahr(m.r.figuren.get(1).f.schild.renderOrder > 1, "über Laub (1)"); });
+test("Render.figurFarbe: eigene Figur in Raumfarbe, zurück auf Standard, Rüstung bleibt", function(){
+  var r = _rb(); r.ausruestung = SC.Render.prototype.ausruestung; r.szene = new THREE.Scene(); r._baueFigur();
+  r.figurFarbe("#e0533a"); gleich(r._fig.koerper.material.color.getHex(), new THREE.Color("#e0533a").getHex()); gleich(r.szene.children.filter(function(o){ return o === r.figur; }).length, 1);
+  r.ausruestung({ helm: { seltenheit: 2 } }, null); r.figurFarbe("#2fae5a"); wahr(r._fig.ruestung.helm[0].visible, "Rüstung bleibt"); r.figurFarbe();
+  var f = r._fig; gleich(f.koerper.material.color.getHex(), 0x3a6fd8); gleich(f.armL.material.color.getHex(), 0x2f5bb8); gleich(f.beinL.material.color.getHex(), 0x2b3f78); gleich(r.kopf, f.kopf);
+});

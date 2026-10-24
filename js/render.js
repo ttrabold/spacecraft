@@ -93,11 +93,19 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
   };
 
   // Einfache Blockfigur für die Ansicht von außen (Fabrik: SC.Figur in render-mitspieler.js)
-  SC.Render.prototype._baueFigur = function(){
-    var f = SC.Figur.baue("#3a6fd8");
+  SC.Render.prototype._baueFigur = function(farbe){
+    var f = SC.Figur.baue(farbe || "#3a6fd8");
     f.gruppe.visible = false; this.figur = f.gruppe; this._fig = f; this.szene.add(f.gruppe);
     this.kopf = f.kopf; this.armL = f.armL; this.armR = f.armR; this.beinL = f.beinL; this.beinR = f.beinR;
     this.ruestung = f.ruestung; this.figurWaffe = f.waffe;
+  };
+
+  // Eigene Figur in Raumfarbe (Gast); ohne Farbe Standardblau. Rüstung und Waffe der Figur bleiben erhalten.
+  SC.Render.prototype.figurFarbe = function(farbe){
+    var alt = this.figur, sicht = alt.visible, a = this._ausrA, w = this._ausrW;
+    this.szene.remove(alt); alt.traverse(function(o){ if(o.material && o.material.dispose) o.material.dispose(); });
+    this._baueFigur(farbe); this.figur.visible = sicht;
+    if(a !== undefined) SC.Figur.ausruestung(this._fig, a, w);
   };
 
   // Waffe in der Ich-Ansicht (Rüstung und Figurwaffe baut SC.Figur)
@@ -121,7 +129,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     s.visible = !!sw && this._hiebK !== 3 && this.handWaffe.klinge.visible; if(s.visible) s.material.opacity = t < 0.1 ? 0.6 : Math.max(0, 0.6 * (1 - (t - 0.1) / 0.15));
   };
   SC.Render.prototype.ausruestung = function(a, waffe){
-    SC.Figur.ausruestung(this._fig, a, waffe);
+    this._ausrA = a; this._ausrW = waffe; SC.Figur.ausruestung(this._fig, a, waffe);
     SC.Figur.waffeStil(this.handWaffe, waffe);
     if(waffe && waffe.art === "laserschwert") this.schweif.material.color.copy(this.handWaffe.klinge.material.color);
     this._mitWaffe = !!waffe;

@@ -85,6 +85,7 @@ SC.RenderMitspieler = function(szene, planet){
   };
   RM.prototype._neu = function(e){
     var f = SC.Figur.baue(e.farbe), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(RM.schildBild(e.name, e.farbe)), transparent: true, depthWrite: false }));
+    sp.renderOrder = 2; // nach Laub (renderOrder 1), sonst verdeckt es das Schild; feste Blöcke verdecken weiterhin (Tiefentest bleibt an)
     sp.userData.name = e.name; sp.position.y = 2.0 + 0.5 + 0.2; f.gruppe.add(sp); this.gruppe.add(f.gruppe);
     var o = { f: f, schild: sp, name: e.name, farbe: e.farbe, p: null, schlag: 0, ausr: null, hN: undefined, hK: -1, hT: 0, sw: { x: 0, y: 0, z: 0 } };
     f.schild = sp; return o;

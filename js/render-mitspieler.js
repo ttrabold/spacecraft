@@ -24,7 +24,7 @@ SC.Figur = {
     farbe = farbe || "#3a6fd8";
     var f = new THREE.Group(), box = SC.Figur._box || (SC.Figur._box = new THREE.BoxGeometry(1, 1, 1));
     function teil(w, h, d, c, x, y, z){ var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ color: c })); m.position.set(x, y, z); f.add(m); return m; }
-    var koerper = teil(0.5, 0.75, 0.28, farbe, 0, 1.125, 0), arm = SC.Figur.dunkler(farbe, 0.82), bein = SC.Figur.dunkler(farbe, 0.58);
+    var koerper = teil(0.5, 0.75, 0.28, farbe, 0, 1.125, 0), std = new THREE.Color(farbe).getHex() === 0x3a6fd8, arm = std ? 0x2f5bb8 : SC.Figur.dunkler(farbe, 0.82), bein = std ? 0x2b3f78 : SC.Figur.dunkler(farbe, 0.58); // eigene Standardfarbe: Gliedmaßen exakt wie früher
     var kopf = teil(0.45, 0.45, 0.45, 0xe8b58a, 0, 1.6, 0);
     teil(0.36, 0.08, 0.02, 0x333333, 0, 1.64, -0.23);      // Visier
     var armL = teil(0.2, 0.7, 0.2, arm, -0.36, 1.12, 0), armR = teil(0.2, 0.7, 0.2, arm, 0.36, 1.12, 0);
@@ -59,7 +59,7 @@ SC.RenderMitspieler = function(szene, planet){
     var c = document.createElement("canvas"); c.width = 256; c.height = 64; var x = c.getContext("2d");
     x.fillStyle = "rgba(0,0,0,.55)"; x.fillRect(4, 8, 248, 48);
     x.strokeStyle = farbe; x.lineWidth = 5; x.strokeRect(4, 8, 248, 48);
-    x.font = "bold 26px system-ui, sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = "#ffffff"; x.fillText(name, 128, 33, 236);
+    x.font = "bold 26px system-ui, sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = "#ffffff"; x.fillText(name || "", 128, 33, 236);
     return c;
   };
   RM.prototype._neu = function(e){
@@ -70,7 +70,7 @@ SC.RenderMitspieler = function(szene, planet){
   };
   RM.prototype._weg = function(o){
     this.gruppe.remove(o.f.gruppe);
-    o.f.gruppe.traverse(function(m){ if(m.material){ if(m.material.map) m.material.map.dispose(); m.material.dispose(); } if(m.geometry && m.geometry !== SC.Figur._box) m.geometry.dispose(); });
+    o.f.gruppe.traverse(function(m){ if(m.material){ if(m.material.map) m.material.map.dispose(); m.material.dispose(); } if(m.geometry && !m.isSprite && m.geometry !== SC.Figur._box) m.geometry.dispose(); });
   };
   RM.prototype.aktualisiere = function(liste, ichPos, dt, kamPos){
     var r = this, P = this.P, gesehen = {}, k0 = 1 - Math.exp(-15 * (dt || 0));
@@ -88,7 +88,7 @@ SC.RenderMitspieler = function(szene, planet){
       var tempo = alt && dt > 0 ? Math.hypot(nah(o.p[0], alt[0], P) - alt[0], nah(o.p[2], alt[2], P) - alt[2]) / dt : 0;
       if(tempo > 0.5) o.schlag += dt * 8.3; var sw = tempo > 0.5 ? Math.sin(o.schlag) * 0.6 : 0;
       o.f.armL.rotation.x = sw; o.f.armR.rotation.x = -sw; o.f.beinL.rotation.x = -sw; o.f.beinR.rotation.x = sw;
-      g.visible = e.modus !== "zuschauer";
+      g.visible = e.modus !== "zuschauer" && e.lebt !== false;
       var a = e.ausr || {}, key = JSON.stringify([a.ruestung || null, a.waffe || null]);
       if(key !== o.ausr){ o.ausr = key; SC.Figur.ausruestung(o.f, a.ruestung || null, a.waffe || null); }
       var halb = e.verbunden === false;

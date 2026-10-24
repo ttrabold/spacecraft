@@ -100,6 +100,7 @@ SC.Slots = function(backend){ this.b = backend; };
   // Erst Daten, dann Liste: schlägt das Schreiben fehl, bleibt alles beim Alten
   SC.Slots.prototype.speichere = function(daten){
     var b = this.b;
+    if(daten && daten.id === "gast") return Promise.reject(new Error("Gastwelt wird nicht gespeichert")); // gehört dem Gastgeber
     daten.zuletzt = Date.now();
     return b.lege("welt:" + daten.id, daten).then(function(){ return b.hole("welten"); }).then(function(l){
       l = (l || []).filter(function(m){ return m.id !== daten.id; });

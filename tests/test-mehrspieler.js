@@ -614,3 +614,50 @@ test("Mehrspieler: Spiel: Warten abbrechen setzt zurück", function(){
     gleich(e.f && e.f.art, "abbruch"); gleich(u.g.rolle, "allein"); gleich(u.g.raum, null);
   }).then(mspFertig, mspFehler);
 });
+
+test("Mehrspieler: Spiel: Export als Gast exportiert die eigene Welt, nie die Gastwelt", function(){
+  var u, raus = [], alt = SC.Spiel.herunterladen;
+  SC.Spiel.herunterladen = function(blob, name){ raus.push(name); };
+  return mspZwei().then(function(x){ u = x; u.g.kampf.rucksack.lege({ block: SC.B.KIES, anzahl: 1 }); return u.g.exportiere("gast"); }).then(function(){
+    gleich(raus.length, 1); gleich(u.sG.b.m["welt:gast"], undefined, "kein gast-Slot"); var d = u.sG.b.m["welt:" + u.eigen.id]; wahr(d.zuletztExport > 0, "eigene Welt als exportiert markiert");
+    return u.sG.speichere({ id: "gast" }).then(function(){ wahr(false, "gast-Slot darf nicht gehen"); }, function(){});
+  }).then(function(){ SC.Spiel.herunterladen = alt; }, function(f){ SC.Spiel.herunterladen = alt; throw f; }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Neuverbinden gibt verlorene Block-Wünsche im Rucksack zurück", function(){
+  var u, a, rs;
+  return mspZwei().then(function(x){ u = x; a = u.g; rs = a.kampf.rucksack; rs.lege({ block: SC.B.BRETTER, anzahl: 3 });
+    u.h.welt.setzeBlock(20, 99, 20, SC.B.STEIN, "system"); u.h.welt.setzeBlock(22, 99, 20, SC.B.LUFT, "system"); return mspLauf(u.netz);
+  }).then(function(){
+    // Verbindung reißt, bevor die Wünsche ankommen: Verbindung hart trennen, Wünsche stehen noch offen
+    var v = a.raum.verb; u.netz.trenne(v);
+    a.raum.verb = v; // Wünsche gehen noch in die (tote) Verbindung
+    a.welt.setzeBlock(22, 99, 20, SC.B.BRETTER, "spieler"); rs.verbrauche(rs.plaetze.findIndex ? rs.plaetze.findIndex(function(p){ return p && p.block === SC.B.BRETTER; }) : 1);
+    a.welt.setzeBlock(20, 99, 20, SC.B.LUFT, "spieler"); rs.lege({ block: SC.B.STEIN, anzahl: 1 }); // abgebaut: Stein im Rucksack
+    a.welt.setzeBlock(24, 99, 20, SC.B.BRETTER, "spieler"); a.welt.setzeBlock(24, 99, 20, SC.B.LUFT, "spieler"); // gesetzt und gleich wieder abgebaut: gleicht sich aus
+    gleich(rs.hat(SC.B.BRETTER), 2); return mspLauf(u.netz);
+  }).then(function(){
+    gleich(a.raum.status, "neuverbinden"); a.raum.verb = null; return new Promise(function(ok){ setTimeout(ok, SC.RAUM_NEU_ALLE_MS + 100); });
+  }).then(function(){ return mspLauf(u.netz, 4); }).then(function(){
+    gleich(a.raum.status, "verbunden"); gleich(a.rolle, "gast");
+    gleich(a.welt.holeBlock(22, 99, 20), SC.B.LUFT); gleich(a.welt.holeBlock(20, 99, 20), SC.B.STEIN); gleich(a.welt.holeBlock(9, 99, 9), SC.B.GLAS, "Welt bleibt");
+    gleich(rs.hat(SC.B.BRETTER), 3, "gesetzter Block zurück"); gleich(rs.hat(SC.B.STEIN), 0, "abgebauter Block wieder heraus"); gleich(Object.keys(a.raum._wuensche).length, 0);
+  }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Speichern nach dem Verlassen bleibt still, Gast-Speichern wird zusammengelegt", function(){
+  var u, n = 0;
+  return mspZwei().then(function(x){ u = x;
+    var alt = u.sG.speichere; u.sG.speichere = function(d){ n++; return alt.call(this, d); };
+    for(var i = 0; i < 10; i++) u.g.speichere("fund");
+    return u.g._kette;
+  }).then(function(){ wahr(n >= 1 && n <= 2, "Schreibvorgänge: " + n);
+    var p = u.h.verlasse(); u.h.speichere("auto"); return p.then(function(){ return u.h._kette; });
+  }).then(function(){ gleich(u.h.hinweise.indexOf(SC.T.speichernFehlgeschlagen), -1, u.h.hinweise.join("|")); }).then(mspFertig, mspFehler);
+});
+
+test("Mehrspieler: Spiel: Neue Figur ohne Namen wird abgelehnt", function(){
+  var s = mspSpielVoll(mspSlots());
+  return s.beitreten(SC.Netz.code("MOND", 47), null, undefined).then(function(){ wahr(false, "darf nicht klappen"); }, function(f){ wahr(/Namen/.test(f.message)); gleich(s.rolle, "allein"); return s.slots.liste(); })
+    .then(function(l){ gleich(l.length, 0); });
+});

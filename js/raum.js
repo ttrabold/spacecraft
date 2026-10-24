@@ -258,7 +258,7 @@ SC.Gast = function(o){
     var s = this; s.welt = welt; s._wuensche = {}; SC.Raum.gastWelt(welt);
     welt.ereignisse.an("block", function(b){
       if(s.welt !== welt || !s.verb || String(b.quelle || "").indexOf("netz") === 0) return;
-      var nr = ++s._nr; s._wuensche[nr] = { id: b.id, alt: b.alt, nr: nr, zeit: s.jetzt() };
+      var nr = ++s._nr; s._wuensche[nr] = { id: b.id, alt: b.alt, nr: nr, zeit: s.jetzt(), x: b.x, y: b.y, z: b.z };
       s.verb.sende({ t: "block", x: b.x, y: b.y, z: b.z, id: b.id, alt: b.alt, nr: nr });
     });
   };
@@ -267,7 +267,7 @@ SC.Gast = function(o){
     var s = this; s._takt += dt;
     if(s._takt < SC.RAUM_TAKT) return;
     s._takt -= SC.RAUM_TAKT; if(s._takt >= SC.RAUM_TAKT) s._takt = 0;
-    var alt = s.jetzt() - SC.RAUM_WUNSCH_MS; for(var k in s._wuensche) if(s._wuensche[k].zeit < alt) delete s._wuensche[k];
+    var alt = s.jetzt() - SC.RAUM_WUNSCH_MS; if(s.status === "verbunden") for(var k in s._wuensche) if(s._wuensche[k].zeit < alt) delete s._wuensche[k]; // beim Neuverbinden behalten (Abgleich danach)
     if(!s.verb || !ich || s.status !== "verbunden") return;
     var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false },
       j = JSON.stringify(ich.ausr === undefined ? null : ich.ausr);

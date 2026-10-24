@@ -221,8 +221,14 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype.speichere = function(grund){
     var s = this;
     if(!this.daten || !this.welt) return Promise.resolve();
+    var gast = this.rolle === "gast";
+    if(gast && this._figurWartet) return this._kette; // schon eingereiht: speichert dann den neuesten Stand
+    if(gast) this._figurWartet = true;
     this._kette = (this._kette || Promise.resolve()).then(function(){
+      if(gast) s._figurWartet = false;
+      if(!s.daten || !s.welt) return; // inzwischen verlassen
       if(s.rolle === "gast") return s._figurSpeichern();
+      if(s.daten.id === "gast") return; // die Gastwelt wird nie gespeichert
       SC.Spielstand.ausWelt(s.daten, s.welt, s.spieler, s.kampf);
       s.daten.spieler.schnellleisteKreativ = s.spieler.schnellleiste.slice();
       s.daten.tageszeit = s.tageszeit;
@@ -237,12 +243,16 @@ SC.Spiel.startpunkt = function(planet){
     setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
   }
 
+  SC.Spiel.herunterladen = herunterladen; // in Tests ersetzbar
+
+  // Als Gast wird statt der Gastwelt die eigene Welt (mit aktueller Figur) exportiert
   SC.Spiel.prototype.exportiere = function(id){
-    var s = this, aktuell = this.daten && this.daten.id === id && this._laeuft;
-    var holen = aktuell ? this.speichere("export").then(function(){ return s.daten; }) : this.slots.lade(id);
+    var s = this, eigen = this.rolle === "gast" && this._eigen && (id === "gast" || id === this._eigen.id);
+    var aktuell = !eigen && this.daten && this.daten.id === id && this._laeuft;
+    var holen = eigen ? this.speichere("export").then(function(){ return s._eigen; }) : aktuell ? this.speichere("export").then(function(){ return s.daten; }) : this.slots.lade(id);
     return holen.then(function(d){
       return SC.Spielstand.exportiere(d).then(function(blob){
-        herunterladen(blob, SC.Spielstand.dateiname(d));
+        SC.Spiel.herunterladen(blob, SC.Spielstand.dateiname(d));
         d.zuletztExport = Date.now();
         s.ui.hinweis(SC.T.exportiert + ": " + SC.Spielstand.dateiname(d));
         return s.slots.speichere(d);
@@ -318,6 +328,7 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype.beitreten = function(code, eigeneWeltId, figurName){
     var s = this, laden;
     if(this.daten || this.raum) return Promise.reject(new Error("Spiel läuft noch")); // nur aus der Weltliste
+    if((eigeneWeltId === null || eigeneWeltId === undefined) && !(figurName && String(figurName).trim())) return Promise.reject(new Error("Neue Figur braucht einen Namen"));
     if(eigeneWeltId === null || eigeneWeltId === undefined){
       var neu = SC.Spielstand.neu({ name: figurName + "s Welt", figurName: figurName, modus: "survival" });
       laden = this.slots.speichere(neu).then(function(){ return neu; });
@@ -344,11 +355,7 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype._gastBereit = function(gast, chunks){
     var s = this;
     if(this.raum !== gast) return;
-    if(this.daten && this.daten.id === "gast" && this.welt){
-      var w = this.welt;
-      for(var k in chunks){ w.geaenderte.set(k, chunks[k]); if(w.chunks.has(k)) w.chunks.set(k, chunks[k]); w.neuZuZeichnen.add(k); }
-      return;
-    }
+    if(this.daten && this.daten.id === "gast" && this.welt){ this._gastWiederkehr(gast, chunks); return; }
     var will = gast.willkommen, wk = will;
     if(!will.pos){ wk = {}; for(var x in will) wk[x] = will[x]; wk.pos = will.welt.startpunkt || [0, 0, 0]; }
     var d = SC.Spielstand.gastDaten(wk, SC.Spielstand.figur(this._eigen));
@@ -366,6 +373,21 @@ SC.Spiel.startpunkt = function(planet){
       },
       beiPvpBesiegt: function(name){ s._pvpBesiegt(name); }
     });
+  };
+  // Neuverbinden: Welt behalten, Stand des Gastgebers übernehmen (nicht gesendete Chunks wieder wie erzeugt). Wünsche, die nie ankamen
+  // oder deren Antwort verloren ging, je Stelle vom neuesten rückwärts im Rucksack rückgängig machen, bis der Block des Gastgebers erreicht ist.
+  SC.Spiel.prototype._gastWiederkehr = function(gast, chunks){
+    var w = this.welt, k, s = this;
+    w.geaenderte.forEach(function(c, key){ if(!chunks[key]){ w.geaenderte.delete(key); w.chunks.delete(key); w.neuZuZeichnen.add(key); } });
+    for(k in chunks){ w.geaenderte.set(k, chunks[k]); if(w.chunks.has(k)) w.chunks.set(k, chunks[k]); w.neuZuZeichnen.add(k); }
+    var orte = {}, l = [];
+    for(k in gast._wuensche) l.push(gast._wuensche[k]);
+    l.sort(function(a, b){ return a.nr - b.nr; }).forEach(function(wu){ if(wu.x === undefined) return; var o = wu.x + "," + wu.y + "," + wu.z; (orte[o] = orte[o] || []).push(wu); });
+    gast._wuensche = {};
+    for(k in orte){
+      var reihe = orte[k], a = w.holeBlock(reihe[0].x, reihe[0].y, reihe[0].z), stand = reihe[reihe.length - 1].id;
+      for(var i = reihe.length - 1; i >= 0 && stand !== a; i--){ s._blockZurueck(a, { id: reihe[i].id, alt: reihe[i].alt }); stand = reihe[i].alt; }
+    }
   };
   SC.Spiel.prototype._gastStatus = function(gast, st, info){
     if(this.raum !== gast) return;

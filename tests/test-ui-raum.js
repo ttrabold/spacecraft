@@ -42,6 +42,7 @@ test("Beitreten: Wort + zwei Ziffern ergeben Code", function(){
       gleich(w.querySelector(".raumcode").textContent, "MOND 47");
       wahr(w.querySelector('[data-aktion="ziffer"][data-id="1"]').disabled, "höchstens zwei Ziffern");
       wahr(!w.querySelector('[data-aktion="codeOk"]').disabled);
+      var weg = w.querySelector('[data-aktion="zifferWeg"]'); gleich(weg.textContent, SC.T.zifferWegZeichen); gleich(weg.getAttribute("aria-label"), SC.T.zifferWeg);
     });
 });
 
@@ -118,6 +119,8 @@ test("Einladen zeigt Code, PvP-Schalter und Mitspieler", function(){
     return raumKlick(ui, '[data-aktion="pvp"]');
   }).then(function(){ gleich(pvp.join(), "true"); wahr(w.querySelector('[data-aktion="pvp"]').classList.contains("an"));
     return raumKlick(ui, '[data-aktion="hinauswerfen"][data-id="g1"]');
+  }).then(function(){ gleich(raus.length, 0, "erster Tipp fragt nur nach"); var h = w.querySelector('[data-aktion="hinauswerfen"][data-id="g1"]'); gleich(h.textContent, SC.T.wirklichHinauswerfen);
+    return ui._klick(h);
   }).then(function(){ gleich(raus.join(), "g1");
     info.spieler = []; ui.raumAktualisieren(); wahr(!w.querySelector(".mitspieler-zeile"), "Liste aktualisiert"); wahr(w.textContent.indexOf(SC.T.keineMitspieler) >= 0);
     return raumKlick(ui, '[data-aktion="zurueck"]');
@@ -176,6 +179,7 @@ test("Gast sieht keinen Moduswechsel", function(){
   ui.zeigePause(d);
   wahr(!w.querySelector('[data-aktion="modus"]'), "kein Modus"); wahr(!w.querySelector('[data-aktion="schwierigkeit"]'), "keine Schwierigkeit");
   wahr(!w.querySelector('[data-aktion="einladen"]')); wahr(w.textContent.indexOf("Du spielst bei Mia") >= 0);
+  ui.o.raumInfo = function(){ return { rolle: "gast", gastgeber: "A$&B$1" }; }; ui.zeigePause(d); wahr(w.textContent.indexOf("Du spielst bei A$&B$1") >= 0, "Name wörtlich: " + w.querySelector(".spielt-bei").textContent);
   ui.o.raumInfo = function(){ return { rolle: "gastgeber", code: "MOND 47", spieler: [] }; };
   ui.zeigePause(d);
   wahr(!!w.querySelector('[data-aktion="einladen"]'), "Gastgeber lädt ein");
@@ -189,4 +193,38 @@ test("Spiel: raumInfo je Rolle", function(){
   var i = s.raumInfo(); gleich(i.rolle, "gastgeber"); gleich(i.code, "MOND 47"); gleich(i.pvp, true); gleich(i.spieler[0].name, "Ben"); gleich(i.spieler[0].farbe, "#e0533a");
   var gg = Object.create(SC.Gast.prototype); gg.spieler = [{ id: "h", name: "Mia", farbe: SC.RAUM_FARBEN[0] }, { id: "y", name: "Ben", farbe: "#e0533a" }]; gg.pvp = false; s.raum = gg;
   i = s.raumInfo(); gleich(i.rolle, "gast"); gleich(i.gastgeber, "Mia");
+});
+
+// --- Abbrechen, während die eigene Welt noch lädt (nutzt die Helfer aus test-mehrspieler.js) ---
+function raumHalte(slots, name){ var alt = slots[name], h = {}, tor = new Promise(function(ok){ h.los = ok; }); slots[name] = function(x){ var sl = this; slots[name] = alt; return tor.then(function(){ return alt.call(sl, x); }); }; return h; }
+test("Spiel: Abbrechen während die Welt lädt startet kein Spiel", function(){
+  var u, e = {};
+  return mspZwei({ ohneBeitritt: true }).then(function(x){ u = x; var h = raumHalte(u.sG, "lade");
+    u.g.beitreten(u.code, u.eigen.id, "Ben").then(function(){ e.ok = true; }, function(f){ e.f = f; });
+    u.g.beitretenAbbrechen(); h.los(); return mspLauf(u.netz, 4);
+  }).then(function(){ wahr(!e.ok, "nicht beigetreten"); gleich(e.f && e.f.art, "abbruch"); gleich(u.anfragen, 0, "keine Anfrage beim Gastgeber"); gleich(u.g.rolle, "allein"); gleich(u.g.raum, null); gleich(u.g.daten, undefined); })
+    .then(mspFertig, mspFehler);
+});
+test("Spiel: kein zweiter Beitritt gleichzeitig, nach Abbruch genau eine Anfrage", function(){
+  var u, e1 = {}, e2 = {}, e3 = {};
+  return mspZwei({ ohneBeitritt: true }).then(function(x){ u = x; var h = raumHalte(u.sG, "lade");
+    u.g.beitreten(u.code, u.eigen.id, "Ben").then(function(){ e1.ok = true; }, function(f){ e1.f = f; });
+    u.g.beitreten(u.code, u.eigen.id, "Ben").then(function(){ e3.ok = true; }, function(f){ e3.f = f; });
+    u.g.beitretenAbbrechen();
+    u.g.beitreten(u.code, u.eigen.id, "Ben").then(function(){ e2.ok = true; }, function(f){ e2.f = f; });
+    h.los(); return mspLauf(u.netz, 5);
+  }).then(function(){ wahr(!e3.ok && !!e3.f, "läuft schon: abgelehnt"); gleich(e1.f && e1.f.art, "abbruch"); wahr(e2.ok, "zweiter Versuch klappt: " + (e2.f && (e2.f.art || e2.f.message)));
+    gleich(u.anfragen, 1, "genau eine Anfrage"); gleich(u.h.raum.spieler.length, 1); gleich(u.g.rolle, "gast"); })
+    .then(mspFertig, mspFehler);
+});
+test("Spiel: Neue Figur nach Abbruch legt keine zweite Welt an", function(){
+  var u, e = {};
+  return mspZwei({ ohneBeitritt: true }).then(function(x){ u = x; var h = raumHalte(u.sG, "speichere");
+    u.g.beitreten(u.code, null, "Ben").then(null, function(){});
+    u.g.beitretenAbbrechen();
+    u.g.beitreten(u.code, null, "Ben").then(function(){ e.ok = true; }, function(f){ e.f = f; });
+    h.los(); return mspLauf(u.netz, 5);
+  }).then(function(){ wahr(e.ok, "beigetreten: " + (e.f && (e.f.art || e.f.message))); return u.sG.liste(); })
+    .then(function(l){ var welten = Object.keys(u.sG.b.m).filter(function(k){ return /^welt:[^:]+$/.test(k); }); gleich(welten.length, 2, "eigene Welt und genau eine neue: " + welten.join()); gleich(l.length, 2); gleich(u.anfragen, 1, "genau eine Anfrage"); })
+    .then(mspFertig, mspFehler);
 });

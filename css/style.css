@@ -114,7 +114,7 @@ input[type=range].regeln{outline:3px solid #3ef0ff}
 .woerter button{min-height:56px;justify-content:center;font-size:18px;font-weight:bold;letter-spacing:1px}
 .ziffern{display:grid;grid-template-columns:repeat(3,minmax(64px,96px));gap:8px;justify-content:center}
 .ziffern button{min-height:64px;justify-content:center;font-size:26px;font-weight:bold}
-.ziffern [data-aktion="zifferWeg"]{font-size:15px;font-weight:normal}
+.ziffern [data-aktion="zifferWeg"]{font-size:26px;font-weight:normal}
 .figuren button{justify-content:flex-start;text-align:left;min-height:52px}
 .pvp{align-self:flex-start;margin-bottom:6px}
 h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}

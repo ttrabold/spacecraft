@@ -35,7 +35,7 @@
     function ziffer(n){ return '<button class="ziffer" data-aktion="ziffer" data-id="' + n + '"' + (voll || (n === 0 && !st.zahl) ? " disabled" : "") + ">" + n + "</button>"; }
     this._zeige(kopf(st.wort + " " + (st.zahl + "__").slice(0, 2)) + '<p class="raum-schritt">' + esc(SC.T.codeZahl) + "</p>" +
       '<div class="ziffern">' + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(ziffer).join("") +
-      '<button class="ziffer" data-aktion="zifferWeg"' + (st.zahl ? "" : " disabled") + ">" + esc(SC.T.zifferWeg) + "</button>" + ziffer(0) + "</div>" +
+      '<button class="ziffer" data-aktion="zifferWeg" aria-label="' + esc(SC.T.zifferWeg) + '" title="' + esc(SC.T.zifferWeg) + '"' + (st.zahl ? "" : " disabled") + ">" + esc(SC.T.zifferWegZeichen) + "</button>" + ziffer(0) + "</div>" +
       '<div class="reihe"><button data-aktion="zurueck">' + esc(SC.T.zurueck) + '</button><button class="haupt" data-aktion="codeOk"' + (voll ? "" : " disabled") + ">" + esc(SC.T.weiter) + "</button></div>",
       {
         ziffer: function(el, id){ if(st.zahl.length < 2) st.zahl += id; behalteFokus(ui, function(){ ui.zeigeBeitreten(st); }); },
@@ -82,7 +82,11 @@
     function aktuell(){ return ui._beitrittNr === nr; }
     this._zeige(kopf(code.text) + '<p class="raum-status">' + esc(SC.T.raumVerbinde) + "</p>" +
       '<div class="reihe"><button data-aktion="zurueck">' + esc(SC.T.abbrechen) + "</button></div>",
-      { zurueck: function(){ ui._beitrittNr++; ui.o.beiBeitretenAbbrechen && ui.o.beiBeitretenAbbrechen(); return ui._figurWahl(st); } });
+      { zurueck: function(){
+        ui._beitrittNr++; ui.o.beiBeitretenAbbrechen && ui.o.beiBeitretenAbbrechen();
+        if(st.weltId === null) st.alteIds = (st.figuren || []).map(function(x){ return x.id; }); // eine neue Figur hat vielleicht schon ihre Welt
+        st.figuren = null; return ui._figurWahl(st);
+      } });
     return Promise.resolve().then(function(){ return ui.o.beiBeitreten(code, st.weltId, name); }).then(function(){
       ui._beitrittNr++; ui.schliesse(); // Spiel läuft (auch wenn vorher abgebrochen wurde, aber der Eintritt schon klappte)
     }, function(f){
@@ -156,7 +160,11 @@
       '<div class="reihe"><button class="haupt" data-aktion="zurueck">' + esc(SC.T.zurueck) + "</button></div></div>",
       {
         pvp: function(){ ui.o.beiPvp && ui.o.beiPvp(!info.pvp); ui.raumAktualisieren(); },
-        hinauswerfen: function(el, id){ ui.o.beiHinauswerfen && ui.o.beiHinauswerfen(id); ui.raumAktualisieren(); },
+        hinauswerfen: function(el, id){
+          // Zweimal tippen, wie beim Löschen einer Welt
+          if(el.getAttribute("data-sicher") !== "1"){ el.setAttribute("data-sicher", "1"); el.textContent = SC.T.wirklichHinauswerfen; el.classList.add("sicher"); return; }
+          ui.o.beiHinauswerfen && ui.o.beiHinauswerfen(id); ui.raumAktualisieren();
+        },
         zurueck: function(){ zurueck(); }
       });
   };

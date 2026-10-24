@@ -178,7 +178,7 @@ SC.UI = function(wurzel, o){
       '<div class="spalte">' +
       '<button class="haupt" data-aktion="weiter">' + esc(SC.T.weiterspielen) + "</button>" +
       // Gast: Modus und Schwierigkeit legt der Gastgeber fest
-      (gast ? '<p class="spielt-bei">' + esc(SC.T.spieltBei.replace("{name}", raum.gastgeber || "")) + "</p>" :
+      (gast ? '<p class="spielt-bei">' + esc(SC.T.spieltBei.replace("{name}", function(){ return raum.gastgeber || ""; })) + "</p>" :
       (o.beiEinladen ? '<button data-aktion="einladen">' + esc(SC.T.einladen) + "</button>" : "") +
       '<div class="reihe modi"><span>' + esc(SC.T.modus) + ":</span>" +
       '<button class="modus' + (daten.modus === "kreativ" ? " an" : "") + '" data-aktion="modus" data-modus="kreativ">' + esc(SC.T.kreativ) + "</button>" +

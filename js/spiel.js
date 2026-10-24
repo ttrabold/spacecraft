@@ -340,18 +340,30 @@ SC.Spiel.startpunkt = function(planet){
 
   // Einem Raum beitreten. eigeneWeltId: Welt, deren Figur mitkommt; null → neue Survival-Welt „<figurName>s Welt“.
   // figurName: Name für die neue Figur bzw. für eine Figur ohne Namen. → Promise (erfüllt nach dem Eintritt, sonst SC.Netz.Fehler)
+  // Jeder Versuch hat eine Marke; nach jedem Zwischenschritt wird geprüft, ob abgebrochen wurde. Ein neuer Versuch wartet, bis ein
+  // abgebrochener fertig ist; solange einer läuft, wird ein weiterer abgelehnt.
   SC.Spiel.prototype.beitreten = function(code, eigeneWeltId, figurName){
-    var s = this, laden;
-    if(this.daten || this.raum) return Promise.reject(new Error("Spiel läuft noch")); // nur aus der Weltliste
-    if((eigeneWeltId === null || eigeneWeltId === undefined) && !(figurName && String(figurName).trim())) return Promise.reject(new Error("Neue Figur braucht einen Namen"));
-    if(eigeneWeltId === null || eigeneWeltId === undefined){
-      var neu = SC.Spielstand.neu({ name: figurName + "s Welt", figurName: figurName, modus: "survival" });
-      laden = this.slots.speichere(neu).then(function(){ return neu; });
-    } else laden = this.slots.lade(eigeneWeltId).then(function(d){
-      if(d.spieler.name || !figurName) return d;
-      d.spieler.name = figurName; return s.slots.speichere(d).then(function(){ return d; });
-    });
-    return laden.then(function(eigen){
+    var s = this, alt = this._beitritt, neueFigur = eigeneWeltId === null || eigeneWeltId === undefined;
+    if(this.daten || this.raum && !(alt && alt.abgebrochen)) return Promise.reject(new Error("Spiel läuft noch")); // nur aus der Weltliste
+    if(alt && !alt.abgebrochen) return Promise.reject(new Error("Beitritt läuft schon"));
+    if(neueFigur && !(figurName && String(figurName).trim())) return Promise.reject(new Error("Neue Figur braucht einen Namen"));
+    var v = { abgebrochen: false }; this._beitritt = v;
+    function pruefe(){ if(v.abgebrochen) throw new SC.Netz.Fehler("abbruch"); }
+    function neu(){ var d = SC.Spielstand.neu({ name: figurName + "s Welt", figurName: figurName, modus: "survival" }); return s.slots.speichere(d).then(function(){ s._neueFigur = { id: d.id, name: figurName }; return d; }); }
+    v.p = (alt ? alt.p.then(null, function(){}) : Promise.resolve()).then(function(){
+      pruefe();
+      if(s.daten || s.raum) throw new Error("Spiel läuft noch");
+      if(neueFigur){
+        // Nach Abbruch oder Ablehnung gibt es die Welt der neuen Figur schon: wiederverwenden statt eine zweite anzulegen
+        var nf = s._neueFigur;
+        return nf && nf.name === figurName ? s.slots.lade(nf.id).then(null, neu) : neu();
+      }
+      return s.slots.lade(eigeneWeltId).then(function(d){
+        if(d.spieler.name || !figurName) return d;
+        d.spieler.name = figurName; return s.slots.speichere(d).then(function(){ return d; });
+      });
+    }).then(function(eigen){
+      pruefe();
       var chunks = {}, gast = new SC.Gast({ adapter: SC.Spiel.adapter(), figur: SC.Spielstand.figur(eigen),
         beiWillkommen: function(){ chunks = {}; },
         beiChunk: function(k, u8){ chunks[k] = u8; },
@@ -362,7 +374,9 @@ SC.Spiel.startpunkt = function(planet){
         beiPvp: function(an){ rueck(s, "pvp", an); } });
       s._eigen = eigen; s.raum = gast; s.rolle = "gast";
       return gast.verbinde(code).catch(function(f){ if(s.raum === gast){ s.raum = null; s.rolle = "allein"; s._eigen = null; } throw f; });
-    });
+    }).then(function(){ if(s._beitritt === v) s._beitritt = null; s._neueFigur = null; },
+      function(f){ if(s._beitritt === v) s._beitritt = null; throw f; });
+    return v.p;
   };
   // Für die Oberfläche: Rolle, Code, Spaßkampf, die anderen Spieler (Gastgeber) bzw. Name des Gastgebers (Gast)
   SC.Spiel.prototype.raumInfo = function(){
@@ -372,7 +386,11 @@ SC.Spiel.startpunkt = function(planet){
     return { rolle: "allein" };
   };
   // Warten auf den Gastgeber abbrechen: beitreten wird mit SC.Netz.Fehler("abbruch") abgelehnt
-  SC.Spiel.prototype.beitretenAbbrechen = function(){ if(this.raum instanceof SC.Gast && !this.daten) this.raum.trenne(); };
+  SC.Spiel.prototype.beitretenAbbrechen = function(){
+    if(this.daten) return;
+    if(this._beitritt) this._beitritt.abgebrochen = true; // greift auch, solange die eigene Welt noch lädt
+    if(this.raum instanceof SC.Gast) this.raum.trenne();
+  };
   // bereit: beim ersten Mal Spiel starten (Welt binden, bevor Block-Tatsachen kommen); beim Neuverbinden Welt behalten, nur Chunks übernehmen
   SC.Spiel.prototype._gastBereit = function(gast, chunks){
     var s = this;

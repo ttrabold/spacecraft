@@ -30,7 +30,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | live als 0.5.1; offen: kleinere Punkte #38–#42 und Balance nach Feedback | [Design](superpowers/specs/2026-10-23-stufe-2-survival-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-2-survival.md) |
 | 3 | Gemeinsam spielen per Raumcode | fertig, live als 0.6.1 | [Design](superpowers/specs/2026-10-24-stufe-3-gemeinsam-spielen-design.md) | [Plan](superpowers/plans/2026-10-24-stufe-3-gemeinsam-spielen.md) |
 | 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | fertig, live als 0.7.8 | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | [Plan](superpowers/plans/2026-10-29-stufe-4-fahrzeuge.md) |
-| 5 | Neue Planeten (5a: Glutfrost, Rankenmoor) und Raumflug (5b: Raumschiff, All, Sprungantrieb) | 5a live als 0.8.0, 5b in Planung | [Design](superpowers/specs/2026-10-29-stufe-5-planeten-raumflug-design.md) | [Plan 5a](superpowers/plans/2026-10-29-stufe-5a-neue-planeten.md) |
+| 5 | Neue Planeten (5a: Glutfrost, Rankenmoor) und Raumflug (5b: Raumschiff, All, Sprungantrieb) | 5a live als 0.8.0, 5b geplant (#77–#83) | [Design](superpowers/specs/2026-10-29-stufe-5-planeten-raumflug-design.md) | [Plan 5a](superpowers/plans/2026-10-29-stufe-5a-neue-planeten.md), [Plan 5b](superpowers/plans/2026-10-29-stufe-5b-raumflug.md) |
 | später | Crafting: aus Rohstoffen Dinge herstellen (gewünscht, Zeitpunkt offen) | offen | – | – |
 
 ## Aktueller Stand

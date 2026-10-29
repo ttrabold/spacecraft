@@ -18,10 +18,18 @@ SC.Generator = function(planet){
 (function(){
   var B = SC.B, H = SC.CHUNK.H;
 
+  // Landschaftsregeln eines neuen Planeten (js/landschaft.js); null für den Startplaneten, der über den bisherigen Pfad läuft
+  SC.Generator.prototype._land = function(){
+    if(this._L === undefined) this._L = this.planet.landschaft && this.planet.landschaft !== "start" && SC.LANDSCHAFTEN ? SC.LANDSCHAFTEN[this.planet.landschaft] || null : null;
+    return this._L;
+  };
+
   SC.Generator.prototype.hoehe = function(x, z){
     var P = this.planet.groesse; x = SC.mod(Math.floor(x), P); z = SC.mod(Math.floor(z), P);
     var k = x * P + z, c = this._hCache[k];
     if(c !== undefined) return c;
+    var L = this._land();
+    if(L){ c = L.hoehe(this, x, z); if(this._hAnzahl++ > 200000){ this._hCache = {}; this._hAnzahl = 0; } return this._hCache[k] = c; }
     var h = 56 + this.rHoehe.oktaven(x, z, P, 256, 5) * 16;
     var m = this.rBerge.oktaven(x, z, P, 512, 3);
     if(m > 0.15) h += (m - 0.15) * 110;
@@ -40,7 +48,8 @@ SC.Generator = function(planet){
     return c;
   };
   SC.Generator.prototype._biom = function(x, z){
-    var P = this.planet.groesse, h = this.hoehe(x, z);
+    var P = this.planet.groesse, h = this.hoehe(x, z), L = this._land();
+    if(L) return L.biom(this, x, z, h);
     if(h <= SC.MEER) return "see";
     if(h <= SC.MEER + 2) return "strand";
     if(h >= 82) return "berge";
@@ -84,7 +93,9 @@ SC.Generator = function(planet){
     }
   }
 
+  SC.Generator.grobFeld = grobFeld;
   SC.Generator.prototype.chunk = function(cx, cz){
+    if(this._land()) return SC.Landschaft.chunk(this, cx, cz);
     var P = this.planet.groesse, n = P / 16, s = this.planet.seed;
     cx = SC.mod(cx, n); cz = SC.mod(cz, n);
     var x0 = cx * 16, z0 = cz * 16, c = new Uint8Array(16 * H * 16);
@@ -123,7 +134,12 @@ SC.Generator = function(planet){
       if(th <= SC.MEER + 1 || th > 100) continue;
       baum(c, this, x0, z0, tx, tz, th, 4 + (hb % 3));
     }
-    // Bauwerke zuletzt einprägen
+    this._bauwerkePraegen(c, cx, cz);
+    return c;
+  };
+  // Bauwerke zuletzt einprägen (alle Planeten)
+  SC.Generator.prototype._bauwerkePraegen = function(c, cx, cz){
+    var P = this.planet.groesse, x0 = cx * 16, z0 = cz * 16;
     var liste = SC.Bauwerke.imChunk(this.planet, cx, cz);
     for(var b = 0; b < liste.length; b++){
       var bw = liste[b];

@@ -30,3 +30,32 @@ test("Neue Blöcke haben feste IDs und Eigenschaften", function(){
   var l = SC.BLOECKE[SC.B.LAVA]; gleich(l.fest, false); gleich(l.leuchten, 15); wahr(l.name.length > 2);
   wahr(SC.BLOECKE[SC.B.EIS].fest && SC.BLOECKE[SC.B.EIS].durchsichtig, "Eis fest und durchsichtig"); wahr(SC.BLOECKE[SC.B.SCHLAMM].fest); wahr(SC.BLOECKE[SC.B.BASALT].fest);
 });
+
+// --- Landschaften ---
+function plZaehle(planet, ids, n){ var g = new SC.Generator(planet), z = {}; ids.forEach(function(i){ z[i] = 0; }); for(var i = 0; i < n; i++) for(var j = 0; j < n; j++){ var c = g.chunk(i * 31, j * 29); for(var k = 0; k < c.length; k++) if(z[c[k]] !== undefined) z[c[k]]++; } return z; }
+test("Glutfrost: deterministisch, hat Eis, Lava und Basalt", function(){
+  var a = new SC.Planet({ id: "glutfrost", seed: 777 }), b = new SC.Planet({ id: "glutfrost", seed: 777 });
+  gleich(plPruef(new SC.Generator(a).chunk(3, 9)), plPruef(new SC.Generator(b).chunk(3, 9)));
+  var z = plZaehle(a, [SC.B.GRAS], 3); gleich(z[SC.B.GRAS], 0, "kein Gras");
+  // je Landschaft eine Stelle suchen und dort den erwarteten Block im Chunk finden
+  var g = new SC.Generator(a);
+  [["lavasee", SC.B.LAVA], ["vulkan", SC.B.BASALT], ["eisfeld", SC.B.EIS]].forEach(function(e){
+    var ort = null; for(var x = 0; x < 2048 && !ort; x += 32) for(var zz = 0; zz < 2048 && !ort; zz += 32) if(g.biom(x, zz) === e[0] && g.hoehe(x, zz) < 46 + (e[0] === "lavasee" ? 0 : 80)) ort = [x, zz];
+    wahr(ort, "Landschaft " + e[0] + " vorhanden"); var c = g.chunk(ort[0] >> 4, ort[1] >> 4), n = 0; for(var k = 0; k < c.length; k++) if(c[k] === e[1]) n++; wahr(n > 0, e[0] + ": Block " + e[1]);
+  });
+});
+test("Rankenmoor: deterministisch, hat Schlamm, Wasser und hohe Bäume", function(){
+  var a = new SC.Planet({ id: "rankenmoor", seed: 778 }), g = new SC.Generator(a);
+  gleich(plPruef(g.chunk(4, 4)), plPruef(new SC.Generator(new SC.Planet({ id: "rankenmoor", seed: 778 })).chunk(4, 4)));
+  var z = plZaehle(a, [SC.B.SCHLAMM, SC.B.WASSER, SC.B.LAVA], 4); wahr(z[SC.B.SCHLAMM] > 0, "Schlamm"); wahr(z[SC.B.WASSER] > 0, "Wasser"); gleich(z[SC.B.LAVA], 0);
+  var hoch = 0; for(var i = 0; i < 3 && !hoch; i++) for(var j = 0; j < 3 && !hoch; j++){ var c = g.chunk(i * 7, j * 7); for(var x = 0; x < 16; x++) for(var zz = 0; zz < 16; zz++){ var n = 0; for(var y = 0; y < SC.CHUNK.H; y++){ if(c[SC.idx(x, y, zz)] === SC.B.STAMM){ if(++n >= 10) hoch = 1; } else n = 0; } } }
+  wahr(hoch, "Stamm mit mindestens 10 Blöcken");
+});
+test("Landepunkt ist sicher", function(){
+  ["glutfrost", "rankenmoor"].forEach(function(id){ [1, 2, 3].forEach(function(seed){
+    var p = new SC.Planet({ id: id, seed: seed * 1000 + 7 }), w = new SC.Welt(p), lp = SC.Spiel.startpunkt(p), x = Math.floor(lp[0]), y = Math.floor(lp[1]), z = Math.floor(lp[2]);
+    var unter = w.holeBlock(x, y - 1, z); wahr(SC.BLOECKE[unter].fest && unter !== SC.B.LAVA && unter !== SC.B.SCHLAMM, id + "/" + seed + ": Boden " + unter);
+    wahr(!SC.BLOECKE[w.holeBlock(x, y, z)].fest && !SC.BLOECKE[w.holeBlock(x, y + 1, z)].fest, id + "/" + seed + ": frei");
+    for(var dx = -2; dx <= 2; dx++) for(var dz = -2; dz <= 2; dz++) for(var dy = -1; dy <= 1; dy++){ var b = w.holeBlock(x + dx, y + dy, z + dz); wahr(b !== SC.B.LAVA && b !== SC.B.WASSER, id + "/" + seed + ": keine Flüssigkeit nah"); }
+  }); });
+});

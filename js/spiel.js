@@ -64,14 +64,16 @@ SC.Spiel.bildFaellig = function(t, letzte, max){ return !max || t - letzte >= 10
 
 // Startpunkt neuer Welten: Spalte über Land, spiralförmig um die Planetenmitte gesucht
 SC.Spiel.startpunkt = function(planet){
-  var g = new SC.Generator(planet), m = planet.groesse / 2, chunks = {};
+  var g = new SC.Generator(planet), m = planet.groesse / 2, chunks = {}, L = g._land();
   // Tatsächliche Blöcke prüfen: fester Boden, darüber zwei freie Blöcke (kein Baum, keine Wand)
-  function block(x, y, z){ var k = (x >> 4) + "," + (z >> 4); var c = chunks[k] || (chunks[k] = g.chunk(x >> 4, z >> 4)); return SC.BLOECKE[c[SC.idx(x & 15, y, z & 15)]]; }
+  function block(x, y, z){ x = SC.mod(x, planet.groesse); z = SC.mod(z, planet.groesse); var k = (x >> 4) + "," + (z >> 4); var c = chunks[k] || (chunks[k] = g.chunk(x >> 4, z >> 4)); return SC.BLOECKE[c[SC.idx(x & 15, y, z & 15)]]; }
+  function fluessigNah(x, h, z){ for(var dx = -2; dx <= 2; dx++) for(var dz = -2; dz <= 2; dz++) for(var dy = 0; dy <= 2; dy++){ var id = block(x + dx, h + dy, z + dz).id; if(id === SC.B.LAVA || id === SC.B.WASSER) return true; } return !block(x, h, z).fest || block(x, h, z).id === SC.B.SCHLAMM; }
   for(var r = 0; r < 400; r += 4){
     var schritte = Math.max(1, r * 2);
     for(var i = 0; i < schritte; i++){
       var w = i / schritte * Math.PI * 2, x = SC.mod(Math.floor(m + Math.cos(w) * r), planet.groesse), z = SC.mod(Math.floor(m + Math.sin(w) * r), planet.groesse), b = g.biom(x, z), h = g.hoehe(x, z);
       if(h <= SC.MEER + 1 || b === "see" || b === "strand" || b === "berge" || h + 2 >= SC.CHUNK.H) continue;
+      if(L && (L.keinLanden.indexOf(b) >= 0 || fluessigNah(x, h, z))) continue; // neue Planeten: nicht in Lava, Sumpf oder am Wasser
       if(block(x, h, z).fest && !block(x, h + 1, z).fest && !block(x, h + 2, z).fest && block(x, h + 1, z).id !== SC.B.WASSER) return [x + 0.5, h + 1, z + 0.5];
     }
   }

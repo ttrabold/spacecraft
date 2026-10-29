@@ -10,3 +10,18 @@ test("Entwicklerwerkzeuge zeigen die Version", function(){ var w=document.create
 test("Kampf und Boss haben Vorrang", function(){ gleich(SC.Musik.stimmung({tageslicht:1,unterTage:true,kampf:true}),"kampf"); gleich(SC.Musik.stimmung({tageslicht:1,kampf:true,boss:true}),"boss"); gleich(SC.Musik.stimmung({tageslicht:1,unterTage:false}),"tag"); });
 test("Kampfmusik ist schnell und treibend", function(){ var k=SC.Musik.komponiere(1,"kampf"),b=SC.Musik.komponiere(1,"boss"); wahr(k.tempo>=120); wahr(b.tempo>=128); wahr(k.moll); var pauken=k.events.filter(function(e){return e.instrument==="pauke"&&e.t<4;}).length; wahr(pauken>=4); wahr(tonleiterOk(k,k.grundton,true)); });
 test("Kampfgeräusche erzeugen Klang", function(){ var ctx=new OfflineAudioContext(1,44100,44100),z=ctx.createGain(); z.connect(ctx.destination); ["blaster","schwert","blocken","abprall","treffer","getroffen","zerfall","aufsammeln","kiste","aufstieg","besiegt","droide","krabbler","spucker","ueberhitzt"].forEach(function(n){ SC.Klang.erzeuge(ctx,z,n,{seltenheit:3},0.8); }); return ctx.startRendering().then(function(b){ var d=b.getChannelData(0),s=0; for(var i=0;i<d.length;i++) s+=d[i]*d[i]; wahr(Math.sqrt(s/d.length)>0.005); wahr(d.every(function(v){return isFinite(v);})); }); });
+test("iOS: Ton als Wiedergabe anmelden, unterbrochenen Ton wieder starten", function(){
+  var altA = window.AudioContext, altS = Object.getOwnPropertyDescriptor(navigator, "audioSession"), fortgesetzt = 0;
+  function Ctx(){ var c = this; this.state = "interrupted"; this.currentTime = 0; this.destination = {}; this.sampleRate = 44100;
+    function knoten(){ return { connect: function(){}, gain: { value: 1, setValueAtTime: function(){}, setTargetAtTime: function(){} }, buffer: null, frequency: { value: 0 }, type: "" }; }
+    this.createGain = knoten; this.createDynamicsCompressor = knoten; this.createConvolver = knoten; this.createBiquadFilter = knoten;
+    this.createBuffer = function(k, n){ return { getChannelData: function(){ return new Float32Array(n); } }; };
+    this.resume = function(){ fortgesetzt++; c.state = "running"; return Promise.resolve(); }; }
+  window.AudioContext = Ctx; Object.defineProperty(navigator, "audioSession", { value: { type: "auto" }, configurable: true });
+  try{
+    var a = new SC.Audio(); a.entsperren();
+    gleich(navigator.audioSession.type, "playback", "Wiedergabe statt Umgebungston (Stummschalter)"); gleich(fortgesetzt, 1, "unterbrochener Ton wird fortgesetzt");
+    wahr(a._stumm && a._stumm.loop, "stilles Audio-Element als Rückfall für ältere iOS");
+    a.ctx.state = "interrupted"; a.entsperren(); gleich(fortgesetzt, 2, "auch nach App-Wechsel");
+  } finally { window.AudioContext = altA; if(altS) Object.defineProperty(navigator, "audioSession", altS); else delete navigator.audioSession; }
+});

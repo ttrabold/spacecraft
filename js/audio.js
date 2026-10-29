@@ -138,8 +138,28 @@ SC.Klang = {};
       this.musikTrocken = c.createGain(); this.musikTrocken.connect(this.musik); this.musikTrocken.connect(h);
       this.lautstaerke(this.musikLaut, this.sfxLaut);
     }
-    if(this.ctx.state === "suspended") this.ctx.resume();
+    // iOS: als Wiedergabe anmelden, sonst schaltet der Stummschalter Web Audio stumm (Safari ab 16.4) …
+    try{ if(navigator.audioSession && navigator.audioSession.type !== "playback") navigator.audioSession.type = "playback"; }catch(e){}
+    // … bei älteren Geräten hilft ein stilles, endlos laufendes Audio-Element (startet nur innerhalb einer Nutzeraktion)
+    try{
+      if(!this._stumm){ var el = this._stumm = document.createElement("audio"); el.src = stilleWav(); el.loop = true; el.setAttribute("playsinline", ""); }
+      if(this._stumm.paused){ var p = this._stumm.play(); if(p && p.catch) p.catch(function(){}); } // bei der nächsten Berührung erneut, falls es nicht klappte
+    }catch(e){}
+    // „suspended“ oder auf iOS nach einem App-Wechsel „interrupted“: wieder starten
+    if(this.ctx.state !== "running" && this.ctx.state !== "closed"){ var r = this.ctx.resume(); if(r && r.catch) r.catch(function(){}); }
   };
+  // 0,1 s Stille als WAV (data:-Adresse), damit keine Audiodatei nötig ist
+  var _stille = null;
+  function stilleWav(){
+    if(_stille) return _stille;
+    var n = 800, b = new Uint8Array(44 + n), v = new DataView(b.buffer);
+    function txt(o, t){ for(var i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); }
+    txt(0, "RIFF"); v.setUint32(4, 36 + n, true); txt(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); txt(36, "data"); v.setUint32(40, n, true);
+    for(var i = 44; i < b.length; i++) b[i] = 128;
+    var s = ""; for(var k = 0; k < b.length; k++) s += String.fromCharCode(b[k]);
+    return _stille = "data:audio/wav;base64," + btoa(s);
+  }
   SC.Audio.prototype.lautstaerke = function(m, s){
     this.musikLaut = m; this.sfxLaut = s;
     if(this.ctx){ this.musik.gain.value = m * 0.6; this.sfx.gain.value = s; }

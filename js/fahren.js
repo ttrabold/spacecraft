@@ -167,12 +167,36 @@
     this.audio.spiele("zerfall");
     if(sitz >= 0){ this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, f, sitz)); this.ui.hinweis((f.fundort ? SC.T.fahrzeugVerpufftFundort : SC.T.fahrzeugVerpufft).replace("{name}", name), 4000); }
   };
+  // Ziel des Bordgeschützes: erster Gegner oder Block auf der Blicklinie der Kamera (bis 60 Blöcke) → { punkt, gegner } oder null ohne Geschütz.
+  // Der Strahl beginnt auf Höhe des Rohrs, damit nichts zwischen Kamera und Fahrzeug als Ziel zählt.
+  var BORD_REICHWEITE = 60;
+  S._bordZiel = function(f){
+    var g = SC.FAHRZEUGE[f.art].geschuetz; if(!g) return null;
+    var w = this.welt, P = w.planet.groesse, k = this.spieler.kamera(), d = k.richtung, rohr = SC.Fahrzeug.dreh(f, g.rohr, P);
+    var rk = [SC.mod(rohr[0] - k.pos[0] + P / 2, P) - P / 2, rohr[1] - k.pos[1], SC.mod(rohr[2] - k.pos[2] + P / 2, P) - P / 2];
+    var t0 = Math.max(0, rk[0] * d[0] + rk[1] * d[1] + rk[2] * d[2]), st = [k.pos[0] + d[0] * t0, k.pos[1] + d[1] * t0, k.pos[2] + d[2] * t0];
+    var b = SC.zielen(w, st, d, BORD_REICHWEITE), tb = BORD_REICHWEITE;
+    if(b){ var bx = SC.mod(b.x + 0.5 - st[0] + P / 2, P) - P / 2, by = b.y + 0.5 - st[1], bz = SC.mod(b.z + 0.5 - st[2] + P / 2, P) - P / 2; tb = Math.max(0, bx * d[0] + by * d[1] + bz * d[2]); }
+    var bester = null, tg = tb;
+    w.wesen.forEach(function(x){
+      if(x.art !== "gegner" || x.lp <= 0) return;
+      var v = [SC.mod(x.pos[0] - st[0] + P / 2, P) - P / 2, x.pos[1] + x.hoehe / 2 - st[1], SC.mod(x.pos[2] - st[2] + P / 2, P) - P / 2], t = v[0] * d[0] + v[1] * d[1] + v[2] * d[2];
+      if(t < 0 || t >= tg) return;
+      var r = Math.max(x.breite, x.hoehe) / 2 + 0.3, q = v[0] * v[0] + v[1] * v[1] + v[2] * v[2] - t * t;
+      if(q <= r * r){ tg = t; bester = x; }
+    });
+    var t = bester ? tg : tb;
+    return { punkt: [st[0] + d[0] * t, st[1] + d[1] * t, st[2] + d[2] * t], gegner: bester };
+  };
   // Bordgeschütz des Fahrers (Angriffstaste), mit Abklingzeit; t in ms
   S._bordschuss = function(f, t){
     var g = SC.FAHRZEUGE[f.art].geschuetz;
     if(!g || t < (this._bordBereit || 0)) return false;
     this._bordBereit = t + g.abklingen * 1000;
-    this._spielerSchuss({ pos: SC.Fahrzeug.dreh(f, g.rohr, this.welt.planet.groesse), richtung: this.spieler.richtung(), tempo: g.tempo, schaden: g.schaden, team: "spieler", art: "laser", lebensdauer: 60 / g.tempo, farbe: g.farbe });
+    // vom Rohr auf den Punkt unter dem Fadenkreuz
+    var rohr = SC.Fahrzeug.dreh(f, g.rohr, this.welt.planet.groesse), z = this._bordZiel(f), r = this.spieler.richtung();
+    if(z){ var v = [z.punkt[0] - rohr[0], z.punkt[1] - rohr[1], z.punkt[2] - rohr[2]], l = Math.hypot(v[0], v[1], v[2]); if(l > 1) r = [v[0] / l, v[1] / l, v[2] / l]; }
+    this._spielerSchuss({ pos: rohr, richtung: r, tempo: g.tempo, schaden: g.schaden, team: "spieler", art: "laser", lebensdauer: 60 / g.tempo, farbe: g.farbe });
     this.audio.spiele("blaster");
     return true;
   };

@@ -208,3 +208,9 @@ test("All: Ziel und fehlendes Ziel nur im Cockpit, keine doppelte Meldung", func
   s._allBild(alE({ sprung: true }), 1 / 60, false); s._allBild(alE({ ziel: true }), 1 / 60, false); s._zielSetzen("rankenmoor");
   gleich(s.hinweise.length, 0, s.hinweise.join(" | ")); gleich(s.all.ziel, "rankenmoor");
 });
+test("All: T schaltet reihum durch alle Planeten, auch den Startplaneten", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u); var gesehen = {};
+  s._zielWechseln(); wahr(s.all.ziel && s.all.ziel !== "start", "erst ein anderer Planet: " + s.all.ziel);
+  for(var i = 0; i < SC.PLANET_REIHENFOLGE.length; i++){ gesehen[s.all.ziel] = true; s._zielWechseln(); }
+  gleich(Object.keys(gesehen).sort().join(), SC.PLANET_REIHENFOLGE.slice().sort().join());
+});

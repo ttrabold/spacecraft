@@ -203,3 +203,38 @@ test("Mehrspieler: Gast wechselt den Platz über den Gastgeber (#86)", function(
     gleich(f.sitze.indexOf(id), 1, "Gastgeber setzt um"); u.h._raumBild(0.1, false); return mspLauf(u.netz);
   }).then(function(){ u.g._raumBild(0.1, false); gleich(u.g._imFahrzeug().sitz, 1, "Gast sitzt hinten"); mspFertig(); }, mspFehler);
 });
+// --- Sicht und Zielen im Fahrzeug ---
+test("Fahrzeug: Verfolgerkamera höher und weiter hinten, Ich-Ansicht an den Augen", function(){
+  var sp = new SC.Spieler({ id: "a", pos: [100, 60, 100], modus: "survival" }); sp.blick = [0, 0]; sp.ansicht = "aussen";
+  var a = sp.augen(), k = sp.kamera(); gleich(k.pos[1] - a[1] > 0.2 && k.pos[1] - a[1] < 1, true, "zu Fuß wie bisher");
+  sp.sitzt = 0; k = sp.kamera(); wahr(k.pos[1] - a[1] >= 1.5, "im Fahrzeug über dem Fahrer: " + (k.pos[1] - a[1])); wahr(k.pos[2] - a[2] >= 6.5, "dahinter");
+  sp.ansicht = "ich"; k = sp.kamera(); gleich(k.pos.join(), a.join()); gleich(k.richtung.join(), sp.richtung().join());
+});
+function fzZielSpiel(){
+  var u = fhSpiel("survival"), s = u.s, sp = s.spieler, f = SC.Fahrzeug.neu(s.welt, "flieger", [u.f.pos[0] + 8, u.f.pos[1] + 30, u.f.pos[2]], 0);
+  SC.Fahrzeug.einsteigen(f, s._fzId()); s._eingestiegen(f, 0); sp.blick = [0, -0.15]; s._fahrzeugFolgen(s._imFahrzeug(), true);
+  var k = sp.kamera(), c = [k.pos[0] + k.richtung[0] * 25, k.pos[1] + k.richtung[1] * 25, k.pos[2] + k.richtung[2] * 25], def = SC.GEGNER[Object.keys(SC.GEGNER)[0]];
+  var g = SC.Wesen.neu(s.welt, "gegner", { gegnerArt: Object.keys(SC.GEGNER)[0], stufe: 1, pos: [c[0], c[1] - def.hoehe / 2, c[2]], heim: c.slice(), lp: 999, lpMax: 999, breite: def.breite, hoehe: def.hoehe, ort: "dungeon" });
+  return { s: s, f: f, g: g, c: c };
+}
+test("Fahrzeug: Bordgeschütz trifft, worauf das Fadenkreuz zeigt", function(){
+  var u = fzZielSpiel(), s = u.s, z = s._bordZiel(u.f);
+  wahr(z && z.gegner === u.g, "Gegner unter dem Fadenkreuz erkannt");
+  var schuss = null; s._spielerSchuss = function(d){ schuss = d; };
+  wahr(s._bordschuss(u.f, 1e6), "geschossen");
+  var r = schuss.richtung, p = schuss.pos, soll = [u.c[0] - p[0], u.c[1] - p[1], u.c[2] - p[2]], l = Math.hypot(soll[0], soll[1], soll[2]);
+  wahr(Math.abs(r[0] * soll[0] / l + r[1] * soll[1] / l + r[2] * soll[2] / l - 1) < 0.002, "Schuss fliegt aufs Ziel: " + r + " / " + soll);
+});
+test("Fahrzeug: Fadenkreuz des Bordgeschützes, rot mit Ziel; Mitfahrer und unbewaffnet normal", function(){
+  var u = fzZielSpiel(), s = u.s, ex = null; s.ui.hud = function(sp, e){ ex = e; }; s.ui.kampfHud = function(){};
+  s._hudSurvival(true, null, null); gleich(ex.fadenkreuz, "fahrzeug-ziel");
+  s.welt.wesen.delete(u.g.id); s._hudSurvival(true, null, null); gleich(ex.fadenkreuz, "fahrzeug");
+  s.platzWechseln(); s._hudSurvival(true, null, null); gleich(ex.fadenkreuz || null, null, "Mitfahrer");
+});
+test("Fahrzeug: Gegner direkt vor einer Wand wird erfasst", function(){
+  var u = fzZielSpiel(), s = u.s, d = s.spieler.kamera().richtung, w = s.welt, alt = w.holeBlock;
+  // Wand 0,6 Blöcke hinter der Gegnermitte
+  var wx = Math.floor(u.c[0] + d[0] * 0.6), wy = Math.floor(u.c[1] + d[1] * 0.6), wz = Math.floor(u.c[2] + d[2] * 0.6);
+  w.holeBlock = function(x, y, z){ return Math.floor(x) === wx && Math.floor(y) === wy && Math.floor(z) === wz ? SC.B.STEIN : alt.call(w, x, y, z); };
+  var z = s._bordZiel(u.f); w.holeBlock = alt; wahr(z && z.gegner === u.g, "Gegner vor der Wand");
+});

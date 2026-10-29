@@ -21,6 +21,14 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     return [-Math.sin(g) * Math.cos(n), Math.sin(n), -Math.cos(g) * Math.cos(n)];
   };
   SC.Spieler.prototype.augen = function(){ return [this.pos[0], this.pos[1] + F.augen, this.pos[2]]; };
+  // Kamera: Ich-Ansicht an den Augen; Verfolgeransicht dahinter, im Fahrzeug höher und weiter hinten,
+  // damit Fahrzeug und Fahrer im unteren Bilddrittel sitzen und die Bildmitte (Fadenkreuz) frei bleibt → { pos, richtung }
+  SC.Spieler.prototype.kamera = function(){
+    var a = this.augen(), d = this.richtung();
+    if(this.ansicht !== "aussen") return { pos: a, richtung: d };
+    var fz = typeof this.sitzt === "number", ab = fz ? 7 : 4, hoch = fz ? 1.6 : 0.3;
+    return { pos: [a[0] - d[0] * ab, a[1] - d[1] * ab + hoch, a[2] - d[2] * ab], richtung: d };
+  };
 
   SC.Spieler.prototype.schritt = function(welt, e, dt){
     if(dt > 0.05){ var n = Math.ceil(dt / 0.05); for(var i = 0; i < n; i++) this.schritt(welt, i === 0 ? e : Object.assign({}, e, { springenNeu: false }), dt / n); return; }

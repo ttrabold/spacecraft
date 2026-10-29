@@ -95,7 +95,13 @@ SC.UI = function(wurzel, o){
     if(!k){
       k = document.createElement("div"); k.className = "sternenkarte";
       k.innerHTML = '<div class="karte-titel">' + esc(SC.T.sternenkarte) + "</div>" + info.planeten.map(function(p){ return '<button data-planet="' + esc(p.id) + '"><i></i><span>' + esc(p.name) + "</span></button>"; }).join("") + '<div class="karte-schiff">▲</div>';
-      k.addEventListener("click", function(ev){ var b = ev.target.closest("[data-planet]"); if(b && ui._allBeiZiel){ ev.stopPropagation(); ui._allBeiZiel(b.getAttribute("data-planet")); } });
+      // Tipp irgendwo auf die Karte: nächstgelegener Planet (die Punkte sind klein und liegen auf dem Handy dicht beieinander)
+      k.addEventListener("click", function(ev){
+        if(!ui._allBeiZiel) return; ev.stopPropagation();
+        var r = k.getBoundingClientRect(), x = (ev.clientX - r.left) / (r.width || 1) * 100, y = (ev.clientY - r.top) / (r.height || 1) * 100, best = null, bd = Infinity;
+        Array.prototype.forEach.call(k.querySelectorAll("[data-planet]"), function(b){ var d = Math.hypot(parseFloat(b.style.left) - x, parseFloat(b.style.top) - y); if(d < bd){ bd = d; best = b; } });
+        if(best) ui._allBeiZiel(best.getAttribute("data-planet"));
+      });
       this.wurzel.appendChild(k);
     }
     k.hidden = false;
@@ -335,6 +341,9 @@ SC.UI = function(wurzel, o){
       h.innerHTML = '<div class="fadenkreuz"></div><div class="modus-anzeige"></div><div class="fps"></div><div class="kampf" hidden></div><div class="leiste"></div>';
       this._hudGebaut = true; this._leisteSchl = "";
     }
+    // im bewaffneten Fahrzeug: Zielkreis statt Kreuz, rot mit Gegner darunter
+    var fk = h.querySelector(".fadenkreuz"), art = extra && extra.fadenkreuz;
+    fk.classList.toggle("fahrzeug", !!art); fk.classList.toggle("ziel", art === "fahrzeug-ziel");
     // Survival: die Leiste zeigt die ersten 9 Rucksackplätze (extra.leiste)
     var leiste = extra && extra.leiste;
     var schl = (leiste ? JSON.stringify(leiste) : spieler.schnellleiste.join(",")) + "|" + spieler.auswahl + "|" + zus + "|" + spieler.modus + "|" + !!(extra && extra.all);

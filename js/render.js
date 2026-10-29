@@ -263,10 +263,9 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
       if(c.durch) c.durch.position.set(x, 0, z);
     });
     // Kamera
-    var a = spieler.augen(), k = this.kamera, aussen = spieler.ansicht === "aussen";
+    var k = this.kamera, aussen = spieler.ansicht === "aussen", kp = spieler.kamera().pos;
     k.rotation.set(spieler.blick[1], spieler.blick[0], 0);
-    if(aussen){ var d = spieler.richtung(), ab = typeof spieler.sitzt === "number" ? 7 : 4; k.position.set(a[0] - d[0] * ab, a[1] - d[1] * ab + 0.3, a[2] - d[2] * ab); } // im Fahrzeug weiter hinten
-    else k.position.set(a[0], a[1], a[2]);
+    k.position.set(kp[0], kp[1], kp[2]);
     this.figur.visible = aussen && spieler.modus !== "zuschauer";
     var sitzt = typeof spieler.sitzt === "number";
     this.figur.position.set(px, spieler.pos[1], pz); this.figur.rotation.y = sitzt ? spieler.sitzt : spieler.blick[0];
@@ -275,8 +274,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.armL.rotation.x = schw; this.beinL.rotation.x = sitzt ? SC.Figur.SITZEN : -schw; this.beinR.rotation.x = sitzt ? SC.Figur.SITZEN : schw;
     this._schwungBild(dt, -schw);
     this._handBlock(spieler.modus === "zuschauer" ? -1 : spieler.schnellleiste[spieler.auswahl]);
-    this.hand.visible = this.hand.visible && !aussen && spieler.modus !== "zuschauer" && !this._mitWaffe;
-    this.handWaffe.visible = !!this._mitWaffe && !aussen && spieler.modus !== "zuschauer";
+    this.hand.visible = this.hand.visible && !aussen && spieler.modus !== "zuschauer" && !this._mitWaffe && !sitzt; // im Fahrzeug freie Sicht
+    this.handWaffe.visible = !!this._mitWaffe && !aussen && spieler.modus !== "zuschauer" && !sitzt;
     this.grenzen.visible = this.chunkGrenzen;
     if(this.chunkGrenzen) this.grenzen.position.set(Math.floor(px / 16) * 16, 0, Math.floor(pz / 16) * 16);
     // Rahmen um den anvisierten Block

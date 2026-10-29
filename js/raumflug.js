@@ -156,9 +156,10 @@ SC.Spiel.prototype.all = null;
     } else if(this.all && this.all.zuschauer) this._allEnde();
   };
 
-  // Ziel reihum durch die anderen Planeten
+  // Ziel reihum durch alle Planeten (auch zurück zum Startplaneten); ohne Ziel zuerst ein anderer als der Startplanet
   S._zielWechseln = function(){
-    var a = this.all, l = SC.PLANET_REIHENFOLGE.filter(function(id){ return id !== a.vonPlanet; }), i = l.indexOf(a.ziel);
+    var a = this.all, l = SC.PLANET_REIHENFOLGE, i = l.indexOf(a.ziel);
+    if(i < 0){ a.ziel = l.filter(function(id){ return id !== a.vonPlanet; })[0] || l[0]; return; }
     a.ziel = l[(i + 1) % l.length]; // das Cockpit zeigt das Ziel
 
   };

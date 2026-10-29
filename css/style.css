@@ -156,3 +156,7 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
   .mit-cockpit .hinweise{top:calc(44px + env(safe-area-inset-top))}
   .sternenkarte{left:calc(100px + env(safe-area-inset-left));top:calc(28px + env(safe-area-inset-top));width:100px;height:100px}
 }
+.fadenkreuz.fahrzeug{width:44px;height:44px;margin:-22px 0 0 -22px;mix-blend-mode:normal;border-radius:50%;border:2px solid rgba(62,240,255,.9);box-sizing:border-box;box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 0 0 1px rgba(0,0,0,.4);
+  background:radial-gradient(circle,#3ef0ff 0 2px,transparent 3px),linear-gradient(#3ef0ff,#3ef0ff) center top/2px 9px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) center bottom/2px 9px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) left center/9px 2px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) right center/9px 2px no-repeat}
+.fadenkreuz.fahrzeug.ziel{border-color:#ff4a5c;transform:scale(.85);transition:transform .1s;
+  background:radial-gradient(circle,#ff4a5c 0 3px,transparent 4px),linear-gradient(#ff4a5c,#ff4a5c) center top/2px 11px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) center bottom/2px 11px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) left center/11px 2px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) right center/11px 2px no-repeat}

@@ -60,3 +60,12 @@ test("Sternenkarte: Planeten antippbar, Marker, ausblenden (#89, #90)", function
 test("Schnellleiste im All ausgeblendet", function(){ var w=document.createElement("div"),ui=leereUI(w),s=new SC.Spieler({id:"a",pos:[0,0,0],modus:"kreativ",schnellleiste:[1,2,3,4,5,6,7,8,9]}); ui.hud(s,{fps:60}); wahr(!w.querySelector(".leiste").hidden,"am Boden da"); ui.hud(s,{fps:60,all:true}); wahr(w.querySelector(".leiste").hidden,"im All weg"); ui.hud(s,{fps:60}); wahr(!w.querySelector(".leiste").hidden,"wieder da"); });
 test("Spielanleitung: Xbox-Controller am Boden und im All", function(){ var t=JSON.stringify(SC.T.anleitung.abschnitte); ["Controller (Xbox)","Controller im All","LB","RB","Ansichtstaste","Menütaste"].forEach(function(x){ wahr(t.indexOf(x)>=0,x); }); });
 test("Cockpit im All: Hinweise rücken darunter", function(){ var w=document.createElement("div"),ui=leereUI(w); wahr(!w.classList.contains("mit-cockpit"),"ohne Cockpit"); ui.cockpit({ziel:null,sekunden:null,schild:100,sprung:false}); wahr(w.classList.contains("mit-cockpit"),"mit Cockpit"); ui.cockpit(null); wahr(!w.classList.contains("mit-cockpit"),"wieder normal"); });
+test("HUD: Fadenkreuz im Fahrzeug", function(){ var w=document.createElement("div"),ui=leereUI(w),s=new SC.Spieler({id:"a",pos:[0,0,0],modus:"survival"}); ui.hud(s,{fps:60,fadenkreuz:"fahrzeug"}); var f=w.querySelector(".fadenkreuz"); wahr(f.classList.contains("fahrzeug")&&!f.classList.contains("ziel")); ui.hud(s,{fps:60,fadenkreuz:"fahrzeug-ziel"}); wahr(f.classList.contains("ziel")); ui.hud(s,{fps:60}); wahr(!f.classList.contains("fahrzeug")&&!f.classList.contains("ziel")); });
+test("Sternenkarte: Tipp neben einen Planeten wählt den nächstgelegenen", function(){
+  var w = document.createElement("div"), ui = leereUI(w), gew = null; document.body.appendChild(w);
+  ui.allKarte({ planeten: [{ id: "a", name: "A", x: -100, z: -100 }, { id: "b", name: "B", x: 100, z: 100 }], schiff: { x: 0, z: 0, blick: 0 }, marker: [] }, function(id){ gew = id; });
+  var k = w.querySelector(".sternenkarte"); k.style.cssText = "position:fixed;left:0;top:0;width:100px;height:100px";
+  k.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 70, clientY: 75 })); gleich(gew, "b", "unten rechts");
+  k.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 20, clientY: 30 })); gleich(gew, "a", "oben links");
+  document.body.removeChild(w);
+});

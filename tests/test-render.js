@@ -52,3 +52,11 @@ test("Figur: im Fahrzeug keine Laufanimation, zu Fuß schon", function(){
   sp.sitzt = 0.4; gleich(SC.Figur.laufSchwung(sp, 188), 0, "sitzend nicht");
   gleich(SC.Figur.laufSchwung({ geschw: [0, 0, 0], aufBoden: true }, 188), 0, "im Stand nicht");
 });
+test("Fahrzeuge: nur in Sichtweite dargestellt, weit entfernte werden freigegeben", function(){
+  var w = { fahrzeuge: new Map() }, sz = new THREE.Scene(), rf = new SC.RenderFahrzeuge(sz, { groesse: 2048 }), ich = [100, 70, 100];
+  w.fahrzeuge.set("a", { id: "a", art: "gleiter", pos: [110, 70, 100], blick: 0, weg: false });
+  w.fahrzeuge.set("b", { id: "b", art: "buggy", pos: [100 + 400, 70, 100], blick: 0, weg: false });
+  w.fahrzeuge.set("c", { id: "c", art: "flieger", pos: [SC.mod(100 - 150, 2048), 70, 100], blick: 0, weg: false });
+  rf.bild(w, ich, 1, 160); wahr(rf.objekte.has("a"), "nah"); wahr(rf.objekte.has("c"), "nah über die Ringgrenze"); gleich(rf.objekte.has("b"), false, "weit weg: kein Modell");
+  ich = [500, 70, 100]; rf.bild(w, ich, 1, 160); wahr(rf.objekte.has("b"), "jetzt nah"); gleich(rf.objekte.has("a"), false, "a freigegeben"); gleich(rf.gruppe.children.length, rf.objekte.size);
+});

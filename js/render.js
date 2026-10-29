@@ -284,7 +284,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.uniforms.nebelNah.value = this.sichtweite * 16 * 0.55; this.uniforms.nebelFern.value = this.sichtweite * 16 * 0.95;
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());
     this.mitspieler.aktualisiere(this._mitspieler || [], spieler.pos, dt, k.position);
-    if(this._welt) this.fahrzeuge.bild(this._welt, spieler.pos, h.tageslicht);
+    if(this._welt) this.fahrzeuge.bild(this._welt, spieler.pos, h.tageslicht, this.sichtweite * 16);
     this.renderer.setClearColor(h.unten);
     this.renderer.render(this.szene, k);
     // FPS

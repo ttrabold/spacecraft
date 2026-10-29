@@ -16,9 +16,11 @@ SC.RenderFahrzeuge = function(szene, planet){
     this.gruppe.add(g);
     return { g: g, teile: teile, art: f.art, licht: -1 };
   };
-  RF.bild = function(welt, spielerPos, licht){
+  // reichweite: nur Fahrzeuge so weit (waagerecht, Ring) werden dargestellt; weiter entfernte geben ihr Modell frei wie entfernte Chunks
+  RF.bild = function(welt, spielerPos, licht, reichweite){
     var r = this, P = this.planet.groesse, gesehen = {}, l = Math.max(0.35, licht);
     welt.fahrzeuge.forEach(function(f, id){
+      if(reichweite && Math.hypot(SC.mod(f.pos[0] - spielerPos[0] + P / 2, P) - P / 2, SC.mod(f.pos[2] - spielerPos[2] + P / 2, P) - P / 2) > reichweite) return;
       var o = r.objekte.get(id);
       if(o && o.art !== f.art){ r._weg(o); o = null; }
       if(!o){ o = r._modell(f); r.objekte.set(id, o); }

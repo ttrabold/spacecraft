@@ -57,7 +57,7 @@ SC.Landschaft = {};
     },
     // Riesenbäume im Dschungel (10–16 hoch, Krone 3–4), im Sumpf kleinere
     baum: function(g, x, z, biom, hash){
-      if(biom === "dschungel" && hash < 34) return { hoehe: 10 + hash % 7, krone: 3 + hash % 2, blatt: B.BLAETTER };
+      if(biom === "dschungel" && hash < 16) return { hoehe: 10 + hash % 7, krone: 3, blatt: B.BLAETTER };
       if(biom === "sumpf" && hash < 8) return { hoehe: 5 + hash % 3, krone: 2, blatt: B.BLAETTER };
       return null;
     },

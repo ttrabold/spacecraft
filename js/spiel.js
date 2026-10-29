@@ -115,12 +115,14 @@ SC.Spiel.startpunkt = function(planet){
       else s.audio.spiele("setzen", { material: SC.Klang.material(b.id) });
     });
     this._schritt = 0; this._warBoden = true; this._warWasser = false; this._fall = 0; this._musikZeit = 0;
-    var sp = daten.spieler, pos = sp.pos || SC.Spiel.startpunkt(planet);
+    // Andere Planeten bekommen beim ersten Besuch ihren eigenen Landepunkt (nicht in der Gastwelt: dort gilt der des Gastgebers)
+    if(planet.landschaft !== "start" && daten.id !== "gast" && !pd.landepunkt) pd.landepunkt = SC.Spiel.startpunkt(planet);
+    var sp = daten.spieler, pos = sp.pos || (pd.landepunkt ? pd.landepunkt.slice() : SC.Spiel.startpunkt(planet));
     this.spieler = new SC.Spieler({ id: "ich", pos: pos, blick: sp.blick, modus: daten.modus, schnellleiste: sp.schnellleisteKreativ || sp.schnellleiste, ansicht: sp.ansicht });
     if(!daten.startpunkt) daten.startpunkt = sp.pos ? SC.Spiel.startpunkt(planet) : pos.slice();
     // Fahrzeuge der Welt; der Start-Gleiter wird auch in alten Welten nachgezogen (nicht in der Gastwelt: die Fahrzeuge kommen vom Gastgeber)
     SC.Fahrzeug.ausDaten(this.welt, pd.fahrzeuge);
-    if(daten.id !== "gast") SC.Fahrzeug.sichereStart(this.welt, daten.startpunkt);
+    if(daten.id !== "gast") SC.Fahrzeug.sichereStart(this.welt, this.landepunkt());
     this._fzTakt = 0;
     // Survival: Kampfwerte, Rucksack, Gegner
     this._zf = SC.zufall((Date.now() ^ (Math.random() * 4294967296)) >>> 0);
@@ -147,7 +149,8 @@ SC.Spiel.startpunkt = function(planet){
     this.eingabe.sperreMaus();
     this._laeuft = true; this._t0 = performance.now();
     if(!daten.spieler.pos) this.speichere("auto");
-    requestAnimationFrame(function bild(t){ if(!s._laeuft) return; if(SC.Spiel.bildFaellig(t, s._t0, +s.einstellungen.bildrate)) s._bild(t); requestAnimationFrame(bild); });
+    var lauf = this._lauf = (this._lauf || 0) + 1; // nach einem Neustart (Planetenwechsel) endet die alte Bildschleife
+    requestAnimationFrame(function bild(t){ if(!s._laeuft || s._lauf !== lauf) return; if(SC.Spiel.bildFaellig(t, s._t0, +s.einstellungen.bildrate)) s._bild(t); requestAnimationFrame(bild); });
   };
 
   SC.Spiel.prototype._bild = function(t){
@@ -200,6 +203,21 @@ SC.Spiel.startpunkt = function(planet){
     if(r instanceof SC.Gastgeber) r.spieler.forEach(function(e){ if(e.verbunden && e.pos) orte.push(e.pos); });
     orte.forEach(function(p){ SC.Fahrzeug.fundorteNah(w, p); });
     SC.Fahrzeug.wiederkehr(w, this.daten.spielzeit || 0);
+  };
+
+  SC.Spiel.prototype.landepunkt = function(){ return SC.Planeten.landepunkt(this.daten); };
+  // Zu Planet id wechseln (nicht als Gast): aussteigen, alten Planeten speichern, neuen anlegen, am Landepunkt neu starten, Ankunft zeigen
+  SC.Spiel.prototype.wechslePlanet = function(id){
+    var s = this;
+    if(!this.daten || this.rolle === "gast" || !SC.PLANETEN[id]) return Promise.reject(new Error("Planetenwechsel nicht möglich"));
+    if(id === this.daten.aktuellerPlanet) return Promise.resolve();
+    if(this._imFahrzeug()) this.aussteigen();
+    return this.speichere("planet").then(function(){
+      var d = s.daten; SC.Planeten.anlegen(d, id); d.aktuellerPlanet = id; d.spieler.pos = null; d.spieler.blick = [0, 0];
+      s.lebenszyklusAbmelden(document); s.starte(d);
+      if(s.ui.ankunft) s.ui.ankunft(SC.PLANETEN[id].name);
+      return s.speichere("planet");
+    });
   };
 
   SC.Spiel.prototype.zeigeRucksack = function(){

@@ -83,6 +83,11 @@ SC.UI = function(wurzel, o){
   SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
 
+  // Großer Planetenname bei der Ankunft (blendet nach 3 s aus)
+  SC.UI.prototype.ankunft = function(name){
+    var d = document.createElement("div"); d.className = "ankunft"; d.textContent = name; this.wurzel.appendChild(d);
+    setTimeout(function(){ d.classList.add("weg"); }, 2400); setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 3200);
+  };
   SC.UI.prototype.hinweis = function(text, dauer){
     var d = document.createElement("div"); d.className = "hinweis"; d.textContent = text; this.hinweisEl.appendChild(d);
     setTimeout(function(){ d.remove(); }, dauer || 3500);

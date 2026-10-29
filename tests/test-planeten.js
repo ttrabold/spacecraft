@@ -106,3 +106,30 @@ test("Bauwerke auf Glutfrost haben Magmakönig, Stufen mit Aufschlag", function(
   });
   wahr(n > 4, "Bauwerke vorhanden");
 });
+
+// --- Planetenwechsel allein ---
+function plSpiel(modus){ var sl = mspSlots(), s = mspSpielVoll(sl), d = SC.Spielstand.neu({ name: "W", seedText: "wechsel", modus: modus || "survival", figurName: "Mia" }); s.starte(d); return { s: s, d: d, sl: sl }; }
+test("Planetenwechsel: neuer Planet, Landepunkt, zurück zum alten mit seinen Änderungen", function(){
+  var u = plSpiel(), s = u.s, sp = s.spieler, x = Math.floor(sp.pos[0]) + 2, y = Math.floor(sp.pos[1]) + 3, z = Math.floor(sp.pos[2]);
+  s.welt.setzeBlock(x, y, z, SC.B.GLAS, "spieler");
+  return s.wechslePlanet("glutfrost").then(function(){
+    gleich(s.welt.planet.landschaft, "glutfrost"); gleich(s.daten.aktuellerPlanet, "glutfrost"); var lp = s.daten.planeten.glutfrost.landepunkt; wahr(lp, "Landepunkt gesetzt");
+    wahr(Math.hypot(s.spieler.pos[0] - lp[0], s.spieler.pos[2] - lp[2]) < 0.01, "am Landepunkt"); gleich(JSON.stringify(s.landepunkt()), JSON.stringify(lp));
+    wahr(s.welt.fahrzeuge.get("start"), "Gleiter am Landepunkt"); wahr(s.ui.ankuenfte && s.ui.ankuenfte[0] === "Glutfrost", "Ankunftsanzeige");
+    return s.wechslePlanet("start");
+  }).then(function(){ gleich(s.welt.planet.id, "start"); gleich(s.welt.holeBlock(x, y, z), SC.B.GLAS, "Änderung noch da"); gleich(JSON.stringify(s.landepunkt()), JSON.stringify(s.daten.startpunkt)); });
+});
+test("Planetenwechsel im Fahrzeug steigt aus", function(){
+  var u = plSpiel(), s = u.s, f = s.welt.fahrzeuge.get("start"); s.spieler.pos = SC.Fahrzeug.aussteigePos(s.welt, f, 0); s.benutzen(); wahr(s._imFahrzeug());
+  return s.wechslePlanet("rankenmoor").then(function(){ gleich(s._imFahrzeug(), null); wahr(typeof s.spieler.sitzt !== "number", "sitzt nicht"); wahr(s.daten.planeten.start.fahrzeuge.start, "Gleiter bleibt auf dem Startplaneten gespeichert"); });
+});
+test("Wiederbelebung am Landepunkt des aktuellen Planeten", function(){
+  var u = plSpiel(), s = u.s;
+  return s.wechslePlanet("glutfrost").then(function(){ var lp = s.landepunkt(); s.spieler.pos = [lp[0] + 300, 90, lp[2]]; s.kampf.wiederbeleben(s.landepunkt()); wahr(Math.hypot(s.spieler.pos[0] - lp[0], s.spieler.pos[2] - lp[2]) < 2, "am Landepunkt"); });
+});
+test("Speichern und Laden auf Rankenmoor startet dort", function(){
+  var u = plSpiel(), s = u.s;
+  return s.wechslePlanet("rankenmoor").then(function(){ return s.speichere("test"); }).then(function(){ return u.sl.lade(u.d.id); }).then(function(d2){
+    var s2 = mspSpielVoll(u.sl); s2.starte(d2); gleich(s2.welt.planet.id, "rankenmoor"); gleich(s2.welt.planet.landschaft, "rankenmoor");
+  });
+});

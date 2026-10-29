@@ -14,6 +14,8 @@ SC.PLANETEN = {
 SC.PLANET_REIHENFOLGE = ["start", "glutfrost", "rankenmoor"];
 (function(){ for(var id in SC.PLANETEN){ SC.PLANETEN[id].id = id; SC.PLANETEN[id].landschaft = id; SC.PLANETEN[id].name = SC.T.planeten[id]; } })();
 SC.Planeten = {
+  // Landepunkt des aktuellen Planeten: eigener Punkt je Planet, sonst (Heimatplanet, Gastwelt) der Startpunkt der Welt
+  landepunkt: function(daten){ var pl = daten.planeten[daten.aktuellerPlanet]; return (pl && pl.landepunkt) || daten.startpunkt; },
   def: function(planet){ return SC.PLANETEN[planet.landschaft] || SC.PLANETEN.start; },
   // Planetendaten im Spielstand anlegen, falls es sie noch nicht gibt (Seed aus dem Welt-Seed) → planetDaten
   anlegen: function(daten, id){

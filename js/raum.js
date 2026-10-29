@@ -70,7 +70,7 @@ SC.Gastgeber = function(o){
   G.liste = function(){ var s = this.daten.spieler; return [{ id: s.figurId, name: s.name, farbe: this.farbe }].concat(this.spieler.map(function(e){ return { id: e.id, name: e.name, farbe: e.farbe }; })); };
   G._weltInfo = function(){
     var d = this.daten, p = this.welt.planet;
-    return { seed: d.seed, name: d.name, modus: d.modus, schwierigkeit: d.schwierigkeit, startpunkt: d.startpunkt, tageszeit: d.tageszeit,
+    return { seed: d.seed, name: d.name, modus: d.modus, schwierigkeit: d.schwierigkeit, startpunkt: SC.Planeten.landepunkt(d), tageszeit: d.tageszeit,
       planet: { id: p.id, seed: p.seed, groesse: p.groesse, palette: p.palette, generatorVersion: p.generatorVersion } };
   };
   G._listeGeaendert = function(ausserId){ if(this._zu) return; this.sendeAlle({ t: "spieler", liste: this.liste() }, ausserId); ruf(this.o.beiSpieler, this.spieler); };
@@ -90,9 +90,10 @@ SC.Gastgeber = function(o){
     if(alt && alt !== c){ alt.weg = true; alt.verb.schliesse(); } // alte, noch nicht bemerkt abgerissene Verbindung derselben Figur
     c.drin = true; s._verb[id] = c; s._bestaetigt[id] = true;
     if(!c.wiederkehr){ s._wunschNr[id] = 0; s._abgelehnt[id] = []; } // neuer Gast zählt seine Wünsche von vorn
-    var m = d.mitspieler[id], pos = (m && m.pos) || d.startpunkt || d.spieler.pos, blick = (m && m.blick) || [0, 0];
+    // gemerkte Position nur, wenn sie auf dem aktuellen Planeten liegt; sonst am Landepunkt
+    var m = d.mitspieler[id], hier = m && (m.planet || "start") === d.aktuellerPlanet, pos = (hier && m.pos) || SC.Planeten.landepunkt(d) || d.spieler.pos, blick = (hier && m.blick) || [0, 0];
     pos = pos ? pos.slice() : null; blick = blick.slice();
-    d.mitspieler[id] = { name: c.name, pos: pos, blick: blick.slice() };
+    d.mitspieler[id] = { name: c.name, pos: pos, blick: blick.slice(), planet: d.aktuellerPlanet };
     var e = s._eintrag(id);
     if(!e){ e = { id: id, name: c.name, farbe: s._freieFarbe(), pos: pos, blick: blick, modus: d.modus, stufe: 1, ausr: null, menue: false, lebt: true, verbunden: true }; s.spieler.push(e); }
     else { e.name = c.name; e.verbunden = true; e._marke = null; }
@@ -199,7 +200,7 @@ SC.Gastgeber = function(o){
       if(f && f.sitze[0] === c.id && !f.weg){ var p = vekF(fz.pos), g = vekF(fz.geschw), lat = zahl(n.latenz) ? Math.max(0, Math.min(0.5, n.latenz)) : 0;
         if(p && g) p = [p[0] + g[0] * lat, p[1] + g[1] * lat, p[2] + g[2] * lat]; // um die Laufzeit der Meldung vorausrechnen
         if(p) f.pos = p; if(g) f.geschw = g; if(zahl(fz.blick)) f.blick = fz.blick; if(zahl(fz.tempo)) f.tempo = fz.tempo; }
-      if(m){ if(n.pos) m.pos = n.pos.slice(); if(n.blick) m.blick = n.blick.slice(); }
+      if(m){ if(n.pos) m.pos = n.pos.slice(); if(n.blick) m.blick = n.blick.slice(); m.planet = this.daten.aktuellerPlanet; }
       if(typeof this.o.beiNachricht === "function") this.o.beiNachricht(c.id, n);
     },
     // Block-Wunsch eines Gastes {x, y, z, id, alt, nr}: gilt nur, wenn hier noch `alt` steht; sonst bekommt der Urheber den tatsächlichen Block zurück
@@ -539,7 +540,7 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
     if(!this.pvp || !this._k || ziel === vonId) return null;
     if(ziel !== this.daten.spieler.figurId){ this.treffer(ziel, schaden, von, geschoss || null, vonId); return null; }
     var k = this._k.kampf, r = k.trifftSpieler(schaden, von, geschoss || null);
-    if(k.besiegt()){ k.wiederbeleben(this.daten.startpunkt || SC.Spiel.startpunkt(this.welt.planet)); ruf(this._k.o.beiPvpBesiegt, this._name(vonId)); }
+    if(k.besiegt()){ k.wiederbeleben(SC.Planeten.landepunkt(this.daten) || SC.Spiel.startpunkt(this.welt.planet)); ruf(this._k.o.beiPvpBesiegt, this._name(vonId)); }
     return r;
   };
   // Mögliche Spieler-Ziele für Hiebe und Geschosse des Spielers selbst (leer ohne Spaßkampf). raum: Gastgeber oder Gast; ich: eigener Zustand (Gastgeber).

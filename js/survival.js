@@ -196,10 +196,10 @@
     var aKey = JSON.stringify([k.ausruestung, waffe && waffe.id]);
     if(aKey !== this._ausrKey){ this._ausrKey = aKey; this.render.ausruestung(survival ? k.ausruestung : null, waffe); }
     var fzNah = this._fahrzeugNah();
-    if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah });
+    if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah, all: !!this.all });
     var ui = this.ui;
     ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen, leiste: survival ? k.rucksack.plaetze.slice(0, 9) : null });
-    var imFz = this._imFahrzeug(), fz = imFz && { panzerung: imFz.f.panzerung, max: SC.FAHRZEUGE[imFz.f.art].panzerung, name: SC.FAHRZEUGE[imFz.f.art].name };
+    var imFz = this._imFahrzeug(), fz = imFz && { panzerung: imFz.f.panzerung, max: SC.FAHRZEUGE[imFz.f.art].panzerung, name: SC.FAHRZEUGE[imFz.f.art].name, label: SC.FAHRZEUGE[imFz.f.art].unzerstoerbar ? SC.T.allSchild : SC.T.fahrzeugPanzerung };
     ui.kampfHud(survival ? k : null, [], fz);
   };
 

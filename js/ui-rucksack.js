@@ -44,7 +44,7 @@
     q(".balken-lp i").style.width = 100 * w.lp / w.lpMax + "%"; q(".balken-lp span").textContent = Math.ceil(w.lp) + " / " + w.lpMax;
     q(".balken-schild").hidden = !w.schildMax; q(".balken-schild i").style.width = (w.schildMax ? 100 * w.schild / w.schildMax : 0) + "%";
     var fz = q(".balken-fahrzeug"); fz.hidden = !fahrzeug;
-    if(fahrzeug){ fz.querySelector("i").style.width = Math.round(100 * fahrzeug.panzerung / fahrzeug.max) + "%"; fz.querySelector("span").textContent = fahrzeug.name + " · " + SC.T.fahrzeugPanzerung + " " + Math.ceil(fahrzeug.panzerung); }
+    if(fahrzeug){ fz.querySelector("i").style.width = Math.round(100 * fahrzeug.panzerung / fahrzeug.max) + "%"; fz.querySelector("span").textContent = fahrzeug.name + " · " + (fahrzeug.label || SC.T.fahrzeugPanzerung) + " " + Math.ceil(fahrzeug.panzerung); }
     var waffe = kampf.waffe(), heiss = waffe && SC.GEGENSTAENDE[waffe.art].waffe.typ === "blaster";
     q(".balken-hitze").hidden = !heiss; q(".balken-hitze").classList.toggle("ueberhitzt", kampf.uhr < kampf.ueberhitztBis); q(".balken-hitze i").style.width = 100 * kampf.hitze + "%";
     // Treffer: roter Rand und Pfeil aus der Richtung des Angriffs

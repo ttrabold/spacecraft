@@ -62,6 +62,7 @@
     var im = this._imFahrzeug(); if(!im) return;
     var f = im.f, d = SC.FAHRZEUGE[f.art];
     if(im.sitz === 0) SC.Fahrzeug.schritt(this.welt, f, offen ? {} : { vor: e.vor, zurueck: e.zurueck, links: e.links, rechts: e.rechts, hoch: e.springen, runter: e.sinken }, dt);
+    if(im.sitz === 0 && f.art === "raumschiff" && f.pos[1] >= SC.ALL_GRENZE && this._grenzeErreicht){ this._grenzeErreicht(f); if(this.all) return; }
     this._fahrzeugFolgen(im, false);
     if(this.audio.motor) this.audio.motor(f.art, Math.min(1, Math.hypot(f.geschw[0], f.geschw[2]) / d.tempo));
   };

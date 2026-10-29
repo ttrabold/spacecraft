@@ -42,3 +42,43 @@ test("Abstände: Nachbarplaneten bei Flugtempo 150 in 30–60 s", function(){
   });
   var n = SC.All.naechster([SC.ALL.planeten.rankenmoor[0] + 500, SC.ALL.planeten.rankenmoor[1], SC.ALL.planeten.rankenmoor[2]]); gleich(n.id, "rankenmoor"); wahr(Math.abs(n.abstand - 100) < 1e-6);
 });
+
+// --- Flugablauf allein ---
+function alSpiel(){ var sl = mspSlots(), s = mspSpielVoll(sl), d = SC.Spielstand.neu({ name: "Flug", seedText: "flug", modus: "survival", figurName: "Mia" }); s.starte(d); var f = s.welt.fahrzeuge.get("schiff"); s.spieler.pos = SC.Fahrzeug.aussteigePos(s.welt, f, 0); s.benutzen(); return { s: s, d: d, sl: sl, f: f }; }
+function alE(o){ var e = { vor: false, zurueck: false, links: false, rechts: false, springen: false, sinken: false, ziel: false, sprung: false }; for(var k in o || {}) e[k] = o[k]; return e; }
+function alAustritt(u){ u.f.pos[1] = SC.ALL_GRENZE + 1; u.s._fahren(alE(), 1 / 60, false); }
+test("Austritt über der Grenzhöhe nur als Pilot im Raumschiff", function(){
+  var u = alSpiel(), s = u.s; gleich(s._imFahrzeug().f, u.f); gleich(s.all, null);
+  alAustritt(u); wahr(s.all, "im All"); gleich(s.all.phase, "all"); gleich(s.all.vonPlanet, "start");
+  var c = SC.ALL.planeten.start, r = Math.hypot(s.all.pos[0] - c[0], s.all.pos[1] - c[1], s.all.pos[2] - c[2]); wahr(r > SC.ALL.radius * 1.25 && r < SC.ALL.radius * 1.5, "über dem Planeten: " + r);
+  var u2 = alSpiel(), s2 = u2.s; s2.aussteigen(); var fl = SC.Fahrzeug.neu(s2.welt, "flieger", [u2.f.pos[0] + 12, SC.ALL_GRENZE + 1, u2.f.pos[2]], 0); SC.Fahrzeug.einsteigen(fl, s2._fzId()); s2._fahren(alE(), 1 / 60, false); gleich(s2.all, null, "Flieger fliegt nicht ins All");
+});
+test("Flug im All: Schub bis 150, Ziel wählen, Sprung kommt 2,5 R vor dem Ziel heraus", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u);
+  for(var i = 0; i < 60; i++) s._allBild(alE({ vor: true }), 0.1, false); gleich(s.all.tempo, SC.ALL.tempo);
+  s._allBild(alE({ ziel: true }), 0.016, false); gleich(s.all.ziel, "glutfrost"); s._allBild(alE({ ziel: true }), 0.016, false); gleich(s.all.ziel, "rankenmoor");
+  s._allBild(alE({ sprung: true }), 0.016, false); gleich(s.all.phase, "sprung");
+  for(var j = 0; j < 50 && s.all.phase === "sprung"; j++) s._allBild(alE(), 0.1, false);
+  gleich(s.all.phase, "all"); var c = SC.ALL.planeten.rankenmoor, r = Math.hypot(s.all.pos[0] - c[0], s.all.pos[1] - c[1], s.all.pos[2] - c[2]); wahr(Math.abs(r - 2.5 * SC.ALL.radius) < 5, "Abstand " + r);
+});
+test("Sprung ohne Ziel", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u); s._allBild(alE({ sprung: true }), 0.016, false);
+  gleich(s.all.phase, "all"); wahr(s.hinweise.indexOf(SC.T.allKeinZiel) >= 0, "Hinweis");
+});
+test("Eintritt: neuer Planet, Schiff samt Insasse über der Anflugstelle", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u); s.all.pos = SC.All.zuKugel("glutfrost", 500, 900, 40);
+  s._allBild(alE(), 0.016, false); wahr(s._eintrittP, "Eintritt läuft");
+  return s._eintrittP.then(function(){
+    gleich(s.all, null); gleich(s.welt.planet.id, "glutfrost"); var f = s.welt.fahrzeuge.get("schiff"); wahr(f, "Schiff mitgekommen");
+    wahr(Math.abs(f.pos[0] - 500) < 2 && Math.abs(f.pos[2] - 900) < 2, "über der Anflugstelle: " + f.pos); gleich(f.pos[1], SC.ALL_GRENZE - 10);
+    var im = s._imFahrzeug(); wahr(im && im.f === f && im.sitz === 0, "sitzt als Pilot"); gleich(s.daten.planeten.start.fahrzeuge.schiff, undefined, "nicht mehr auf dem Startplaneten");
+  });
+});
+test("Speichern im All lädt am Landepunkt", function(){
+  var u = alSpiel(), s = u.s, lp = s.landepunkt(); alAustritt(u);
+  return s.speichere("test").then(function(){ return u.sl.lade(u.d.id); }).then(function(d2){
+    gleich(d2.aktuellerPlanet, "start"); wahr(Math.hypot(d2.spieler.pos[0] - lp[0], d2.spieler.pos[2] - lp[2]) < 1 && Math.abs(d2.spieler.pos[1] - lp[1]) < 1, "Spieler am Landepunkt");
+    var sch = d2.planeten.start.fahrzeuge.schiff; wahr(sch, "Schiff gespeichert"); wahr(Math.hypot(sch.pos[0] - lp[0], sch.pos[2] - lp[2]) < 24 && sch.pos[1] < SC.ALL_GRENZE - 20, "Schiff am Boden nahe Landepunkt");
+    wahr(s.all, "Flug läuft weiter");
+  });
+});

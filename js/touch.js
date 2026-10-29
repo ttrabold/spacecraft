@@ -18,7 +18,9 @@ SC.Touch = function(eingabe, wurzel){
     '<button class="touch-knopf klein" data-k="blockauswahl" style="right:24px;top:24px">▦</button>' +
     '<button class="touch-knopf klein" data-k="ansicht" style="right:100px;top:24px">👁</button>' +
     '<button class="touch-knopf klein" data-k="menue" style="left:24px;top:24px">☰</button>' +
-    '<button class="touch-knopf" data-k="benutzen" style="right:210px;bottom:120px" hidden>🚗</button>';
+    '<button class="touch-knopf" data-k="benutzen" style="right:210px;bottom:120px" hidden>🚗</button>' +
+    '<button class="touch-knopf" data-k="ziel" style="right:210px;bottom:210px" hidden>🎯</button>' +
+    '<button class="touch-knopf" data-k="sprung" style="right:300px;bottom:210px" hidden>⚡</button>';
   wurzel.appendChild(el);
   this.joyEl = el.querySelector(".touch-joy"); this.knaufEl = el.querySelector(".touch-joy-knauf"); this.blickEl = el.querySelector(".touch-blick");
 
@@ -57,7 +59,7 @@ SC.Touch.prototype.bewegung = function(){
   return b;
 };
 SC.Touch.prototype.einmal = function(){
-  var e = this._einmal, aus = { abbauen: e.abbauen, setzen: e.setzen, blockauswahl: e.blockauswahl, menue: e.menue, ansicht: e.ansicht, ausweichen: e.ausweichen, benutzen: e.benutzen };
+  var e = this._einmal, aus = { abbauen: e.abbauen, setzen: e.setzen, blockauswahl: e.blockauswahl, menue: e.menue, ansicht: e.ansicht, ausweichen: e.ausweichen, benutzen: e.benutzen, ziel: e.ziel, sprung: e.sprung };
   this._einmal = {}; return aus;
 };
 SC.Touch.prototype.blick = function(ziel, empf){ ziel[0] -= this._b.dx * 0.006 * empf; ziel[1] -= this._b.dy * 0.006 * empf; this._b.dx = this._b.dy = 0; };
@@ -67,7 +69,7 @@ SC.Touch.prototype.sichtbar = function(an){ this.el.hidden = !an; };
 // Beschriftung je nach gewählter Sache: Waffe → ⚔, Laserschwert → 🛡 (Blocken); Ausweichen nur im Survival
 SC.Touch.prototype.beschrifte = function(o){
   var a = this.el.querySelector('[data-k="abbauen"]'), s = this.el.querySelector('[data-k="setzen"]'), w = this.el.querySelector('[data-k="ausweichen"]');
-  a.textContent = o.angriff ? "⚔" : "⛏"; this.el.querySelector('[data-k="benutzen"]').hidden = !o.benutzen; s.textContent = o.blocken ? "🛡" : "■"; w.hidden = !o.ausweichen && o.ausweichen !== undefined;
+  a.textContent = o.angriff ? "⚔" : "⛏"; this.el.querySelector('[data-k="benutzen"]').hidden = !o.benutzen; this.el.querySelector('[data-k="ziel"]').hidden = this.el.querySelector('[data-k="sprung"]').hidden = !o.all; s.textContent = o.blocken ? "🛡" : "■"; w.hidden = !o.ausweichen && o.ausweichen !== undefined;
 };
 SC.Touch.prototype.entferne = function(){
   var h = this._h;

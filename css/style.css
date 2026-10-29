@@ -133,3 +133,4 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
 .ankunft.weg{opacity:0}
 .gluehen{position:absolute;inset:0;pointer-events:none;z-index:4;opacity:1;transition:opacity .6s}
 .gluehen.weg{opacity:0}
+.cockpit{position:absolute;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(14,11,46,.7);border:2px solid #3ef0ff;color:#eef2fa;padding:8px 14px;font-weight:700;pointer-events:none;z-index:2;white-space:nowrap}

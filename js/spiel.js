@@ -185,11 +185,16 @@ SC.Spiel.startpunkt = function(planet){
       if(e.auswahlRad) sp.auswahl = SC.mod(sp.auswahl + e.auswahlRad, 9);
     }
     var vorBoden = sp.aufBoden, vy = sp.geschw[1];
-    if(this._imFahrzeug()) this._fahren(e, dt, offen);
-    else { sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
-    this._fahrzeugeBild(dt);
-    this._survival(e, dt, offen, t);
-    this._fahrzeugTakt(dt);
+    if(this.all){ // im All: kein Boden, keine Gegner des Planeten
+      this._allBild(e, dt, offen); this._hudSurvival(sp.modus === "survival", null, null);
+      if((this._musikZeit = (this._musikZeit || 0) + dt) > 0.5){ this._musikZeit = 0; this.audio.musikTakt("nacht", true); }
+    } else {
+      if(this._imFahrzeug()) this._fahren(e, dt, offen);
+      else { sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
+      this._fahrzeugeBild(dt);
+      this._survival(e, dt, offen, t);
+      this._fahrzeugTakt(dt);
+    }
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
     if(this.raum) this._raumBild(dt, offen);
     if(ew.offen() && (this._ewZeit = (this._ewZeit || 0) + dt) > 0.25){ this._ewZeit = 0; ew.aktualisiere(); }
@@ -208,14 +213,22 @@ SC.Spiel.startpunkt = function(planet){
 
   SC.Spiel.prototype.landepunkt = function(){ return SC.Planeten.landepunkt(this.daten); };
   // Zu Planet id wechseln (nicht als Gast): aussteigen, alten Planeten speichern, neuen anlegen, am Landepunkt neu starten, Ankunft zeigen
-  SC.Spiel.prototype.wechslePlanet = function(id){
-    var s = this;
+  // o (optional, Raumflug): { ort: [x, z] auf dem neuen Planeten, schiff: Fahrzeug, das samt Insassen mitkommt (in Höhe SC.ALL_GRENZE − 10) }
+  SC.Spiel.prototype.wechslePlanet = function(id, o){
+    var s = this, schiff = o && o.schiff, sitze = schiff ? schiff.sitze.slice() : null;
     if(!this.daten || this.rolle === "gast" || !SC.PLANETEN[id]) return Promise.reject(new Error("Planetenwechsel nicht möglich"));
     if(id === this.daten.aktuellerPlanet) return Promise.resolve();
-    if(this._imFahrzeug()) this.aussteigen();
+    if(schiff) this.welt.fahrzeuge.delete(schiff.id); // reist mit: aus dem alten Planeten nehmen, bevor er gespeichert wird
+    else if(this._imFahrzeug()) this.aussteigen();
     return this.speichere("planet").then(function(){
-      var d = s.daten; SC.Planeten.anlegen(d, id); d.aktuellerPlanet = id; d.spieler.pos = null; d.spieler.blick = [0, 0];
+      var d = s.daten, ort = o && o.ort; SC.Planeten.anlegen(d, id); d.aktuellerPlanet = id; d.spieler.blick = [0, 0];
+      d.spieler.pos = ort ? [ort[0], SC.ALL_GRENZE - 10, ort[1]] : null;
       s.lebenszyklusAbmelden(document); s.starte(d);
+      if(schiff){
+        var f = SC.Fahrzeug.neu(s.welt, schiff.art, [ort ? ort[0] : s.spieler.pos[0], SC.ALL_GRENZE - 10, ort ? ort[1] : s.spieler.pos[2]], schiff.blick, { id: schiff.id, fundort: schiff.fundort });
+        f.panzerung = schiff.panzerung; f.sitze = sitze;
+        var im = SC.Fahrzeug.sitzVon(s.welt, s._fzId()); if(im){ s.spieler.ansicht = "aussen"; s._fahrzeugFolgen(im, true); }
+      }
       var r = s.raum; if(r instanceof SC.Gastgeber){ r.setzeWelt(s.welt); if(r._k) r._k.kampf = s.kampf; r.planetWechsel(); } // alle Gäste kommen mit
       if(s.ui.ankunft) s.ui.ankunft(SC.PLANETEN[id].name);
       return s.speichere("planet");
@@ -288,7 +301,8 @@ SC.Spiel.startpunkt = function(planet){
       if(!s.daten || !s.welt) return; // inzwischen verlassen
       if(s.rolle === "gast") return s._figurSpeichern();
       if(s.daten.id === "gast") return; // die Gastwelt wird nie gespeichert
-      SC.Spielstand.ausWelt(s.daten, s.welt, s.spieler, s.kampf);
+      if(s.all) s._allSpeichern(function(){ SC.Spielstand.ausWelt(s.daten, s.welt, s.spieler, s.kampf); }); // im All: am Landepunkt speichern
+      else SC.Spielstand.ausWelt(s.daten, s.welt, s.spieler, s.kampf);
       s.daten.spieler.schnellleisteKreativ = s.spieler.schnellleiste.slice();
       s.daten.tageszeit = s.tageszeit;
       return s.slots.speichere(s.daten);

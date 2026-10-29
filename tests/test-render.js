@@ -64,3 +64,15 @@ test("Auflösung: normal zeichnet mit Pixelverhältnis 1, hoch wie bisher (Compu
   gleich(SC.Render.pixelVerhaeltnis("normal", 2, false), 1); gleich(SC.Render.pixelVerhaeltnis("hoch", 2, false), 2); gleich(SC.Render.pixelVerhaeltnis("hoch", 3, true), 1.5);
   gleich(SC.Render.pixelVerhaeltnis("hoch", 1, false), 1); gleich(SC.Render.pixelVerhaeltnis(undefined, 2, false), 2, "ohne Angabe wie bisher");
 });
+// Stufe 5b: Raumszene
+test("RenderAll: drei Planetenkugeln, wenige Objekte, Oberfläche aus der echten Landschaft", function(){
+  var d = SC.Spielstand.neu({ name: "A", seedText: "all" }), ra = new SC.RenderAll(); ra.setzePlaneten(d);
+  gleich(ra.kugeln.length, 3); var n = 0; ra.szene.traverse(function(o){ if(o.isMesh || o.isPoints || o.isLine || o.isLineSegments) n++; }); wahr(n <= 60, "Objekte: " + n);
+  var g = new SC.Generator(new SC.Planet({ id: "glutfrost", seed: SC.hashText("all:glutfrost") })), lava = null;
+  for(var x = 0; x < 2048 && !lava; x += 16) for(var z = 0; z < 2048 && !lava; z += 16) if(g.biom(x, z) === "lavasee" && g.hoehe(x, z) < SC.MEER) lava = [x, z];
+  var f = ra.farbeAn("glutfrost", lava[0], lava[1]), soll = SC.PALETTEN.glutfrost.texturen.lava[0]; gleich(f, soll, "Lavasee auf der Kugel");
+  ra.bild({ schiff: { pos: SC.All.zuKugel("start", 100, 1000, 60), blick: 0, neigung: 0 }, asteroiden: [{ pos: [0, 600, 0], r: 10 }], piraten: [], geschosse: [], sprung: 0 }, 1 / 60);
+});
+test("allModus blendet die Blockwelt aus und wieder ein", function(){
+  var r = Object.create(SC.Render.prototype); r.szene = new THREE.Scene(); r.welt_gruppe = null; r._allSichtbar = []; r.allModus(true); gleich(r._all, true); r.allModus(false); gleich(r._all, false);
+});

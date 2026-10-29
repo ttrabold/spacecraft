@@ -84,6 +84,11 @@ SC.UI = function(wurzel, o){
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
 
   // Großer Planetenname bei der Ankunft (blendet nach 3 s aus)
+  // Vollbild-Glühen zum Kaschieren von Übergängen (Austritt, Eintritt, Sprung)
+  SC.UI.prototype.gluehen = function(farbe, dauer){
+    var d = document.createElement("div"); d.className = "gluehen"; d.style.background = farbe || "#ffd9a0"; this.wurzel.appendChild(d);
+    setTimeout(function(){ d.classList.add("weg"); d.style.transitionDuration = (dauer || 600) + "ms"; }, 30); setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, (dauer || 600) + 100);
+  };
   SC.UI.prototype.ankunft = function(name){
     var d = document.createElement("div"); d.className = "ankunft"; d.textContent = name; this.wurzel.appendChild(d);
     setTimeout(function(){ d.classList.add("weg"); }, 2400); setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 3200);

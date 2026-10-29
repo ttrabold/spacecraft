@@ -246,7 +246,15 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this._ziel = z;
   };
 
+  // All (Stufe 5b): statt der Blockwelt die Raumszene zeichnen; den Zustand setzt das Spiel je Bild in this.allZustand
+  SC.Render.prototype.allModus = function(an){ this._all = !!an; if(an && !this.allSzene) this.allSzene = new SC.RenderAll(); };
   SC.Render.prototype.bild = function(spieler, zeit, dt){
+    if(this._all && this.allSzene && this.allZustand){
+      var ak = this.allSzene.kamera, cv = this.renderer.domElement; ak.aspect = (cv.clientWidth || cv.width) / (cv.clientHeight || cv.height || 1); ak.updateProjectionMatrix();
+      this.allSzene.bild(this.allZustand, dt); this.renderer.setClearColor(0x02030a); this.renderer.render(this.allSzene.szene, ak);
+      this._fpsBilder++; this._fpsZeit += dt; if(this._fpsZeit >= 1){ this.fps = Math.round(this._fpsBilder / this._fpsZeit); this._fpsBilder = 0; this._fpsZeit = 0; }
+      return;
+    }
     var P = this.planet.groesse, px = spieler.pos[0], pz = spieler.pos[2];
     this._verwalte(spieler);
     this.chunks.forEach(function(c){

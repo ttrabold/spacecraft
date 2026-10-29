@@ -9,6 +9,7 @@
 
   // Benutzen-Taste: im Fahrzeug aussteigen, sonst in das nächste Fahrzeug in Reichweite einsteigen → true, wenn etwas passiert ist
   S.benutzen = function(){
+    if(this.all) return false; // im All steigt niemand aus
     var sp = this.spieler, im = this._imFahrzeug();
     if(im) return this.aussteigen();
     if(sp.modus === "zuschauer" || (this.kampf && this.kampf.besiegt())) return false;

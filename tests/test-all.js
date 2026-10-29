@@ -156,3 +156,7 @@ test("Abriss im All", function(){
   return agZwei().then(agGastRein).then(function(x){ u = x; u.f.pos[1] = SC.ALL_GRENZE + 1; u.h._fahren(alE(), 1 / 60, false); wahr(u.h.all); u.netz.trenne(u.g.raum.verb); return mspLauf(u.netz); })
   .then(function(){ var f = u.h.welt.fahrzeuge.get("schiff"); gleich(f.sitze[1], null, "Sitz frei"); wahr(u.h.all && u.h.all.phase === "all", "Flug geht weiter"); u.h._allBild(alE({ vor: true }), 0.1, false); wahr(u.h.all); }).then(mspFertig, mspFehler);
 });
+test("Im All kein Aussteigen und kein Planetenwechsel über F3", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u); gleich(s.benutzen(), false); wahr(s._imFahrzeug(), "sitzt noch");
+  return s.wechslePlanet("glutfrost").then(function(){ wahr(false, "darf nicht gehen"); }, function(){ gleich(s.welt.planet.id, "start"); wahr(s.all, "noch im All"); });
+});

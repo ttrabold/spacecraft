@@ -216,7 +216,7 @@ SC.Spiel.startpunkt = function(planet){
   // o (optional, Raumflug): { ort: [x, z] auf dem neuen Planeten, schiff: Fahrzeug, das samt Insassen mitkommt (in Höhe SC.ALL_GRENZE − 10) }
   SC.Spiel.prototype.wechslePlanet = function(id, o){
     var s = this, schiff = o && o.schiff, sitze = schiff ? schiff.sitze.slice() : null;
-    if(!this.daten || this.rolle === "gast" || !SC.PLANETEN[id]) return Promise.reject(new Error("Planetenwechsel nicht möglich"));
+    if(!this.daten || this.rolle === "gast" || !SC.PLANETEN[id] || (this.all && !schiff)) return Promise.reject(new Error("Planetenwechsel nicht möglich"));
     if(id === this.daten.aktuellerPlanet) return Promise.resolve();
     if(schiff) this.welt.fahrzeuge.delete(schiff.id); // reist mit: aus dem alten Planeten nehmen, bevor er gespeichert wird
     else if(this._imFahrzeug()) this.aussteigen();

@@ -9,6 +9,7 @@ SC.Netz.WOERTER = ["MOND","STERN","KOMET","PLANET","RAKETE","SONNE","NEBEL","ORB
 SC.Netz.code = function(wort, zahl){ return { wort: wort, zahl: zahl, text: wort + " " + zahl, peerId: "spacecraft-" + wort.toLowerCase() + "-" + zahl }; };
 SC.Netz.neuerCode = function(zf){ var W = SC.Netz.WOERTER; return SC.Netz.code(W[Math.floor(zf() * W.length)], 10 + Math.floor(zf() * 90)); };
 SC.Netz.KEINE_DIREKTE_MS = 10000;
+SC.Netz.NEU_ANMELDEN_MS = 3000; // Gastgeber: Abstand der Versuche, sich nach Verlust der Vermittlung neu anzumelden
 
 // Kopie wie nach einer Übertragung: Uint8Array bleibt erhalten, sonst JSON-Rundreise
 SC.Netz.kopie = function(n){
@@ -90,6 +91,12 @@ SC.Netz.peerjs = function(){
         r.schliesse = function(){ try{ p.destroy(); }catch(e){} };
         p.on("connection", function(c){ r._aus("verbindung", umhuelle(c)); });
         p.on("open", function(){ offen = true; ok(r); });
+        // Vermittlung verloren (WLAN-Aussetzer, Server-Neustart): bestehende Verbindungen laufen weiter, neue Beitritte bräuchten
+        // aber die Vermittlung → mit derselben ID neu anmelden, bis der Raum geschlossen wird
+        p.on("disconnected", function(){
+          if(!offen) return;
+          setTimeout(function(){ try{ if(p.disconnected && !p.destroyed) p.reconnect(); }catch(e){} }, SC.Netz.NEU_ANMELDEN_MS);
+        });
         p.on("error", function(e){ if(!offen){ try{ p.destroy(); }catch(x){} nein(SC.Netz._peerjsFehler(e)); } });
       });
     },

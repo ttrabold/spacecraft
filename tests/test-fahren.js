@@ -102,7 +102,7 @@ test("Entwickler: Fahrzeug erscheinen lassen, Fahrzeuge weg schickt Fundort-Fahr
 });
 test("Blockauswahl: Reiter Fahrzeuge stellt hin", function(){
   var w = document.createElement("div"), ui = new SC.UI(w, {}), gew = []; ui.zeigeBlockauswahl(function(){}, { ausruestung: true, beiFahrzeug: function(a){ gew.push(a); } });
-  var k = w.querySelectorAll('[data-aktion="fahrzeug"]'); gleich(k.length, 3); ui._klick(k[1]); gleich(gew[0], "buggy");
+  var k = w.querySelectorAll('[data-aktion="fahrzeug"]'); gleich(k.length, Object.keys(SC.FAHRZEUGE).length); ui._klick(k[1]); gleich(gew[0], "buggy");
 });
 
 // --- Gemeinsam spielen ---

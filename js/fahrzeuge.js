@@ -1,6 +1,7 @@
 // Fahrzeuge (Stufe 4): gefundene Viersitzer. Werte und Modelle in SC.FAHRZEUGE, Logik in SC.Fahrzeug (ohne DOM und three.js).
 // Lage: pos = Mitte unten, blick = Drehwinkel wie bei Gegnern (vorn ist -z bei blick 0, größerer Winkel dreht nach links),
 // Grundfläche quadratisch mit Kantenlänge breite (dreht nicht mit). Modell und Sitze in lokalen Koordinaten (vorn -z).
+SC.ALL_GRENZE = 160; // Stufe 5b: ab dieser Höhe beginnt der Austritt ins All
 SC.FAHRZEUGE = {
   // Offener Landgleiter: schnell, schwebt über Boden und Wasser, kein Geschütz
   gleiter: {
@@ -42,6 +43,30 @@ SC.FAHRZEUGE = {
       { w: 2.02, h: 0.08, d: 0.16, x: 0, y: 1.05, z: -1.2, farbe: "#ffad47", leuchtet: true }, // Leuchtstreifen
       { w: 0.3, h: 0.2, d: 0.05, x: -0.7, y: 0.95, z: -1.53, farbe: "#fff3c0", leuchtet: true }, // Scheinwerfer
       { w: 0.3, h: 0.2, d: 0.05, x: 0.7, y: 0.95, z: -1.53, farbe: "#fff3c0", leuchtet: true }
+    ]
+  },
+  // Raumschiff (Stufe 5b): kleiner Frachter, fliegt wie der Flieger, steigt bis ins All; Schild statt Panzerung, verpufft nie
+  raumschiff: {
+    tempo: 18, beschl: 16, lenk: 1.8, breite: 3.4, hoehe: 2.2, panzerung: 200, fliegt: true, maxHoehe: SC.ALL_GRENZE + 20, steigen: 10, sinken: 4, unzerstoerbar: true,
+    geschuetz: { schaden: 20, tempo: 50, abklingen: 0.25, farbe: "#ff5a3c", rohr: [0, 1.0, -2.9] },
+    sitze: [[-0.4, 0.75, -1.0], [0.4, 0.75, -1.0], [-0.4, 0.75, 0.1], [0.4, 0.75, 0.1]],
+    modell: [
+      { w: 2.2, h: 1.1, d: 4.6, x: 0, y: 0.9, z: 0, farbe: "#d0d3d9" },               // Rumpf
+      { w: 1.4, h: 0.7, d: 1.2, x: 0, y: 0.85, z: -2.7, farbe: "#b8bcc4" },           // Bug
+      { w: 1.3, h: 0.6, d: 1.6, x: 0, y: 1.7, z: -0.9, farbe: "#7fd8ff" },            // Cockpit
+      { w: 1.5, h: 0.5, d: 1.4, x: 0, y: 1.65, z: 0.6, farbe: "#c2c6ce" },            // Aufbau hinten
+      { w: 3.4, h: 0.18, d: 1.6, x: 0, y: 0.7, z: 0.9, farbe: "#a9afba" },            // Stummelflügel
+      { w: 0.5, h: 0.5, d: 1.4, x: -1.45, y: 0.85, z: 0.9, farbe: "#8b919c" },        // Gondeln
+      { w: 0.5, h: 0.5, d: 1.4, x: 1.45, y: 0.85, z: 0.9, farbe: "#8b919c" },
+      { w: 0.9, h: 0.7, d: 0.6, x: -0.55, y: 0.9, z: 2.5, farbe: "#7a808b" },         // Triebwerke
+      { w: 0.9, h: 0.7, d: 0.6, x: 0.55, y: 0.9, z: 2.5, farbe: "#7a808b" },
+      { w: 0.8, h: 0.55, d: 0.05, x: -0.55, y: 0.9, z: 2.82, farbe: "#5ad1ff", leuchtet: true },
+      { w: 0.8, h: 0.55, d: 0.05, x: 0.55, y: 0.9, z: 2.82, farbe: "#5ad1ff", leuchtet: true },
+      { w: 2.22, h: 0.06, d: 0.14, x: 0, y: 1.2, z: -1.8, farbe: "#ff9a3c", leuchtet: true },  // Leuchtstreifen
+      { w: 0.12, h: 0.12, d: 0.9, x: 0, y: 1.0, z: -3.3, farbe: "#3a3f4a" },          // Bordkanone
+      { w: 0.14, h: 0.45, d: 0.14, x: -0.7, y: 0.22, z: -1.6, farbe: "#55595f" },     // Landestützen
+      { w: 0.14, h: 0.45, d: 0.14, x: 0.7, y: 0.22, z: -1.6, farbe: "#55595f" },
+      { w: 0.14, h: 0.45, d: 0.14, x: 0, y: 0.22, z: 1.8, farbe: "#55595f" }
     ]
   },
   // Kleiner Gleitjäger mit Cockpit und Flügeln, fliegt wie eine Drohne
@@ -221,6 +246,14 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
       if(p) F.neu(welt, art, p, 0, { id: b.schluessel, fundort: b.schluessel, heim: p }); else ohne[b.schluessel] = true;
     });
   };
+  // Raumschiff auf dem Startplaneten (14–20 Blöcke vom Startpunkt); ohne heim, damit es beim Reisen nicht zurückgeholt wird → true, wenn angelegt
+  F.sichereSchiff = function(welt, startpunkt){
+    if(welt.fahrzeuge.has("schiff") || !startpunkt || welt.planet.landschaft !== "start") return false;
+    var p = freieStelle(welt, startpunkt[0], startpunkt[2], "raumschiff", 14, 20);
+    if(!p) return false;
+    F.neu(welt, "raumschiff", p, 0, { id: "schiff", fundort: "schiff" });
+    return true;
+  };
   F.inLava = function(welt, f){ return welt.holeBlock(f.pos[0], f.pos[1] + 0.3, f.pos[2]) === SC.B.LAVA; };
   F.sichereStart = function(welt, startpunkt){
     if(welt.fahrzeuge.has("start") || !startpunkt) return;
@@ -257,7 +290,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     var r = { verpufft: false, ausgestiegen: [] };
     if(f.weg || !(menge > 0)) return r;
     f.panzerung = Math.max(0, f.panzerung - menge); f.zuletztGetroffen = spielzeit;
-    if(f.panzerung > 0) return r;
+    if(f.panzerung > 0 || SC.FAHRZEUGE[f.art].unzerstoerbar) return r; // das Raumschiff verpufft nie
     r.verpufft = true; r.sitze = f.sitze.slice(); r.ausgestiegen = f.sitze.filter(function(id){ return id !== null; });
     f.sitze = [null, null, null, null]; f.tempo = 0; f.geschw = [0, 0, 0];
     if(f.fundort){ f.weg = true; f.wiederBei = spielzeit + F.WIEDERKEHR; } else welt.fahrzeuge.delete(f.id);

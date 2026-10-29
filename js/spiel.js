@@ -123,6 +123,7 @@ SC.Spiel.startpunkt = function(planet){
     // Fahrzeuge der Welt; der Start-Gleiter wird auch in alten Welten nachgezogen (nicht in der Gastwelt: die Fahrzeuge kommen vom Gastgeber)
     SC.Fahrzeug.ausDaten(this.welt, pd.fahrzeuge);
     if(daten.id !== "gast") SC.Fahrzeug.sichereStart(this.welt, this.landepunkt());
+    if(daten.id !== "gast" && !daten.schiffErzeugt && SC.Fahrzeug.sichereSchiff(this.welt, daten.startpunkt)) daten.schiffErzeugt = true; // reist danach mit
     this._fzTakt = 0;
     // Survival: Kampfwerte, Rucksack, Gegner
     this._zf = SC.zufall((Date.now() ^ (Math.random() * 4294967296)) >>> 0);

@@ -70,6 +70,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     window.addEventListener("resize", this._groesse); this._groesse();
   };
   SC.Render.FS = FS;
+  // Aufstieg: oberhalb der Bauhöhe (128) bis zur Grenze des Alls wird der Himmel schwarz → 0..1
+  SC.Render.hoehenFaktor = function(y){ return Math.max(0, Math.min(1, (y - 128) / (SC.ALL_GRENZE - 128))); };
   // Pixelverhältnis: "normal" zeichnet mit einfacher Auflösung (ein Viertel der Pixel auf Retina), sonst wie das Gerät (Computer bis 2, Touch bis 1,5)
   SC.Render.pixelVerhaeltnis = function(aufloesung, dpr, touch){ return aufloesung === "normal" ? 1 : Math.min(dpr, touch ? 1.5 : 2); };
   SC.Render.prototype.aufloesung = function(a){ this.renderer.setPixelRatio(SC.Render.pixelVerhaeltnis(a, window.devicePixelRatio || 1, this.touch)); this._groesse(); };
@@ -275,12 +277,14 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     if(z) this.rahmen.position.set(z.x + P * Math.round((px - z.x - 0.5) / P) + 0.5, z.y + 0.5, z.z + P * Math.round((pz - z.z - 0.5) / P) + 0.5);
     // Himmel und Licht
     var h = SC.himmelsFarben(SC.PALETTEN[this.planet.palette] || SC.PALETTEN.start, zeit);
+    var hf = SC.Render.hoehenFaktor(spieler.pos[1]);
+    if(hf > 0){ var schwarz = new THREE.Color(0x02030a); h.oben.lerp(schwarz, hf); h.unten.lerp(schwarz, hf * 0.85); h.tageslicht = h.tageslicht * (1 - hf * 0.3); }
     this.himmelMat.uniforms.oben.value.copy(h.oben); this.himmelMat.uniforms.unten.value.copy(h.unten);
     this.himmel.position.copy(k.position);
     var sx = Math.cos(h.winkel), sy = Math.sin(h.winkel);
     this.sonne.position.set(k.position.x + sx * 400, k.position.y + sy * 400, k.position.z - 60); this.sonne.lookAt(k.position);
     this.mond.position.set(k.position.x - sx * 400, k.position.y - sy * 400, k.position.z + 60); this.mond.lookAt(k.position);
-    this.sterne.position.copy(k.position); this.sterneMat.opacity = Math.max(0, 1 - h.tageslicht * 1.6);
+    this.sterne.position.copy(k.position); this.sterneMat.opacity = Math.max(hf, Math.max(0, 1 - h.tageslicht * 1.6));
     this.hand.material.color.setScalar(Math.max(0.35, h.tageslicht));
     this._leuchtBild(px, spieler.pos[1], pz);
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);

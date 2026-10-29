@@ -29,12 +29,13 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 | 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | live als 0.4.0 (inkl. Entwicklerwerkzeuge, Gamepad, Musik und Geräusche); offen nur noch #18 (Test auf echtem iPad) | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | live als 0.5.1; offen: kleinere Punkte #38–#42 und Balance nach Feedback | [Design](superpowers/specs/2026-10-23-stufe-2-survival-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-2-survival.md) |
 | 3 | Gemeinsam spielen per Raumcode | fertig, live als 0.6.1 | [Design](superpowers/specs/2026-10-24-stufe-3-gemeinsam-spielen-design.md) | [Plan](superpowers/plans/2026-10-24-stufe-3-gemeinsam-spielen.md) |
-| 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | umgesetzt als 0.7.1 auf Branch `stufe-4`, in der Test-Vorschau; Gerätetest läuft | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | [Plan](superpowers/plans/2026-10-29-stufe-4-fahrzeuge.md) |
+| 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | fertig, live als 0.7.1 | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | [Plan](superpowers/plans/2026-10-29-stufe-4-fahrzeuge.md) |
 | 5 | Raumschiffe, nahtloser Flug zu anderen Planeten | offen | – | – |
 | später | Crafting: aus Rohstoffen Dinge herstellen (gewünscht, Zeitpunkt offen) | offen | – | – |
 
 ## Aktueller Stand
 
+- 2026-10-29: 0.7.1 live (Test und Live), Meilenstein Stufe 4 geschlossen. Gerätetest durch den Nutzer ok. Kein itch.io-Release und kein Devlog angefragt.
 - 2026-10-29: Stufe 4 umgesetzt (Branch `stufe-4`, Version 0.7.0, 390 Tests grün): Schwebeflitzer (Gleiter), Kraterkäfer (Buggy), Kometenjäger (Flieger) als Viersitzer; Start-Gleiter beim Startpunkt, weitere an Lager/Station/Herrenhaus; Einsteigen mit F, Steuerkreuz hoch oder 🚗; Panzerung, Rammen, Bordgeschütz, Verpuffen mit Wiederkehr; Kreativ-Reiter Fahrzeuge und F3; gemeinsames Fahren (Protokoll 2, mit zwei Tabs über PeerJS geprüft). Fahrzeuge fahren durch Laub. Testlauf filterbar: `bash scripts/tests.sh <Text>`.
 - 2026-10-29: Stufe 3 abgeschlossen (Gerätetest durch den Nutzer ok, Meilenstein zu, Restpunkte #59 unter „Später“). Stufe 4 neu zugeschnitten: Fahrzeuge werden gefunden statt gebaut (Bauen kommt mit Crafting nach Stufe 5). Design und Plan geschrieben, Issues #60–#67 angelegt. Kein itch.io-Release und kein Devlog für 0.6.x (Wunsch des Nutzers).
 - 2026-10-29: Version 0.6.1 (live auf Test und `main`, 337 Tests grün): Beitritt hängt nicht mehr auf „Verbinde …“, wenn beim Eintritt intern ein Fehler auftritt (Gast und Gastgeber fangen Fehler ab, halb gestartetes Spiel wird abgebaut); Gastgeber meldet sich nach Verlust der PeerJS-Vermittlung neu an; #55: Leuchten ist jetzt ein Punktlicht im Block-Shader statt eines Scheins vor der Kamera (im Browser geprüft). Übrige Review-Kleinpunkte als #59.
@@ -49,7 +50,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Nächster Schritt
 
-- **Stufe 4 prüfen:** Branch `stufe-4` nach `test` pushen (`git push test stufe-4:main`), Gerätetest durch den Nutzer (Tablet, Gamepad, gemeinsam fahren). Danach Fast-Forward nach `main` und live, Meilenstein Stufe 4 schließen.
+- **Stufe 5 beginnen:** Raumschiffe und nahtloser Flug zu anderen Planeten – Design mit dem Nutzer klären (Brainstorming), dann Spec und Plan.
 - Danach: Feedback der Kinder zu Fahrzeugen (Werte in js/fahrzeuge.js: Tempo, Panzerung, Geschütz).
 - Offen, aber nicht in Stufe 4: #57 (Survival im Entwicklerpanel), #58 (Lebensanzeige für Mitspieler), #59 (Restpunkte Stufe 3).
 - Nächste Stufe: 5 (Raumschiffe, nahtloser Flug zu anderen Planeten).

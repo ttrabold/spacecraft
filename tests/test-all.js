@@ -183,3 +183,16 @@ test("Entwickler: Planetenwechsel funktioniert auch im All (#91)", function(){
   var pn = new SC.Entwickler.Panel(div, s); pn.zeige(); div.querySelector("#ew-planet").value = "glutfrost"; div.querySelector('[data-ew="planet"]').click();
   return s._eintrittP.then(function(){ gleich(s.all, null, "aus dem All"); gleich(s.welt.planet.id, "glutfrost"); var im = s._imFahrzeug(); wahr(im && im.f.art === "raumschiff", "sitzt im Schiff"); });
 });
+test("All: Schnellleiste bleibt beim Ziel- und Sprungknopf stehen, HUD ohne Leiste", function(){
+  var u = alSpiel(), s = u.s, ex = null; alAustritt(u); s.spieler.auswahl = 3; s.ui.hud = function(sp, e){ ex = e; }; s.entwickler = { offen: function(){ return false; } }; s.render.bild = function(){};
+  s.eingabe.zustand = function(){ var e = alE({ ziel: true }); e.auswahl = null; e.auswahlRad = 1; e.blickDx = e.blickDy = 0; return e; };
+  s._t0 = 0; s._bild(16); gleich(s.spieler.auswahl, 3, "keine Leistenwahl im All"); wahr(ex && ex.all, "HUD weiß vom All"); wahr(s.all.ziel, "Ziel gewählt");
+});
+test("All: nach Landung mit neuer Darstellung bekommt die neue Raumszene wieder Planeten", function(){
+  var u = alSpiel(), s = u.s;
+  function neueDarstellung(){ s.render.allSzene = null; s.render.allModus = function(an){ if(an && !this.allSzene) this.allSzene = { kugeln: [], setzePlaneten: function(){ this.gesetzt = (this.gesetzt || 0) + 1; } }; }; }
+  neueDarstellung(); alAustritt(u); gleich(s.render.allSzene.gesetzt, 1, "erster Flug");
+  s._allEnde(); neueDarstellung(); // Landung auf einem anderen Planeten: starte() legt eine neue Darstellung an
+  u.f.pos[1] = SC.ALL_GRENZE + 1; s._fahren(alE(), 1 / 60, false); wahr(s.all, "wieder im All"); gleich(s.render.allSzene.gesetzt, 1, "zweiter Flug");
+  s._allEnde(); u.f.pos[1] = SC.ALL_GRENZE + 1; s._fahren(alE(), 1 / 60, false); gleich(s.render.allSzene.gesetzt, 1, "gleiche Szene: nicht neu rechnen");
+});

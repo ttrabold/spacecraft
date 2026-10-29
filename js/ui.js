@@ -335,10 +335,10 @@ SC.UI = function(wurzel, o){
     }
     // Survival: die Leiste zeigt die ersten 9 Rucksackplätze (extra.leiste)
     var leiste = extra && extra.leiste;
-    var schl = (leiste ? JSON.stringify(leiste) : spieler.schnellleiste.join(",")) + "|" + spieler.auswahl + "|" + zus + "|" + spieler.modus;
+    var schl = (leiste ? JSON.stringify(leiste) : spieler.schnellleiste.join(",")) + "|" + spieler.auswahl + "|" + zus + "|" + spieler.modus + "|" + !!(extra && extra.all);
     if(schl !== this._leisteSchl){
       this._leisteSchl = schl;
-      var l = h.querySelector(".leiste"); l.hidden = zus;
+      var l = h.querySelector(".leiste"); l.hidden = zus || !!(extra && extra.all); // im All keine Schnellleiste
       l.innerHTML = (leiste || spieler.schnellleiste).map(function(x, i){
         var bild = "", zahl = "", rand = "";
         if(!leiste) bild = SC.UI.blockBild(x);

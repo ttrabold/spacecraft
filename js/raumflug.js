@@ -7,6 +7,13 @@ SC.Spiel.prototype.all = null;
 
   function vorwaerts(a){ return [-Math.sin(a.blick) * Math.cos(a.neigung), Math.sin(a.neigung), -Math.cos(a.blick) * Math.cos(a.neigung)]; }
 
+  // Raumszene einschalten; Planeten setzen, wenn diese Szene sie für diesen Spielstand noch nicht hat
+  // (nach einer Landung auf einem anderen Planeten legt starte() eine neue Darstellung samt leerer Raumszene an)
+  S._allSzeneAn = function(){
+    var r = this.render; if(!r || !r.allModus) return;
+    r.allModus(true);
+    if(r.allSzene && r.allSzene._daten !== this.daten){ r.allSzene.setzePlaneten(this.daten); r.allSzene._daten = this.daten; }
+  };
   // Sitzen im Fahrzeug f alle Spieler (allein: nur man selbst)?
   S._alleAnBord = function(f){
     var r = this.raum, ids = [this._fzId()];
@@ -27,7 +34,7 @@ SC.Spiel.prototype.all = null;
     this.all = { phase: "all", pos: p, blick: Math.atan2(-n[0], -n[2]), neigung: Math.asin(n[1]), tempo: 40, ziel: null, sprungT: 0, vonPlanet: id, schiffId: f.id, schild: f.panzerung };
     if(this._astDaten !== this.daten){ this._astDaten = this.daten; this._allAsteroiden = SC.All.asteroiden(SC.hashText(this.daten.seed + ":all")); }
     this._allPiraten = []; this._allGeschosse = []; this._allZeit = 0; this._piratZeit = 40 + Math.random() * 30;
-    if(this.render && this.render.allModus){ this.render.allModus(true); if(this._allPlaneten !== this.daten){ this.render.allSzene.setzePlaneten(this.daten); this._allPlaneten = this.daten; } }
+    this._allSzeneAn();
     if(this.ui.gluehen) this.ui.gluehen("#cfe8ff", 700);
   };
 
@@ -141,7 +148,7 @@ SC.Spiel.prototype.all = null;
     if(mit){
       if(!this.all || !this.all.zuschauer){
         this.all = { zuschauer: true };
-        if(this.render && this.render.allModus){ this.render.allModus(true); if(this._allPlaneten !== this.daten){ this.render.allSzene.setzePlaneten(this.daten); this._allPlaneten = this.daten; } }
+        this._allSzeneAn();
       }
       for(var k in st) if(k !== "piraten" && k !== "geschosse") this.all[k] = st[k];
       this._allPiraten = st.piraten || []; this._allGeschosse = st.geschosse || []; this._allAsteroiden = this._allAsteroiden || SC.All.asteroiden(SC.hashText(this.daten.seed + ":all"));

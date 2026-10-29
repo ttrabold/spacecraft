@@ -10,3 +10,4 @@ test("B im Menü geht zurück", function(){ var w=document.createElement("div");
 test("Gamepad B weicht aus", function(){ var z=SC.Gamepad.neuerZustand(); wahr(SC.Gamepad.zuEingabe(pad([0,0,0,0],[1]),z,1/60).einmal.ausweichen); });
 test("Steuerkreuz hoch ist benutzen", function(){ var z=SC.Gamepad.neuerZustand(); wahr(SC.Gamepad.zuEingabe(pad([0,0,0,0],[12]),z,1/60).einmal.benutzen); wahr(!SC.Gamepad.zuEingabe(pad([0,0,0,0],[12]),z,1/60).einmal.benutzen,"nur beim Drücken"); });
 test("Steuerkreuz runter ist Platz wechseln (#86)", function(){ var z=SC.Gamepad.neuerZustand(); wahr(SC.Gamepad.zuEingabe(pad([0,0,0,0],[13]),z,1/60).einmal.platz); });
+test("LB und RB lösen auch Ziel und Sprung aus (im All)", function(){ var z=SC.Gamepad.neuerZustand(); wahr(SC.Gamepad.zuEingabe(pad([0,0,0,0],[4]),z,1/60).einmal.ziel,"LB"); z=SC.Gamepad.neuerZustand(); wahr(SC.Gamepad.zuEingabe(pad([0,0,0,0],[5]),z,1/60).einmal.sprung,"RB"); });

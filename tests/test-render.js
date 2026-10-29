@@ -84,3 +84,19 @@ test("RenderAll: Planetenmarker im Bild und am Rand für Planeten hinter dem Sch
   gleich(v.id, "vorn"); wahr(!v.aussen && Math.abs(v.x - 500) < 40 && v.y > 0 && v.y < 500, "vorn im Bild: " + v.x + "," + v.y);
   gleich(h.id, "hinten"); wahr(h.aussen, "hinten am Rand"); wahr(h.x >= 0 && h.x <= 1000 && h.y >= 0 && h.y <= 500, "auf dem Schirm: " + h.x + "," + h.y);
 });
+test("RenderAll: Schüsse und Asteroiden bleiben sichtbar, egal wohin das Schiff schaut", function(){
+  var ra = new SC.RenderAll(); ra.kamera.aspect = 2; ra.kamera.updateProjectionMatrix();
+  function sicht(){ ra.kamera.updateMatrixWorld(); return new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(ra.kamera.projectionMatrix, ra.kamera.matrixWorldInverse)); }
+  // erstes Bild nach dem Austritt: noch keine Schüsse; three.js legt dabei die Begrenzungskugel fest
+  ra.bild({ schiff: { pos: [-600, 0, 0], blick: 1.57, neigung: 0 } }, 1 / 60); var f0 = sicht(); [ra.geschosse, ra.asteroiden].forEach(function(m){ if(m.frustumCulled) f0.intersectsObject(m); });
+  ra.bild({ schiff: { pos: [-2500, 800, 3000], blick: 2, neigung: 0 }, geschosse: [{ pos: [-2540, 800, 3000], richtung: [-1, 0, 0] }], asteroiden: [{ pos: [-2550, 800, 3000], r: 8 }] }, 1 / 60);
+  var fr = sicht();
+  [ra.geschosse, ra.asteroiden].forEach(function(m){ wahr(!m.frustumCulled || fr.intersectsObject(m), "würde weggeschnitten"); });
+});
+test("RenderAll: Marker am Rand überlappen sich nicht", function(){
+  var ra = new SC.RenderAll(); ra.kamera.aspect = 2; ra.kamera.updateProjectionMatrix();
+  ra.kugeln = [{ id: "a", kugel: { position: new THREE.Vector3(100, 0, 3000) } }, { id: "b", kugel: { position: new THREE.Vector3(160, 0, 3000) } }, { id: "c", kugel: { position: new THREE.Vector3(130, 10, 3000) } }];
+  ra.bild({ schiff: { pos: [0, 0, 0], blick: 0, neigung: 0 } }, 1 / 60);
+  var m = ra.marker(1000, 500);
+  for(var i = 0; i < m.length; i++) for(var j = 0; j < i; j++) wahr(Math.abs(m[i].x - m[j].x) >= 170 || Math.abs(m[i].y - m[j].y) >= 22, m[i].id + "/" + m[j].id + ": " + m[i].x + "," + m[i].y + " – " + m[j].x + "," + m[j].y);
+});

@@ -189,15 +189,31 @@ SC.T = {
         "🎯 und ⚡ – im All: Ziel wählen und Sprung starten",
         "Schnellleiste unten – Platz antippen"
       ]],
-      ["Controller", [
-        "Linker Stick – laufen; rechter Stick – umschauen",
-        "A – springen; B – runter oder ausweichen; linken Stick drücken – rennen",
-        "RT – abbauen oder angreifen; LT – setzen oder blocken",
-        "LB und RB – Schnellleiste",
-        "X – Blöcke oder Rucksack; Y – Ansicht wechseln",
-        "Steuerkreuz hoch – einsteigen oder aussteigen; runter – Platz wechseln",
-        "Steuerkreuz rechts und links – im All: Ziel wählen und Sprung",
-        "Start – Menü; Select – Entwicklerwerkzeuge"
+      ["Controller (Xbox)", [
+        "Linker Stick – laufen (im Fahrzeug: fahren)",
+        "Rechter Stick – umschauen",
+        "Linken Stick drücken – rennen",
+        "A – springen, beim Fliegen hoch",
+        "B – ausweichen, beim Fliegen runter",
+        "X – Blöcke wählen (Kreativ) oder Rucksack (Survival)",
+        "Y – Ansicht wechseln",
+        "RT – abbauen oder angreifen; im Fahrzeug schießen",
+        "LT – Block setzen oder blocken",
+        "LB und RB – Platz in der Schnellleiste wählen",
+        "Steuerkreuz links und rechts – Schnellleiste",
+        "Steuerkreuz hoch – einsteigen oder aussteigen",
+        "Steuerkreuz runter – im Fahrzeug den Platz wechseln",
+        "Menütaste (☰) – Menü; in Menüs wählt A, B geht zurück",
+        "Ansichtstaste (⧉) – Entwicklerwerkzeuge (vorher in den Einstellungen einschalten)"
+      ]],
+      ["Controller im All", [
+        "Linker Stick hoch und runter – Gas geben und bremsen",
+        "Linker Stick links und rechts oder rechter Stick – lenken",
+        "A und B – Nase hoch und runter",
+        "RT – Laser abfeuern",
+        "LB oder Steuerkreuz rechts – Ziel wählen",
+        "RB oder Steuerkreuz links – Sprung zum Ziel starten",
+        "Die Schnellleiste ist im All ausgeblendet."
       ]],
       ["Spielmodi", [
         "Kreativ – Du hast alle Blöcke und baust, was du willst.",

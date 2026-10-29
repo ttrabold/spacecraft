@@ -20,6 +20,9 @@ SC.RenderAll = function(){
   // Asteroiden und Geschosse als InstancedMesh, Piraten als kleine Gruppen
   this.asteroiden = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshBasicMaterial({ color: 0x8a8580 }), 150); this.asteroiden.count = 0; this.szene.add(this.asteroiden);
   this.geschosse = new THREE.InstancedMesh(this.box, new THREE.MeshBasicMaterial({ color: 0xff5a3c }), 60); this.geschosse.count = 0; this.szene.add(this.geschosse);
+  // Die Begrenzungskugel eines InstancedMesh wird nur einmal bestimmt (beim ersten Bild, ohne Schüsse, am Heimatplaneten) –
+  // danach würden Schüsse und Asteroiden abseits davon weggeschnitten. Wenige Teile: immer zeichnen.
+  this.asteroiden.frustumCulled = false; this.geschosse.frustumCulled = false;
   this.piraten = [];
   for(var p = 0; p < 4; p++){
     var g = new THREE.Group(), rumpf = new THREE.Mesh(this.box, new THREE.MeshBasicMaterial({ color: 0x5a3a4a })), fl = new THREE.Mesh(this.box, new THREE.MeshBasicMaterial({ color: 0xff3b5c }));
@@ -72,7 +75,7 @@ SC.RenderAll = function(){
   RA.marker = function(breite, hoehe){
     var k = this.kamera, v = this._v, RAND = { l: 40, r: 40, o: 70, u: 110 };
     k.updateMatrixWorld();
-    return this.kugeln.map(function(e){
+    var l = this.kugeln.map(function(e){
       v.copy(e.kugel.position).project(k);
       var hinten = v.z > 1, x = v.x, y = v.y;
       if(hinten){ x = -x; y = -y; if(Math.abs(x) < 1e-6 && Math.abs(y) < 1e-6) y = -1; } // hinter dem Schiff: gespiegelt, notfalls unten
@@ -84,6 +87,11 @@ SC.RenderAll = function(){
       }
       return { id: e.id, x: Math.round(sx), y: Math.round(sy), aussen: aussen, winkel: w };
     });
+    // Nahe beieinander liegende Marker (z. B. zwei Planeten hinter dem Schiff) zur Bildmitte hin auseinanderschieben
+    for(var i = 1; i < l.length; i++) for(var j = 0; j < i; j++){
+      if(Math.abs(l[i].x - l[j].x) < 170 && Math.abs(l[i].y - l[j].y) < 22){ l[i].y = l[j].y + (l[j].y > hoehe / 2 ? -24 : 24); j = -1; }
+    }
+    return l;
   };
   // Ein Bild: zustand = { schiff: {pos, blick, neigung}, asteroiden: [{pos, r}], piraten: [{pos, blick}], geschosse: [{pos, richtung}], sprung: 0..1 }
   RA.bild = function(z, dt){

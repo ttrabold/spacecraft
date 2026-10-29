@@ -182,8 +182,8 @@ SC.Spiel.startpunkt = function(planet){
       if(e.ansicht) sp.ansicht = sp.ansicht === "ich" ? "aussen" : "ich";
       if(e.benutzen) this.benutzen();
       if(e.platz) this.platzWechseln();
-      if(e.auswahl !== null) sp.auswahl = e.auswahl;
-      if(e.auswahlRad) sp.auswahl = SC.mod(sp.auswahl + e.auswahlRad, 9);
+      if(e.auswahl !== null && !this.all) sp.auswahl = e.auswahl; // im All ist die Leiste ausgeblendet
+      if(e.auswahlRad && !this.all) sp.auswahl = SC.mod(sp.auswahl + e.auswahlRad, 9);
     }
     var vorBoden = sp.aufBoden, vy = sp.geschw[1];
     if(this.all){ // im All: kein Boden, keine Gegner des Planeten

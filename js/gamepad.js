@@ -23,7 +23,7 @@ SC.Gamepad = {};
       blickDx: -rx * Math.abs(rx) * BLICK * dt, blickDy: -ry * Math.abs(ry) * BLICK * dt,
       einmal: {
         springenNeu: neu(K.A), abbauen: neu(K.RT), setzen: neu(K.LT), blockauswahl: neu(K.X), ansicht: neu(K.Y),
-        menue: neu(K.START), entwickler: neu(K.SELECT), ausweichen: neu(K.B), benutzen: neu(K.HOCH), ziel: neu(K.RECHTS), sprung: neu(K.LINKS), platz: neu(K.RUNTER),
+        menue: neu(K.START), entwickler: neu(K.SELECT), ausweichen: neu(K.B), benutzen: neu(K.HOCH), ziel: neu(K.RECHTS) || neu(K.LB), sprung: neu(K.LINKS) || neu(K.RB), /* im All; am Boden blättern dieselben Knöpfe die Leiste */ platz: neu(K.RUNTER),
         auswahlRad: neu(K.RB) || neu(K.RECHTS) ? 1 : neu(K.LB) || neu(K.LINKS) ? -1 : 0
       },
       gehalten: { abbauen: gedrueckt(p, K.RT), setzen: gedrueckt(p, K.LT) }

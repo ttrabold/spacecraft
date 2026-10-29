@@ -57,3 +57,5 @@ test("Sternenkarte: Planeten antippbar, Marker, ausblenden (#89, #90)", function
   var m = w.querySelectorAll(".planet-marker:not([hidden])"); gleich(m.length, 2); wahr(w.textContent.indexOf("Glutfrost · 30 s") >= 0, "Markertext");
   ui.allKarte(null); wahr(k.hidden, "Karte aus"); gleich(w.querySelectorAll(".planet-marker:not([hidden])").length, 0, "Marker aus");
 });
+test("Schnellleiste im All ausgeblendet", function(){ var w=document.createElement("div"),ui=leereUI(w),s=new SC.Spieler({id:"a",pos:[0,0,0],modus:"kreativ",schnellleiste:[1,2,3,4,5,6,7,8,9]}); ui.hud(s,{fps:60}); wahr(!w.querySelector(".leiste").hidden,"am Boden da"); ui.hud(s,{fps:60,all:true}); wahr(w.querySelector(".leiste").hidden,"im All weg"); ui.hud(s,{fps:60}); wahr(!w.querySelector(".leiste").hidden,"wieder da"); });
+test("Spielanleitung: Xbox-Controller am Boden und im All", function(){ var t=JSON.stringify(SC.T.anleitung.abschnitte); ["Controller (Xbox)","Controller im All","LB","RB","Ansichtstaste","Menütaste"].forEach(function(x){ wahr(t.indexOf(x)>=0,x); }); });

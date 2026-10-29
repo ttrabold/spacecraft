@@ -371,7 +371,11 @@ SC.Spiel.startpunkt = function(planet){
       beiAnfrageWeg: function(info){ s._anfrageWeg(info); },
       beiSpieler: function(l){ rueck(s, "spieler", l); s.speichere("mitspieler"); }, // Beitritt und Abgang: speichern (Position der Gastfigur)
       beiNachricht: function(){},
-      beiVerpufft: function(f, r){ s._fahrzeugVerpufft(f, r); } });
+      beiVerpufft: function(f, r){ s._fahrzeugVerpufft(f, r); },
+      // Raumflug eines Gast-Piloten: Eintritt, Notsprung, Pilot weg
+      beiEintritt: function(f, id, ort, schild){ if(typeof schild === "number") f.panzerung = Math.max(0, schild); s._allMitfahren(null); s._eintrittP = s._eintrittAusfuehren(f, id, ort); },
+      beiNotsprung: function(f){ f.panzerung = 0; s._allMitfahren(null); s._schiffAbsetzen(f); },
+      beiPilotWeg: function(f){ if(f && s.all && s.all.zuschauer){ s._allMitfahren(null); s._schiffAbsetzen(f); } } });
     gg.bindeKampf(this.kampf, {
       ich: function(){ return s.raumIch(s._menueOffen); },
       beiBeute: function(pos, l){ s.beuteAuswerfen(pos, l.map(function(b){ return { gegenstand: b }; })); },
@@ -539,7 +543,7 @@ SC.Spiel.startpunkt = function(planet){
   // Pro Bild im Raum: Takt senden, gespiegelte Wesen (Gast), Mitspieler an die Darstellung
   SC.Spiel.prototype._raumBild = function(dt, offen){
     var r = this.raum, ich = this.raumIch(offen);
-    if(r instanceof SC.Gastgeber) r.takt(dt, ich);
+    if(r instanceof SC.Gastgeber){ this._allMitfahren(r.gastAll && r.gastAll.all); r.takt(dt, ich); }
     else if(r instanceof SC.Gast){
       if(r.wesen !== this._wesenRoh){ var mein = r.figur.figurId; this._wesenRoh = r.wesen; this._wesenListe = (r.wesen || []).filter(function(n){ return !n || n.schuetze !== mein; }); } // eigene Schüsse zeigt der Gast schon selbst
       SC.Raum.spiegleWesen(this.welt, this._wesenListe, dt, this.kampf.uhr);

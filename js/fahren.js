@@ -83,11 +83,12 @@
 
   // --- Gemeinsam spielen ---
   // Für den zustand: Lage des Fahrzeugs, wenn man es selbst fährt (sonst undefined)
-  S._fzLage = function(){ var im = this._imFahrzeug(); if(!im || im.sitz !== 0) return undefined; var f = im.f; return { id: f.id, pos: f.pos.slice(), blick: f.blick, geschw: f.geschw.slice(), tempo: f.tempo }; };
+  S._fzLage = function(){ var im = this._imFahrzeug(); if(!im || im.sitz !== 0) return undefined; var f = im.f; return { id: f.id, pos: f.pos.slice(), blick: f.blick, geschw: f.geschw.slice(), tempo: f.tempo, all: this._allLage() }; };
   // Gast, pro Bild: Fahrzeuge des Gastgebers spiegeln; hat der Gastgeber einen gesetzt oder abgesetzt (Verpuffen), entsprechend ein- bzw. aussteigen
   S._gastFahrzeuge = function(gast, dt){
     var war = this._fzWar;
     SC.Raum.spiegleFahrzeuge(this.welt, gast.fahrzeuge, dt, this._fzId(), gast.latenz);
+    this._allMitfahren(gast.allZustand);
     var im = this._imFahrzeug();
     if(im && !war) this._eingestiegen(im.f, im.sitz);
     else if(!im && war) this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, war.f, war.sitz));

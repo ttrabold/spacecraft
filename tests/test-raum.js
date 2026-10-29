@@ -285,5 +285,9 @@ test("Raum: Spiegel rechnet Fahrzeuge um die Laufzeit voraus", function(){
 });
 test("Raum: Protokoll 2 wird abgelehnt", function(){
   var u, r;
-  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Alt", { protokoll: 2 }); return raumBeitritt(u, r); }).then(function(e){ gleich(SC.NETZ_PROTOKOLL, 3); gleich(e.fehler && e.fehler.art, "version"); });
+  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Alt", { protokoll: 2 }); return raumBeitritt(u, r); }).then(function(e){ wahr(SC.NETZ_PROTOKOLL >= 3); gleich(e.fehler && e.fehler.art, "version"); });
+});
+test("Raum: Protokoll 3 wird abgelehnt", function(){
+  var u, r;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Alt", { protokoll: 3 }); return raumBeitritt(u, r); }).then(function(e){ gleich(SC.NETZ_PROTOKOLL, 4); gleich(e.fehler && e.fehler.art, "version"); });
 });

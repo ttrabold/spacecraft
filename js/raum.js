@@ -169,7 +169,9 @@ SC.Gastgeber = function(o){
           c.verb.sende(n);
         });
         c.verb.sende(wesen);
-        var e = s._eintrag(id); if(e && e.pos) c.verb.sende({ t: "fahrzeuge", liste: SC.Raum.fahrzeugeNah(s.welt, fz, e.pos) });
+        // Raumflug: Zustand des Piloten (Gastgeber selbst oder ein Gast) geht an alle
+        var e = s._eintrag(id), all = (ich && ich.all) || (s.gastAll && s.gastAll.all) || null;
+        if(e && e.pos) c.verb.sende({ t: "fahrzeuge", liste: SC.Raum.fahrzeugeNah(s.welt, fz, e.pos, id), all: all });
       });
     }
     if(zeit){ var tz = ich && typeof ich.tageszeit === "number" ? ich.tageszeit : d.tageszeit; // je Gast mit seiner bestätigten Wunsch-Nummer
@@ -216,6 +218,7 @@ SC.Gastgeber = function(o){
       if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt", "hieb", "blockt", "sitzt"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
       // Fahrer: Lage seines Fahrzeugs übernehmen (nur vom Fahrer selbst)
       var fz = n.fz, f = fz && this.welt && this.welt.fahrzeuge.get(fz.id);
+      if(f && f.sitze[0] === c.id){ if(fz.all) this.gastAll = { von: c.id, all: fz.all }; else if(this.gastAll && this.gastAll.von === c.id) this.gastAll = null; }
       if(f && f.sitze[0] === c.id && !f.weg){ var p = vekF(fz.pos), g = vekF(fz.geschw), lat = zahl(n.latenz) ? Math.max(0, Math.min(0.5, n.latenz)) : 0;
         if(p && g) p = [p[0] + g[0] * lat, p[1] + g[1] * lat, p[2] + g[2] * lat]; // um die Laufzeit der Meldung vorausrechnen
         if(p) f.pos = p; if(g) f.geschw = g; if(zahl(fz.blick)) f.blick = fz.blick; if(zahl(fz.tempo)) f.tempo = fz.tempo; }
@@ -659,13 +662,17 @@ SC.RAUM_FZ_NAH = 96;
     welt.fahrzeuge.forEach(function(f){ l.push({ id: f.id, art: f.art, pos: f.pos.map(r2), blick: r2(f.blick), geschw: f.geschw.map(r2), tempo: r2(f.tempo), panzerung: Math.round(f.panzerung), sitze: f.sitze.slice(), weg: !!f.weg, frei: !f.fundort }); });
     return l;
   };
-  SC.Raum.fahrzeugeNah = function(welt, liste, pos){
+  // Im Umkreis von pos; Fahrzeuge, in denen der Empfänger id sitzt, immer (z. B. nach einem Eintritt weit vom Landepunkt)
+  SC.Raum.fahrzeugeNah = function(welt, liste, pos, id){
     var P = welt.planet.groesse;
-    return liste.filter(function(e){ return Math.hypot(SC.mod(e.pos[0] - pos[0] + P / 2, P) - P / 2, SC.mod(e.pos[2] - pos[2] + P / 2, P) - P / 2) <= SC.RAUM_FZ_NAH; });
+    return liste.filter(function(e){ return (id !== undefined && e.sitze.indexOf(id) >= 0) || Math.hypot(SC.mod(e.pos[0] - pos[0] + P / 2, P) - P / 2, SC.mod(e.pos[2] - pos[2] + P / 2, P) - P / 2) <= SC.RAUM_FZ_NAH; });
   };
 
   // --- Gastgeber ---
-  H._fzRaus = function(id){ var s = this.welt && SC.Fahrzeug.sitzVon(this.welt, id); if(s) SC.Fahrzeug.aussteigen(s.f, id); };
+  H._fzRaus = function(id){
+    var s = this.welt && SC.Fahrzeug.sitzVon(this.welt, id); if(s) SC.Fahrzeug.aussteigen(s.f, id);
+    if(this.gastAll && this.gastAll.von === id){ this.gastAll = null; ruf(this.o.beiPilotWeg, s ? s.f : null); } // Pilot im All weg
+  };
   // Schaden aufs Fahrzeug; verpufft es, erfahren es alle Gäste und das eigene Spiel (o.beiVerpufft) → Ergebnis von SC.Fahrzeug.schaden
   H.fahrzeugSchaden = function(f, menge, spielzeit){
     var r = SC.Fahrzeug.schaden(this.welt, f, menge, spielzeit);
@@ -680,6 +687,10 @@ SC.RAUM_FZ_NAH = 96;
     SC.Fahrzeug.einsteigen(f, c.id);
   };
   HN.aussteigen = function(c){ this._fzRaus(c.id); };
+  // Gast-Pilot im All: Eintritt bzw. Notsprung führt der Gastgeber aus (Planetenwechsel für alle)
+  function schiffVon(s, id){ var r = null; if(s.welt) s.welt.fahrzeuge.forEach(function(f){ if(f.sitze[0] === id && f.art === "raumschiff") r = f; }); return r; }
+  HN.eintritt = function(c, n){ var f = schiffVon(this, c.id), o = Array.isArray(n.ort) && n.ort.length === 2 ? n.ort : null; if(!f || !SC.PLANETEN[n.id] || !o) return; this.gastAll = null; ruf(this.o.beiEintritt, f, n.id, o, n.schild); };
+  HN.notsprung = function(c, n){ var f = schiffVon(this, c.id); if(!f) return; this.gastAll = null; ruf(this.o.beiNotsprung, f, n.schild); };
   HN.ping = function(c, n){ c.verb.sende({ t: "pong", z: n.z }); };
   HN.fzHinstellen = function(c, n){ var p = vek(n.pos); if(this.welt && SC.FAHRZEUGE[n.art] && p) SC.Fahrzeug.neu(this.welt, n.art, p, zahl(n.blick) ? n.blick : 0); };
   HN.fzEntfernen = function(c, n){ var f = this.welt && this.welt.fahrzeuge.get(n.id); if(f && !f.fundort && f.sitze.every(function(x){ return x === null; })) this.welt.fahrzeuge.delete(f.id); };
@@ -697,9 +708,11 @@ SC.RAUM_FZ_NAH = 96;
       noch = true; var k = {}; for(var x in e) k[x] = e[x]; k.sitze = e.sitze.map(function(s){ return s === ich ? null : s; }); return k;
     });
     if(!noch) this._fzRaus = null;
-    this.fahrzeuge = l;
+    this.fahrzeuge = l; this.allZustand = n.all || null;
   };
   GN.verpufft = function(n){ ruf(this.o.beiNachricht, n); };
+  G.eintritt = function(id, ort, schild){ this.sende({ t: "eintritt", id: id, ort: ort, schild: schild }); };
+  G.notsprung = function(schild){ this.sende({ t: "notsprung", schild: schild }); };
   // Antwort auf den eigenen Ping: halbe Antwortzeit ist die Laufzeit einer Meldung (geglättet, höchstens 0,5 s)
   GN.pong = function(n){ var l = (this.jetzt() - n.z) / 2000; if(!(l >= 0 && l < 5)) return; l = Math.min(0.5, l); this.latenz = this.latenz === null ? l : this.latenz * 0.8 + l * 0.2; };
 

@@ -24,7 +24,7 @@ SC.Spiel.prototype.all = null;
   S._austritt = function(f){
     var id = this.welt.planet.id, c = SC.ALL.planeten[id], p = SC.All.zuKugel(id, f.pos[0], f.pos[2], SC.ALL.radius * 0.35); // außerhalb der Eintrittsgrenze (1,25 R)
     var n = [p[0] - c[0], p[1] - c[1], p[2] - c[2]], l = Math.hypot(n[0], n[1], n[2]); n = [n[0] / l, n[1] / l, n[2] / l];
-    this.all = { phase: "all", pos: p, blick: Math.atan2(-n[0], -n[2]), neigung: Math.asin(n[1]), tempo: 40, ziel: null, sprungT: 0, vonPlanet: id, schiffId: f.id };
+    this.all = { phase: "all", pos: p, blick: Math.atan2(-n[0], -n[2]), neigung: Math.asin(n[1]), tempo: 40, ziel: null, sprungT: 0, vonPlanet: id, schiffId: f.id, schild: f.panzerung };
     if(this._astDaten !== this.daten){ this._astDaten = this.daten; this._allAsteroiden = SC.All.asteroiden(SC.hashText(this.daten.seed + ":all")); }
     this._allPiraten = []; this._allGeschosse = []; this._allZeit = 0; this._piratZeit = 40 + Math.random() * 30;
     if(this.render && this.render.allModus){ this.render.allModus(true); if(this._allPlaneten !== this.daten){ this.render.allSzene.setzePlaneten(this.daten); this._allPlaneten = this.daten; } }
@@ -34,6 +34,7 @@ SC.Spiel.prototype.all = null;
   // Pro Bild im All (statt Spielerphysik und Survival)
   S._allBild = function(e, dt, offen){
     var a = this.all, R = SC.ALL.radius;
+    if(a.zuschauer){ this._allAnzeige(); return; } // Mitfahrer: Zustand kommt vom Piloten
     if(a.phase === "sprung"){
       a.sprungT += dt;
       var zc = SC.ALL.planeten[a.ziel], d = [zc[0] - a.pos[0], zc[1] - a.pos[1], zc[2] - a.pos[2]], l = Math.hypot(d[0], d[1], d[2]) || 1;
@@ -68,7 +69,9 @@ SC.Spiel.prototype.all = null;
   S._allKampf = function(e, dt, offen){
     var s = this, a = this.all, f = this.welt.fahrzeuge.get(a.schiffId), survival = this.spieler.modus === "survival", fw = vorwaerts(a), z = this.daten.spielzeit || 0;
     this._allZeit = (this._allZeit || 0) + dt;
-    function schaden(m){ if(survival && f) SC.Fahrzeug.schaden(s.welt, f, m, z); s.audio.spiele("getroffen"); }
+    // Schild: beim Gastgeber bzw. allein am Fahrzeug, beim Gast-Piloten im Zustand (das Fahrzeug spiegelt der Gastgeber)
+    var gast = this.raum instanceof SC.Gast;
+    function schaden(m){ if(survival){ if(gast) a.schild = Math.max(0, a.schild - m); else if(f){ SC.Fahrzeug.schaden(s.welt, f, m, z); a.schild = f.panzerung; } } s.audio.spiele("getroffen"); }
     // Asteroiden: Schild −25 (höchstens alle 0,5 s), abbremsen und abprallen
     var hit = SC.All.kollision(a.pos, this._allAsteroiden || [], 4);
     if(hit && this._allZeit >= (this._astBereit || 0)){
@@ -98,7 +101,7 @@ SC.Spiel.prototype.all = null;
       for(var i = 0; i < s._allPiraten.length; i++){ var p = s._allPiraten[i]; if(Math.hypot(q.pos[0] - p.pos[0], q.pos[1] - p.pos[1], q.pos[2] - p.pos[2]) < 8){ p.lp -= g.schaden; if(p.lp <= 0) s._piratBesiegt(i); else s.audio.spiele("treffer"); return false; } }
       return true;
     });
-    if(survival && f && f.panzerung <= 0){ this._notsprung(f); return true; }
+    if(survival && (gast ? a.schild : f ? f.panzerung : 1) <= 0){ this._notsprung(f); return true; }
     return false;
   };
   // Pirat verpufft; Beute direkt in den Rucksack (voll: Hinweis, Beute verfällt)
@@ -111,12 +114,37 @@ SC.Spiel.prototype.all = null;
   };
   // Schild leer im All: zurück auf den Ausgangsplaneten, am Landepunkt auf den Boden (die Welt ist noch dessen Welt)
   S._notsprung = function(f){
+    var schild = this.all.schild;
+    this._allEnde(); if(this.ui.gluehen) this.ui.gluehen("#ffffff", 900);
+    this.ui.hinweis(SC.T.allNotsprung, 4000);
+    if(this.raum instanceof SC.Gast){ this.raum.notsprung(schild); return; } // der Gastgeber setzt das Schiff ab
+    if(f) this._schiffAbsetzen(f);
+  };
+  // Schiff am Landepunkt des aktuellen Planeten auf den Boden setzen; Insassen bleiben sitzen
+  S._schiffAbsetzen = function(f){
     var lp = this.landepunkt(), p = SC.Fahrzeug.freieStelle(this.welt, lp[0] + 10, lp[2], f.art, 0, 12) || [lp[0], lp[1] + 2, lp[2]];
     f.pos = p; f.geschw = [0, 0, 0]; f.tempo = 0;
-    this.all = null; if(this.render && this.render.allModus) this.render.allModus(false); if(this.ui.cockpit) this.ui.cockpit(null);
-    if(this.ui.gluehen) this.ui.gluehen("#ffffff", 900);
-    this.ui.hinweis(SC.T.allNotsprung, 4000);
     var im = SC.Fahrzeug.sitzVon(this.welt, this._fzId()); if(im) this._fahrzeugFolgen(im, true);
+  };
+  S._allEnde = function(){ this.all = null; if(this.render && this.render.allModus) this.render.allModus(false); if(this.ui.cockpit) this.ui.cockpit(null); };
+
+  // --- Gemeinsam: Zustand des Piloten senden bzw. als Mitfahrer übernehmen ---
+  S._allLage = function(){
+    var a = this.all; if(!a || a.zuschauer) return null;
+    return { phase: a.phase, pos: a.pos.slice(), blick: a.blick, neigung: a.neigung, tempo: a.tempo, ziel: a.ziel, sprungT: a.sprungT, vonPlanet: a.vonPlanet, schiffId: a.schiffId, schild: a.schild,
+      piraten: (this._allPiraten || []).map(function(p){ return { pos: p.pos.slice(), blick: p.blick }; }), geschosse: (this._allGeschosse || []).slice(0, 40).map(function(q){ return { pos: q.pos.slice(), richtung: q.richtung.slice() }; }) };
+  };
+  // st: Zustand des Piloten (oder null). Wer als Mitfahrer im selben Schiff sitzt, sieht den Flug; endet er, zurück in die Blockwelt.
+  S._allMitfahren = function(st){
+    var im = this._imFahrzeug(), mit = !!(st && im && im.sitz !== 0 && st.schiffId === im.f.id);
+    if(mit){
+      if(!this.all || !this.all.zuschauer){
+        this.all = { zuschauer: true };
+        if(this.render && this.render.allModus){ this.render.allModus(true); if(this._allPlaneten !== this.daten){ this.render.allSzene.setzePlaneten(this.daten); this._allPlaneten = this.daten; } }
+      }
+      for(var k in st) if(k !== "piraten" && k !== "geschosse") this.all[k] = st[k];
+      this._allPiraten = st.piraten || []; this._allGeschosse = st.geschosse || []; this._allAsteroiden = this._allAsteroiden || SC.All.asteroiden(SC.hashText(this.daten.seed + ":all"));
+    } else if(this.all && this.all.zuschauer) this._allEnde();
   };
 
   // Ziel reihum durch die anderen Planeten
@@ -130,23 +158,26 @@ SC.Spiel.prototype.all = null;
     if(this.render) this.render.allZustand = { schiff: { pos: a.pos, blick: a.blick, neigung: a.neigung }, sprung: a.phase === "sprung" ? Math.min(1, a.sprungT / 0.6) : 0,
       asteroiden: this._allAsteroiden || [], piraten: this._allPiraten || [], geschosse: this._allGeschosse || [] };
     if(this.ui.cockpit){
-      var f = this.welt && this.welt.fahrzeuge.get(a.schiffId), ziel = a.ziel ? SC.ALL.planeten[a.ziel] : null;
+      var ziel = a.ziel ? SC.ALL.planeten[a.ziel] : null;
       this.ui.cockpit({ ziel: a.ziel ? SC.PLANETEN[a.ziel].name : null, sekunden: ziel ? Math.max(0, Math.round((Math.hypot(ziel[0] - a.pos[0], ziel[1] - a.pos[1], ziel[2] - a.pos[2]) - 1.25 * SC.ALL.radius) / SC.ALL.tempo)) : null,
-        schild: f ? Math.round(100 * f.panzerung / SC.FAHRZEUGE[f.art].panzerung) : 100, sprung: a.phase === "sprung" });
+        schild: Math.round(100 * (typeof a.schild === "number" ? a.schild : SC.FAHRZEUGE.raumschiff.panzerung) / SC.FAHRZEUGE.raumschiff.panzerung), sprung: a.phase === "sprung" });
     }
   };
 
   // Eintritt in Planet id: Glühen, Anflugstelle auf dem Torus, Schiff samt Insassen in die Atmosphäre darüber → Promise in this._eintrittP
   S._eintritt = function(id){
-    var s = this, t = SC.All.zuTorus(id, this.all.pos), f = this.welt.fahrzeuge.get(this.all.schiffId);
-    this.all = null; if(this.render && this.render.allModus) this.render.allModus(false); if(this.ui.cockpit) this.ui.cockpit(null);
-    if(this.ui.gluehen) this.ui.gluehen("#ffb070", 800);
-    var ort = [Math.floor(t.x) + 0.5, Math.floor(t.z) + 0.5];
-    if(id === this.welt.planet.id){ // zurück zum selben Planeten: nur das Schiff versetzen
-      if(f){ f.pos = [ort[0], SC.ALL_GRENZE - 10, ort[1]]; f.geschw = [0, 0, 0]; f.tempo = 0; this._fahrzeugFolgen(SC.Fahrzeug.sitzVon(this.welt, this._fzId()), true); }
-      return this._eintrittP = Promise.resolve();
+    var t = SC.All.zuTorus(id, this.all.pos), f = this.welt.fahrzeuge.get(this.all.schiffId), schild = this.all.schild, ort = [Math.floor(t.x) + 0.5, Math.floor(t.z) + 0.5];
+    this._allEnde(); if(this.ui.gluehen) this.ui.gluehen("#ffb070", 800);
+    if(this.raum instanceof SC.Gast){ this.raum.eintritt(id, ort, schild); return this._eintrittP = Promise.resolve(); } // der Gastgeber wechselt für alle
+    return this._eintrittP = this._eintrittAusfuehren(f, id, ort);
+  };
+  // Schiff f samt Insassen in Planet id über ort [x, z] setzen (gleicher Planet: nur versetzen)
+  S._eintrittAusfuehren = function(f, id, ort){
+    if(id === this.welt.planet.id){
+      if(f){ f.pos = [ort[0], SC.ALL_GRENZE - 10, ort[1]]; f.geschw = [0, 0, 0]; f.tempo = 0; var im = SC.Fahrzeug.sitzVon(this.welt, this._fzId()); if(im) this._fahrzeugFolgen(im, true); }
+      return Promise.resolve();
     }
-    return this._eintrittP = this.wechslePlanet(id, { ort: ort, schiff: f });
+    return this.wechslePlanet(id, { ort: ort, schiff: f });
   };
 
   // Speichern im All: Spieler am Landepunkt des Ausgangsplaneten, Schiff am Boden daneben (nur in den gespeicherten Daten)

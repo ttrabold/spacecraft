@@ -109,3 +109,50 @@ test("Notsprung statt Verpuffen", function(){
   gleich(s.all, null, "zurück"); gleich(s.welt.planet.id, "start"); var f = s.welt.fahrzeuge.get("schiff"); wahr(f && !f.weg, "Schiff da"); wahr(Math.hypot(f.pos[0] - lp[0], f.pos[2] - lp[2]) < 30 && f.pos[1] < 120, "am Landepunkt am Boden");
   var im = s._imFahrzeug(); wahr(im && im.f === f, "sitzt im Schiff"); gleich(JSON.stringify(s.kampf.rucksack.alsDaten()), ruck); wahr(s.hinweise.indexOf(SC.T.allNotsprung) >= 0);
 });
+
+// --- Gemeinsam fliegen ---
+function agZwei(){
+  return mspZwei().then(function(u){
+    u.f = u.h.welt.fahrzeuge.get("schiff"); u.h.spieler.pos = SC.Fahrzeug.aussteigePos(u.h.welt, u.f, 0); u.h.benutzen(); u.h._raumBild(0.1, false);
+    return mspLauf(u.netz).then(function(){ return u; });
+  });
+}
+function agGastRein(u){
+  u.g._raumBild(0.1, false); var fg = u.g.welt.fahrzeuge.get("schiff"); u.g.spieler.pos = SC.Fahrzeug.aussteigePos(u.g.welt, fg, 1); u.g._raumBild(0.1, false);
+  return mspLauf(u.netz).then(function(){ u.g.benutzen(); return mspLauf(u.netz); }).then(function(){ u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){ u.g._raumBild(0.1, false); return u; });
+}
+test("Gemeinsam: Austritt nur mit allen an Bord", function(){
+  var u;
+  return agZwei().then(function(x){ u = x; u.f.pos[1] = SC.ALL_GRENZE + 1; u.h._fahren(alE(), 1 / 60, false);
+    gleich(u.h.all, null, "Gast fehlt"); wahr(u.f.pos[1] < SC.ALL_GRENZE, "Halt an der Grenze"); wahr(u.h.hinweise.indexOf(SC.T.allAlleAnBord) >= 0); return agGastRein(u);
+  }).then(function(){ wahr(u.g._imFahrzeug(), "Gast sitzt"); u.f.pos[1] = SC.ALL_GRENZE + 1; u.h._fahren(alE(), 1 / 60, false); wahr(u.h.all, "jetzt ins All"); }).then(mspFertig, mspFehler);
+});
+test("Gemeinsam: Gast sieht den Raumflug des Gastgebers", function(){
+  var u;
+  return agZwei().then(agGastRein).then(function(x){ u = x; u.f.pos[1] = SC.ALL_GRENZE + 1; u.h._fahren(alE(), 1 / 60, false); u.h._allBild(alE({ vor: true }), 0.1, false); u.h._raumBild(0.1, false); return mspLauf(u.netz); })
+  .then(function(){ u.g._raumBild(0.1, false); wahr(u.g.all && u.g.all.zuschauer, "Gast im All als Mitfahrer");
+    var a = u.g.all.pos, b = u.h.all.pos; wahr(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) < 1, "gleiche Lage"); }).then(mspFertig, mspFehler);
+});
+test("Gemeinsam: Gast fliegt, Gastgeber übernimmt den Raumflug-Zustand", function(){
+  var u;
+  return mspZwei().then(function(x){ u = x; u.f = u.h.welt.fahrzeuge.get("schiff"); u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){
+    u.g._raumBild(0.1, false); var fg = u.g.welt.fahrzeuge.get("schiff"); u.g.spieler.pos = SC.Fahrzeug.aussteigePos(u.g.welt, fg, 0); u.g._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){ u.g.benutzen(); return mspLauf(u.netz); }).then(function(){ u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){
+    u.g._raumBild(0.1, false); gleich(u.g._imFahrzeug().sitz, 0, "Gast ist Pilot"); u.h.spieler.pos = SC.Fahrzeug.aussteigePos(u.h.welt, u.f, 1); u.h.benutzen(); u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){ u.g._raumBild(0.1, false); var fg = u.g.welt.fahrzeuge.get("schiff"); fg.pos[1] = SC.ALL_GRENZE + 1; u.g._fahren(alE(), 1 / 60, false); wahr(u.g.all && !u.g.all.zuschauer, "Gast fliegt");
+    u.g._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){ u.h._raumBild(0.1, false); wahr(u.h.all && u.h.all.zuschauer, "Gastgeber schaut zu"); }).then(mspFertig, mspFehler);
+});
+test("Gemeinsam: Eintritt bringt alle auf den Planeten, sitzend", function(){
+  var u;
+  return agZwei().then(agGastRein).then(function(x){ u = x; u.f.pos[1] = SC.ALL_GRENZE + 1; u.h._fahren(alE(), 1 / 60, false); u.h.all.pos = SC.All.zuKugel("glutfrost", 400, 800, 40); u.h._allBild(alE(), 0.016, false); return u.h._eintrittP; })
+  .then(function(){ return mspLauf(u.netz, 4); }).then(function(){ u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){
+    u.g._raumBild(0.1, false); gleich(u.h.welt.planet.id, "glutfrost"); gleich(u.g.welt.planet.id, "glutfrost", "Gast mitgekommen");
+    var im = u.g._imFahrzeug(); wahr(im && im.f.id === "schiff" && im.sitz === 1, "Gast sitzt wieder"); gleich(u.g.all, null);
+  }).then(mspFertig, mspFehler);
+});
+test("Abriss im All", function(){
+  var u;
+  return agZwei().then(agGastRein).then(function(x){ u = x; u.f.pos[1] = SC.ALL_GRENZE + 1; u.h._fahren(alE(), 1 / 60, false); wahr(u.h.all); u.netz.trenne(u.g.raum.verb); return mspLauf(u.netz); })
+  .then(function(){ var f = u.h.welt.fahrzeuge.get("schiff"); gleich(f.sitze[1], null, "Sitz frei"); wahr(u.h.all && u.h.all.phase === "all", "Flug geht weiter"); u.h._allBild(alE({ vor: true }), 0.1, false); wahr(u.h.all); }).then(mspFertig, mspFehler);
+});

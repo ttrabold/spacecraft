@@ -71,6 +71,43 @@
     });
   };
 
+  // --- Kampf ---
+  // Treffer auf den Spieler im Fahrzeug → Panzerung (true = umgeleitet)
+  S._fahrzeugTreffer = function(menge){
+    var im = this._imFahrzeug(); if(!im) return false;
+    var r = SC.Fahrzeug.schaden(this.welt, im.f, menge, this.daten.spielzeit || 0);
+    if(r.verpufft) this._fahrzeugVerpufft(im.f, im.sitz, r);
+    return true;
+  };
+  // Verpufft: Funken wie bei Gegnern, Hinweis; wer drin saß, steht neben dem Fahrzeug (sitz: eigener Sitz)
+  S._fahrzeugVerpufft = function(f, sitz, r){
+    var sp = this.spieler, name = SC.FAHRZEUGE[f.art].name;
+    if(this.render && this.render.wesen) this.render.wesen.funken([f.pos[0], f.pos[1] + 1, f.pos[2]], "#ffd95c", 30, sp.pos);
+    this.audio.spiele("zerfall");
+    if(r.ausgestiegen.indexOf(this._fzId()) >= 0){ this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, f, sitz)); this.ui.hinweis((f.fundort ? SC.T.fahrzeugVerpufftFundort : SC.T.fahrzeugVerpufft).replace("{name}", name), 4000); }
+  };
+  // Bordgeschütz des Fahrers (Angriffstaste), mit Abklingzeit; t in ms
+  S._bordschuss = function(f, t){
+    var g = SC.FAHRZEUGE[f.art].geschuetz;
+    if(!g || t < (this._bordBereit || 0)) return false;
+    this._bordBereit = t + g.abklingen * 1000;
+    this._spielerSchuss({ pos: SC.Fahrzeug.dreh(f, g.rohr, this.welt.planet.groesse), richtung: this.spieler.richtung(), tempo: g.tempo, schaden: g.schaden, team: "spieler", art: "laser", lebensdauer: 60 / g.tempo, farbe: g.farbe });
+    this.audio.spiele("blaster");
+    return true;
+  };
+  // Pro Bild dort, wo Gegner gerechnet werden (allein oder Gastgeber): Rammen und Erholung
+  S._fahrzeugKampf = function(dt){
+    var s = this, w = this.welt, k = this.kampf, z = this.daten.spielzeit || 0;
+    w.fahrzeuge.forEach(function(f){
+      SC.Fahrzeug.erholung(f, dt, z);
+      SC.Fahrzeug.rammen(w, f, z).forEach(function(r){
+        if(r.boss){ s.audio.spiele("blocken"); return; }
+        var g = r.gegner, tr = k.trifftGegner(g, r.schaden, [-Math.sin(f.blick), 0, -Math.cos(f.blick)]);
+        s._zahl(g, tr.schaden); if(tr.besiegt) s.besiege(g); else s.audio.spiele("treffer");
+      });
+    });
+  };
+
   // Hinweis, sobald man neben einem Fahrzeug steht; liefert, ob der Benutzen-Knopf sichtbar sein soll
   S._fahrzeugNah = function(){
     var sp = this.spieler, im = this._imFahrzeug(), f = im ? null : SC.Fahrzeug.naechstes(this.welt, sp.pos);

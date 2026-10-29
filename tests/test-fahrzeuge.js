@@ -198,3 +198,31 @@ test("Fahrzeug: fährt durch Laub, Stämme halten auf", function(){
   var w2 = fzWelt(); for(var x2 = 0; x2 < 40; x2++) for(var y2 = 60; y2 < 64; y2++) w2.setze(x2, y2, 10, SC.B.STAMM);
   var g = SC.Fahrzeug.neu(w2, "buggy", [20, 60, 20], 0); fzLauf(w2, g, { vor: true }, 3); wahr(g.pos[2] > 10, "Stamm hält auf");
 });
+
+// --- Panzerung, Verpuffen, Erholung, Rammen ---
+test("Panzerung: leer → verpufft, Fundort-Fahrzeug wartet, freies ist weg", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "buggy", [20, 60, 20], 0, { id: "lager@0,0", fundort: "lager@0,0", heim: [20, 60, 20] });
+  SC.Fahrzeug.einsteigen(f, "a"); SC.Fahrzeug.einsteigen(f, "b");
+  var r = SC.Fahrzeug.schaden(w, f, 50, 10); gleich(r.verpufft, false); gleich(f.panzerung, 200); gleich(f.zuletztGetroffen, 10);
+  r = SC.Fahrzeug.schaden(w, f, 500, 11); gleich(r.verpufft, true); gleich(JSON.stringify(r.ausgestiegen), '["a","b"]'); gleich(f.weg, true); gleich(f.wiederBei, 131); gleich(f.panzerung, 0);
+  gleich(JSON.stringify(f.sitze), "[null,null,null,null]"); wahr(w.fahrzeuge.get(f.id), "bleibt gespeichert");
+  gleich(SC.Fahrzeug.schaden(w, f, 5, 12).verpufft, false, "verpufft nur einmal");
+  var g = SC.Fahrzeug.neu(w, "gleiter", [40, 60.6, 20], 0); SC.Fahrzeug.schaden(w, g, 999, 1); gleich(w.fahrzeuge.has(g.id), false, "freies ist weg");
+});
+test("Panzerung: erholt sich nach 8 s ohne Treffer", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "gleiter", [20, 60.6, 20], 0); SC.Fahrzeug.schaden(w, f, 40, 100);
+  SC.Fahrzeug.erholung(f, 1, 107); gleich(f.panzerung, 80, "zu früh");
+  SC.Fahrzeug.erholung(f, 1, 108); gleich(f.panzerung, 84); SC.Fahrzeug.erholung(f, 100, 200); gleich(f.panzerung, 120, "nicht über das Maximum");
+});
+test("Rammen: Abklingzeit und Boss", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "buggy", [20, 60, 20], 0); f.tempo = 10;
+  var g = SC.Wesen.neu(w, "gegner", { gegnerArt: "krabbler", pos: [20, 60, 18.6], breite: 0.9, hoehe: 0.8, lp: 100, lpMax: 100 });
+  var r = SC.Fahrzeug.rammen(w, f, 0); gleich(r.length, 1); gleich(r[0].gegner, g); gleich(r[0].schaden, 15); gleich(r[0].boss, false); wahr(g.geschw[2] < -4, "weggeschleudert in Fahrtrichtung: " + g.geschw[2]);
+  gleich(SC.Fahrzeug.rammen(w, f, 0.3).length, 0, "Abklingzeit"); gleich(SC.Fahrzeug.rammen(w, f, 0.6).length, 1, "danach wieder");
+  f.tempo = 3; gleich(SC.Fahrzeug.rammen(w, f, 5).length, 0, "zu langsam");
+  var w2 = fzWelt(), b = SC.Fahrzeug.neu(w2, "buggy", [20, 60, 20], 0); b.tempo = 8;
+  var boss = SC.Wesen.neu(w2, "gegner", { gegnerArt: "panzerkoloss", pos: [20, 60, 18.4], breite: 1.6, hoehe: 2.6, lp: 900, lpMax: 900, boss: true });
+  var rb = SC.Fahrzeug.rammen(w2, b, 0); gleich(rb.length, 1); gleich(rb[0].boss, true); gleich(rb[0].schaden, 0); gleich(b.tempo, -4, "prallt zurück"); gleich(boss.geschw[2], 0, "Boss bleibt stehen");
+  var w3 = fzWelt(), c = SC.Fahrzeug.neu(w3, "gleiter", [20, 60.6, 20], 0); c.tempo = 12; SC.Wesen.neu(w3, "gegner", { gegnerArt: "krabbler", pos: [26, 60, 26], breite: 0.9, hoehe: 0.8, lp: 10, lpMax: 10 });
+  gleich(SC.Fahrzeug.rammen(w3, c, 0).length, 0, "nur Gegner an der Grundfläche");
+});

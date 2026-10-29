@@ -82,7 +82,7 @@ input[type=range].regeln{outline:3px solid #3ef0ff}
 .balken i{position:absolute;left:0;top:0;bottom:0;display:block}
 .balken span{position:absolute;inset:0;font-size:10px;line-height:12px;text-align:center;color:#fff;text-shadow:0 1px 1px #000}
 .balken-lp{height:16px}.balken-lp i{background:#e84545}.balken-lp span{line-height:16px;font-size:12px}
-.balken-schild i{background:#4aa3ff}.balken-xp{height:6px}.balken-xp i{background:#ffd95c}
+.balken-schild i{background:#4aa3ff}.balken-fahrzeug i{background:#ffad47}.balken-xp{height:6px}.balken-xp i{background:#ffd95c}
 .balken-hitze{height:6px;width:40%;align-self:center}.balken-hitze i{background:#ff9a3c}.balken-hitze.ueberhitzt i{background:#ff3b3b;animation:blink .3s infinite alternate}
 @keyframes blink{from{opacity:1}to{opacity:.3}}
 .treffer-rand{position:fixed;inset:0;box-shadow:inset 0 0 80px 20px rgba(255,40,40,.7);opacity:0;pointer-events:none}

@@ -121,6 +121,7 @@ SC.Spiel.startpunkt = function(planet){
     // Survival: Kampfwerte, Rucksack, Gegner
     this._zf = SC.zufall((Date.now() ^ (Math.random() * 4294967296)) >>> 0);
     this.kampf = new SC.Kampf(this.welt, this.spieler, daten, this._zf);
+    this.kampf.fahrzeugTreffer = function(menge){ return s._fahrzeugTreffer(menge); };
     this.auftauchen = new SC.Auftauchen(this.welt, daten, this._zf);
     this._besiegtOffen = false; this._ausrKey = null; this._kampfBis = 0; this._bossBis = 0; this.musikKampf = { kampf: false, boss: false };
     this.tageszeit = typeof daten.tageszeit === "number" ? daten.tageszeit : 0.3;

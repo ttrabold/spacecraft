@@ -49,3 +49,33 @@ test("Fahren: Blick dreht beim Lenken mit dem Fahrzeug mit", function(){
   for(var j = 0; j < 30; j++) s._fahren(fhE({ vor: true, links: true }), 1 / 60, false);
   wahr(Math.abs(u.f.blick) > 0.5, "gelenkt"); wahr(Math.abs(sp.blick[0] - u.f.blick - b0) < 1e-9, "Blick folgt: " + (sp.blick[0] - u.f.blick));
 });
+
+// --- Kampf mit Fahrzeugen ---
+test("Panzerung: Treffer auf Insassen gehen aufs Fahrzeug", function(){
+  var u = fhSpiel(), s = u.s, k = s.kampf; s.benutzen(); s._fahren(fhE(), 1 / 60, false);
+  var lp = k.werte.lp, r = k.trifftSpieler(10, [0, 0, 1], null);
+  gleich(k.werte.lp, lp, "Spieler unverletzt"); wahr(r.fahrzeug, "umgeleitet"); wahr(u.f.panzerung < SC.FAHRZEUGE.gleiter.panzerung, "Panzerung sinkt");
+  s.aussteigen(); k.trifftSpieler(10, [0, 0, 1], null); wahr(k.werte.lp < lp, "draußen trifft es wieder den Spieler");
+});
+test("Panzerung: Kreativ nimmt keinen Schaden", function(){
+  var u = fhSpiel("kreativ"), s = u.s; s.benutzen(); s.kampf.trifftSpieler(50, [0, 0, 1], null); gleich(u.f.panzerung, SC.FAHRZEUGE.gleiter.panzerung);
+});
+test("Panzerung: im Spiel verpufft, Spieler steht frei, Fahrzeug kommt wieder", function(){
+  var u = fhSpiel(), s = u.s, sp = s.spieler; s.benutzen(); s._fahren(fhE(), 1 / 60, false);
+  s.kampf.trifftSpieler(9999, [0, 0, 1], null);
+  gleich(s._imFahrzeug(), null, "ausgestiegen"); gleich(u.f.weg, true); wahr(SC.Fahrzeug.frei(s.welt, sp.pos), "steht frei"); gleich(sp.sitzt, null);
+  s.daten.spielzeit = u.f.wiederBei; s._fzTakt = 5; s._fahrzeugTakt(0); gleich(u.f.weg, false, "zurück am Fundort");
+});
+test("Bordgeschütz: Buggy schießt mit Abklingzeit, Gleiter hat keins", function(){
+  var u = fhSpiel(), s = u.s, sp = s.spieler, P = 2048;
+  var b = SC.Fahrzeug.neu(s.welt, "buggy", [SC.mod(u.f.pos[0] + 40, P), u.f.pos[1] + 5, u.f.pos[2]], 0);
+  for(var i = 0; i < 120; i++) SC.Fahrzeug.schritt(s.welt, b, null, 1 / 60);
+  sp.pos = SC.Fahrzeug.aussteigePos(s.welt, b, 0); s.benutzen(); gleich(s._imFahrzeug().f, b);
+  function schuesse(){ var n = 0; s.welt.wesen.forEach(function(e){ if(e.art === "geschoss") n++; }); return n; }
+  s._survival(fhE({ abbauen: true }), 1 / 60, false, 1000); s._survival(fhE({ abbauen: true }), 1 / 60, false, 1100); gleich(schuesse(), 1, "Abklingzeit");
+  s._survival(fhE({ abbauen: true }), 1 / 60, false, 1400); gleich(schuesse(), 2, "danach wieder");
+  var g = null; s.welt.wesen.forEach(function(e){ if(e.art === "geschoss") g = e; }); gleich(g.schaden, SC.FAHRZEUGE.buggy.geschuetz.schaden); gleich(g.team, "spieler");
+  s.aussteigen(); s.welt.wesen.forEach(function(e, id){ s.welt.wesen.delete(id); });
+  sp.pos = SC.Fahrzeug.aussteigePos(s.welt, u.f, 0); s.benutzen(); gleich(s._imFahrzeug().f, u.f);
+  s._survival(fhE({ abbauen: true }), 1 / 60, false, 5000); gleich(schuesse(), 0, "Gleiter schießt nicht");
+});

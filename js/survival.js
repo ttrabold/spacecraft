@@ -85,7 +85,8 @@
       }
       k.blocken(e.setzenGehalten && wdef && wdef.typ === "schwert"); s.render.blocke(k.blockt);
       // Angreifen bzw. Abbauen
-      if(waffe && !(imFz && imFz.sitz === 0) && (e.abbauen || e.abbauenGehalten)){
+      if(imFz && imFz.sitz === 0){ if(e.abbauen || e.abbauenGehalten) this._bordschuss(imFz.f, t); } // Fahrer: Bordgeschütz statt eigener Waffe
+      else if(waffe && (e.abbauen || e.abbauenGehalten)){
         var richtung = sp.richtung();
         if(ein.touchAktiv || ein.gamepadAktiv){ var gl = []; w.wesen.forEach(function(x){ if(x.art === "gegner") gl.push({ pos: [sp.pos[0] + ring(w, sp.pos, x.pos)[0], x.pos[1], sp.pos[2] + ring(w, sp.pos, x.pos)[2]], hoehe: x.hoehe }); }); richtung = SC.zielhilfe(sp, gl, richtung, 1); }
         var akt = k.angriff(t, richtung);
@@ -167,6 +168,7 @@
       }
     });
     k.schritt(t, dt);
+    if(!gast) this._fahrzeugKampf(dt);
     if(!gast && (this._auftZeit = (this._auftZeit || 0) + dt) >= 1){
       this._auftZeit = 0;
       var h = SC.himmelsFarben(SC.PALETTEN[w.planet.palette] || SC.PALETTEN.start, this.tageszeit);
@@ -193,7 +195,8 @@
     if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah });
     var ui = this.ui;
     ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen, leiste: survival ? k.rucksack.plaetze.slice(0, 9) : null });
-    ui.kampfHud(survival ? k : null, []);
+    var imFz = this._imFahrzeug(), fz = imFz && { panzerung: imFz.f.panzerung, max: SC.FAHRZEUGE[imFz.f.art].panzerung, name: SC.FAHRZEUGE[imFz.f.art].name };
+    ui.kampfHud(survival ? k : null, [], fz);
   };
 
   S._zahl = function(g, schaden){ if(this.render && g && schaden > 0) this.render.wesen.zahl([g.pos[0], g.pos[1] + g.hoehe + 0.3, g.pos[2]], String(Math.round(schaden)), "#ffffff", this.spieler.pos); };

@@ -84,6 +84,8 @@ SC.Kampf = function(welt, spieler, daten, zf){
   K.trifftSpieler = function(schaden, von, geschoss){
     var sp = this.spieler, w = this.werte;
     if(sp.modus !== "survival" || this.unverwundbar || this.uhr < this.ausweichenBis) return { abgeprallt: false, schaden: 0 };
+    // Im Fahrzeug trifft es die Panzerung (Rückruf aus js/fahren.js, Schaden schon mit Schwierigkeit)
+    if(this.fahrzeugTreffer && this.fahrzeugTreffer(schaden * (SC.SCHWIERIGKEIT[this.daten.schwierigkeit] || SC.SCHWIERIGKEIT.normal).schaden)) return { abgeprallt: false, schaden: 0, fahrzeug: true };
     if(this.blockt && vonVorn(sp, von)){
       if(geschoss && (geschoss.typ || geschoss.art) === "laser"){
         SC.Wesen.neu(this.welt, "geschoss", { pos: geschoss.pos.slice(), richtung: [-geschoss.richtung[0], -geschoss.richtung[1], -geschoss.richtung[2]], tempo: 35, schaden: schaden, team: "spieler", schuetze: this.daten.spieler && this.daten.spieler.figurId, art: "laser", lebensdauer: 2, farbe: "#7cf3ff" });

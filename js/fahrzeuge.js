@@ -233,6 +233,45 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     });
   };
 
+  // --- Kampf: Panzerung, Verpuffen, Erholung, Rammen ---
+  F.WIEDERKEHR = 120; F.ERHOLUNG = 4; F.ERHOLUNG_NACH = 8;
+  // Schaden aufs Fahrzeug. Bei 0 steigen alle aus; ein Fundort-Fahrzeug wartet F.WIEDERKEHR s auf die Rückkehr, ein freies ist weg.
+  // → { verpufft, ausgestiegen: [IDs] }
+  F.schaden = function(welt, f, menge, spielzeit){
+    var r = { verpufft: false, ausgestiegen: [] };
+    if(f.weg || !(menge > 0)) return r;
+    f.panzerung = Math.max(0, f.panzerung - menge); f.zuletztGetroffen = spielzeit;
+    if(f.panzerung > 0) return r;
+    r.verpufft = true; r.ausgestiegen = f.sitze.filter(function(id){ return id !== null; });
+    f.sitze = [null, null, null, null]; f.tempo = 0; f.geschw = [0, 0, 0];
+    if(f.fundort){ f.weg = true; f.wiederBei = spielzeit + F.WIEDERKEHR; } else welt.fahrzeuge.delete(f.id);
+    return r;
+  };
+  F.erholung = function(f, dt, spielzeit){
+    var max = SC.FAHRZEUGE[f.art].panzerung;
+    if(f.weg || f.panzerung >= max || spielzeit - (f.zuletztGetroffen === undefined ? -Infinity : f.zuletztGetroffen) < F.ERHOLUNG_NACH) return;
+    f.panzerung = Math.min(max, f.panzerung + F.ERHOLUNG * dt);
+  };
+  // Gegner an der Grundfläche ab Tempo 4: Schaden round(tempo * 1.5), Schub in Fahrtrichtung, je Gegner höchstens alle 0,5 s (zeit in s).
+  // Ein Boss bleibt stehen und das Fahrzeug prallt mit halbem Tempo zurück. → [{ gegner, schaden, boss }]
+  F.rammen = function(welt, f, zeit){
+    var v = Math.abs(f.tempo), aus = [];
+    if(f.weg || v < 4) return aus;
+    var d = SC.FAHRZEUGE[f.art], P = welt.planet.groesse, m = f._gerammt || (f._gerammt = {}), rx = -Math.sin(f.blick) * Math.sign(f.tempo), rz = -Math.cos(f.blick) * Math.sign(f.tempo);
+    welt.wesen.forEach(function(g){
+      if(g.art !== "gegner" || aus.some(function(a){ return a.boss; })) return;
+      var gr = d.breite / 2 + (g.breite || 0.8) / 2 + 0.3;
+      if(Math.abs(SC.mod(g.pos[0] - f.pos[0] + P / 2, P) - P / 2) > gr || Math.abs(SC.mod(g.pos[2] - f.pos[2] + P / 2, P) - P / 2) > gr) return;
+      if(g.pos[1] > f.pos[1] + d.hoehe || g.pos[1] + (g.hoehe || 1.8) < f.pos[1]) return;
+      if(m[g.id] !== undefined && zeit < m[g.id]) return;
+      m[g.id] = zeit + 0.5;
+      if(g.boss){ f.tempo = -f.tempo * 0.5; aus.push({ gegner: g, schaden: 0, boss: true }); return; }
+      g.geschw[0] += rx * 5; g.geschw[2] += rz * 5; g.geschw[1] = Math.max(g.geschw[1], 4);
+      aus.push({ gegner: g, schaden: Math.round(v * 1.5), boss: false });
+    });
+    return aus;
+  };
+
   // --- Speichern: je Planet { id: {art, pos, blick, panzerung, fundort, heim, weg, wiederBei} }, ohne Sitze und Tempo ---
   F.inDaten = function(welt){
     var o = {};

@@ -29,19 +29,22 @@
     }).join("") + (g.sonder ? '<div class="sonder">★ ' + esc(SC.T.sonderName[g.sonder]) + "</div>" : "");
   }
 
-  SC.UI.prototype.kampfHud = function(kampf, bemerkt){
+  // fahrzeug (optional): { panzerung, max, name } – Panzerungsbalken, solange man im Fahrzeug sitzt
+  SC.UI.prototype.kampfHud = function(kampf, bemerkt, fahrzeug){
     var el = this.hudEl.querySelector(".kampf"); if(!el) return;
     if(!kampf){ el.hidden = true; return; }
     el.hidden = false;
     if(!el.firstChild) el.innerHTML =
       '<div class="kampf-stufe"></div><div class="balken balken-xp"><i></i></div>' +
       '<div class="balken balken-lp"><i></i><span></span></div><div class="balken balken-schild"><i></i></div>' +
-      '<div class="balken balken-hitze"><i></i></div><div class="treffer-rand"></div><div class="treffer-pfeil">▲</div>';
+      '<div class="balken balken-fahrzeug" hidden><i></i><span></span></div><div class="balken balken-hitze"><i></i></div><div class="treffer-rand"></div><div class="treffer-pfeil">▲</div>';
     var w = kampf.werte, q = function(s){ return el.querySelector(s); };
     q(".kampf-stufe").textContent = SC.T.stufe + " " + w.stufe;
     q(".balken-xp i").style.width = (w.stufe >= SC.Werte.MAX_STUFE ? 100 : 100 * w.erfahrung / SC.Werte.erfahrungFuer(w.stufe)) + "%";
     q(".balken-lp i").style.width = 100 * w.lp / w.lpMax + "%"; q(".balken-lp span").textContent = Math.ceil(w.lp) + " / " + w.lpMax;
     q(".balken-schild").hidden = !w.schildMax; q(".balken-schild i").style.width = (w.schildMax ? 100 * w.schild / w.schildMax : 0) + "%";
+    var fz = q(".balken-fahrzeug"); fz.hidden = !fahrzeug;
+    if(fahrzeug){ fz.querySelector("i").style.width = Math.round(100 * fahrzeug.panzerung / fahrzeug.max) + "%"; fz.querySelector("span").textContent = fahrzeug.name + " · " + SC.T.fahrzeugPanzerung + " " + Math.ceil(fahrzeug.panzerung); }
     var waffe = kampf.waffe(), heiss = waffe && SC.GEGENSTAENDE[waffe.art].waffe.typ === "blaster";
     q(".balken-hitze").hidden = !heiss; q(".balken-hitze").classList.toggle("ueberhitzt", kampf.uhr < kampf.ueberhitztBis); q(".balken-hitze i").style.width = 100 * kampf.hitze + "%";
     // Treffer: roter Rand und Pfeil aus der Richtung des Angriffs

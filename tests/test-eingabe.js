@@ -15,3 +15,5 @@ test("Eingabe fängt Leertaste im Textfeld nicht ab, sonst schon", function(){
   var ce = document.createElement("div"); Object.defineProperty(ce, "isContentEditable", { value: true }); wahr(!k(ce).defaultPrevented, "contenteditable");
   wahr(k(d).defaultPrevented, "sonst normal"); e.entferne();
 });
+test("Eingabe: F ist benutzen", function(){ var e=new SC.Eingabe(document.createElement("canvas"),document.createElement("div")); e._druecke("KeyF"); wahr(e.zustand().benutzen,"F"); wahr(!e.zustand().benutzen,"nur einmal"); e._los("KeyF"); e.entferne(); });
+test("Touch: Benutzen-Knopf nur in der Nähe eines Fahrzeugs", function(){ var ui=document.createElement("div"),e=new SC.Eingabe(document.createElement("canvas"),ui),t=new SC.Touch(e,ui),k=t.el.querySelector('[data-k="benutzen"]'); wahr(k&&k.hidden,"anfangs aus"); t.beschrifte({angriff:false,blocken:false,benutzen:true}); wahr(!k.hidden,"sichtbar"); t.beschrifte({angriff:false,blocken:false,benutzen:false}); wahr(k.hidden,"wieder aus"); t._knopf={}; t._einmal={benutzen:true}; wahr(t.einmal().benutzen,"löst benutzen aus"); t.entferne(); e.entferne(); });

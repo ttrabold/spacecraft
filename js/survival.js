@@ -75,17 +75,17 @@
     var survival = sp.modus === "survival", lebt = !k.besiegt();
     this.daten.spielzeit = (this.daten.spielzeit || 0) + dt;
     var waffe = survival ? k.waffe() : null, wdef = waffe && SC.GEGENSTAENDE[waffe.art].waffe;
-    var ziel = sp.modus === "zuschauer" || !this._blockErlaubt() ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
+    var imFz = this._imFahrzeug(), ziel = sp.modus === "zuschauer" || imFz || !this._blockErlaubt() ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
     this.render.markiere(ziel);
     if(survival && !offen && lebt){
-      if(e.ausweichen && !sp.fliegt){
+      if(e.ausweichen && !sp.fliegt && !imFz){
         var bw = [(e.rechts ? 1 : 0) - (e.links ? 1 : 0), (e.zurueck ? 1 : 0) - (e.vor ? 1 : 0)], g0 = sp.blick[0];
         var dir = bw[0] || bw[1] ? [Math.cos(g0) * bw[0] + Math.sin(g0) * bw[1], 0, -Math.sin(g0) * bw[0] + Math.cos(g0) * bw[1]] : [-Math.sin(g0), 0, -Math.cos(g0)];
         if(k.ausweichen(t, dir)) a.spiele("springen");
       }
       k.blocken(e.setzenGehalten && wdef && wdef.typ === "schwert"); s.render.blocke(k.blockt);
       // Angreifen bzw. Abbauen
-      if(waffe && (e.abbauen || e.abbauenGehalten)){
+      if(waffe && !(imFz && imFz.sitz === 0) && (e.abbauen || e.abbauenGehalten)){
         var richtung = sp.richtung();
         if(ein.touchAktiv || ein.gamepadAktiv){ var gl = []; w.wesen.forEach(function(x){ if(x.art === "gegner") gl.push({ pos: [sp.pos[0] + ring(w, sp.pos, x.pos)[0], x.pos[1], sp.pos[2] + ring(w, sp.pos, x.pos)[2]], hoehe: x.hoehe }); }); richtung = SC.zielhilfe(sp, gl, richtung, 1); }
         var akt = k.angriff(t, richtung);
@@ -189,7 +189,8 @@
     var sp = this.spieler, k = this.kampf, ein = this.eingabe;
     var aKey = JSON.stringify([k.ausruestung, waffe && waffe.id]);
     if(aKey !== this._ausrKey){ this._ausrKey = aKey; this.render.ausruestung(survival ? k.ausruestung : null, waffe); }
-    if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival });
+    var fzNah = this._fahrzeugNah();
+    if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah });
     var ui = this.ui;
     ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen, leiste: survival ? k.rucksack.plaetze.slice(0, 9) : null });
     ui.kampfHud(survival ? k : null, []);

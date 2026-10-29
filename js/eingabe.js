@@ -50,7 +50,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
 };
 
 (function(){
-  var EINMAL = { KeyE: "blockauswahl", Escape: "menue", F5: "ansicht", KeyV: "ansicht", F3: "entwickler", KeyQ: "ausweichen" };
+  var EINMAL = { KeyE: "blockauswahl", Escape: "menue", F5: "ansicht", KeyV: "ansicht", F3: "entwickler", KeyQ: "ausweichen", KeyF: "benutzen" };
   SC.Eingabe.prototype._druecke = function(code){
     if(!this.tasten.has(code)){
       if(EINMAL[code]) this._einmal[EINMAL[code]] = true;
@@ -92,17 +92,17 @@ SC.Eingabe = function(leinwand, uiWurzel){
     if(!this.aktiv){ for(var k2 in b) b[k2] = false; }
     b.springenNeu = b.springen && !this._springenVorher; this._springenVorher = b.springen;
     var e1 = this._einmal; this._einmal = {};
-    if(gpe){ var ge = gpe.einmal; ["abbauen", "setzen", "blockauswahl", "ansicht", "menue", "entwickler", "ausweichen"].forEach(function(k){ if(ge[k]) e1[k] = true; }); if(ge.auswahlRad) this._rad += ge.auswahlRad; }
+    if(gpe){ var ge = gpe.einmal; ["abbauen", "setzen", "blockauswahl", "ansicht", "menue", "entwickler", "ausweichen", "benutzen"].forEach(function(k){ if(ge[k]) e1[k] = true; }); if(ge.auswahlRad) this._rad += ge.auswahlRad; }
     if(t){ var te = t.einmal(); for(var k3 in te) e1[k3] = e1[k3] || te[k3]; t.blick(this._blick, this.empfindlichkeit); }
     b.blickDx = this._blick[0]; b.blickDy = this._blick[1]; this._blick = [0, 0];
     b.abbauen = !!e1.abbauen || wiederhole(this._maus, "abbauen", "tAbbauen", jetzt) || wiederhole(this._gpHalten, "abbauen", "tAbbauen", jetzt) || !!(t && t.wiederhole("abbauen", jetzt));
     b.setzen = !!e1.setzen || wiederhole(this._maus, "setzen", "tSetzen", jetzt) || wiederhole(this._gpHalten, "setzen", "tSetzen", jetzt) || !!(t && t.wiederhole("setzen", jetzt));
     b.auswahl = e1.auswahl === undefined ? null : e1.auswahl;
     b.auswahlRad = this._rad; this._rad = 0;
-    b.menue = !!e1.menue; b.blockauswahl = !!e1.blockauswahl; b.ansicht = !!e1.ansicht; b.entwickler = !!e1.entwickler; b.ausweichen = !!e1.ausweichen;
+    b.menue = !!e1.menue; b.blockauswahl = !!e1.blockauswahl; b.ansicht = !!e1.ansicht; b.entwickler = !!e1.entwickler; b.ausweichen = !!e1.ausweichen; b.benutzen = !!e1.benutzen;
     b.abbauenGehalten = this._maus.abbauen || this._gpHalten.abbauen || !!(t && t._knopf.abbauen);
     b.setzenGehalten = this._maus.setzen || this._gpHalten.setzen || !!(t && t._knopf.setzen);
-    if(!this.aktiv){ b.abbauen = b.setzen = b.abbauenGehalten = b.setzenGehalten = b.ausweichen = false; b.blickDx = b.blickDy = 0; b.auswahlRad = 0; }
+    if(!this.aktiv){ b.abbauen = b.setzen = b.abbauenGehalten = b.setzenGehalten = b.ausweichen = false; b.blickDx = b.blickDy = 0; b.auswahlRad = 0; b.benutzen = false; }
     return b;
   };
 

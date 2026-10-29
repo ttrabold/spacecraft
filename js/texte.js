@@ -106,6 +106,8 @@ SC.T = {
   ueberhitzt: "Überhitzt!",
   kisteLeer: "Diese Kiste ist leer.",
   fahrzeuge: { gleiter: "Schwebeflitzer", buggy: "Kraterkäfer", flieger: "Kometenjäger" },
+  fahrzeugEinsteigen: "{name}: Einsteigen mit F oder 🚗", fahrzeugFahrer: "Du fährst den {name}. Aussteigen mit F.", fahrzeugMitfahrer: "Du fährst im {name} mit. Aussteigen mit F.",
+  fahrzeugVoll: "Alle vier Plätze sind schon besetzt.",
   gegner: { patrouillendroide: "Patrouillendroide", weltraumbandit: "Weltraumbandit", krabbler: "Krabbler", spucker: "Spucker", schattenritter: "Schattenritter", panzerkoloss: "Panzerkoloss" },
   gegenstand: {
     laserschwert: ["Laserschwert", "n"], blasterpistole: ["Blasterpistole", "f"], blastergewehr: ["Blastergewehr", "n"],

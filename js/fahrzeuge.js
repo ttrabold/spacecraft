@@ -74,6 +74,8 @@ SC.FAHRZEUGE = {
 SC.Fahrzeug = { SCHWERKRAFT: 32 };
 (function(){
   var F = SC.Fahrzeug;
+  // Laub hält Fahrzeuge nicht auf (sonst hinge man im Wald ständig fest); es bleibt dabei stehen
+  var DURCH = {}; DURCH[SC.B.BLAETTER] = true; F.DURCH = DURCH;
 
   // o: { id, fundort, heim } – ohne id ein frei hingestelltes Fahrzeug
   F.neu = function(welt, art, pos, blick, o){
@@ -94,10 +96,10 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   }
   // Waagerecht bewegen; an einer Kante (höchstens d.stufe hoch) steigt das Fahrzeug hinauf
   function waagerecht(welt, f, d, achse, weg){
-    if(!SC.bewegeKoerper(welt, f.pos, achse, weg, d.breite, d.hoehe)) return false;
+    if(!SC.bewegeKoerper(welt, f.pos, achse, weg, d.breite, d.hoehe, DURCH)) return false;
     if(d.stufe && (f.aufBoden || d.schwebt)){
       var q = f.pos.slice();
-      if(!SC.bewegeKoerper(welt, q, 1, d.stufe, d.breite, d.hoehe) && !SC.bewegeKoerper(welt, q, achse, weg, d.breite, d.hoehe)){ f.pos = q; return false; }
+      if(!SC.bewegeKoerper(welt, q, 1, d.stufe, d.breite, d.hoehe, DURCH) && !SC.bewegeKoerper(welt, q, achse, weg, d.breite, d.hoehe, DURCH)){ f.pos = q; return false; }
     }
     return true;
   }
@@ -123,7 +125,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     var gx = waagerecht(welt, f, d, 0, f.geschw[0] * dt), gz = waagerecht(welt, f, d, 2, f.geschw[2] * dt);
     if(gx || gz) f.tempo *= Math.max(0, 1 - 6 * dt);
     var vy = f.geschw[1];
-    if(SC.bewegeKoerper(welt, f.pos, 1, vy * dt, d.breite, d.hoehe)){ f.aufBoden = vy < 0; f.geschw[1] = 0; }
+    if(SC.bewegeKoerper(welt, f.pos, 1, vy * dt, d.breite, d.hoehe, DURCH)){ f.aufBoden = vy < 0; f.geschw[1] = 0; }
     else f.aufBoden = false;
     if(ziel !== null && f.pos[1] <= ziel + 0.01 && vy <= 0){ if(f.pos[1] < ziel) f.pos[1] = ziel; f.geschw[1] = 0; f.aufBoden = true; }
     if(d.maxHoehe && f.pos[1] > d.maxHoehe){ f.pos[1] = d.maxHoehe; if(f.geschw[1] > 0) f.geschw[1] = 0; }

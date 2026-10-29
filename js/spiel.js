@@ -170,12 +170,14 @@ SC.Spiel.startpunkt = function(planet){
         });
       }
       if(e.ansicht) sp.ansicht = sp.ansicht === "ich" ? "aussen" : "ich";
+      if(e.benutzen) this.benutzen();
       if(e.auswahl !== null) sp.auswahl = e.auswahl;
       if(e.auswahlRad) sp.auswahl = SC.mod(sp.auswahl + e.auswahlRad, 9);
     }
     var vorBoden = sp.aufBoden, vy = sp.geschw[1];
-    sp.schritt(w, e, dt);
-    this._geraeusche(e, vorBoden, vy, dt);
+    if(this._imFahrzeug()) this._fahren(e, dt, offen);
+    else { sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
+    this._fahrzeugeBild(dt);
     this._survival(e, dt, offen, t);
     this._fahrzeugTakt(dt);
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
@@ -236,6 +238,7 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype._weiter = function(){ this.ui.schliesse(); this.eingabe.aktiv = true; this.eingabe.sperreMaus(); };
 
   SC.Spiel.prototype.modus = function(m){
+    if(m === "zuschauer" && this._imFahrzeug && this._imFahrzeug()) this.aussteigen();
     this.spieler.modus = m; this.daten.modus = m;
     this.spieler.fliegt = m === "zuschauer";
   };

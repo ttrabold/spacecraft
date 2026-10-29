@@ -192,3 +192,9 @@ test("Spiel: neue Welt hat Start-Gleiter, Fundorte im Takt, Speichern und Laden 
     var s2 = mspSpielVoll(sl); return sl.lade(d.id).then(function(d2){ s2.starte(d2); gleich(s2.welt.fahrzeuge.get("start").panzerung, 7); wahr(s2.welt.fahrzeuge.get(b.schluessel), "Fundort-Fahrzeug geladen"); var n = 0; s2.welt.fahrzeuge.forEach(function(f){ if(f.fundort === "start") n++; }); gleich(n, 1); });
   });
 });
+test("Fahrzeug: fährt durch Laub, Stämme halten auf", function(){
+  var w = fzWelt(); for(var x = 0; x < 40; x++) for(var y = 60; y < 64; y++) w.setze(x, y, 10, SC.B.BLAETTER);
+  var f = SC.Fahrzeug.neu(w, "buggy", [20, 60, 20], 0); fzLauf(w, f, { vor: true }, 3); wahr(f.pos[2] < 9 || f.pos[2] > 2000, "durchs Laub: " + f.pos[2]); gleich(w.holeBlock(20, 61, 10), SC.B.BLAETTER, "Laub bleibt");
+  var w2 = fzWelt(); for(var x2 = 0; x2 < 40; x2++) for(var y2 = 60; y2 < 64; y2++) w2.setze(x2, y2, 10, SC.B.STAMM);
+  var g = SC.Fahrzeug.neu(w2, "buggy", [20, 60, 20], 0); fzLauf(w2, g, { vor: true }, 3); wahr(g.pos[2] > 10, "Stamm hält auf");
+});

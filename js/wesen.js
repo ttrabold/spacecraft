@@ -1,6 +1,7 @@
 // Wesen: Gegner, Geschosse und Beutekugeln in welt.wesen (Map nach ID) – in Stufe 3 rechnet sie der Gastgeber.
 // Dazu die Körperphysik, die Spieler und Gegner gemeinsam nutzen.
-SC.bewegeKoerper = function(welt, pos, achse, d, breite, hoehe){
+// durch (optional): Block-IDs, die nicht aufhalten (Fahrzeuge fahren durch Laub)
+SC.bewegeKoerper = function(welt, pos, achse, d, breite, hoehe, durch){
   if(d === 0) return false;
   var hb = breite / 2, eps = 1e-4, neu = pos.slice(); neu[achse] += d;
   var x0 = Math.floor(neu[0] - hb), x1 = Math.floor(neu[0] + hb - eps);
@@ -8,7 +9,7 @@ SC.bewegeKoerper = function(welt, pos, achse, d, breite, hoehe){
   var z0 = Math.floor(neu[2] - hb), z1 = Math.floor(neu[2] + hb - eps);
   for(var x = x0; x <= x1; x++) for(var y = y0; y <= y1; y++) for(var z = z0; z <= z1; z++){
     var b = SC.BLOECKE[welt.holeBlock(x, y, z)];
-    if(!b || !b.fest) continue;
+    if(!b || !b.fest || (durch && durch[b.id])) continue;
     // An die Blockkante setzen
     if(achse === 0) pos[0] = d > 0 ? x - hb : x + 1 + hb;
     else if(achse === 1) pos[1] = d > 0 ? y - hoehe : y + 1;

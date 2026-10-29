@@ -1,5 +1,6 @@
 // Figuren-Fabrik (eigene Figur und Mitspieler) und Darstellung der Mitspieler mit Namensschild
 SC.Figur = {
+  SITZEN: 1.4, // Beinwinkel im Fahrzeug (Füße nach vorn)
   // Farbe (CSS-Text oder Zahl) in sRGB-Kanälen abdunkeln
   dunkler: function(farbe, f){
     var h = new THREE.Color(farbe).getHex(), r = (h >> 16) & 255, g = (h >> 8) & 255, b = h & 255;
@@ -106,10 +107,12 @@ SC.RenderMitspieler = function(szene, planet){
       if(!o.p) o.p = e.pos.slice();
       else { var tx = nah(e.pos[0], o.p[0], P), tz = nah(e.pos[2], o.p[2], P); if(Math.abs(tx - o.p[0]) + Math.abs(tz - o.p[2]) + Math.abs(e.pos[1] - o.p[1]) > 8) k = 1; o.p[0] += (tx - o.p[0]) * k; o.p[1] += (e.pos[1] - o.p[1]) * k; o.p[2] += (tz - o.p[2]) * k; o.p[0] = (o.p[0] % P + P) % P; o.p[2] = (o.p[2] % P + P) % P; }
       var x = nah(o.p[0], ichPos[0], P), z = nah(o.p[2], ichPos[2], P), g = o.f.gruppe, blick = e.blick || [0, 0];
-      g.position.set(x, o.p[1], z); g.rotation.y = blick[0]; o.f.kopf.rotation.x = blick[1];
+      var sitzt = typeof e.sitzt === "number"; // im Fahrzeug: Blick in Fahrtrichtung, Beine angewinkelt
+      g.position.set(x, o.p[1], z); g.rotation.y = sitzt ? e.sitzt : blick[0]; o.f.kopf.rotation.x = blick[1];
       var tempo = alt && dt > 0 ? Math.hypot(nah(o.p[0], alt[0], P) - alt[0], nah(o.p[2], alt[2], P) - alt[2]) / dt : 0;
       if(tempo > 0.5) o.schlag += dt * 8.3; var sw = tempo > 0.5 ? Math.sin(o.schlag) * 0.6 : 0;
-      o.f.armL.rotation.x = sw; o.f.beinL.rotation.x = -sw; o.f.beinR.rotation.x = sw;
+      if(sitzt) sw = 0;
+      o.f.armL.rotation.x = sw; o.f.beinL.rotation.x = sitzt ? SC.Figur.SITZEN : -sw; o.f.beinR.rotation.x = sitzt ? SC.Figur.SITZEN : sw;
       // Hieb: neuer Zähler hieb.n startet den Armschwung (beim ersten Sehen nur merken); blockt hält das Schwert quer
       if(e.hieb){ if(o.hN !== undefined && e.hieb.n !== o.hN){ o.hK = e.hieb.kombo; o.hT = 0; } o.hN = e.hieb.n; }
       var hs = null; if(o.hK >= 0){ o.hT += dt || 0; hs = SC.Figur.schwung(o.hK, o.hT, o.sw); if(!hs) o.hK = -1; }

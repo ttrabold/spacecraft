@@ -63,6 +63,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this._baueGrenzen();
     this.wesen = new SC.RenderWesen(this.szene, planet);
     this.mitspieler = new SC.RenderMitspieler(this.szene, planet);
+    this.fahrzeuge = new SC.RenderFahrzeuge(this.szene, planet);
     this._baueAusruestung();
     this.fps = 60; this._fpsZeit = 0; this._fpsBilder = 0;
     var r = this; this._groesse = function(){ r.renderer.setSize(window.innerWidth, window.innerHeight, false); r.kamera.aspect = window.innerWidth / window.innerHeight; r.kamera.updateProjectionMatrix(); };
@@ -251,13 +252,14 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     // Kamera
     var a = spieler.augen(), k = this.kamera, aussen = spieler.ansicht === "aussen";
     k.rotation.set(spieler.blick[1], spieler.blick[0], 0);
-    if(aussen){ var d = spieler.richtung(); k.position.set(a[0] - d[0] * 4, a[1] - d[1] * 4 + 0.3, a[2] - d[2] * 4); }
+    if(aussen){ var d = spieler.richtung(), ab = typeof spieler.sitzt === "number" ? 7 : 4; k.position.set(a[0] - d[0] * ab, a[1] - d[1] * ab + 0.3, a[2] - d[2] * ab); } // im Fahrzeug weiter hinten
     else k.position.set(a[0], a[1], a[2]);
     this.figur.visible = aussen && spieler.modus !== "zuschauer";
-    this.figur.position.set(px, spieler.pos[1], pz); this.figur.rotation.y = spieler.blick[0];
+    var sitzt = typeof spieler.sitzt === "number";
+    this.figur.position.set(px, spieler.pos[1], pz); this.figur.rotation.y = sitzt ? spieler.sitzt : spieler.blick[0];
     this.kopf.rotation.x = spieler.blick[1];
     var gehen = Math.hypot(spieler.geschw[0], spieler.geschw[2]) > 0.5 && spieler.aufBoden, schw = gehen ? Math.sin(performance.now() / 120) * 0.6 : 0;
-    this.armL.rotation.x = schw; this.beinL.rotation.x = -schw; this.beinR.rotation.x = schw;
+    this.armL.rotation.x = schw; this.beinL.rotation.x = sitzt ? SC.Figur.SITZEN : -schw; this.beinR.rotation.x = sitzt ? SC.Figur.SITZEN : schw;
     this._schwungBild(dt, -schw);
     this._handBlock(spieler.modus === "zuschauer" ? -1 : spieler.schnellleiste[spieler.auswahl]);
     this.hand.visible = this.hand.visible && !aussen && spieler.modus !== "zuschauer" && !this._mitWaffe;
@@ -282,6 +284,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.uniforms.nebelNah.value = this.sichtweite * 16 * 0.55; this.uniforms.nebelFern.value = this.sichtweite * 16 * 0.95;
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());
     this.mitspieler.aktualisiere(this._mitspieler || [], spieler.pos, dt, k.position);
+    if(this._welt) this.fahrzeuge.bild(this._welt, spieler.pos, h.tageslicht);
     this.renderer.setClearColor(h.unten);
     this.renderer.render(this.szene, k);
     // FPS

@@ -111,6 +111,9 @@ SC.Klang = {};
       var og = osz(ctx, "sine", 300, huelle(ctx, z, t + 0.3, 0.005, 0, 0.1, v * 0.3), t + 0.3, t + 0.45); og.frequency.exponentialRampToValueAtTime(120, t + 0.42);
     } else if(name === "ueberhitzt"){
       rausch(ctx, filter(ctx, "highpass", 4000, 0.7, huelle(ctx, z, t, 0.01, 0.3, 0.4, v * 0.2)), t, 0.8);
+    } else if(name === "einsteigen"){
+      osz(ctx, "sine", 160, huelle(ctx, z, t, 0.005, 0, 0.12, v * 0.4), t, t + 0.15);
+      var oe = osz(ctx, "triangle", 300, huelle(ctx, z, t + 0.1, 0.02, 0.15, 0.2, v * 0.15), t + 0.1, t + 0.5); oe.frequency.exponentialRampToValueAtTime(700, t + 0.45);
     } else if(name === "klick"){
       osz(ctx, "square", 880, filter(ctx, "lowpass", 3000, 0.7, huelle(ctx, z, t, 0.002, 0, 0.05, v * 0.12)), t, t + 0.07);
     }
@@ -140,6 +143,18 @@ SC.Klang = {};
   SC.Audio.prototype.lautstaerke = function(m, s){
     this.musikLaut = m; this.sfxLaut = s;
     if(this.ctx){ this.musik.gain.value = m * 0.6; this.sfx.gain.value = s; }
+  };
+  // Motor im Fahrzeug: ein Dauerton, Höhe folgt dem Tempo (anteil 0..1); art null blendet aus
+  SC.Audio.prototype.motor = function(art, anteil){
+    var c = this.ctx; if(!c || c.state !== "running") return;
+    if(!this._motor){
+      var g = c.createGain(), lp = c.createBiquadFilter(), o = c.createOscillator();
+      g.gain.value = 0; lp.type = "lowpass"; lp.frequency.value = 500; o.type = "sawtooth"; o.frequency.value = 60;
+      o.connect(lp); lp.connect(g); g.connect(this.sfx); o.start(); this._motor = { g: g, o: o, lp: lp };
+    }
+    var m = this._motor, t = c.currentTime, basis = art === "buggy" ? 45 : art === "flieger" ? 90 : 70;
+    m.g.gain.setTargetAtTime(art && this.sfxLaut > 0 ? 0.05 + 0.05 * anteil : 0, t, 0.15);
+    if(art){ m.o.frequency.setTargetAtTime(basis * (1 + anteil * 1.5), t, 0.1); m.lp.frequency.setTargetAtTime(400 + anteil * 900, t, 0.1); }
   };
   SC.Audio.prototype.spiele = function(name, o){
     if(!this.ctx || this.ctx.state !== "running" || this.sfxLaut <= 0) return;

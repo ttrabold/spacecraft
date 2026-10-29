@@ -1,6 +1,6 @@
 // Oberfläche: Weltliste, Neue Welt, Pause, Einstellungen, Blockauswahl, HUD und Hinweise
 SC.Einstellungen = {
-  standard: function(){ return { sichtweite: matchMedia("(pointer: coarse)").matches ? 6 : 10, empfindlichkeit: 1, touchGroesse: 1, fpsAnzeigen: false, entwickler: false, musik: 0.5, geraeusche: 0.8, bildrate: 60 }; }, // bildrate: höchstens so viele Bilder/s, 0 = unbegrenzt
+  standard: function(){ return { sichtweite: matchMedia("(pointer: coarse)").matches ? 6 : 10, empfindlichkeit: 1, touchGroesse: 1, fpsAnzeigen: false, entwickler: false, musik: 0.5, geraeusche: 0.8, bildrate: 60, aufloesung: matchMedia("(pointer: coarse)").matches ? "hoch" : "normal" }; }, // bildrate: höchstens so viele Bilder/s, 0 = unbegrenzt
   lade: function(ns){ var e = SC.Einstellungen.standard(); try { var t = localStorage.getItem("sc-" + ns + ":einstellungen"); if(t) Object.assign(e, JSON.parse(t)); } catch(err){} return e; },
   speichere: function(ns, e){ try { localStorage.setItem("sc-" + ns + ":einstellungen", JSON.stringify(e)); } catch(err){} }
 };
@@ -212,6 +212,7 @@ SC.UI = function(wurzel, o){
       regler("e-touch", SC.T.touchGroesse, 0.7, 1.6, 0.1, e.touchGroesse) +
       regler("e-musik", SC.T.musik, 0, 1, 0.05, e.musik) +
       regler("e-geraeusche", SC.T.geraeusche, 0, 1, 0.05, e.geraeusche) +
+      '<label class="feld">' + esc(SC.T.aufloesung) + ' <select id="e-aufloesung">' + [["normal", SC.T.aufloesungNormal], ["hoch", SC.T.aufloesungHoch]].map(function(o){ return '<option value="' + o[0] + '"' + (e.aufloesung === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") + "</select></label>" +
       '<label class="feld">' + esc(SC.T.bildrate) + ' <select id="e-bildrate">' + [[30, "30"], [60, "60"], [0, SC.T.bildrateFrei]].map(function(o){ return '<option value="' + o[0] + '"' + (+e.bildrate === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") + "</select></label>" +
       '<label class="feld zeile"><input type="checkbox" id="e-fps"' + (e.fpsAnzeigen ? " checked" : "") + "> " + esc(SC.T.fpsAnzeigen) + "</label>" +
       '<label class="feld zeile"><input type="checkbox" id="e-entw"' + (e.entwickler ? " checked" : "") + "> " + esc(SC.T.entwicklerAn) + "</label>" +
@@ -226,6 +227,7 @@ SC.UI = function(wurzel, o){
         ui.o.beiEinstellungen && ui.o.beiEinstellungen(e);
       });
     }
+    ui2.ebene.querySelector("#e-aufloesung").addEventListener("change", function(ev){ e.aufloesung = ev.target.value; ui.o.beiEinstellungen && ui.o.beiEinstellungen(e); });
     ui2.ebene.querySelector("#e-bildrate").addEventListener("change", function(ev){ e.bildrate = +ev.target.value; ui.o.beiEinstellungen && ui.o.beiEinstellungen(e); });
     an("e-sicht", "sichtweite", true); an("e-maus", "empfindlichkeit", true); an("e-touch", "touchGroesse", true); an("e-musik", "musik", true); an("e-geraeusche", "geraeusche", true); an("e-fps", "fpsAnzeigen", false); an("e-entw", "entwickler", false);
   };

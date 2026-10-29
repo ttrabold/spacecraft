@@ -60,3 +60,7 @@ test("Fahrzeuge: nur in Sichtweite dargestellt, weit entfernte werden freigegebe
   rf.bild(w, ich, 1, 160); wahr(rf.objekte.has("a"), "nah"); wahr(rf.objekte.has("c"), "nah über die Ringgrenze"); gleich(rf.objekte.has("b"), false, "weit weg: kein Modell");
   ich = [500, 70, 100]; rf.bild(w, ich, 1, 160); wahr(rf.objekte.has("b"), "jetzt nah"); gleich(rf.objekte.has("a"), false, "a freigegeben"); gleich(rf.gruppe.children.length, rf.objekte.size);
 });
+test("Auflösung: normal zeichnet mit Pixelverhältnis 1, hoch wie bisher (Computer bis 2, Touch bis 1,5)", function(){
+  gleich(SC.Render.pixelVerhaeltnis("normal", 2, false), 1); gleich(SC.Render.pixelVerhaeltnis("hoch", 2, false), 2); gleich(SC.Render.pixelVerhaeltnis("hoch", 3, true), 1.5);
+  gleich(SC.Render.pixelVerhaeltnis("hoch", 1, false), 1); gleich(SC.Render.pixelVerhaeltnis(undefined, 2, false), 2, "ohne Angabe wie bisher");
+});

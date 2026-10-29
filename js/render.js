@@ -42,7 +42,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.sichtweite = this.touch ? 6 : 10;
     this.renderer = new THREE.WebGLRenderer({ canvas: leinwand, antialias: false, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.touch ? 1.5 : 2));
+    this.renderer.setPixelRatio(SC.Render.pixelVerhaeltnis(undefined, window.devicePixelRatio || 1, this.touch));
     this.szene = new THREE.Scene();
     this.kamera = new THREE.PerspectiveCamera(75, 1, 0.08, 1000);
     this.kamera.rotation.order = "YXZ";
@@ -70,6 +70,9 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     window.addEventListener("resize", this._groesse); this._groesse();
   };
   SC.Render.FS = FS;
+  // Pixelverhältnis: "normal" zeichnet mit einfacher Auflösung (ein Viertel der Pixel auf Retina), sonst wie das Gerät (Computer bis 2, Touch bis 1,5)
+  SC.Render.pixelVerhaeltnis = function(aufloesung, dpr, touch){ return aufloesung === "normal" ? 1 : Math.min(dpr, touch ? 1.5 : 2); };
+  SC.Render.prototype.aufloesung = function(a){ this.renderer.setPixelRatio(SC.Render.pixelVerhaeltnis(a, window.devicePixelRatio || 1, this.touch)); this._groesse(); };
 
   SC.Render.prototype._baueHimmel = function(){
     var g = new THREE.SphereGeometry(500, 24, 12);

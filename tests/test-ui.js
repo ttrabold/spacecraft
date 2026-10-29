@@ -14,3 +14,9 @@ test("Einstellungen: Bildrate standardmäßig 60, wählbar 30 / 60 / unbegrenzt"
   ui.zeigeEinstellungen(function(){}); var sel = w.querySelector("#e-bildrate"); wahr(sel, "Auswahl da"); gleich(sel.options.length, 3); gleich(sel.value, "60");
   sel.value = "0"; sel.dispatchEvent(new Event("change")); gleich(neu && neu.bildrate, 0, "unbegrenzt");
 });
+test("Einstellungen: Auflösung wählbar, am Computer standardmäßig normal", function(){
+  var e = SC.Einstellungen.standard(); gleich(e.aufloesung, matchMedia("(pointer: coarse)").matches ? "hoch" : "normal");
+  var w = document.createElement("div"), neu = null, ui = new SC.UI(w, { einstellungen: e, beiEinstellungen: function(x){ neu = x; } });
+  ui.zeigeEinstellungen(function(){}); var sel = w.querySelector("#e-aufloesung"); wahr(sel, "Auswahl da"); gleich(sel.options.length, 2);
+  sel.value = "hoch"; sel.dispatchEvent(new Event("change")); gleich(neu && neu.aufloesung, "hoch");
+});

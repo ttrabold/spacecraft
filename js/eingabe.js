@@ -6,8 +6,7 @@ SC.TASTEN = {
   touch: { benutzen: "🚗", platz: "💺", ziel: "🎯", sprung: "⚡" },
   gamepad: { benutzen: "Steuerkreuz ↑", platz: "Steuerkreuz ↓", ziel: "LB", sprung: "RB" }
 };
-// Ein verbundener Controller zählt schon, bevor er benutzt wird
-SC.eingabeModus = function(e){ return (e && e.gamepadAktiv) || (SC.Gamepad && SC.Gamepad.erstes && SC.Gamepad.erstes()) ? "gamepad" : e && e.touchAktiv ? "touch" : "tastatur"; };
+SC.eingabeModus = function(e){ return e && (e.controllerVorn ? e.controllerVorn() : e.gamepadAktiv) ? "gamepad" : e && e.touchAktiv ? "touch" : "tastatur"; };
 SC.tastenText = function(t, modus){ var n = SC.TASTEN[modus] || SC.TASTEN.tastatur; return t.replace(/\{(benutzen|platz|ziel|sprung)\}/g, function(x, k){ return n[k]; }); };
 SC.tastenZuEingabe = function(t){
   return {
@@ -49,7 +48,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
     contextmenu: function(ev){ ev.preventDefault(); },
     wheel: function(ev){ if(document.pointerLockElement === leinwand){ e._rad += ev.deltaY > 0 ? 1 : -1; ev.preventDefault(); } },
     sperre: function(){ if(document.pointerLockElement !== leinwand && e.aktiv && !e.touchAktiv) e._einmal.menue = true; },
-    touchstart: function(){ e.gamepadAktiv = false; if(!e.touchAktiv){ e.touchAktiv = true; e.touch = new SC.Touch(e, uiWurzel); } }
+    touchstart: function(){ e.gamepadAktiv = false; e._touchSeitGp = true; if(!e.touchAktiv){ e.touchAktiv = true; e.touch = new SC.Touch(e, uiWurzel); } }
   };
   window.addEventListener("keydown", this._h.keydown); window.addEventListener("keyup", this._h.keyup); window.addEventListener("blur", this._h.blur);
   document.addEventListener("mousemove", this._h.mousemove); leinwand.addEventListener("mousedown", this._h.mousedown);
@@ -79,7 +78,10 @@ SC.Eingabe = function(leinwand, uiWurzel){
   // Touch-Knöpfe nur, solange nicht mit dem Controller gespielt wird (Issue #21)
   // Gerade benutztes Eingabegerät: "gamepad", "touch" oder "tastatur" (für Tastennamen in Hinweisen)
   SC.Eingabe.prototype.modus = function(){ return SC.eingabeModus(this); };
-  SC.Eingabe.prototype.touchSichtbar = function(){ return this.touchAktiv && !this.gamepadAktiv; };
+  // Controller vorn: benutzt oder verbunden, ohne dass seither der Bildschirm berührt wurde.
+  // Dann sind die Touch-Knöpfe weg (bis zur nächsten Berührung) und die Controller-Hilfe am Rand zeigt die Tasten.
+  SC.Eingabe.prototype.controllerVorn = function(){ return !!(this.gamepadAktiv || (this._gpVerbunden && !this._touchSeitGp)); };
+  SC.Eingabe.prototype.touchSichtbar = function(){ return this.touchAktiv && !this.controllerVorn(); };
 
   // Gedrückt gehaltene Aktion alle 0,25 s wiederholen
   function wiederhole(m, feld, zeit, jetzt){ if(m[feld] && jetzt - m[zeit] > 250){ m[zeit] = jetzt; return true; } return false; }
@@ -89,6 +91,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
     if(t){ var j = t.bewegung(); for(var k in j) b[k] = b[k] || j[k]; }
     // Gamepad im Spiel (im Menü übernimmt menueGamepad)
     var gp = SC.Gamepad.erstes(), gpe = null, dtg = this._gpT ? Math.min(0.1, (jetzt - this._gpT) / 1000) : 0;
+    if(gp && !this._gpVerbunden){ this._gpVerbunden = true; this._touchSeitGp = false; } else if(!gp) this._gpVerbunden = false; // neu verbunden
     this._gpT = jetzt;
     if(gp && this.aktiv){
       if(this._gpModus !== "spiel"){ SC.Gamepad.vorbereiten(gp, this._gp); this._gpModus = "spiel"; }

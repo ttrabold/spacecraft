@@ -127,6 +127,16 @@ SC.UI = function(wurzel, o){
     });
     Array.prototype.forEach.call(this.wurzel.querySelectorAll(".planet-marker"), function(m){ if(!da[m.getAttribute("data-id")]) m.hidden = true; });
   };
+  // Controller-Hilfe am rechten Rand (liste aus SC.controllerHilfe, null blendet aus)
+  var CH_KLASSE = { A: "a", B: "b", X: "x", Y: "y", "▲": "kreuz", "▼": "kreuz", "☰": "rund" };
+  SC.UI.prototype.controllerHilfe = function(liste){
+    var h = this.wurzel.querySelector(".controller-hilfe");
+    if(!liste){ if(h) h.hidden = true; this._chSchl = null; return; }
+    if(!h){ h = document.createElement("div"); h.className = "controller-hilfe"; this.wurzel.appendChild(h); }
+    h.hidden = false;
+    var schl = JSON.stringify(liste); if(schl === this._chSchl) return; this._chSchl = schl;
+    h.innerHTML = liste.map(function(z){ return '<div class="ch-zeile"><span class="ch-taste ' + (CH_KLASSE[z.taste] || "schulter") + '">' + esc(z.taste) + '</span><span class="ch-symbol">' + esc(z.symbol) + "</span><span>" + esc(z.text) + "</span></div>"; }).join("");
+  };
   SC.UI.prototype.cockpit = function(info){
     var el = this.wurzel.querySelector(".cockpit");
     this.wurzel.classList.toggle("mit-cockpit", !!info); // Hinweise rücken unter das Cockpit

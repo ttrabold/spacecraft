@@ -26,10 +26,25 @@ test("Tastennamen je Eingabegerät in Hinweisen", function(){
   gleich(SC.tastenText("Aussteigen mit {benutzen}, Platz {platz}, Ziel {ziel}", "gamepad"), "Aussteigen mit Steuerkreuz ↑, Platz Steuerkreuz ↓, Ziel LB");
   var e = new SC.Eingabe(document.createElement("canvas"), document.createElement("div")); gleich(e.modus(), "tastatur"); e.gamepadAktiv = true; gleich(e.modus(), "gamepad"); e.entferne();
 });
-test("Touch-Knöpfe zeigen Xbox-Tasten, wenn ein Controller verbunden ist", function(){
-  var ui = document.createElement("div"), e = new SC.Eingabe(document.createElement("canvas"), ui), t = new SC.Touch(e, ui), k = function(n){ return t.el.querySelector('[data-k="' + n + '"]').textContent; };
-  t.beschrifte({ angriff: false, blocken: false, all: true }); gleich(k("springen"), "⤒"); gleich(k("ziel"), "🎯");
-  t.beschrifte({ angriff: true, blocken: false, all: true, controller: true });
-  gleich(k("springen"), "Ⓐ"); gleich(k("abbauen"), "RT"); gleich(k("setzen"), "LT"); gleich(k("blockauswahl"), "Ⓧ"); gleich(k("ziel"), "LB"); gleich(k("sprung"), "RB"); gleich(k("platz"), "✚↓");
-  t.beschrifte({ angriff: true, blocken: false, all: true }); gleich(k("abbauen"), "⚔", "ohne Controller wieder Symbole"); t.entferne(); e.entferne();
+test("Controller verbunden: Touch-Knöpfe weg bis zur nächsten Berührung, Tastennamen vom Controller", function(){
+  var alt = SC.Gamepad.erstes, pad = null; SC.Gamepad.erstes = function(){ return pad; };
+  try{
+    var ui = document.createElement("div"), e = new SC.Eingabe(document.createElement("canvas"), ui); e.aktiv = true;
+    e._h.touchstart(); e.zustand(); wahr(e.touchSichtbar(), "nur Touch"); gleich(e.modus(), "touch");
+    pad = { buttons: [], axes: [0, 0, 0, 0], id: "Xbox" }; e.zustand(); wahr(!e.touchSichtbar(), "Controller verbunden: weg"); gleich(e.modus(), "gamepad");
+    e._h.touchstart(); e.zustand(); wahr(e.touchSichtbar(), "nach Berührung wieder da"); gleich(e.modus(), "touch");
+    pad = null; e.zustand(); pad = { buttons: [], axes: [0, 0, 0, 0], id: "Xbox" }; e.zustand(); wahr(!e.touchSichtbar(), "neu verbunden: wieder weg");
+    e.entferne();
+  } finally { SC.Gamepad.erstes = alt; }
+});
+test("Controller-Hilfe: Tasten mit Beschreibung je nach Lage", function(){
+  function t(l, taste){ var r = l.filter(function(x){ return x.taste === taste; })[0]; return r ? r.text : null; }
+  var l = SC.controllerHilfe({ survival: true, waffe: true });
+  gleich(t(l, "A"), "Springen"); gleich(t(l, "RT"), "Angreifen"); gleich(t(l, "X"), "Rucksack"); gleich(t(l, "LB"), "Schnellleiste");
+  l = SC.controllerHilfe({ survival: false }); gleich(t(l, "RT"), "Abbauen"); gleich(t(l, "X"), "Blöcke");
+  l = SC.controllerHilfe({ fahrzeugNah: true }); gleich(t(l, "▲"), "Einsteigen");
+  l = SC.controllerHilfe({ fahrzeug: { fahrer: true, geschuetz: true }, survival: true }); gleich(t(l, "RT"), "Schießen"); gleich(t(l, "▲"), "Aussteigen"); gleich(t(l, "▼"), "Platz wechseln"); gleich(t(l, "LB"), null, "keine Leiste im Fahrzeug");
+  l = SC.controllerHilfe({ fahrzeug: { fahrer: false } }); gleich(t(l, "RT"), null, "Mitfahrer schießt nicht mit dem Bordgeschütz");
+  l = SC.controllerHilfe({ all: true }); gleich(t(l, "LB"), "Ziel wählen"); gleich(t(l, "RB"), "Sprung"); gleich(t(l, "RT"), "Laser"); gleich(t(l, "▲"), null, "im All kein Aussteigen");
+  l.forEach(function(x){ wahr(x.symbol, "Symbol zu " + x.taste); });
 });

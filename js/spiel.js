@@ -160,7 +160,7 @@ SC.Spiel.startpunkt = function(planet){
     var offen = ui.offen() || ew.offen();
     this._menueOffen = offen;
     this.eingabe.aktiv = !offen;
-    if(this.eingabe.touch){ this.eingabe.touch.sichtbar(!offen); this.eingabe.touch.setzeGroesse(this.einstellungen.touchGroesse); }
+    if(this.eingabe.touch){ this.eingabe.touch.sichtbar(!offen && this.eingabe.touchSichtbar()); this.eingabe.touch.setzeGroesse(this.einstellungen.touchGroesse); }
     var e = this.eingabe.zustand();
     // F3 öffnet und schließt die Entwicklerwerkzeuge (nur wenn in den Einstellungen eingeschaltet)
     if(e.entwickler && this.einstellungen.entwickler && !ui.offen()){

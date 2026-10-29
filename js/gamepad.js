@@ -58,3 +58,29 @@ SC.Gamepad = {};
     return null;
   };
 })();
+
+// Controller-Hilfe am Bildrand: Tasten mit Symbol und Text je nach Lage → [{taste, symbol, text}]
+// k: { all, zuschauerImAll, fahrzeug: {fahrer, geschuetz}, fahrzeugNah, survival, waffe, schwert }
+SC.controllerHilfe = function(k){
+  var T = SC.T.steuerHilfe, l = [];
+  function z(taste, symbol, text){ l.push({ taste: taste, symbol: symbol, text: text }); }
+  if(k.zuschauerImAll){ z("☰", "☰", T.menue); return l; }
+  if(k.all){
+    z("RT", "💥", T.laser); z("LB", "🎯", T.ziel); z("RB", "⚡", T.sprung);
+    z("A", "⤒", T.naseHoch); z("B", "⤓", T.naseRunter); z("☰", "☰", T.menue);
+    return l;
+  }
+  if(k.fahrzeug){
+    if(k.fahrzeug.fahrer && k.fahrzeug.geschuetz && k.survival) z("RT", "💥", T.schiessen);
+    else if(!k.fahrzeug.fahrer && k.survival && k.waffe) z("RT", "⚔", T.angreifen);
+    z("▲", "🚗", T.aussteigen); z("▼", "💺", T.platz); z("Y", "👁", T.ansicht); z("☰", "☰", T.menue);
+    return l;
+  }
+  z("A", "⤒", T.springen); z("B", "⇆", k.survival ? T.ausweichen : T.runter);
+  z("RT", k.survival && k.waffe ? "⚔" : "⛏", k.survival && k.waffe ? T.angreifen : T.abbauen);
+  z("LT", k.schwert ? "🛡" : "■", k.schwert ? T.blocken : T.setzen);
+  z("X", "▦", k.survival ? T.rucksack : T.bloecke); z("Y", "👁", T.ansicht); z("LB", "◀▶", T.leiste);
+  if(k.fahrzeugNah) z("▲", "🚗", T.einsteigen);
+  z("☰", "☰", T.menue);
+  return l;
+};

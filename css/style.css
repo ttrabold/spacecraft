@@ -160,4 +160,10 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
   background:radial-gradient(circle,#3ef0ff 0 2px,transparent 3px),linear-gradient(#3ef0ff,#3ef0ff) center top/2px 9px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) center bottom/2px 9px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) left center/9px 2px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) right center/9px 2px no-repeat}
 .fadenkreuz.fahrzeug.ziel{border-color:#ff4a5c;transform:scale(.85);transition:transform .1s;
   background:radial-gradient(circle,#ff4a5c 0 3px,transparent 4px),linear-gradient(#ff4a5c,#ff4a5c) center top/2px 11px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) center bottom/2px 11px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) left center/11px 2px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) right center/11px 2px no-repeat}
-.touch.controller .touch-knopf{font-weight:800;font-size:calc(22px * var(--touch-skala))}
+.controller-hilfe{position:absolute;right:calc(14px + env(safe-area-inset-right));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;pointer-events:none;z-index:2;background:rgba(14,11,46,.55);border:1px solid rgba(62,240,255,.35);padding:8px 10px;color:#eef2fa;font-size:13px;font-weight:600}
+.ch-zeile{display:flex;align-items:center;gap:7px;white-space:nowrap;text-shadow:0 1px 2px #000}
+.ch-taste{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 5px;box-sizing:border-box;border-radius:6px;background:#2b2f3a;border:1px solid #6b7385;font-size:11px;font-weight:800;color:#fff}
+.ch-taste.a,.ch-taste.b,.ch-taste.x,.ch-taste.y,.ch-taste.rund{border-radius:50%;width:24px;padding:0;font-size:13px}
+.ch-taste.a{background:#2f8f3a;border-color:#6fd18a}.ch-taste.b{background:#b8323a;border-color:#ff7a80}.ch-taste.x{background:#2a5fbf;border-color:#7fb0ff}.ch-taste.y{background:#b89a1c;border-color:#ffe07a;color:#1b1b1b}
+.ch-taste.kreuz{border-radius:3px;font-size:10px}
+.ch-symbol{width:20px;text-align:center}

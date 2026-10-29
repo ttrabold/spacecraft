@@ -196,8 +196,14 @@
     var aKey = JSON.stringify([k.ausruestung, waffe && waffe.id]);
     if(aKey !== this._ausrKey){ this._ausrKey = aKey; this.render.ausruestung(survival ? k.ausruestung : null, waffe); }
     var fzNah = this._fahrzeugNah();
-    if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah && !this.all, platz: !this.all && !!this._imFahrzeug(), all: !!this.all, controller: !!(SC.Gamepad && SC.Gamepad.erstes && SC.Gamepad.erstes()) });
+    if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah && !this.all, platz: !this.all && !!this._imFahrzeug(), all: !!this.all });
     var ui = this.ui;
+    // Controller vorn: Hilfe am Rand statt Touch-Knöpfen
+    if(ui.controllerHilfe){
+      var vorn = ein && (ein.controllerVorn ? ein.controllerVorn() : ein.gamepadAktiv), imF = this._imFahrzeug();
+      ui.controllerHilfe(vorn ? SC.controllerHilfe({ all: !!this.all && !this.all.zuschauer, zuschauerImAll: !!(this.all && this.all.zuschauer), survival: survival, waffe: !!waffe, schwert: !!(wdef && wdef.typ === "schwert"), fahrzeugNah: !!fzNah && !imF,
+        fahrzeug: imF && !this.all ? { fahrer: imF.sitz === 0, geschuetz: !!SC.FAHRZEUGE[imF.f.art].geschuetz } : null }) : null);
+    }
     // Fahrer eines bewaffneten Fahrzeugs im Survival: Zielkreis, rot mit Gegner darunter
     var imFz = this._imFahrzeug(), kreuz = null;
     if(survival && imFz && imFz.sitz === 0 && SC.FAHRZEUGE[imFz.f.art].geschuetz){ var bz = this._bordZiel(imFz.f); kreuz = bz && bz.gegner ? "fahrzeug-ziel" : "fahrzeug"; }

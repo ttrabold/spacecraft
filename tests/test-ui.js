@@ -69,3 +69,9 @@ test("Sternenkarte: Tipp neben einen Planeten wählt den nächstgelegenen", func
   k.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 20, clientY: 30 })); gleich(gew, "a", "oben links");
   document.body.removeChild(w);
 });
+test("Controller-Hilfe am Rand: zeigen, aktualisieren, ausblenden", function(){
+  var w = document.createElement("div"), ui = leereUI(w);
+  ui.controllerHilfe([{ taste: "A", symbol: "⤒", text: "Springen" }, { taste: "RT", symbol: "⛏", text: "Abbauen" }]);
+  var h = w.querySelector(".controller-hilfe"); wahr(h && !h.hidden); gleich(h.querySelectorAll(".ch-zeile").length, 2); wahr(h.textContent.indexOf("Springen") >= 0); wahr(h.querySelector(".ch-taste.a"), "A farbig");
+  ui.controllerHilfe(null); wahr(h.hidden, "weg");
+});

@@ -8,6 +8,7 @@ SC.Welt = function(planet, gespeicherteChunks){
   this.neuZuZeichnen = new Set();
   this.ereignisse = new SC.Ereignisse();
   this.wesen = new Map();           // Gegner, Geschosse, Beutekugeln
+  this.fahrzeuge = new Map();      // Fahrzeuge nach Text-ID (js/fahrzeuge.js)
   this.naechsteId = 1;
   var g = gespeicherteChunks || {};
   for(var k in g) this.geaenderte.set(k, g[k]);

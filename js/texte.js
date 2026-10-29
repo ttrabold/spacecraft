@@ -105,6 +105,7 @@ SC.T = {
   platzName: { waffe: "Waffe", helm: "Helm", brust: "Brust", handschuhe: "Hände", stiefel: "Stiefel", schild: "Schild" },
   ueberhitzt: "Überhitzt!",
   kisteLeer: "Diese Kiste ist leer.",
+  fahrzeuge: { gleiter: "Schwebeflitzer", buggy: "Kraterkäfer", flieger: "Kometenjäger" },
   gegner: { patrouillendroide: "Patrouillendroide", weltraumbandit: "Weltraumbandit", krabbler: "Krabbler", spucker: "Spucker", schattenritter: "Schattenritter", panzerkoloss: "Panzerkoloss" },
   gegenstand: {
     laserschwert: ["Laserschwert", "n"], blasterpistole: ["Blasterpistole", "f"], blastergewehr: ["Blastergewehr", "n"],

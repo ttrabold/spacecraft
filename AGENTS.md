@@ -33,7 +33,7 @@ docs/superpowers/   Specs und Pläne zu größeren Features
 
 ## Prüfen
 
-Die Tests laufen im Browser: `tests/index.html` öffnen, erwartet: keine ❌-Zeilen und `Fertig: N ok, 0 fehlgeschlagen`. Kurzform auf der Kommandozeile: `bash scripts/tests.sh` (braucht Chrome; in der Claude-Sandbox ohne Sandbox ausführen). Behaupte nie, etwas funktioniere, ohne die Testseite wirklich geladen zu haben. Wenn du keinen Browser steuern kannst, sag das offen.
+Die Tests laufen im Browser: `tests/index.html` öffnen, erwartet: keine ❌-Zeilen und `Fertig: N ok, 0 fehlgeschlagen`. Kurzform auf der Kommandozeile: `bash scripts/tests.sh` (braucht Chrome; in der Claude-Sandbox ohne Sandbox ausführen); `bash scripts/tests.sh <Text>` lässt nur Tests laufen, deren Name den Text enthält. Behaupte nie, etwas funktioniere, ohne die Testseite wirklich geladen zu haben. Wenn du keinen Browser steuern kannst, sag das offen.
 
 ## Veröffentlichen
 

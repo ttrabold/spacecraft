@@ -4,7 +4,8 @@ const { spawn } = require("child_process");
 const fs = require("fs"), path = require("path"), os = require("os");
 const chrome = process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const profil = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), "sc-tests-"));
-const seite = "file://" + path.resolve(__dirname, "../tests/index.html");
+const nur = process.argv[2]; // optional: nur Tests, deren Name diesen Text enthält
+const seite = "file://" + path.resolve(__dirname, "../tests/index.html") + (nur ? "?nur=" + encodeURIComponent(nur) : "");
 const p = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-first-run", "--user-data-dir=" + profil, "--allow-file-access-from-files", "--remote-debugging-port=0", "about:blank"], { stdio: "ignore" });
 const ende = (code) => { try { p.kill(); } catch (e) {} setTimeout(() => { try { fs.rmSync(profil, { recursive: true, force: true }); } catch (e) {} process.exit(code); }, 300); };
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));

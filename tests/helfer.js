@@ -2,7 +2,8 @@
 (function(){
   var liste=[];
   function Pruefung(text){ this.message=text; }
-  window.test=function(name,fn){ liste.push({name:name,fn:fn}); };
+  var nur=decodeURIComponent((/[?&]nur=([^&]*)/.exec(location.search)||[])[1]||""); // ?nur=Text: nur passende Tests
+  window.test=function(name,fn){ if(!nur||name.indexOf(nur)>=0) liste.push({name:name,fn:fn}); };
   window.gleich=function(ist,soll,text){ if(ist!==soll) throw new Pruefung((text?text+": ":"")+"erwartet "+JSON.stringify(soll)+", war "+JSON.stringify(ist)); };
   window.wahr=function(bed,text){ if(!bed) throw new Pruefung(text||"Bedingung nicht erfüllt"); };
   window.wirft=function(fn,typ){ try{ fn(); }catch(f){ if(typ&&!(f instanceof typ)) throw new Pruefung("falscher Fehlertyp: "+f); return; } throw new Pruefung("kein Fehler geworfen"); };

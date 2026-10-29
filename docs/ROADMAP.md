@@ -29,12 +29,13 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 | 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | live als 0.4.0 (inkl. Entwicklerwerkzeuge, Gamepad, Musik und Geräusche); offen nur noch #18 (Test auf echtem iPad) | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | live als 0.5.1; offen: kleinere Punkte #38–#42 und Balance nach Feedback | [Design](superpowers/specs/2026-10-23-stufe-2-survival-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-2-survival.md) |
 | 3 | Gemeinsam spielen per Raumcode | fertig, live als 0.6.1 | [Design](superpowers/specs/2026-10-24-stufe-3-gemeinsam-spielen-design.md) | [Plan](superpowers/plans/2026-10-24-stufe-3-gemeinsam-spielen.md) |
-| 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | fertig, live als 0.7.1 | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | [Plan](superpowers/plans/2026-10-29-stufe-4-fahrzeuge.md) |
+| 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | fertig, live als 0.7.2 | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | [Plan](superpowers/plans/2026-10-29-stufe-4-fahrzeuge.md) |
 | 5 | Raumschiffe, nahtloser Flug zu anderen Planeten | offen | – | – |
 | später | Crafting: aus Rohstoffen Dinge herstellen (gewünscht, Zeitpunkt offen) | offen | – | – |
 
 ## Aktueller Stand
 
+- 2026-10-29: 0.7.2 live: Einstellung „Höchste Bildrate“ (30/60/unbegrenzt, Standard 60) gegen hohe CPU-/GPU-Last in Chrome (#68).
 - 2026-10-29: 0.7.1 live (Test und Live), Meilenstein Stufe 4 geschlossen. Gerätetest durch den Nutzer ok. Kein itch.io-Release und kein Devlog angefragt.
 - 2026-10-29: Stufe 4 umgesetzt (Branch `stufe-4`, Version 0.7.0, 390 Tests grün): Schwebeflitzer (Gleiter), Kraterkäfer (Buggy), Kometenjäger (Flieger) als Viersitzer; Start-Gleiter beim Startpunkt, weitere an Lager/Station/Herrenhaus; Einsteigen mit F, Steuerkreuz hoch oder 🚗; Panzerung, Rammen, Bordgeschütz, Verpuffen mit Wiederkehr; Kreativ-Reiter Fahrzeuge und F3; gemeinsames Fahren (Protokoll 2, mit zwei Tabs über PeerJS geprüft). Fahrzeuge fahren durch Laub. Testlauf filterbar: `bash scripts/tests.sh <Text>`.
 - 2026-10-29: Stufe 3 abgeschlossen (Gerätetest durch den Nutzer ok, Meilenstein zu, Restpunkte #59 unter „Später“). Stufe 4 neu zugeschnitten: Fahrzeuge werden gefunden statt gebaut (Bauen kommt mit Crafting nach Stufe 5). Design und Plan geschrieben, Issues #60–#67 angelegt. Kein itch.io-Release und kein Devlog für 0.6.x (Wunsch des Nutzers).

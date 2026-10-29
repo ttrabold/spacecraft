@@ -226,3 +226,9 @@ test("Rammen: Abklingzeit und Boss", function(){
   var w3 = fzWelt(), c = SC.Fahrzeug.neu(w3, "gleiter", [20, 60.6, 20], 0); c.tempo = 12; SC.Wesen.neu(w3, "gegner", { gegnerArt: "krabbler", pos: [26, 60, 26], breite: 0.9, hoehe: 0.8, lp: 10, lpMax: 10 });
   gleich(SC.Fahrzeug.rammen(w3, c, 0).length, 0, "nur Gegner an der Grundfläche");
 });
+test("Fundort ohne freien Platz wird nicht jede Sekunde neu durchsucht", function(){
+  var w = fzEchteWelt(), b = fzBauwerkMitFundort(w), alt = SC.Fahrzeug.fundortPos, n = 0;
+  SC.Fahrzeug.fundortPos = function(){ n++; return null; };
+  try{ SC.Fahrzeug.fundorteNah(w, [b.x, 80, b.z]); var erst = n; SC.Fahrzeug.fundorteNah(w, [b.x, 80, b.z]); SC.Fahrzeug.fundorteNah(w, [b.x, 80, b.z]); wahr(erst > 0, "einmal gesucht"); gleich(n, erst, "nicht erneut"); }
+  finally{ SC.Fahrzeug.fundortPos = alt; }
+});

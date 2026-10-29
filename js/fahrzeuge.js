@@ -213,11 +213,12 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     var pl = welt.planet, P = pl.groesse, rx = Math.floor(pos[0] / 128), rz = Math.floor(pos[2] / 128);
     for(var i = -1; i <= 1; i++) for(var j = -1; j <= 1; j++) SC.Bauwerke.inRegion(pl, rx + i, rz + j).forEach(function(b){
       var art = F.FUNDORT_ART[b.typ];
-      if(!art || welt.fahrzeuge.has(b.schluessel)) return;
+      var ohne = welt._fundortOhnePlatz || (welt._fundortOhnePlatz = {}); // ohne freien Platz: in dieser Sitzung nicht erneut suchen
+      if(!art || welt.fahrzeuge.has(b.schluessel) || ohne[b.schluessel]) return;
       var dx = SC.mod(b.x + b.breite / 2 - pos[0] + P / 2, P) - P / 2, dz = SC.mod(b.z + b.tiefe / 2 - pos[2] + P / 2, P) - P / 2;
       if(Math.hypot(dx, dz) > r) return;
       var p = F.fundortPos(welt, b);
-      if(p) F.neu(welt, art, p, 0, { id: b.schluessel, fundort: b.schluessel, heim: p });
+      if(p) F.neu(welt, art, p, 0, { id: b.schluessel, fundort: b.schluessel, heim: p }); else ohne[b.schluessel] = true;
     });
   };
   F.sichereStart = function(welt, startpunkt){

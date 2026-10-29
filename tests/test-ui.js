@@ -20,3 +20,17 @@ test("Einstellungen: Auflösung wählbar, am Computer standardmäßig normal", f
   ui.zeigeEinstellungen(function(){}); var sel = w.querySelector("#e-aufloesung"); wahr(sel, "Auswahl da"); gleich(sel.options.length, 2);
   sel.value = "hoch"; sel.dispatchEvent(new Event("change")); gleich(neu && neu.aufloesung, "hoch");
 });
+test("Touch: Schnellleiste und Entwicklerfenster liegen über der Blickfläche (#84)", function(){
+  // eigenes Fenster im iPhone-Format mit dem echten Stylesheet
+  var f = document.createElement("iframe"); f.style.cssText = "position:absolute;left:-2000px;top:0;width:390px;height:700px;border:0"; document.body.appendChild(f);
+  var d = f.contentDocument; d.open(); d.write('<link rel="stylesheet" href="../css/style.css"><div class="ui" style="position:fixed;inset:0"><div class="touch"><div class="touch-blick"></div></div><div class="leiste"></div><div class="entwickler" style="width:300px;height:80px"></div></div>'); d.close();
+  return new Promise(function(fertig){ f.onload = fertig; setTimeout(fertig, 1500); }).then(function(){
+    var w = d.createElement("div"), ui = leereUI(w), s = new SC.Spieler({ id: "a", pos: [0, 0, 0], modus: "kreativ", schnellleiste: [1, 2, 3, 4, 5, 6, 7, 8, 9] });
+    ui.hud(s, { fps: 60 }); d.querySelector(".leiste").innerHTML = w.querySelector(".leiste").innerHTML;
+    var fehl = [];
+    Array.prototype.forEach.call(d.querySelectorAll(".leiste-platz"), function(b, i){ var r = b.getBoundingClientRect(), el = d.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); if(!(el === b || b.contains(el))) fehl.push(i + 1); });
+    var e = d.querySelector(".entwickler"), r = e.getBoundingClientRect(), el = d.elementFromPoint(r.right - 5, r.top + 5);
+    document.body.removeChild(f);
+    gleich(fehl.join(","), "", "verdeckte Plätze"); wahr(el === e, "Entwicklerfenster frei");
+  });
+});

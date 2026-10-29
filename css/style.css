@@ -51,7 +51,7 @@ input[type=range]{width:100%}
 .modus-anzeige{position:absolute;left:calc(12px + env(safe-area-inset-left));bottom:calc(12px + env(safe-area-inset-bottom));font-size:14px;color:#aab3d6;text-shadow:0 1px 2px #000}
 .touch ~ .hud .modus-anzeige{display:none}
 .fps{position:absolute;right:12px;top:12px;font-size:14px;color:#3ef0ff;text-shadow:0 1px 2px #000}
-.leiste{position:absolute;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:4px;pointer-events:auto}
+.leiste{position:absolute;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:4px;pointer-events:auto;z-index:2}
 .leiste-platz{position:relative;width:56px;height:56px;min-height:0;padding:6px;background:rgba(14,11,46,.65);border:2px solid #4a5a8a;justify-content:center}
 .leiste-platz.gewaehlt{border-color:#3ef0ff;box-shadow:0 0 10px rgba(62,240,255,.7)}
 .leiste-platz span{position:absolute;right:3px;bottom:1px;font-size:11px;color:#eef2fa}
@@ -60,7 +60,7 @@ input[type=range]{width:100%}
 @media (max-width:700px){.leiste-platz{width:40px;height:40px;padding:3px}.leiste-platz img{width:30px;height:30px}}
 
 /* Entwicklerwerkzeuge */
-.entwickler{position:absolute;left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));width:min(380px,calc(100% - 16px));max-height:calc(100% - 16px);overflow:auto;background:rgba(14,11,46,.88);border:2px solid #ffd95c;padding:10px;box-sizing:border-box;pointer-events:auto;font-size:14px}
+.entwickler{position:absolute;z-index:2;left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));width:min(380px,calc(100% - 16px));max-height:calc(100% - 16px);overflow:auto;background:rgba(14,11,46,.88);border:2px solid #ffd95c;padding:10px;box-sizing:border-box;pointer-events:auto;font-size:14px}
 .ew-kopf{display:flex;justify-content:space-between;align-items:center;color:#ffd95c;font-weight:bold;margin-bottom:6px}
 .ew-kopf button{min-height:36px;padding:4px 10px}
 .ew-info{margin:0 0 8px;font:12px/1.4 ui-monospace,Menlo,monospace;color:#eef2fa;white-space:pre-wrap}

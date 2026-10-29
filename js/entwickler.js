@@ -121,7 +121,11 @@ SC.Entwickler = {};
     }
     if(a === "stufe" && s.kampf){ s.kampf.werte.stufe = Math.max(1, Math.min(30, +this.el.querySelector("#ew-sstufe").value || 1)); s.kampf.werte.erfahrung = 0; s.kampf.ruestungAnwenden(); s.kampf.werte.lp = s.kampf.werte.lpMax; }
     if(a === "bauwerke" && s.daten.planeten){ var pl = s.daten.planeten[s.welt.planet.id]; pl.geraeumt = {}; if(s.auftauchen){ s.auftauchen.besiegt = {}; } }
-    if(a === "planet" && s.wechslePlanet && s.rolle !== "gast"){ var pl = this.el.querySelector("#ew-planet").value, p = this; s.wechslePlanet(pl).then(function(){ p.verberge(); if(s.beiEntwicklerZu) s.beiEntwicklerZu(); }, function(){}); return; }
+    if(a === "planet" && s.wechslePlanet && s.rolle !== "gast"){
+      var pl = this.el.querySelector("#ew-planet").value, p = this;
+      if(s.all && s.all.zuschauer) return; // Mitfahrer: der Pilot entscheidet
+      // Im All: Eintritt in den gewählten Planeten mit Schiff und Insassen
+      (s.all ? s._eintritt(pl) : s.wechslePlanet(pl)).then(function(){ p.verberge(); if(s.beiEntwicklerZu) s.beiEntwicklerZu(); }, function(){}); return; }
     if(a === "fahrzeug" && s.fahrzeugHinstellen) s.fahrzeugHinstellen(this.el.querySelector("#ew-fz").value);
     if(a === "fahrzeuge-weg" && s.fahrzeugeWeg) s.fahrzeugeWeg();
     if(a.indexOf("m-") === 0){ var m = a.slice(2); if(s.modus) s.modus(m); else sp.modus = m; }

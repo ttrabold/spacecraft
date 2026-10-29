@@ -46,8 +46,9 @@ SC.Spiel.prototype.all = null;
     } else {
       if(!offen){
         var gas = (e.vor ? 1 : 0) - (e.zurueck ? 1 : 0); a.tempo = Math.max(0, Math.min(SC.ALL.tempo, a.tempo + gas * 60 * dt));
-        a.blick += ((e.links ? 1 : 0) - (e.rechts ? 1 : 0)) * 1.2 * dt;
-        a.neigung = Math.max(-1.2, Math.min(1.2, a.neigung + ((e.springen ? 1 : 0) - (e.sinken ? 1 : 0)) * 1.0 * dt));
+        // Lenken: Tasten, dazu Maus bzw. Wischen (wie der Blick am Boden)
+        a.blick += ((e.links ? 1 : 0) - (e.rechts ? 1 : 0)) * 1.2 * dt + (e.blickDx || 0);
+        a.neigung = Math.max(-1.2, Math.min(1.2, a.neigung + ((e.springen ? 1 : 0) - (e.sinken ? 1 : 0)) * 1.0 * dt + (e.blickDy || 0)));
         if(e.ziel) this._zielWechseln();
         if(e.sprung){ if(!a.ziel) this.ui.hinweis(SC.T.allKeinZiel, 2000); else { a.phase = "sprung"; a.sprungT = 0; this.audio.spiele("aufstieg"); } }
       }
@@ -126,7 +127,7 @@ SC.Spiel.prototype.all = null;
     f.pos = p; f.geschw = [0, 0, 0]; f.tempo = 0;
     var im = SC.Fahrzeug.sitzVon(this.welt, this._fzId()); if(im) this._fahrzeugFolgen(im, true);
   };
-  S._allEnde = function(){ this.all = null; if(this.render && this.render.allModus) this.render.allModus(false); if(this.ui.cockpit) this.ui.cockpit(null); };
+  S._allEnde = function(){ this.all = null; if(this.render && this.render.allModus) this.render.allModus(false); if(this.ui.cockpit) this.ui.cockpit(null); if(this.ui.allKarte) this.ui.allKarte(null); };
 
   // --- Gemeinsam: Zustand des Piloten senden bzw. als Mitfahrer übernehmen ---
   S._allLage = function(){
@@ -152,6 +153,12 @@ SC.Spiel.prototype.all = null;
     var a = this.all, l = SC.PLANET_REIHENFOLGE.filter(function(id){ return id !== a.vonPlanet; }), i = l.indexOf(a.ziel);
     a.ziel = l[(i + 1) % l.length]; this.ui.hinweis(SC.T.allZiel.replace("{name}", SC.PLANETEN[a.ziel].name), 1500);
   };
+  // Ziel direkt setzen (Sternenkarte), nur als Pilot außerhalb des Sprungs → true, wenn gesetzt
+  S._zielSetzen = function(id){
+    var a = this.all; if(!a || a.zuschauer || a.phase !== "all" || !SC.ALL.planeten[id]) return false;
+    a.ziel = id; this.ui.hinweis(SC.T.allZiel.replace("{name}", SC.PLANETEN[id].name), 1500); return true;
+  };
+  function flugzeit(c, pos){ return Math.max(0, Math.round((Math.hypot(c[0] - pos[0], c[1] - pos[1], c[2] - pos[2]) - 1.25 * SC.ALL.radius) / SC.ALL.tempo)); }
   // Raumszene und Cockpit-Anzeige
   S._allAnzeige = function(){
     var a = this.all; if(!a) return;
@@ -159,8 +166,17 @@ SC.Spiel.prototype.all = null;
       asteroiden: this._allAsteroiden || [], piraten: this._allPiraten || [], geschosse: this._allGeschosse || [] };
     if(this.ui.cockpit){
       var ziel = a.ziel ? SC.ALL.planeten[a.ziel] : null;
-      this.ui.cockpit({ ziel: a.ziel ? SC.PLANETEN[a.ziel].name : null, sekunden: ziel ? Math.max(0, Math.round((Math.hypot(ziel[0] - a.pos[0], ziel[1] - a.pos[1], ziel[2] - a.pos[2]) - 1.25 * SC.ALL.radius) / SC.ALL.tempo)) : null,
+      this.ui.cockpit({ ziel: a.ziel ? SC.PLANETEN[a.ziel].name : null, sekunden: ziel ? flugzeit(ziel, a.pos) : null,
         schild: Math.round(100 * (typeof a.schild === "number" ? a.schild : SC.FAHRZEUGE.raumschiff.panzerung) / SC.FAHRZEUGE.raumschiff.panzerung), sprung: a.phase === "sprung" });
+    }
+    // Sternenkarte (von oben, x/z) und Planetenmarker im Bild; Antippen eines Planeten auf der Karte setzt das Ziel
+    if(this.ui.allKarte && a.pos){
+      var s = this, ms = this.render && this.render.allSzene && this.render.allSzene.marker ? this.render.allSzene.marker(innerWidth, innerHeight) : [];
+      this.ui.allKarte({
+        planeten: SC.PLANET_REIHENFOLGE.map(function(id){ var c = SC.ALL.planeten[id]; return { id: id, name: SC.PLANETEN[id].name, x: c[0], z: c[2], ziel: a.ziel === id }; }),
+        schiff: { x: a.pos[0], z: a.pos[2], blick: a.blick },
+        marker: ms.map(function(m){ var n = SC.PLANETEN[m.id] ? SC.PLANETEN[m.id].name : m.id; return { id: m.id, name: n, text: n + " · " + flugzeit(SC.ALL.planeten[m.id] || a.pos, a.pos) + " s", x: m.x, y: m.y, aussen: m.aussen, winkel: m.winkel, ziel: a.ziel === m.id }; })
+      }, a.zuschauer ? null : function(id){ s._zielSetzen(id); });
     }
   };
 

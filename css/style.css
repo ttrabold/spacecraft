@@ -135,3 +135,15 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
 .gluehen.weg{opacity:0}
 .cockpit{position:absolute;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(14,11,46,.7);border:2px solid #3ef0ff;color:#eef2fa;padding:8px 14px;font-weight:700;pointer-events:none;z-index:2;white-space:nowrap}
 .anleitung{text-align:left;max-width:720px;margin:0 auto}.anleitung h3:first-child{margin-top:4px}.anleitung ul{margin:0 0 6px;padding-left:22px;line-height:1.5}.anleitung li{margin:3px 0}
+.sternenkarte{position:absolute;left:calc(16px + env(safe-area-inset-left));top:calc(120px + env(safe-area-inset-top));width:150px;height:150px;background:rgba(14,11,46,.75);border:2px solid #3ef0ff;z-index:2;pointer-events:auto;box-sizing:border-box}
+.karte-titel{position:absolute;left:0;right:0;top:-20px;font-size:12px;font-weight:700;color:#3ef0ff;text-shadow:0 1px 0 #0e0b2e}
+.sternenkarte button{position:absolute;transform:translate(-50%,-50%);background:none;border:0;padding:4px;margin:0;color:#eef2fa;font-size:11px;line-height:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;white-space:nowrap;min-width:0}
+.sternenkarte button i{display:block;width:12px;height:12px;border-radius:50%;background:#6fd18a;box-shadow:0 0 6px rgba(111,209,138,.8)}
+.sternenkarte button.ziel i{background:#ffd95c;box-shadow:0 0 0 3px rgba(255,217,92,.4),0 0 8px #ffd95c}
+.sternenkarte button.ziel span{color:#ffd95c;font-weight:700}
+.karte-schiff{position:absolute;color:#3ef0ff;font-size:14px;line-height:1;pointer-events:none}
+.planet-marker{position:absolute;left:0;top:0;pointer-events:none;z-index:2;display:flex;align-items:center;gap:4px;margin:-10px 0 0 -6px;color:#eef2fa;font-size:13px;font-weight:700;text-shadow:0 1px 2px #000,0 0 4px #000;white-space:nowrap}
+.planet-marker .pfeil{visibility:hidden;color:#3ef0ff;font-size:16px}
+.planet-marker.aussen .pfeil{visibility:visible}
+.planet-marker.ziel{color:#ffd95c}.planet-marker.ziel .pfeil{color:#ffd95c}
+.planet-marker.rechts{flex-direction:row-reverse;margin-left:auto}.planet-marker.rechts>span{position:absolute;right:22px}

@@ -76,3 +76,11 @@ test("RenderAll: drei Planetenkugeln, wenige Objekte, Oberfläche aus der echten
 test("allModus blendet die Blockwelt aus und wieder ein", function(){
   var r = Object.create(SC.Render.prototype); r.szene = new THREE.Scene(); r.welt_gruppe = null; r._allSichtbar = []; r.allModus(true); gleich(r._all, true); r.allModus(false); gleich(r._all, false);
 });
+test("RenderAll: Planetenmarker im Bild und am Rand für Planeten hinter dem Schiff (#90)", function(){
+  var ra = new SC.RenderAll(); ra.kamera.aspect = 2; ra.kamera.updateProjectionMatrix();
+  ra.kugeln = [{ id: "vorn", kugel: { position: new THREE.Vector3(0, 0, -3000) } }, { id: "hinten", kugel: { position: new THREE.Vector3(0, 0, 3000) } }];
+  ra.bild({ schiff: { pos: [0, 0, 0], blick: 0, neigung: 0 } }, 1 / 60);
+  var m = ra.marker(1000, 500), v = m[0], h = m[1];
+  gleich(v.id, "vorn"); wahr(!v.aussen && Math.abs(v.x - 500) < 40 && v.y > 0 && v.y < 500, "vorn im Bild: " + v.x + "," + v.y);
+  gleich(h.id, "hinten"); wahr(h.aussen, "hinten am Rand"); wahr(h.x >= 0 && h.x <= 1000 && h.y >= 0 && h.y <= 500, "auf dem Schirm: " + h.x + "," + h.y);
+});

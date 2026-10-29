@@ -47,3 +47,13 @@ test("Spielanleitung über Pausenmenü und Weltliste, Zurück führt zurück (#8
   var w3 = document.createElement("div"), s = new SC.Slots(uiBackend()), ui3 = leereUI(w3, s);
   return ui3.zeigeWeltliste().then(function(){ w3.querySelector('[data-aktion="anleitung"]').click(); wahr(w3.textContent.indexOf(A.titel) >= 0, "aus der Weltliste"); });
 });
+test("Sternenkarte: Planeten antippbar, Marker, ausblenden (#89, #90)", function(){
+  var w = document.createElement("div"), ui = leereUI(w), gew = null;
+  ui.allKarte({ planeten: [{ id: "start", name: "Heimatplanet", x: 0, z: 0, ziel: false }, { id: "glutfrost", name: "Glutfrost", x: 5200, z: -1800, ziel: true }], schiff: { x: 100, z: 50, blick: 0.5 },
+    marker: [{ id: "glutfrost", name: "Glutfrost", text: "Glutfrost · 30 s", x: 300, y: 200, aussen: false, ziel: true }, { id: "start", name: "Heimatplanet", text: "Heimatplanet · 2 s", x: 0, y: 100, aussen: true, winkel: Math.PI }] }, function(id){ gew = id; });
+  var k = w.querySelector(".sternenkarte"); wahr(k && !k.hidden, "Karte da"); gleich(k.querySelectorAll("[data-planet]").length, 2);
+  wahr(k.querySelector('[data-planet="glutfrost"]').classList.contains("ziel"), "Ziel markiert");
+  k.querySelector('[data-planet="start"]').click(); gleich(gew, "start");
+  var m = w.querySelectorAll(".planet-marker:not([hidden])"); gleich(m.length, 2); wahr(w.textContent.indexOf("Glutfrost · 30 s") >= 0, "Markertext");
+  ui.allKarte(null); wahr(k.hidden, "Karte aus"); gleich(w.querySelectorAll(".planet-marker:not([hidden])").length, 0, "Marker aus");
+});

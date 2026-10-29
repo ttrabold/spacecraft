@@ -67,6 +67,24 @@ SC.RenderAll = function(){
       s.szene.add(kugel); s.szene.add(hauch); s.kugeln.push({ id: id, kugel: kugel, hauch: hauch });
     });
   };
+  // Planetenmarker für ein Bild der Größe breite × hoehe (Kamera des letzten Bildes): [{id, x, y, aussen, winkel}].
+  // Liegt ein Planet hinter dem Schiff oder außerhalb des Bildes, sitzt sein Marker am Rand (seitlich 40 px, oben 70, unten 110 über der Schnellleiste), winkel zeigt vom Bildmittelpunkt zu ihm.
+  RA.marker = function(breite, hoehe){
+    var k = this.kamera, v = this._v, RAND = { l: 40, r: 40, o: 70, u: 110 };
+    k.updateMatrixWorld();
+    return this.kugeln.map(function(e){
+      v.copy(e.kugel.position).project(k);
+      var hinten = v.z > 1, x = v.x, y = v.y;
+      if(hinten){ x = -x; y = -y; if(Math.abs(x) < 1e-6 && Math.abs(y) < 1e-6) y = -1; } // hinter dem Schiff: gespiegelt, notfalls unten
+      var aussen = hinten || x < -1 || x > 1 || y < -1 || y > 1, sx = (x + 1) / 2 * breite, sy = (1 - y) / 2 * hoehe, mx = breite / 2, my = hoehe / 2, w = Math.atan2(sy - my, sx - mx);
+      if(aussen){
+        // vom Mittelpunkt in Richtung des Planeten bis an den Rand
+        var dx = Math.cos(w), dy = Math.sin(w), f = Math.min(Math.abs(dx) > 1e-6 ? (mx - (dx > 0 ? RAND.r : RAND.l)) / Math.abs(dx) : Infinity, Math.abs(dy) > 1e-6 ? (my - (dy > 0 ? RAND.u : RAND.o)) / Math.abs(dy) : Infinity);
+        sx = mx + dx * f; sy = my + dy * f;
+      }
+      return { id: e.id, x: Math.round(sx), y: Math.round(sy), aussen: aussen, winkel: w };
+    });
+  };
   // Ein Bild: zustand = { schiff: {pos, blick, neigung}, asteroiden: [{pos, r}], piraten: [{pos, blick}], geschosse: [{pos, richtung}], sprung: 0..1 }
   RA.bild = function(z, dt){
     var s = this, sch = z.schiff, k = this.kamera, m = this._m, q = this._q;

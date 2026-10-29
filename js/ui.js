@@ -86,6 +86,41 @@ SC.UI = function(wurzel, o){
   // Großer Planetenname bei der Ankunft (blendet nach 3 s aus)
   // Vollbild-Glühen zum Kaschieren von Übergängen (Austritt, Eintritt, Sprung)
   // Cockpit im All: Ziel, Flugzeit, Schild; null blendet aus
+  // Sternenkarte und Planetenmarker im All (jedes Bild); info null blendet beides aus.
+  // info: { planeten: [{id, name, x, z, ziel}], schiff: {x, z, blick}, marker: [{id, text, x, y, aussen, winkel, ziel}] }; beiZiel(id) beim Antippen eines Planeten
+  SC.UI.prototype.allKarte = function(info, beiZiel){
+    var ui = this, k = this.wurzel.querySelector(".sternenkarte"), ml = this.wurzel.querySelectorAll(".planet-marker");
+    if(!info){ if(k) k.hidden = true; Array.prototype.forEach.call(ml, function(m){ m.hidden = true; }); return; }
+    this._allBeiZiel = beiZiel;
+    if(!k){
+      k = document.createElement("div"); k.className = "sternenkarte";
+      k.innerHTML = '<div class="karte-titel">' + esc(SC.T.sternenkarte) + "</div>" + info.planeten.map(function(p){ return '<button data-planet="' + esc(p.id) + '"><i></i><span>' + esc(p.name) + "</span></button>"; }).join("") + '<div class="karte-schiff">▲</div>';
+      k.addEventListener("click", function(ev){ var b = ev.target.closest("[data-planet]"); if(b && ui._allBeiZiel){ ev.stopPropagation(); ui._allBeiZiel(b.getAttribute("data-planet")); } });
+      this.wurzel.appendChild(k);
+    }
+    k.hidden = false;
+    // Maßstab: alle Planeten passen hinein, das Schiff klebt notfalls am Rand
+    var mx = 0, mz = 0, r = 1;
+    info.planeten.forEach(function(p){ mx += p.x / info.planeten.length; mz += p.z / info.planeten.length; });
+    info.planeten.forEach(function(p){ r = Math.max(r, Math.abs(p.x - mx), Math.abs(p.z - mz)); });
+    r *= 1.25;
+    function lage(x, z){ return [50 + Math.max(-1, Math.min(1, (x - mx) / r)) * 50, 50 + Math.max(-1, Math.min(1, (z - mz) / r)) * 50]; }
+    info.planeten.forEach(function(p){ var b = k.querySelector('[data-planet="' + p.id + '"]'); if(!b) return; var l = lage(p.x, p.z); b.style.left = l[0] + "%"; b.style.top = l[1] + "%"; b.classList.toggle("ziel", !!p.ziel); });
+    var sl = lage(info.schiff.x, info.schiff.z), se = k.querySelector(".karte-schiff");
+    se.style.left = sl[0] + "%"; se.style.top = sl[1] + "%"; se.style.transform = "translate(-50%,-50%) rotate(" + (-info.schiff.blick) + "rad)";
+    // Marker: einer je Planet, wiederverwendet
+    var da = {};
+    (info.marker || []).forEach(function(m){
+      var el = ui.wurzel.querySelector('.planet-marker[data-id="' + m.id + '"]');
+      if(!el){ el = document.createElement("div"); el.className = "planet-marker"; el.setAttribute("data-id", m.id); el.innerHTML = '<b class="pfeil">➤</b><span></span>'; ui.wurzel.appendChild(el); }
+      da[m.id] = true; el.hidden = false;
+      el.style.transform = "translate(" + m.x + "px," + m.y + "px)";
+      el.classList.toggle("aussen", !!m.aussen); el.classList.toggle("ziel", !!m.ziel); el.classList.toggle("rechts", m.x > ui.wurzel.clientWidth / 2);
+      el.firstChild.style.transform = "rotate(" + (m.winkel || 0) + "rad)";
+      if(el.lastChild.textContent !== m.text) el.lastChild.textContent = m.text;
+    });
+    Array.prototype.forEach.call(this.wurzel.querySelectorAll(".planet-marker"), function(m){ if(!da[m.getAttribute("data-id")]) m.hidden = true; });
+  };
   SC.UI.prototype.cockpit = function(info){
     var el = this.wurzel.querySelector(".cockpit");
     if(!info){ if(el) el.hidden = true; return; }

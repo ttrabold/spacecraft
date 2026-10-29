@@ -160,3 +160,26 @@ test("Im All kein Aussteigen und kein Planetenwechsel über F3", function(){
   var u = alSpiel(), s = u.s; alAustritt(u); gleich(s.benutzen(), false); wahr(s._imFahrzeug(), "sitzt noch");
   return s.wechslePlanet("glutfrost").then(function(){ wahr(false, "darf nicht gehen"); }, function(){ gleich(s.welt.planet.id, "start"); wahr(s.all, "noch im All"); });
 });
+test("All: Maus und Wischen lenken das Schiff, nicht bei offenem Menü (#92)", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u); var a = s.all, b0 = a.blick, n0 = a.neigung;
+  s._allBild(alE({ blickDx: 0.3, blickDy: 0.2 }), 1 / 60, false);
+  wahr(Math.abs(a.blick - b0 - 0.3) < 1e-9, "gieren"); wahr(Math.abs(a.neigung - n0 - 0.2) < 1e-9, "nicken");
+  s._allBild(alE({ blickDx: 5, blickDy: 5 }), 1 / 60, false); wahr(a.neigung <= 1.2, "Nicken begrenzt");
+  var b1 = a.blick; s._allBild(alE({ blickDx: 0.3 }), 1 / 60, true); gleich(a.blick, b1, "Menü offen");
+});
+test("All: Ziel über die Sternenkarte setzen, Anzeige bekommt Karte und Marker (#89, #90)", function(){
+  var u = alSpiel(), s = u.s, info = null, beiZiel = null; s.ui.allKarte = function(i, f){ info = i; beiZiel = f; };
+  s.render.allSzene = { marker: function(){ return [{ id: "glutfrost", x: 10, y: 20, aussen: true, winkel: 0 }]; } };
+  alAustritt(u); s._allBild(alE(), 1 / 60, false);
+  wahr(info, "Karte gezeigt"); gleich(info.planeten.length, SC.PLANET_REIHENFOLGE.length); wahr(info.schiff && typeof info.schiff.blick === "number", "Schiff auf der Karte");
+  gleich(info.marker.length, 1); gleich(info.marker[0].name, SC.PLANETEN.glutfrost.name); wahr(/\d+ s/.test(info.marker[0].text), "Flugzeit im Marker");
+  beiZiel("rankenmoor"); gleich(s.all.ziel, "rankenmoor"); beiZiel("start"); gleich(s.all.ziel, "start", "auch zurück nach Hause");
+  s._allBild(alE(), 1 / 60, false); wahr(info.planeten.some(function(p){ return p.id === "start" && p.ziel; }), "Ziel hervorgehoben");
+  s._allEnde(); gleich(info, null, "Karte weg nach dem Flug");
+});
+test("Entwickler: Planetenwechsel funktioniert auch im All (#91)", function(){
+  var u = alSpiel(), s = u.s, div = document.createElement("div"); s.render.sichtweite = 6; s.render.chunks = new Map(); s.render.chunkGrenzen = false;
+  alAustritt(u); wahr(s.all, "im All");
+  var pn = new SC.Entwickler.Panel(div, s); pn.zeige(); div.querySelector("#ew-planet").value = "glutfrost"; div.querySelector('[data-ew="planet"]').click();
+  return s._eintrittP.then(function(){ gleich(s.all, null, "aus dem All"); gleich(s.welt.planet.id, "glutfrost"); var im = s._imFahrzeug(); wahr(im && im.f.art === "raumschiff", "sitzt im Schiff"); });
+});

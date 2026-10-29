@@ -81,7 +81,9 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 - Das Raumschiff Sternenläufer steht auf dem Heimatplaneten in der Nähe des Startpunkts.
 - Spielt ihr zusammen, müssen alle an Bord sein, bevor es losgeht.
 - Flieg nach oben, bis du die Atmosphäre verlässt. Dann bist du im All.
-- Wähle mit T (oder 🎯) einen Planeten und starte mit J (oder ⚡) den Sprung.
+- Im All lenkst du mit der Maus oder durch Wischen, dazu mit den Pfeil- bzw. WASD-Tasten; W gibt Gas, S bremst.
+- Die Sternenkarte oben links zeigt alle Planeten und dein Schiff (▲). Am Bildrand zeigen Pfeile, wo die Planeten liegen.
+- Wähle mit T (oder 🎯) einen Planeten, oder tippe ihn auf der Sternenkarte an. Mit J (oder ⚡) startest du den Sprung.
 - Weiche Asteroiden aus und schieß Weltraumpiraten ab. Ist der Schild leer, rettet dich ein Notsprung.
 - Fliegst du auf einen Planeten zu, tritt das Schiff in die Atmosphäre ein und landet.
 

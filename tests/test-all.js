@@ -63,7 +63,7 @@ test("Flug im All: Schub bis 150, Ziel wählen, Sprung kommt 2,5 R vor dem Ziel 
 });
 test("Sprung ohne Ziel", function(){
   var u = alSpiel(), s = u.s; alAustritt(u); s._allBild(alE({ sprung: true }), 0.016, false);
-  gleich(s.all.phase, "all"); wahr(s.hinweise.indexOf(SC.T.allKeinZiel) >= 0, "Hinweis");
+  gleich(s.all.phase, "all"); var info = null; s.ui.cockpit = function(i){ info = i; }; s._allBild(alE(), 0.016, false); wahr(info && info.mahnen, "Cockpit blinkt");
 });
 test("Eintritt: neuer Planet, Schiff samt Insasse über der Anflugstelle", function(){
   var u = alSpiel(), s = u.s; alAustritt(u); s.all.pos = SC.All.zuKugel("glutfrost", 500, 900, 40);
@@ -195,4 +195,16 @@ test("All: nach Landung mit neuer Darstellung bekommt die neue Raumszene wieder 
   s._allEnde(); neueDarstellung(); // Landung auf einem anderen Planeten: starte() legt eine neue Darstellung an
   u.f.pos[1] = SC.ALL_GRENZE + 1; s._fahren(alE(), 1 / 60, false); wahr(s.all, "wieder im All"); gleich(s.render.allSzene.gesetzt, 1, "zweiter Flug");
   s._allEnde(); u.f.pos[1] = SC.ALL_GRENZE + 1; s._fahren(alE(), 1 / 60, false); gleich(s.render.allSzene.gesetzt, 1, "gleiche Szene: nicht neu rechnen");
+});
+test("All: Laser feuert auch beim zweiten Flug sofort", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u);
+  for(var i = 0; i < 600; i++) s._allBild(alE(), 0.05, false); // 30 s fliegen
+  s._allBild(alE({ abbauen: true }), 0.05, false); wahr(s._allGeschosse.some(function(q){ return q.team === "spieler"; }), "erster Flug");
+  s._allEnde(); alAustritt(u); s._allGeschosse = [];
+  s._allBild(alE({ abbauen: true }), 0.05, false); wahr(s._allGeschosse.some(function(q){ return q.team === "spieler"; }), "zweiter Flug");
+});
+test("All: Ziel und fehlendes Ziel nur im Cockpit, keine doppelte Meldung", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u); s.hinweise.length = 0;
+  s._allBild(alE({ sprung: true }), 1 / 60, false); s._allBild(alE({ ziel: true }), 1 / 60, false); s._zielSetzen("rankenmoor");
+  gleich(s.hinweise.length, 0, s.hinweise.join(" | ")); gleich(s.all.ziel, "rankenmoor");
 });

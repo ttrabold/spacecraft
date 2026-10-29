@@ -34,6 +34,7 @@ SC.Spiel.prototype.all = null;
     this.all = { phase: "all", pos: p, blick: Math.atan2(-n[0], -n[2]), neigung: Math.asin(n[1]), tempo: 40, ziel: null, sprungT: 0, vonPlanet: id, schiffId: f.id, schild: f.panzerung };
     if(this._astDaten !== this.daten){ this._astDaten = this.daten; this._allAsteroiden = SC.All.asteroiden(SC.hashText(this.daten.seed + ":all")); }
     this._allPiraten = []; this._allGeschosse = []; this._allZeit = 0; this._piratZeit = 40 + Math.random() * 30;
+    this._laserBereit = this._astBereit = 0; this._mahnen = 0; // Sperren laufen in _allZeit, die bei jedem Flug neu beginnt
     this._allSzeneAn();
     if(this.ui.gluehen) this.ui.gluehen("#cfe8ff", 700);
   };
@@ -57,7 +58,7 @@ SC.Spiel.prototype.all = null;
         a.blick += ((e.links ? 1 : 0) - (e.rechts ? 1 : 0)) * 1.2 * dt + (e.blickDx || 0);
         a.neigung = Math.max(-1.2, Math.min(1.2, a.neigung + ((e.springen ? 1 : 0) - (e.sinken ? 1 : 0)) * 1.0 * dt + (e.blickDy || 0)));
         if(e.ziel) this._zielWechseln();
-        if(e.sprung){ if(!a.ziel) this.ui.hinweis(SC.T.allKeinZiel, 2000); else { a.phase = "sprung"; a.sprungT = 0; this.audio.spiele("aufstieg"); } }
+        if(e.sprung){ if(!a.ziel) this._mahnen = 1.2; else { a.phase = "sprung"; a.sprungT = 0; this.audio.spiele("aufstieg"); } }
       }
       var fw = vorwaerts(a); a.pos = [a.pos[0] + fw[0] * a.tempo * dt, a.pos[1] + fw[1] * a.tempo * dt, a.pos[2] + fw[2] * a.tempo * dt];
       if(this._allKampf(e, dt, offen)) return; // Notsprung
@@ -158,23 +159,25 @@ SC.Spiel.prototype.all = null;
   // Ziel reihum durch die anderen Planeten
   S._zielWechseln = function(){
     var a = this.all, l = SC.PLANET_REIHENFOLGE.filter(function(id){ return id !== a.vonPlanet; }), i = l.indexOf(a.ziel);
-    a.ziel = l[(i + 1) % l.length]; this.ui.hinweis(SC.T.allZiel.replace("{name}", SC.PLANETEN[a.ziel].name), 1500);
+    a.ziel = l[(i + 1) % l.length]; // das Cockpit zeigt das Ziel
+
   };
   // Ziel direkt setzen (Sternenkarte), nur als Pilot außerhalb des Sprungs → true, wenn gesetzt
   S._zielSetzen = function(id){
     var a = this.all; if(!a || a.zuschauer || a.phase !== "all" || !SC.ALL.planeten[id]) return false;
-    a.ziel = id; this.ui.hinweis(SC.T.allZiel.replace("{name}", SC.PLANETEN[id].name), 1500); return true;
+    a.ziel = id; return true; // das Cockpit zeigt das Ziel
   };
   function flugzeit(c, pos){ return Math.max(0, Math.round((Math.hypot(c[0] - pos[0], c[1] - pos[1], c[2] - pos[2]) - 1.25 * SC.ALL.radius) / SC.ALL.tempo)); }
   // Raumszene und Cockpit-Anzeige
   S._allAnzeige = function(){
     var a = this.all; if(!a) return;
+    if(this._mahnen > 0) this._mahnen -= 1 / 60;
     if(this.render) this.render.allZustand = { schiff: { pos: a.pos, blick: a.blick, neigung: a.neigung }, sprung: a.phase === "sprung" ? Math.min(1, a.sprungT / 0.6) : 0,
       asteroiden: this._allAsteroiden || [], piraten: this._allPiraten || [], geschosse: this._allGeschosse || [] };
     if(this.ui.cockpit){
       var ziel = a.ziel ? SC.ALL.planeten[a.ziel] : null;
       this.ui.cockpit({ ziel: a.ziel ? SC.PLANETEN[a.ziel].name : null, sekunden: ziel ? flugzeit(ziel, a.pos) : null,
-        schild: Math.round(100 * (typeof a.schild === "number" ? a.schild : SC.FAHRZEUGE.raumschiff.panzerung) / SC.FAHRZEUGE.raumschiff.panzerung), sprung: a.phase === "sprung" });
+        schild: Math.round(100 * (typeof a.schild === "number" ? a.schild : SC.FAHRZEUGE.raumschiff.panzerung) / SC.FAHRZEUGE.raumschiff.panzerung), sprung: a.phase === "sprung", mahnen: this._mahnen > 0 });
     }
     // Sternenkarte (von oben, x/z) und Planetenmarker im Bild; Antippen eines Planeten auf der Karte setzt das Ziel
     if(this.ui.allKarte && a.pos){

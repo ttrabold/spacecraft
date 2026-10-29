@@ -123,9 +123,11 @@ SC.UI = function(wurzel, o){
   };
   SC.UI.prototype.cockpit = function(info){
     var el = this.wurzel.querySelector(".cockpit");
+    this.wurzel.classList.toggle("mit-cockpit", !!info); // Hinweise rücken unter das Cockpit
     if(!info){ if(el) el.hidden = true; return; }
     if(!el){ el = document.createElement("div"); el.className = "cockpit"; this.wurzel.appendChild(el); }
     el.hidden = false;
+    el.classList.toggle("mahnen", !!info.mahnen);
     var t = (info.ziel ? "🎯 " + info.ziel + (info.sekunden !== null ? " · " + info.sekunden + " s" : "") : SC.T.allKeinZiel) + " · " + SC.T.allSchild + " " + info.schild + " %" + (info.sprung ? " · " + SC.T.allSprung : "");
     if(el.textContent !== t) el.textContent = t;
   };

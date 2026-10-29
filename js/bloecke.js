@@ -3,7 +3,8 @@ SC.B = {
   LUFT: 0, GRUNDGESTEIN: 1, STEIN: 2, ERDE: 3, GRAS: 4, SAND: 5, KIES: 6, SCHNEE: 7, WASSER: 8,
   STAMM: 9, BLAETTER: 10, KRISTALL: 11, LEUCHTPILZ: 12, BRETTER: 13, STEINZIEGEL: 14, GLAS: 15,
   WOLLE_ROT: 16, WOLLE_BLAU: 17, WOLLE_GELB: 18, WOLLE_WEISS: 19, METALL: 20, METALLGITTER: 21,
-  TECHNIK: 22, LEUCHT_CYAN: 23, LEUCHT_PINK: 24, LEUCHT_GRUEN: 25, BETON: 26, KISTE: 27, KISTE_OFFEN: 28
+  TECHNIK: 22, LEUCHT_CYAN: 23, LEUCHT_PINK: 24, LEUCHT_GRUEN: 25, BETON: 26, KISTE: 27, KISTE_OFFEN: 28,
+  LAVA: 29, EIS: 30, SCHLAMM: 31, BASALT: 32                       // Stufe 5a: neue Planeten
 };
 
 // Muster je Textur (Farben kommen aus der Palette des Planeten)
@@ -14,7 +15,8 @@ SC.TEXTUREN = {
   bretter: "bretter", steinziegel: "ziegel", glas: "glas", wolle_rot: "wolle", wolle_blau: "wolle",
   wolle_gelb: "wolle", wolle_weiss: "wolle", metall: "platte", metallgitter: "gitter", technik: "technik",
   leucht_cyan: "leucht", leucht_pink: "leucht", leucht_gruen: "leucht", beton: "beton",
-  kiste_oben: "kistedeckel", kiste_seite: "kiste", kiste_offen: "kisteoffen"
+  kiste_oben: "kistedeckel", kiste_seite: "kiste", kiste_offen: "kisteoffen",
+  lava: "lava", eis: "eis", schlamm: "schlamm", basalt: "basalt"
 };
 
 SC.BLOECKE = {};
@@ -50,7 +52,11 @@ SC.BLOECKE = {};
     [SC.B.LEUCHT_GRUEN, "leuchtGruen", alle("leucht_gruen"), true, false, 15, [0.4, 1.0, 0.65], true, true],
     [SC.B.BETON, "beton", alle("beton"), true, false, 0, null, true, true],
     [SC.B.KISTE, "kiste", { oben: "kiste_oben", seite: "kiste_seite", unten: "kiste_seite" }, true, false, 6, [1.0, 0.8, 0.35], false, false],
-    [SC.B.KISTE_OFFEN, "kisteOffen", { oben: "kiste_offen", seite: "kiste_seite", unten: "kiste_seite" }, true, false, 0, null, false, false]
+    [SC.B.KISTE_OFFEN, "kisteOffen", { oben: "kiste_offen", seite: "kiste_seite", unten: "kiste_seite" }, true, false, 0, null, false, false],
+    [SC.B.LAVA, "lava", alle("lava"), false, true, 15, [1.0, 0.5, 0.15], false, true],
+    [SC.B.EIS, "eis", alle("eis"), true, true, 0, null, true, true],
+    [SC.B.SCHLAMM, "schlamm", alle("schlamm"), true, false, 0, null, true, true],
+    [SC.B.BASALT, "basalt", alle("basalt"), true, false, 0, null, true, true]
   ];
   D.forEach(function(d){
     SC.BLOECKE[d[0]] = { id: d[0], name: SC.T.bloecke[d[1]], seiten: d[2], fest: d[3], durchsichtig: d[4], leuchten: d[5], lichtFarbe: d[6], zerstoerbar: d[7], inAuswahl: d[8] };

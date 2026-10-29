@@ -105,6 +105,7 @@ SC.T = {
   platzName: { waffe: "Waffe", helm: "Helm", brust: "Brust", handschuhe: "Hände", stiefel: "Stiefel", schild: "Schild" },
   ueberhitzt: "Überhitzt!",
   kisteLeer: "Diese Kiste ist leer.",
+  planeten: { start: "Heimatplanet", glutfrost: "Glutfrost", rankenmoor: "Rankenmoor" },
   fahrzeuge: { gleiter: "Schwebeflitzer", buggy: "Kraterkäfer", flieger: "Kometenjäger" },
   fahrzeugEinsteigen: "{name}: Einsteigen mit F oder 🚗", fahrzeugFahrer: "Du fährst den {name}. Aussteigen mit F.", fahrzeugMitfahrer: "Du fährst im {name} mit. Aussteigen mit F.",
   fahrzeugVoll: "Alle vier Plätze sind schon besetzt.", fahrzeugPanzerung: "Panzerung", fahrzeugeTitel: "Fahrzeuge", fahrzeugKeinPlatz: "Hier ist kein Platz für ein Fahrzeug.", ewFahrzeugeWeg: "Fahrzeuge weg",
@@ -141,6 +142,7 @@ SC.T = {
     bretter: "Holzbretter", steinziegel: "Steinziegel", glas: "Glas", wolleRot: "Rote Wolle", wolleBlau: "Blaue Wolle",
     wolleGelb: "Gelbe Wolle", wolleWeiss: "Weiße Wolle", metall: "Metallplatte", metallgitter: "Metallgitter",
     technik: "Technikblock", leuchtCyan: "Leuchtblock Cyan", leuchtPink: "Leuchtblock Pink", leuchtGruen: "Leuchtblock Grün",
-    beton: "Bunkerbeton", kiste: "Schatzkiste", kisteOffen: "Offene Schatzkiste"
+    beton: "Bunkerbeton", kiste: "Schatzkiste", kisteOffen: "Offene Schatzkiste",
+    lava: "Lava", eis: "Eis", schlamm: "Schlamm", basalt: "Basalt"
   }
 };

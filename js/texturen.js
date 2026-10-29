@@ -42,6 +42,11 @@ SC.Texturen = {};
         case "kistedeckel": c = x === 0 || x === 15 || y === 0 || y === 15 ? d : (x === 7 || x === 8) ? d : y % 4 === 1 ? mische(g, [0, 0, 0], 0.2) : g; break;
         case "kisteoffen": var ro = x === 0 || x === 15 || y === 0 || y === 15; c = ro ? d : h; break;
         case "beton": c = zf() < 0.25 ? d : zf() < 0.1 ? h : g; if(y === 7) c = d; break;
+        // Stufe 5a: glühende Adern, glattes Eis mit Rissen, Schlamm mit Blasen, dunkles Vulkangestein
+        case "lava": var ad = Math.sin(x * 0.9 + y * 0.5) + Math.sin(y * 1.3 - x * 0.4); c = ad > 1.1 ? h : ad < -0.8 ? d : g; break;
+        case "eis": c = (x + 2 * y) % 13 === 0 || (x === 11 && y > 3 && y < 9) ? h : zf() < 0.08 ? d : g; a = 215; break;
+        case "schlamm": c = rausch(x, y, 0.4); if((x - 4) * (x - 4) + (y - 10) * (y - 10) < 3 || (x - 11) * (x - 11) + (y - 4) * (y - 4) < 2) c = h; break;
+        case "basalt": r = zf(); c = r < 0.25 ? d : r < 0.33 ? h : g; if(x % 5 === 0 && y % 4 !== 0) c = d; break;
       }
       setze(x, y, c, a);
     }

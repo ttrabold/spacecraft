@@ -215,6 +215,7 @@ SC.Spiel.startpunkt = function(planet){
     return this.speichere("planet").then(function(){
       var d = s.daten; SC.Planeten.anlegen(d, id); d.aktuellerPlanet = id; d.spieler.pos = null; d.spieler.blick = [0, 0];
       s.lebenszyklusAbmelden(document); s.starte(d);
+      var r = s.raum; if(r instanceof SC.Gastgeber){ r.setzeWelt(s.welt); if(r._k) r._k.kampf = s.kampf; r.planetWechsel(); } // alle Gäste kommen mit
       if(s.ui.ankunft) s.ui.ankunft(SC.PLANETEN[id].name);
       return s.speichere("planet");
     });
@@ -442,7 +443,14 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype._gastBereit = function(gast, chunks){
     var s = this;
     if(this.raum !== gast) return;
-    if(this.daten && this.daten.id === "gast" && this.welt){ this._gastWiederkehr(gast, chunks); return; }
+    if(this.daten && this.daten.id === "gast" && this.welt && !gast._planetWechsel){ this._gastWiederkehr(gast, chunks); return; }
+    if(gast._planetWechsel && this.daten){
+      // Planetenwechsel des Gastgebers: Figur behalten (in die eigene Welt übernehmen), Gastwelt neu aufbauen
+      gast._planetWechsel = false; this._figurSpeichern(); this._fzWar = null; this.lebenszyklusAbmelden(document);
+      this._gastErsterEintritt(gast, chunks);
+      if(this.ui.ankunft) this.ui.ankunft(SC.Planeten.def(this.welt.planet).name);
+      return;
+    }
     // Scheitert der erste Eintritt, wird das halb gestartete Spiel abgebaut; der Fehler beendet den Beitritt (SC.Gast lehnt ihn ab)
     try{ this._gastErsterEintritt(gast, chunks); }catch(e){ if(this.daten) this._abbauen(); throw e; }
   };

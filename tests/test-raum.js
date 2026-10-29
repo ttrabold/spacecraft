@@ -212,7 +212,7 @@ test("Raum: Zweite Verbindung derselben Figur ersetzt die alte", function(){
 // --- Fahrzeuge im Raum (Stufe 4, Protokoll 2) ---
 test("Raum: Protokoll 1 wird abgelehnt", function(){
   var u, r;
-  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Alt", { protokoll: 1 }); return raumBeitritt(u, r); }).then(function(e){ gleich(SC.NETZ_PROTOKOLL, 2); gleich(e.fehler && e.fehler.art, "version"); });
+  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Alt", { protokoll: 1 }); return raumBeitritt(u, r); }).then(function(e){ wahr(SC.NETZ_PROTOKOLL >= 2); gleich(e.fehler && e.fehler.art, "version"); });
 });
 function rfMehr(u, namen){ var l = []; return namen.reduce(function(p, n){ return p.then(function(){ var r = raumGast(u, n); l.push(r); return raumBeitritt(u, r); }); }, Promise.resolve()).then(function(){ return l; }); }
 test("Raum: Vier Spieler in einem Fahrzeug, Liste geht an die Gäste", function(){
@@ -282,4 +282,8 @@ test("Raum: Gast misst die Laufzeit per Ping, Gastgeber rechnet die Fahrerlage u
 test("Raum: Spiegel rechnet Fahrzeuge um die Laufzeit voraus", function(){
   var w = { planet: { groesse: 2048 }, fahrzeuge: new Map() }, l = [{ id: "a", art: "gleiter", pos: [100, 60, 100], blick: 0, geschw: [10, 0, 0], tempo: 10, panzerung: 120, sitze: ["x", null, null, null], weg: false, frei: true }];
   SC.Raum.spiegleFahrzeuge(w, l, 0, "ich", 0.15); wahr(Math.abs(w.fahrzeuge.get("a").pos[0] - 101.5) < 1e-6, "neu angelegt schon vorausgerechnet: " + w.fahrzeuge.get("a").pos[0]);
+});
+test("Raum: Protokoll 2 wird abgelehnt", function(){
+  var u, r;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Alt", { protokoll: 2 }); return raumBeitritt(u, r); }).then(function(e){ gleich(SC.NETZ_PROTOKOLL, 3); gleich(e.fehler && e.fehler.art, "version"); });
 });

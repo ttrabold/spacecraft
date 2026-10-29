@@ -133,3 +133,30 @@ test("Speichern und Laden auf Rankenmoor startet dort", function(){
     var s2 = mspSpielVoll(u.sl); s2.starte(d2); gleich(s2.welt.planet.id, "rankenmoor"); gleich(s2.welt.planet.landschaft, "rankenmoor");
   });
 });
+
+// --- Planetenwechsel im gemeinsamen Spiel ---
+test("Mehrspieler: Gastgeber wechselt Planet, Gast kommt mit", function(){
+  var u, ruck;
+  return mspZwei().then(function(x){ u = x; u.g.kampf.rucksack.lege({ block: SC.B.KIES, anzahl: 5 }); ruck = JSON.stringify(u.g.kampf.rucksack.alsDaten()); return u.h.wechslePlanet("glutfrost"); })
+  .then(function(){ return mspLauf(u.netz, 4); }).then(function(){
+    gleich(u.g.welt.planet.id, "glutfrost"); gleich(u.g.welt.planet.landschaft, "glutfrost"); gleich(u.g.rolle, "gast"); gleich(u.g.raum.status, "verbunden");
+    var lp = u.h.landepunkt(); wahr(Math.hypot(u.g.spieler.pos[0] - lp[0], u.g.spieler.pos[2] - lp[2]) < 3, "Gast am Landepunkt");
+    gleich(JSON.stringify(u.g.kampf.rucksack.alsDaten()), ruck, "Rucksack unverändert"); wahr(u.g.ui.ankuenfte && u.g.ui.ankuenfte[0] === "Glutfrost", "Ankunft beim Gast");
+    u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){ u.g._raumBild(0.1, false); wahr(u.g._mitspielerListe().length === 1, "Gastgeber sichtbar"); }).then(mspFertig, mspFehler);
+});
+test("Planetenwechsel verwirft offene Wünsche", function(){
+  var u, x, y, z;
+  return mspZwei().then(function(v){ u = v; x = Math.floor(u.g.spieler.pos[0]) + 3; y = 90; z = Math.floor(u.g.spieler.pos[2]);
+    u.g.raum._nr = 100; u.g.raum._wuensche[100] = { id: SC.B.GLAS, alt: SC.B.LUFT, nr: 100, x: x, y: y, z: z }; // unbestätigter Wunsch
+    return u.h.wechslePlanet("glutfrost"); }).then(function(){ return mspLauf(u.netz, 4); }).then(function(){
+    gleich(Object.keys(u.g.raum._wuensche).length, 0, "verworfen"); gleich(u.h.welt.holeBlock(x, y, z) === SC.B.GLAS, false, "nicht auf Glutfrost");
+  }).then(mspFertig, mspFehler);
+});
+test("Mehrspieler: Blockänderung nach dem Wechsel kommt an", function(){
+  var u, alt;
+  return mspZwei().then(function(v){ u = v; alt = u.h.welt; return u.h.wechslePlanet("rankenmoor"); }).then(function(){ return mspLauf(u.netz, 4); }).then(function(){
+    var lp = u.h.landepunkt(), x = Math.floor(lp[0]), y = 100, z = Math.floor(lp[2]) + 2;
+    u.h.welt.setzeBlock(x, y, z, SC.B.METALL, "spieler"); alt.setzeBlock(x, y + 1, z, SC.B.GLAS, "spieler"); return mspLauf(u.netz).then(function(){ return [x, y, z]; });
+  }).then(function(p){ gleich(u.g.welt.holeBlock(p[0], p[1], p[2]), SC.B.METALL, "neue Welt"); gleich(u.g.welt.holeBlock(p[0], p[1] + 1, p[2]) === SC.B.GLAS, false, "alte Welt sendet nicht"); }).then(mspFertig, mspFehler);
+});

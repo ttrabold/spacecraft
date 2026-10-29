@@ -26,8 +26,7 @@ SC.Gastgeber = function(o){
   this.uhr = o.uhr || function(){ return typeof performance !== "undefined" ? performance.now() : Date.now(); }; // Spieluhr für getroffenBis
   this._takt = 0; this._zeitTakt = 0;
   this._wunschNr = {}; this._abgelehnt = {}; // figurId → höchste verarbeitete Wunsch-Nummer bzw. zuletzt abgelehnte Nummern
-  var s = this;
-  if(this.welt) this.welt.ereignisse.an("block", function(b){ s._blockGeaendert(b); });
+  if(this.welt) this.setzeWelt(this.welt);
 };
 (function(){
   var G = SC.Gastgeber.prototype;
@@ -60,6 +59,8 @@ SC.Gastgeber = function(o){
       s._weg(c);
     });
   };
+  // Welt anbinden (auch nach einem Planetenwechsel): nur Blockänderungen der aktuellen Welt gehen an die Gäste
+  G.setzeWelt = function(welt){ var s = this; s.welt = welt; welt.ereignisse.an("block", function(b){ if(s.welt === welt) s._blockGeaendert(b); }); };
   G._eintrag = function(id){ for(var i = 0; i < this.spieler.length; i++) if(this.spieler[i].id === id) return this.spieler[i]; return null; };
   // Eintrag weg: auch die je Empfänger gemerkte Ausrüstung dieses Spielers vergessen (die Gäste löschen ihn aus mitspieler)
   G._entferne = function(id){ this.spieler = this.spieler.filter(function(e){ return e.id !== id; }); for(var v in this._verb){ var c = this._verb[v]; if(c.ausr) delete c.ausr[id]; } };
@@ -97,11 +98,29 @@ SC.Gastgeber = function(o){
     var e = s._eintrag(id);
     if(!e){ e = { id: id, name: c.name, farbe: s._freieFarbe(), pos: pos, blick: blick, modus: d.modus, stufe: 1, ausr: null, menue: false, lebt: true, verbunden: true }; s.spieler.push(e); }
     else { e.name = c.name; e.verbunden = true; e._marke = null; }
+    s._sendeWelt(c, e, pos, blick);
+    s._listeGeaendert(id);
+  };
+  // Welt an einen Gast: willkommen, je geändertem Chunk eine chunk-Nachricht, bereit
+  G._sendeWelt = function(c, e, pos, blick){
+    var s = this, id = c.id;
     c.verb.sende({ t: "willkommen", farbe: e.farbe, welt: s._weltInfo(), pos: pos, blick: blick, pvp: s.pvp, spieler: s.liste(), chunkAnzahl: s.welt.geaenderte.size,
       wunschNr: s._wunschNr[id] || 0, abgelehnt: (s._abgelehnt[id] || []).slice() });
     s.welt.geaenderte.forEach(function(u8, k){ c.verb.sende({ t: "chunk", k: k, daten: u8 }); });
     c.verb.sende({ t: "bereit" });
-    s._listeGeaendert(id);
+  };
+  // Gastgeber hat den Planeten gewechselt (vorher setzeWelt): alle Gäste bekommen „planet“ und die neue Welt, alle stehen am Landepunkt
+  G.planetWechsel = function(){
+    var s = this, d = s.daten, lp = SC.Planeten.landepunkt(d);
+    if(s._zu) return;
+    for(var id in s._verb){
+      var c = s._verb[id], e = s._eintrag(id); if(!e) continue;
+      s._wunschNr[id] = 0; s._abgelehnt[id] = [];
+      e.pos = lp.slice(); e.blick = [0, 0]; d.mitspieler[id] = { name: c.name, pos: lp.slice(), blick: [0, 0], planet: d.aktuellerPlanet };
+      c.verb.sende({ t: "planet" });
+      s._sendeWelt(c, e, lp.slice(), [0, 0]);
+    }
+    s._listeGeaendert();
   };
   G._weg = function(c){
     if(!c.drin || this._verb[c.id] !== c) return;
@@ -319,6 +338,8 @@ SC.Gast = function(o){
   G.trenne = function(){ this._ende = true; this._loese(); this._abschluss(new SC.Netz.Fehler("abbruch")); };
 
   SC.Gast.NACHRICHTEN = {
+    // Der Gastgeber wechselt den Planeten: offene Wünsche verfallen, danach kommt die neue Welt wie beim Beitritt
+    planet: function(){ this._planetWechsel = true; this._wuensche = {}; this._fzRaus = null; this.fahrzeuge = []; this.wesen = []; },
     warte: function(){ if(!this._fertig) this._status("warte"); },
     ablehnen: function(n){
       var g = n.grund; this._ende = true; this._loese();

@@ -18,3 +18,27 @@ test("Spiel: Raumschiff entsteht einmal pro Welt", function(){
   s.welt.fahrzeuge.delete("schiff"); s.starte(d); gleich(s.welt.fahrzeuge.has("schiff"), false, "kein zweites, wenn es woanders ist");
 });
 test("Höhenfaktor: 0 am Boden, 1 an der Grenze", function(){ gleich(SC.Render.hoehenFaktor(60), 0); gleich(SC.Render.hoehenFaktor(128), 0); gleich(SC.Render.hoehenFaktor(SC.ALL_GRENZE), 1); wahr(Math.abs(SC.Render.hoehenFaktor((128 + SC.ALL_GRENZE) / 2) - 0.5) < 1e-9); gleich(SC.Render.hoehenFaktor(999), 1); });
+
+// --- Sonnensystem, Kugel ↔ Torus ---
+test("Kugel ↔ Torus hin und zurück", function(){
+  ["start", "glutfrost", "rankenmoor"].forEach(function(id){
+    for(var x = 0; x < 2048; x += 173) for(var z = 3; z < 2048; z += 191){
+      var p = SC.All.zuKugel(id, x, z, 30), t = SC.All.zuTorus(id, p), dx = Math.abs(SC.mod(t.x - x + 1024, 2048) - 1024);
+      wahr(dx < 1 && Math.abs(t.z - z) < 1, id + " " + x + "," + z + " → " + t.x.toFixed(1) + "," + t.z.toFixed(1));
+      var c = SC.ALL.planeten[id], r = Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2]); wahr(Math.abs(r - SC.ALL.radius - 30) < 1e-6, "Abstand");
+    }
+  });
+});
+test("Kugel ↔ Torus an Polen und Rändern", function(){
+  var c = SC.ALL.planeten.glutfrost, R = SC.ALL.radius;
+  [[0, R + 50, 0], [0, -(R + 50), 0], [R + 50, 0, 0], [R + 50, 0, -0.0001]].forEach(function(o){
+    var t = SC.All.zuTorus("glutfrost", [c[0] + o[0], c[1] + o[1], c[2] + o[2]]); wahr(t.x >= 0 && t.x < 2048 && t.z >= 0 && t.z < 2048, "gültig: " + t.x + "," + t.z);
+  });
+});
+test("Abstände: Nachbarplaneten bei Flugtempo 150 in 30–60 s", function(){
+  [["start", "glutfrost"], ["start", "rankenmoor"]].forEach(function(p){
+    var a = SC.ALL.planeten[p[0]], b = SC.ALL.planeten[p[1]], s = (Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) - 2 * SC.ALL.radius) / SC.ALL.tempo;
+    wahr(s >= 30 && s <= 60, p.join("–") + ": " + s.toFixed(1) + " s");
+  });
+  var n = SC.All.naechster([SC.ALL.planeten.rankenmoor[0] + 500, SC.ALL.planeten.rankenmoor[1], SC.ALL.planeten.rankenmoor[2]]); gleich(n.id, "rankenmoor"); wahr(Math.abs(n.abstand - 100) < 1e-6);
+});

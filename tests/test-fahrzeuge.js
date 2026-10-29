@@ -144,3 +144,51 @@ test("naechstes: findet nur in Reichweite, nicht verpuffte, über die Ringgrenze
   g.weg = true; gleich(SC.Fahrzeug.naechstes(w, [503, 60, 500]), null, "verpufft");
   gleich(SC.Fahrzeug.naechstes(w, [1, 80, 10]), null, "weit darüber");
 });
+
+// --- Fundorte, Start-Gleiter, Speichern ---
+function fzEchteWelt(seed){ return new SC.Welt(new SC.Planet({ id: "start", seed: seed || 1234 })); }
+function fzBauwerkMitFundort(w){ for(var r = 0; r < 16; r++){ var l = SC.Bauwerke.inRegion(w.planet, r, 0).filter(function(b){ return SC.Fahrzeug.FUNDORT_ART[b.typ]; }); if(l.length) return l[0]; } return null; }
+test("Fundort liefert genau einmal", function(){
+  var w = fzEchteWelt(), b = fzBauwerkMitFundort(w), pos = [b.x, 80, b.z];
+  SC.Fahrzeug.fundorteNah(w, pos); SC.Fahrzeug.fundorteNah(w, pos);
+  var f = w.fahrzeuge.get(b.schluessel); wahr(f, "Fahrzeug am Bauwerk"); gleich(f.art, SC.Fahrzeug.FUNDORT_ART[b.typ]); gleich(f.fundort, b.schluessel);
+  var n = 0; w.fahrzeuge.forEach(function(x){ if(x.fundort === b.schluessel) n++; }); gleich(n, 1);
+  f.pos = [SC.mod(b.x + 300, 2048), 90, b.z]; SC.Fahrzeug.fundorteNah(w, pos); n = 0; w.fahrzeuge.forEach(function(x){ if(x.fundort === b.schluessel) n++; }); gleich(n, 1, "weggefahren: kein zweites");
+  var leer = fzEchteWelt(); SC.Fahrzeug.fundorteNah(leer, [SC.mod(b.x + 1000, 2048), 80, SC.mod(b.z + 1000, 2048)]); gleich(leer.fahrzeuge.has(b.schluessel), false, "nur in der Nähe");
+});
+test("Fundorte sind deterministisch und passen zur Bauwerksart", function(){
+  var a = fzEchteWelt(77), c = fzEchteWelt(77), b = fzBauwerkMitFundort(a);
+  SC.Fahrzeug.fundorteNah(a, [b.x, 80, b.z]); SC.Fahrzeug.fundorteNah(c, [b.x, 80, b.z]);
+  var fa = a.fahrzeuge.get(b.schluessel), fc = c.fahrzeuge.get(b.schluessel); gleich(JSON.stringify(fa.pos), JSON.stringify(fc.pos)); gleich(fa.art, fc.art);
+  gleich(SC.Fahrzeug.FUNDORT_ART.lager, "buggy"); gleich(SC.Fahrzeug.FUNDORT_ART.station, "flieger"); gleich(SC.Fahrzeug.FUNDORT_ART.herrenhaus, "gleiter"); gleich(SC.Fahrzeug.FUNDORT_ART.dungeon, undefined);
+  wahr(!fzImBlock(a, fa), "steht frei"); wahr(JSON.stringify(fa.heim) === JSON.stringify(fa.pos), "heim = Fundort");
+});
+test("Start-Gleiter nur einmal", function(){
+  var w = fzEchteWelt(), sp = SC.Spiel.startpunkt(w.planet);
+  SC.Fahrzeug.sichereStart(w, sp); SC.Fahrzeug.sichereStart(w, sp); SC.Fahrzeug.sichereStart(w, sp);
+  var n = 0; w.fahrzeuge.forEach(function(){ n++; }); gleich(n, 1); var f = w.fahrzeuge.get("start"); gleich(f.art, "gleiter"); gleich(f.fundort, "start");
+  var d = Math.hypot(f.pos[0] - sp[0], f.pos[2] - sp[2]); wahr(d >= 6 && d <= 10.5, "Abstand " + d); wahr(!fzImBlock(w, f), "frei");
+  var unter = SC.BLOECKE[w.holeBlock(f.pos[0], Math.floor(f.pos[1] - SC.FAHRZEUGE.gleiter.schwebt) - 1, f.pos[2])]; wahr(unter.fest && unter.id !== SC.B.WASSER, "auf festem Boden");
+});
+test("Speichern und Laden behält Lage, Panzerung, Verpuffen", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "flieger", [5, 70, 6], 1.2, { id: "station@0,0", fundort: "station@0,0", heim: [5, 61, 6] });
+  f.panzerung = 33; f.weg = true; f.wiederBei = 500; SC.Fahrzeug.einsteigen(f, "a"); var g = SC.Fahrzeug.neu(w, "buggy", [9, 61, 9], 0);
+  var daten = JSON.parse(JSON.stringify(SC.Fahrzeug.inDaten(w))), w2 = fzWelt(); SC.Fahrzeug.ausDaten(w2, daten);
+  var f2 = w2.fahrzeuge.get("station@0,0"); gleich(f2.art, "flieger"); gleich(JSON.stringify(f2.pos), "[5,70,6]"); gleich(f2.blick, 1.2); gleich(f2.panzerung, 33); gleich(f2.weg, true); gleich(f2.wiederBei, 500);
+  gleich(JSON.stringify(f2.heim), "[5,61,6]"); gleich(JSON.stringify(f2.sitze), "[null,null,null,null]", "Sitze leer"); wahr(w2.fahrzeuge.get(g.id), "freies Fahrzeug");
+});
+test("Wiederkehr nach 120 s", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "buggy", [50, 61, 50], 0.4, { id: "lager@0,0", fundort: "lager@0,0", heim: [5, 60, 6] });
+  f.panzerung = 0; f.weg = true; f.wiederBei = 120;
+  SC.Fahrzeug.wiederkehr(w, 119); gleich(f.weg, true);
+  SC.Fahrzeug.wiederkehr(w, 120); gleich(f.weg, false); gleich(JSON.stringify(f.pos), "[5,60,6]"); gleich(f.panzerung, SC.FAHRZEUGE.buggy.panzerung); gleich(f.wiederBei, null); gleich(f.blick, 0);
+});
+test("Spiel: neue Welt hat Start-Gleiter, Fundorte im Takt, Speichern und Laden behält Fahrzeuge", function(){
+  var sl = mspSlots(), s = mspSpielVoll(sl), d = SC.Spielstand.neu({ name: "F", seedText: "fz", modus: "survival", figurName: "Mia" });
+  s.starte(d); wahr(s.welt.fahrzeuge.get("start"), "Start-Gleiter");
+  var b = fzBauwerkMitFundort(s.welt); s.spieler.pos = [b.x, 90, b.z]; s._fahrzeugTakt(1.1); wahr(s.welt.fahrzeuge.get(b.schluessel), "Fundort im Takt");
+  s.welt.fahrzeuge.get("start").panzerung = 7;
+  return s.speichere("test").then(function(){
+    var s2 = mspSpielVoll(sl); return sl.lade(d.id).then(function(d2){ s2.starte(d2); gleich(s2.welt.fahrzeuge.get("start").panzerung, 7); wahr(s2.welt.fahrzeuge.get(b.schluessel), "Fundort-Fahrzeug geladen"); var n = 0; s2.welt.fahrzeuge.forEach(function(f){ if(f.fundort === "start") n++; }); gleich(n, 1); });
+  });
+});

@@ -161,13 +161,14 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     welt.fahrzeuge.forEach(function(f){ if(f.weg) return; var a = abstand(welt, f, pos); if(a.senkrecht <= 1.5 && a.waagerecht <= r && a.waagerecht < bd){ bd = a.waagerecht; best = f; } });
     return best;
   };
-  // Passt ein Spielerkörper an p, ohne einen festen Block zu schneiden?
-  function frei(welt, p){
-    var hb = SC.PHYSIK.breite / 2 - 0.01, xs = [p[0] - hb, p[0] + hb], zs = [p[2] - hb, p[2] + hb];
-    for(var y = Math.floor(p[1]); y <= Math.floor(p[1] + SC.PHYSIK.hoehe - 0.01); y++)
-      for(var i = 0; i < 2; i++) for(var j = 0; j < 2; j++){ var b = SC.BLOECKE[welt.holeBlock(xs[i], y, zs[j])]; if(b && b.fest) return false; }
+  // Passt ein Körper (Standard: Spieler) an p, ohne einen festen Block zu schneiden? Geprüft wird jede Blockspalte der Grundfläche.
+  function frei(welt, p, breite, hoehe){
+    var hb = (breite || SC.PHYSIK.breite) / 2 - 0.01, h = hoehe || SC.PHYSIK.hoehe;
+    for(var x = Math.floor(p[0] - hb); x <= Math.floor(p[0] + hb); x++) for(var z = Math.floor(p[2] - hb); z <= Math.floor(p[2] + hb); z++)
+      for(var y = Math.floor(p[1]); y <= Math.floor(p[1] + h - 0.01); y++){ var b = SC.BLOECKE[welt.holeBlock(x, y, z)]; if(b && b.fest) return false; }
     return true;
   }
+  F.frei = frei;
   // Freier Platz zum Aussteigen: neben dem Sitz, dann im Umkreis bis 3 Blöcke um das Fahrzeug (je auf Fahrzeug- und eine Blockhöhe darüber),
   // sonst obenauf (notfalls höher)
   F.aussteigePos = function(welt, f, sitz){
@@ -181,5 +182,67 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     var oben = [f.pos[0], f.pos[1] + d.hoehe, f.pos[2]];
     for(var n = 0; n < 12 && !frei(welt, oben); n++) oben[1] += 1;
     return oben;
+  };
+
+  // --- Fundorte: Lager → Buggy, Station → Flieger, Herrenhaus → Gleiter, dazu "start" (Gleiter beim Startpunkt) ---
+  // Die ID eines Fundort-Fahrzeugs ist der Fundort-Schlüssel; es wird nie gelöscht, darum liefert jeder Fundort genau einmal.
+  F.FUNDORT_ART = { lager: "buggy", station: "flieger", herrenhaus: "gleiter" };
+  // Freie Stelle für Fahrzeug art: Spalten in festen Ringen um (x, z) (Abstand rMin..rMax), Boden fest und trocken, Körper frei
+  function freieStelle(welt, x, z, art, rMin, rMax){
+    var d = SC.FAHRZEUGE[art], P = welt.planet.groesse;
+    for(var r = rMin; r <= rMax; r++) for(var k = 0, n = r ? 16 : 1; k < n; k++){
+      var a = k / n * Math.PI * 2, px = SC.mod(Math.floor(x + Math.sin(a) * r), P) + 0.5, pz = SC.mod(Math.floor(z + Math.cos(a) * r), P) + 0.5, y = SC.CHUNK.H - 2;
+      while(y > 1 && !SC.BLOECKE[welt.holeBlock(px, y - 1, pz)].fest && welt.holeBlock(px, y - 1, pz) !== SC.B.WASSER) y--;
+      if(welt.holeBlock(px, y - 1, pz) === SC.B.WASSER) continue;
+      var p = [px, y + (d.schwebt || 0), pz];
+      if(frei(welt, p, d.breite, d.hoehe)) return p;
+    }
+    return null;
+  }
+  F.fundortPos = function(welt, b){
+    var art = F.FUNDORT_ART[b.typ];
+    return freieStelle(welt, b.x + b.breite + 2 + SC.FAHRZEUGE[art].breite / 2, b.z + (b.tiefe >> 1), art, 0, 8);
+  };
+  F.startPos = function(welt, startpunkt){ return freieStelle(welt, startpunkt[0], startpunkt[2], "gleiter", 6, 10); };
+  // Fundort-Fahrzeuge der Bauwerke im Umkreis r (Ringabstand zur Bauwerksmitte) anlegen, sofern es sie noch nicht gibt
+  F.fundorteNah = function(welt, pos, r){
+    r = r || 96;
+    var pl = welt.planet, P = pl.groesse, rx = Math.floor(pos[0] / 128), rz = Math.floor(pos[2] / 128);
+    for(var i = -1; i <= 1; i++) for(var j = -1; j <= 1; j++) SC.Bauwerke.inRegion(pl, rx + i, rz + j).forEach(function(b){
+      var art = F.FUNDORT_ART[b.typ];
+      if(!art || welt.fahrzeuge.has(b.schluessel)) return;
+      var dx = SC.mod(b.x + b.breite / 2 - pos[0] + P / 2, P) - P / 2, dz = SC.mod(b.z + b.tiefe / 2 - pos[2] + P / 2, P) - P / 2;
+      if(Math.hypot(dx, dz) > r) return;
+      var p = F.fundortPos(welt, b);
+      if(p) F.neu(welt, art, p, 0, { id: b.schluessel, fundort: b.schluessel, heim: p });
+    });
+  };
+  F.sichereStart = function(welt, startpunkt){
+    if(welt.fahrzeuge.has("start") || !startpunkt) return;
+    var p = F.startPos(welt, startpunkt);
+    if(p) F.neu(welt, "gleiter", p, 0, { id: "start", fundort: "start", heim: p });
+  };
+  // Verpuffte Fundort-Fahrzeuge kommen zur Zeit wiederBei (Spielzeit) mit voller Panzerung an den Fundort zurück
+  F.wiederkehr = function(welt, spielzeit){
+    welt.fahrzeuge.forEach(function(f){
+      if(!f.weg || f.wiederBei === null || spielzeit < f.wiederBei || !f.heim) return;
+      f.pos = f.heim.slice(); f.blick = 0; f.geschw = [0, 0, 0]; f.tempo = 0; f.panzerung = SC.FAHRZEUGE[f.art].panzerung;
+      f.weg = false; f.wiederBei = null; f.sitze = [null, null, null, null];
+    });
+  };
+
+  // --- Speichern: je Planet { id: {art, pos, blick, panzerung, fundort, heim, weg, wiederBei} }, ohne Sitze und Tempo ---
+  F.inDaten = function(welt){
+    var o = {};
+    welt.fahrzeuge.forEach(function(f, id){ o[id] = { art: f.art, pos: f.pos.slice(), blick: f.blick, panzerung: f.panzerung, fundort: f.fundort, heim: f.heim ? f.heim.slice() : null, weg: !!f.weg, wiederBei: f.wiederBei }; });
+    return o;
+  };
+  F.ausDaten = function(welt, o){
+    for(var id in o || {}){
+      var e = o[id]; if(!e || !SC.FAHRZEUGE[e.art] || !Array.isArray(e.pos)) continue;
+      var f = F.neu(welt, e.art, e.pos, +e.blick || 0, { id: id, fundort: e.fundort, heim: e.heim });
+      if(typeof e.panzerung === "number") f.panzerung = e.panzerung;
+      f.weg = !!e.weg; f.wiederBei = typeof e.wiederBei === "number" ? e.wiederBei : null;
+    }
   };
 })();

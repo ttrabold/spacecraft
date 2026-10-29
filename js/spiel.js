@@ -114,6 +114,10 @@ SC.Spiel.startpunkt = function(planet){
     var sp = daten.spieler, pos = sp.pos || SC.Spiel.startpunkt(planet);
     this.spieler = new SC.Spieler({ id: "ich", pos: pos, blick: sp.blick, modus: daten.modus, schnellleiste: sp.schnellleisteKreativ || sp.schnellleiste, ansicht: sp.ansicht });
     if(!daten.startpunkt) daten.startpunkt = sp.pos ? SC.Spiel.startpunkt(planet) : pos.slice();
+    // Fahrzeuge der Welt; der Start-Gleiter wird auch in alten Welten nachgezogen (nicht in der Gastwelt: die Fahrzeuge kommen vom Gastgeber)
+    SC.Fahrzeug.ausDaten(this.welt, pd.fahrzeuge);
+    if(daten.id !== "gast") SC.Fahrzeug.sichereStart(this.welt, daten.startpunkt);
+    this._fzTakt = 0;
     // Survival: Kampfwerte, Rucksack, Gegner
     this._zf = SC.zufall((Date.now() ^ (Math.random() * 4294967296)) >>> 0);
     this.kampf = new SC.Kampf(this.welt, this.spieler, daten, this._zf);
@@ -173,10 +177,21 @@ SC.Spiel.startpunkt = function(planet){
     sp.schritt(w, e, dt);
     this._geraeusche(e, vorBoden, vy, dt);
     this._survival(e, dt, offen, t);
+    this._fahrzeugTakt(dt);
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
     if(this.raum) this._raumBild(dt, offen);
     if(ew.offen() && (this._ewZeit = (this._ewZeit || 0) + dt) > 0.25){ this._ewZeit = 0; ew.aktualisiere(); }
     this.render.bild(sp, this.tageszeit, dt);
+  };
+
+  // Einmal pro Sekunde (nicht als Gast): Fundort-Fahrzeuge in der Nähe aller Spieler anlegen, verpuffte zurückholen
+  SC.Spiel.prototype._fahrzeugTakt = function(dt){
+    if(this.rolle === "gast" || (this._fzTakt = (this._fzTakt || 0) + dt) < 1) return;
+    this._fzTakt = 0;
+    var w = this.welt, r = this.raum, orte = [this.spieler.pos];
+    if(r instanceof SC.Gastgeber) r.spieler.forEach(function(e){ if(e.verbunden && e.pos) orte.push(e.pos); });
+    orte.forEach(function(p){ SC.Fahrzeug.fundorteNah(w, p); });
+    SC.Fahrzeug.wiederkehr(w, this.daten.spielzeit || 0);
   };
 
   SC.Spiel.prototype.zeigeRucksack = function(){

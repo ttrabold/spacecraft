@@ -181,3 +181,25 @@ test("Mehrspieler: eigener Sitz folgt dem Fahrzeug im selben Bild, nicht ein Bil
     gleich(JSON.stringify(s.spieler.pos), JSON.stringify(SC.Fahrzeug.sitzPos(f, 1, 2048)), "Gastgeber: Sitz nach dem Vorausrechnen");
   }).then(mspFertig, mspFehler);
 });
+test("Fahren: Platz wechseln vom Fahrer- auf den Mitfahrersitz und zurück (#86)", function(){
+  var u = fhSpiel(), s = u.s, sp = s.spieler;
+  gleich(s.platzWechseln(), false, "nicht im Fahrzeug");
+  s.benutzen(); gleich(s._imFahrzeug().sitz, 0);
+  wahr(s.platzWechseln(), "gewechselt"); gleich(s._imFahrzeug().sitz, 1); gleich(u.f.sitze[0], null);
+  var soll = SC.Fahrzeug.sitzPos(u.f, 1, s.welt.planet.groesse); wahr(Math.hypot(sp.pos[0] - soll[0], sp.pos[2] - soll[2]) < 0.01, "Figur sitzt am neuen Platz");
+  var x = u.f.pos[0]; fhE60(s, { vor: true }, 30); wahr(Math.abs(u.f.pos[0] - x) < 0.01 && u.f.tempo === 0, "Mitfahrer steuert nicht");
+  s.platzWechseln(); s.platzWechseln(); s.platzWechseln(); gleich(s._imFahrzeug().sitz, 0, "reihum wieder Fahrer");
+});
+test("Mehrspieler: Gast wechselt den Platz über den Gastgeber (#86)", function(){
+  var u, f, fg, id;
+  return mspZwei().then(function(x){ u = x; f = u.h.welt.fahrzeuge.get("start"); u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){
+    u.g._raumBild(0.1, false); fg = u.g.welt.fahrzeuge.get("start"); u.g.spieler.pos = SC.Fahrzeug.aussteigePos(u.g.welt, fg, 0); u.g._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){ u.g.benutzen(); return mspLauf(u.netz); }).then(function(){
+    u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){
+    u.g._raumBild(0.1, false); id = u.eigen.spieler.figurId; gleich(u.g._imFahrzeug().sitz, 0);
+    wahr(u.g.platzWechseln(), "Wunsch geschickt"); return mspLauf(u.netz);
+  }).then(function(){
+    gleich(f.sitze.indexOf(id), 1, "Gastgeber setzt um"); u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){ u.g._raumBild(0.1, false); gleich(u.g._imFahrzeug().sitz, 1, "Gast sitzt hinten"); mspFertig(); }, mspFehler);
+});

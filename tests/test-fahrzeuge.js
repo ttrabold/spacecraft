@@ -103,6 +103,14 @@ test("Sitze: erster wird Fahrer, weitere Mitfahrer, fünfter passt nicht", funct
   gleich(SC.Fahrzeug.einsteigen(f, "e"), -1); gleich(JSON.stringify(f.sitze), '["a","b","c","d"]');
   var s = SC.Fahrzeug.sitzVon(w, "c"); wahr(s && s.f === f && s.sitz === 2, "sitzVon"); gleich(SC.Fahrzeug.sitzVon(w, "e"), null);
 });
+test("Sitze: Platz wechseln geht reihum zum nächsten freien Sitz (#86)", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "gleiter", [20, 60.6, 20], 0);
+  gleich(SC.Fahrzeug.platzWechseln(f, "a"), -1, "nicht drin");
+  SC.Fahrzeug.einsteigen(f, "a"); SC.Fahrzeug.einsteigen(f, "b"); SC.Fahrzeug.einsteigen(f, "c");
+  gleich(SC.Fahrzeug.platzWechseln(f, "a"), 3); gleich(JSON.stringify(f.sitze), '[null,"b","c","a"]');
+  gleich(SC.Fahrzeug.platzWechseln(f, "b"), 0, "reihum, auch auf den freien Fahrersitz"); gleich(JSON.stringify(f.sitze), '["b",null,"c","a"]');
+  SC.Fahrzeug.einsteigen(f, "d"); gleich(SC.Fahrzeug.platzWechseln(f, "c"), -1, "voll"); gleich(JSON.stringify(f.sitze), '["b","d","c","a"]');
+});
 test("Sitze: Fahrer steigt aus, niemand rückt nach", function(){
   var w = fzWelt(), f = SC.Fahrzeug.neu(w, "buggy", [20, 60, 20], 0);
   SC.Fahrzeug.einsteigen(f, "a"); SC.Fahrzeug.einsteigen(f, "b");

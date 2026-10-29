@@ -647,7 +647,7 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
 
 // --- Fahrzeuge im Raum (Stufe 4) ---
 // Der Gastgeber hält Sitze und Panzerung; der Fahrer rechnet sein Fahrzeug selbst und schickt die Lage mit seinem zustand (fz).
-// Nachrichten: einsteigen G→H {id}, aussteigen G→H, fzHinstellen G→H {art, pos, blick}, fzEntfernen G→H {id},
+// Nachrichten: einsteigen G→H {id}, aussteigen G→H, platz G→H, fzHinstellen G→H {art, pos, blick}, fzEntfernen G→H {id},
 // fahrzeuge H→G (15 Hz, Umkreis SC.RAUM_FZ_NAH) {liste: [{id, art, pos, blick, geschw, tempo, panzerung, sitze, weg, frei}]}, verpufft H→G {id, pos}.
 SC.RAUM_FZ_NAH = 96;
 (function(){
@@ -687,6 +687,7 @@ SC.RAUM_FZ_NAH = 96;
     SC.Fahrzeug.einsteigen(f, c.id);
   };
   HN.aussteigen = function(c){ this._fzRaus(c.id); };
+  HN.platz = function(c){ if(this.gastAll && this.gastAll.von === c.id) return; var s = this.welt && SC.Fahrzeug.sitzVon(this.welt, c.id); if(s) SC.Fahrzeug.platzWechseln(s.f, c.id); };
   // Gast-Pilot im All: Eintritt bzw. Notsprung führt der Gastgeber aus (Planetenwechsel für alle)
   function schiffVon(s, id){ var r = null; if(s.welt) s.welt.fahrzeuge.forEach(function(f){ if(f.sitze[0] === id && f.art === "raumschiff") r = f; }); return r; }
   HN.eintritt = function(c, n){ var f = schiffVon(this, c.id), o = Array.isArray(n.ort) && n.ort.length === 2 ? n.ort : null; if(!f || !SC.PLANETEN[n.id] || !o) return; this.gastAll = null; ruf(this.o.beiEintritt, f, n.id, o, n.schild); };
@@ -699,6 +700,7 @@ SC.RAUM_FZ_NAH = 96;
   G.einsteigen = function(id){ this.sende({ t: "einsteigen", id: id }); };
   // Selbst ausgestiegen: bis die Liste des Gastgebers das zeigt, den eigenen Sitz darin nicht mehr beachten
   G.aussteigen = function(id){ this._fzRaus = id || true; this.sende({ t: "aussteigen" }); };
+  G.platzWechseln = function(){ this.sende({ t: "platz" }); };
   G.fzHinstellen = function(art, pos, blick){ this.sende({ t: "fzHinstellen", art: art, pos: pos.slice(), blick: blick }); };
   G.fzEntfernen = function(id){ this.sende({ t: "fzEntfernen", id: id }); };
   GN.fahrzeuge = function(n){

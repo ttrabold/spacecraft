@@ -167,6 +167,12 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     return -1;
   };
   F.aussteigen = function(f, id){ var i = f.sitze.indexOf(id); if(i < 0) return false; f.sitze[i] = null; return true; };
+  // Platz wechseln: reihum zum nächsten freien Sitz (auch auf den Fahrersitz) → neuer Sitz oder -1 (nicht drin oder kein Platz frei)
+  F.platzWechseln = function(f, id){
+    var i = f.sitze.indexOf(id), n = f.sitze.length; if(i < 0) return -1;
+    for(var k = 1; k < n; k++){ var j = (i + k) % n; if(f.sitze[j] === null){ f.sitze[i] = null; f.sitze[j] = id; return j; } }
+    return -1;
+  };
   F.sitzVon = function(welt, id){ var r = null; welt.fahrzeuge.forEach(function(f){ var i = f.sitze.indexOf(id); if(i >= 0 && !r) r = { f: f, sitz: i }; }); return r; };
   // Lokalen Versatz [x, y, z] mit blick drehen → Weltposition
   function dreh(f, o, P){

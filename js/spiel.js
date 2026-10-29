@@ -181,6 +181,7 @@ SC.Spiel.startpunkt = function(planet){
       }
       if(e.ansicht) sp.ansicht = sp.ansicht === "ich" ? "aussen" : "ich";
       if(e.benutzen) this.benutzen();
+      if(e.platz) this.platzWechseln();
       if(e.auswahl !== null) sp.auswahl = e.auswahl;
       if(e.auswahlRad) sp.auswahl = SC.mod(sp.auswahl + e.auswahlRad, 9);
     }

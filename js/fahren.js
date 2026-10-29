@@ -40,6 +40,22 @@
     this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, im.f, im.sitz));
     return true;
   };
+  // Platz-Taste (G / 💺): im Fahrzeug reihum auf den nächsten freien Sitz; im All nicht (der Pilot bleibt am Steuer) → true, wenn etwas passiert ist
+  S.platzWechseln = function(){
+    var im = this._imFahrzeug(); if(!im || this.all) return false;
+    if(this.raum instanceof SC.Gast){ // der Gastgeber setzt um; die Liste zeigt danach den neuen Sitz
+      if(im.f.sitze.indexOf(null) < 0){ this.ui.hinweis(SC.T.fahrzeugKeinSitz, 2000); return false; }
+      this.raum.platzWechseln(); return true;
+    }
+    var sitz = SC.Fahrzeug.platzWechseln(im.f, this._fzId());
+    if(sitz < 0){ this.ui.hinweis(SC.T.fahrzeugKeinSitz, 2000); return false; }
+    this._platzGewechselt(im.f, sitz);
+    return true;
+  };
+  S._platzGewechselt = function(f, sitz){
+    this._fahrzeugFolgen({ f: f, sitz: sitz }, true);
+    this.ui.hinweis((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.FAHRZEUGE[f.art].name), 2500);
+  };
   // Spieler steht wieder (pos: Aussteigeposition)
   S._ausgestiegen = function(pos){
     var sp = this.spieler;
@@ -93,6 +109,7 @@
     var im = this._imFahrzeug();
     if(im && !war) this._eingestiegen(im.f, im.sitz);
     else if(!im && war) this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, war.f, war.sitz));
+    else if(im && war && im.f === war.f && im.sitz !== war.sitz) this._platzGewechselt(im.f, im.sitz);
     else if(im) this._fahrzeugFolgen(im, false); // gespiegeltes Fahrzeug hat sich bewegt: Sitz im selben Bild nachziehen
     this._fzWar = im;
   };

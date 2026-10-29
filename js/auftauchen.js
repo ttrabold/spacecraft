@@ -84,7 +84,7 @@ SC.Auftauchen = function(welt, daten, zf){
         var key = b.schluessel + "#" + k;
         if(bes[k] || (a.platzGegner[key] && w.wesen.has(a.platzGegner[key]))) return;
         var boss = q.typ === "boss", art = boss ? b.bossArt : ba[Math.floor(zf() * ba.length)];
-        var stufe = Math.max(1, b.stufe + Math.floor(zf() * 3) - 1 + (boss ? 2 : 0));
+        var stufe = Math.min(SC.Werte.MAX_STUFE, Math.max(1, b.stufe + Math.floor(zf() * 3) - 1 + (boss ? 2 : 0)));
         var e = a._neu(art, stufe, [q.x + 0.5, q.y, q.z + 0.5], { ort: b.typ, bauwerk: b.schluessel, platzKey: key, platzIndex: k });
         if(e) a.platzGegner[key] = e.id;
       });

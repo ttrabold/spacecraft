@@ -160,3 +160,11 @@ test("Mehrspieler: Blockänderung nach dem Wechsel kommt an", function(){
     u.h.welt.setzeBlock(x, y, z, SC.B.METALL, "spieler"); alt.setzeBlock(x, y + 1, z, SC.B.GLAS, "spieler"); return mspLauf(u.netz).then(function(){ return [x, y, z]; });
   }).then(function(p){ gleich(u.g.welt.holeBlock(p[0], p[1], p[2]), SC.B.METALL, "neue Welt"); gleich(u.g.welt.holeBlock(p[0], p[1] + 1, p[2]) === SC.B.GLAS, false, "alte Welt sendet nicht"); }).then(mspFertig, mspFehler);
 });
+test("Gegnerstufen höchstens MAX_STUFE, auch an Dungeons mit Aufschlag", function(){
+  var d = SC.Spielstand.neu({ name: "S", seedText: "surv5", modus: "survival" }); SC.Planeten.anlegen(d, "glutfrost"); d.aktuellerPlanet = "glutfrost";
+  var p = new SC.Planet(d.planeten.glutfrost), w = new SC.Welt(p), a = new SC.Auftauchen(w, d, SC.zufall(3)), b = null;
+  for(var rx = 0; rx < 16 && !b; rx++) for(var rz = 0; rz < 4 && !b; rz++) SC.Bauwerke.inRegion(p, rx, rz).forEach(function(x){ if(x.typ === "dungeon" && x.stufe === SC.Werte.MAX_STUFE && !b) b = x; });
+  wahr(b, "Dungeon mit hoher Stufe"); var sp = new SC.Spieler({ id: "ich", pos: [b.x + b.breite / 2, b.y + 3, b.z + b.tiefe / 2], modus: "survival" });
+  for(var i = 0; i < 3; i++) a.schritt(sp, 1, i);
+  var n = 0, boss = 0; w.wesen.forEach(function(e){ if(e.art === "gegner"){ n++; if(e.boss) boss++; wahr(e.stufe <= SC.Werte.MAX_STUFE, e.gegnerArt + " Stufe " + e.stufe); } }); wahr(n > 0, "Gegner erschienen"); gleich(boss, 1, "Boss erschienen");
+});

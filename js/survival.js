@@ -84,6 +84,7 @@
         if(k.ausweichen(t, dir)) a.spiele("springen");
       }
       k.blocken(e.setzenGehalten && wdef && wdef.typ === "schwert"); s.render.blocke(k.blockt);
+      if(sp.imLava && !imFz){ var lr = k.lava(dt); if(lr.schaden > 0) a.spiele("getroffen"); }
       // Angreifen bzw. Abbauen
       if(imFz && imFz.sitz === 0){ if(e.abbauen || e.abbauenGehalten) this._bordschuss(imFz.f, t); } // Fahrer: Bordgeschütz statt eigener Waffe
       else if(waffe && (e.abbauen || e.abbauenGehalten)){

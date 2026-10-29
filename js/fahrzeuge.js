@@ -90,7 +90,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   function boden(welt, pos){
     for(var y = Math.floor(pos[1] + 0.5); y > pos[1] - 24 && y > 0; y--){
       var b = SC.BLOECKE[welt.holeBlock(pos[0], y - 1, pos[2])];
-      if(b && (b.fest || b.id === SC.B.WASSER)) return y;
+      if(b && (b.fest || b.id === SC.B.WASSER || b.id === SC.B.LAVA)) return y; // der Gleiter schwebt auch über Lava
     }
     return -Infinity;
   }
@@ -221,6 +221,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
       if(p) F.neu(welt, art, p, 0, { id: b.schluessel, fundort: b.schluessel, heim: p }); else ohne[b.schluessel] = true;
     });
   };
+  F.inLava = function(welt, f){ return welt.holeBlock(f.pos[0], f.pos[1] + 0.3, f.pos[2]) === SC.B.LAVA; };
   F.sichereStart = function(welt, startpunkt){
     if(welt.fahrzeuge.has("start") || !startpunkt) return;
     var p = F.startPos(welt, startpunkt);

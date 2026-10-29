@@ -159,8 +159,10 @@
   // Pro Bild dort, wo Gegner gerechnet werden (allein oder Gastgeber): Rammen und Erholung
   S._fahrzeugKampf = function(dt){
     var s = this, w = this.welt, k = this.kampf, z = this.daten.spielzeit || 0;
+    var survival = this.spieler.modus === "survival";
     w.fahrzeuge.forEach(function(f){
       SC.Fahrzeug.erholung(f, dt, z);
+      if(survival && !f.weg && SC.Fahrzeug.inLava(w, f)) s._fahrzeugSchaden(f, 15 * dt); // Buggy oder Flieger in Lava
       SC.Fahrzeug.rammen(w, f, z).forEach(function(r){
         if(r.boss){ s.audio.spiele("blocken"); return; }
         var g = r.gegner, tr = k.trifftGegner(g, r.schaden, [-Math.sin(f.blick), 0, -Math.cos(f.blick)]);

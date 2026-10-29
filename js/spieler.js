@@ -34,7 +34,9 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     if(this.modus !== "kreativ" && !zus) this.fliegt = false;
 
     var fb = SC.BLOECKE[welt.holeBlock(this.pos[0], this.pos[1] + 0.4, this.pos[2])];
-    this.imWasser = !!fb && fb.id === SC.B.WASSER;
+    this.imWasser = !!fb && (fb.id === SC.B.WASSER || fb.id === SC.B.LAVA); this.imLava = !!fb && fb.id === SC.B.LAVA; // in Lava schwimmt man wie in Wasser
+    // Untergrund: Eis rutscht, Schlamm bremst
+    var unter = this.aufBoden && !this.fliegt ? welt.holeBlock(this.pos[0], this.pos[1] - 0.05, this.pos[2]) : SC.B.LUFT;
 
     // Gewünschte Richtung in der Ebene, relativ zur Blickrichtung
     var g = this.blick[0], vx = 0, vz = 0;
@@ -43,8 +45,10 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     var l = Math.hypot(vx, vz); if(l > 0){ vx /= l; vz /= l; }
     var tempo = this.fliegt ? F.fliegen * (this.flugFaktor || 1) * (e.sprint ? 1.6 : 1) : e.sprint ? F.sprint : F.laufen;
     if(this.imWasser && !this.fliegt) tempo *= 0.6;
+    if(unter === SC.B.SCHLAMM) tempo *= 0.6;
     tempo *= this.tempoFaktor || 1;
-    this.geschw[0] = vx * tempo; this.geschw[2] = vz * tempo;
+    if(unter === SC.B.EIS){ var k = Math.min(1, 3 * dt); this.geschw[0] += (vx * tempo - this.geschw[0]) * k; this.geschw[2] += (vz * tempo - this.geschw[2]) * k; }
+    else { this.geschw[0] = vx * tempo; this.geschw[2] = vz * tempo; }
     // Ausweichen: kurzer Schub zusätzlich zur Laufrichtung
     if(this.schub && this.schub.t > 0){ this.geschw[0] += this.schub.v[0]; this.geschw[2] += this.schub.v[1]; this.schub.t -= dt; }
 

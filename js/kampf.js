@@ -159,6 +159,18 @@ SC.Kampf = function(welt, spieler, daten, zf){
     return auf;
   };
   // Erfahrung und Beute für einen besiegten Gegner würfeln (ohne sie zu verbuchen); im Raum einmal für alle
+  // Nächstes Ufer um pos (Ringe bis r): fester Block, der keine Lava ist, darüber zwei freie Blöcke ohne Lava → Standposition oder null
+  SC.Kampf.ufer = function(welt, pos, r){
+    var P = welt.planet.groesse, L = SC.B.LAVA;
+    for(var d = 1; d <= r; d++) for(var k = 0, n = Math.max(8, d * 6); k < n; k++){
+      var a = k / n * Math.PI * 2, x = Math.floor(SC.mod(pos[0] + Math.sin(a) * d, P)), z = Math.floor(SC.mod(pos[2] + Math.cos(a) * d, P));
+      for(var y = Math.floor(pos[1]) + 4; y >= Math.floor(pos[1]) - 6; y--){
+        var b = welt.holeBlock(x, y, z), o1 = welt.holeBlock(x, y + 1, z), o2 = welt.holeBlock(x, y + 2, z);
+        if(SC.BLOECKE[b].fest && b !== L && !SC.BLOECKE[o1].fest && !SC.BLOECKE[o2].fest && o1 !== L && o2 !== L) return [x + 0.5, y + 1, z + 0.5];
+      }
+    }
+    return null;
+  };
   SC.Kampf.beuteFuer = function(g, daten, zf){
     var def = SC.GEGNER[g.gegnerArt] || {}, boss = !!(def.boss || g.boss);
     var xp = SC.Werte.erfahrungFuerGegner(g.stufe, boss);
@@ -177,6 +189,22 @@ SC.Kampf = function(welt, spieler, daten, zf){
     if(jetzt - this.zuletztGetroffen > 3000) w.schild = Math.min(w.schildMax, w.schild + w.schildMax * 0.2 * dt * (this.sonder.has("schnellladen") ? 2 : 1));
   };
 
+  // Survival in Lava (alle 0,5 s): Schaden 6 wie ein Treffer, Schub nach oben und zum nächsten Ufer; liegt es weiter als 8 Blöcke,
+  // wird man direkt dorthin gesetzt, damit niemand im großen Lavasee festhängt. Kreativ und Zuschauer: nichts. → { schaden }
+  K.lava = function(dt){
+    var sp = this.spieler;
+    this._lavaT = (this._lavaT || 0) - dt;
+    if(sp.modus !== "survival" || this._lavaT > 0) return { schaden: 0 };
+    this._lavaT = 0.5;
+    var r = this.trifftSpieler(6, [0, -1, 0], null);
+    sp.geschw[1] = 9;
+    var u = SC.Kampf.ufer(this.welt, sp.pos, 32);
+    if(u){
+      var P = this.welt.planet.groesse, dx = SC.mod(u[0] - sp.pos[0] + P / 2, P) - P / 2, dz = SC.mod(u[2] - sp.pos[2] + P / 2, P) - P / 2, d = Math.hypot(dx, dz) || 1;
+      if(d > 8){ sp.pos = u; sp.geschw = [0, 0, 0]; } else sp.schub = { v: [dx / d * 7, dz / d * 7], t: 0.5 };
+    }
+    return r;
+  };
   K.besiegt = function(){ return this.werte.lp <= 0; };
 
   K.wiederbeleben = function(startpunkt){

@@ -54,7 +54,7 @@ test("Fahren: Blick dreht beim Lenken mit dem Fahrzeug mit", function(){
 test("Panzerung: Treffer auf Insassen gehen aufs Fahrzeug", function(){
   var u = fhSpiel(), s = u.s, k = s.kampf; s.benutzen(); s._fahren(fhE(), 1 / 60, false);
   var lp = k.werte.lp, r = k.trifftSpieler(10, [0, 0, 1], null);
-  gleich(k.werte.lp, lp, "Spieler unverletzt"); wahr(r.fahrzeug, "umgeleitet"); wahr(u.f.panzerung < SC.FAHRZEUGE.gleiter.panzerung, "Panzerung sinkt");
+  gleich(k.werte.lp, lp, "Spieler unverletzt"); wahr(r.fahrzeug, "umgeleitet"); gleich(SC.FAHRZEUGE.gleiter.panzerung - u.f.panzerung, 10 * SC.SCHWIERIGKEIT[s.daten.schwierigkeit].schaden, "genau einmal mit Schwierigkeit");
   s.aussteigen(); k.trifftSpieler(10, [0, 0, 1], null); wahr(k.werte.lp < lp, "draußen trifft es wieder den Spieler");
 });
 test("Panzerung: Kreativ nimmt keinen Schaden", function(){
@@ -103,4 +103,36 @@ test("Entwickler: Fahrzeug erscheinen lassen, Fahrzeuge weg schickt Fundort-Fahr
 test("Blockauswahl: Reiter Fahrzeuge stellt hin", function(){
   var w = document.createElement("div"), ui = new SC.UI(w, {}), gew = []; ui.zeigeBlockauswahl(function(){}, { ausruestung: true, beiFahrzeug: function(a){ gew.push(a); } });
   var k = w.querySelectorAll('[data-aktion="fahrzeug"]'); gleich(k.length, 3); ui._klick(k[1]); gleich(gew[0], "buggy");
+});
+
+// --- Gemeinsam spielen ---
+function fhE60(s, o, n){ for(var i = 0; i < (n || 60); i++) s._fahren(fhE(o), 1 / 60, false); }
+test("Mehrspieler: Gast steigt ein und fährt, Gastgeber sieht Lage und Sitz, Gast speichert keine Fahrzeuge", function(){
+  var u, f, fg;
+  return mspZwei().then(function(x){ u = x; f = u.h.welt.fahrzeuge.get("start"); wahr(f, "Start-Gleiter beim Gastgeber"); u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){
+    u.g._raumBild(0.1, false); fg = u.g.welt.fahrzeuge.get("start"); wahr(fg, "beim Gast gespiegelt");
+    u.g.spieler.pos = SC.Fahrzeug.aussteigePos(u.g.welt, fg, 0); u.g._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){ gleich(u.g.benutzen(), true); return mspLauf(u.netz); }).then(function(){
+    gleich(f.sitze[0], u.eigen.spieler.figurId, "Gastgeber setzt den Gast als Fahrer"); u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){
+    u.g._raumBild(0.1, false); var im = u.g._imFahrzeug(); wahr(im && im.sitz === 0, "Gast sitzt"); gleich(u.g.spieler.ansicht, "aussen");
+    fhE60(u.g, { vor: true }); u.g._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){
+    wahr(Math.hypot(f.pos[0] - fg.pos[0], f.pos[2] - fg.pos[2]) < 0.5, "Lage beim Gastgeber: " + f.pos + " / " + fg.pos);
+    wahr(typeof u.h.raum.spieler[0].sitzt === "number", "Gastgeber sieht den Gast sitzen");
+    return u.g.speichere("test");
+  }).then(function(){
+    gleich(JSON.stringify(u.sG.b.m["welt:" + u.eigen.id].planeten.start.fahrzeuge), "{}", "eigene Welt ohne Fahrzeuge");
+    gleich(u.g.benutzen(), true, "aussteigen"); gleich(u.g._imFahrzeug(), null); return mspLauf(u.netz);
+  }).then(function(){
+    gleich(f.sitze[0], null, "Sitz beim Gastgeber frei"); u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){ u.g._raumBild(0.1, false); gleich(u.g._imFahrzeug(), null, "bleibt draußen"); }).then(mspFertig, mspFehler);
+});
+test("Mehrspieler: Verpuffen setzt den Gast ab", function(){
+  var u, f;
+  return mspZwei().then(function(x){ u = x; f = u.h.welt.fahrzeuge.get("start"); SC.Fahrzeug.einsteigen(f, u.eigen.spieler.figurId); u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){
+    u.g._raumBild(0.1, false); wahr(u.g._imFahrzeug(), "sitzt"); u.h.raum.treffer(u.eigen.spieler.figurId, 99999, [0, 0, 1], null); u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){
+    u.g._raumBild(0.1, false); gleich(u.g._imFahrzeug(), null, "abgesetzt"); gleich(u.g.spieler.sitzt, null); wahr(SC.Fahrzeug.frei(u.g.welt, u.g.spieler.pos), "steht frei"); gleich(f.weg, true);
+  }).then(mspFertig, mspFehler);
 });

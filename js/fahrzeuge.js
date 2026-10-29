@@ -250,13 +250,13 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   // --- Kampf: Panzerung, Verpuffen, Erholung, Rammen ---
   F.WIEDERKEHR = 120; F.ERHOLUNG = 4; F.ERHOLUNG_NACH = 8;
   // Schaden aufs Fahrzeug. Bei 0 steigen alle aus; ein Fundort-Fahrzeug wartet F.WIEDERKEHR s auf die Rückkehr, ein freies ist weg.
-  // → { verpufft, ausgestiegen: [IDs] }
+  // → { verpufft, ausgestiegen: [IDs], sitze (vor dem Verpuffen, nur wenn verpufft) }
   F.schaden = function(welt, f, menge, spielzeit){
     var r = { verpufft: false, ausgestiegen: [] };
     if(f.weg || !(menge > 0)) return r;
     f.panzerung = Math.max(0, f.panzerung - menge); f.zuletztGetroffen = spielzeit;
     if(f.panzerung > 0) return r;
-    r.verpufft = true; r.ausgestiegen = f.sitze.filter(function(id){ return id !== null; });
+    r.verpufft = true; r.sitze = f.sitze.slice(); r.ausgestiegen = f.sitze.filter(function(id){ return id !== null; });
     f.sitze = [null, null, null, null]; f.tempo = 0; f.geschw = [0, 0, 0];
     if(f.fundort){ f.weg = true; f.wiederBei = spielzeit + F.WIEDERKEHR; } else welt.fahrzeuge.delete(f.id);
     return r;

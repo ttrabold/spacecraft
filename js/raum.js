@@ -107,6 +107,7 @@ SC.Gastgeber = function(o){
     // Platz bleibt frei: Eintrag mit verbunden=false (zählt für „voll“, behält die Farbe), erst nach SC.RAUM_PLATZ_MS weg
     var s = this, id = c.id, e = s._eintrag(id), marke = {};
     c.drin = false; delete s._verb[id];
+    s._fzRaus(id);
     if(!e) return;
     e.verbunden = false; e._marke = marke; ruf(s.o.beiSpieler, s.spieler);
     s.warte(SC.RAUM_PLATZ_MS, function(){ var x = s._eintrag(id); if(x && !x.verbunden && x._marke === marke){ s._entferne(id); s._listeGeaendert(); } });
@@ -125,7 +126,7 @@ SC.Gastgeber = function(o){
     this.spieler.forEach(function(e){ if(e.verbunden && e.pos) l.push(zustand(e.id, e)); });
     return l;
   };
-  function zustand(id, q){ return { id: id, pos: q.pos, blick: q.blick, modus: q.modus, stufe: q.stufe, ausr: q.ausr, menue: !!q.menue, lebt: q.lebt !== false, hieb: q.hieb, blockt: !!q.blockt }; }
+  function zustand(id, q){ return { id: id, pos: q.pos, blick: q.blick, modus: q.modus, stufe: q.stufe, ausr: q.ausr, menue: !!q.menue, lebt: q.lebt !== false, hieb: q.hieb, blockt: !!q.blockt, sitzt: typeof q.sitzt === "number" ? q.sitzt : null }; }
   // Pro Bild aufrufen. ich: {pos, blick, modus, stufe, ausr, menue, lebt, tageszeit?} des Gastgebers.
   // 15 Hz: jedem Gast den Zustand der anderen Spieler (ausr nur, wenn sie sich für diesen Empfänger geändert hat) und die Wesen-Liste;
   // 1 Hz: zeit {tageszeit (aus ich.tageszeit, sonst daten.tageszeit), modus, schwierigkeit}
@@ -137,7 +138,7 @@ SC.Gastgeber = function(o){
     if(zeit){ s._zeitTakt -= SC.RAUM_ZEIT_TAKT; if(s._zeitTakt >= SC.RAUM_ZEIT_TAKT) s._zeitTakt = 0; }
     var ids = Object.keys(s._verb); if(!ids.length) return;
     if(zust){
-      var alle = s._zustaende(ich), wesen = { t: "wesen", liste: SC.Raum.wesenListe(s.welt, s.uhr()) };
+      var alle = s._zustaende(ich), wesen = { t: "wesen", liste: SC.Raum.wesenListe(s.welt, s.uhr()) }, fz = SC.Raum.fahrzeugListe(s.welt);
       ids.forEach(function(id){
         var c = s._verb[id], merk = c.ausr || (c.ausr = {}); // je Empfänger: zuletzt geschickte Ausrüstung pro Spieler
         alle.forEach(function(z){
@@ -148,6 +149,7 @@ SC.Gastgeber = function(o){
           c.verb.sende(n);
         });
         c.verb.sende(wesen);
+        var e = s._eintrag(id); if(e && e.pos) c.verb.sende({ t: "fahrzeuge", liste: SC.Raum.fahrzeugeNah(s.welt, fz, e.pos) });
       });
     }
     if(zeit){ var tz = ich && typeof ich.tageszeit === "number" ? ich.tageszeit : d.tageszeit; // je Gast mit seiner bestätigten Wunsch-Nummer
@@ -159,7 +161,7 @@ SC.Gastgeber = function(o){
   G.hinauswerfen = function(id){
     delete this._bestaetigt[id];
     var c = this._verb[id], war = !!this._eintrag(id);
-    this._entferne(id);
+    this._entferne(id); this._fzRaus(id);
     if(c){ c.drin = false; delete this._verb[id]; this._ablehnen(c, "hinausgeworfen"); }
     if(c || war) this._listeGeaendert();
   };
@@ -191,7 +193,10 @@ SC.Gastgeber = function(o){
     // Position und Anzeige-Zustand des Gastes; Position wird pro Figur in der Welt des Gastgebers gemerkt
     zustand: function(c, n){
       var e = this._eintrag(c.id), m = this.daten.mitspieler[c.id];
-      if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt", "hieb", "blockt"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
+      if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt", "hieb", "blockt", "sitzt"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
+      // Fahrer: Lage seines Fahrzeugs übernehmen (nur vom Fahrer selbst)
+      var fz = n.fz, f = fz && this.welt && this.welt.fahrzeuge.get(fz.id);
+      if(f && f.sitze[0] === c.id && !f.weg){ var p = vekF(fz.pos), g = vekF(fz.geschw); if(p) f.pos = p; if(g) f.geschw = g; if(zahl(fz.blick)) f.blick = fz.blick; if(zahl(fz.tempo)) f.tempo = fz.tempo; }
       if(m){ if(n.pos) m.pos = n.pos.slice(); if(n.blick) m.blick = n.blick.slice(); }
       if(typeof this.o.beiNachricht === "function") this.o.beiNachricht(c.id, n);
     },
@@ -207,6 +212,7 @@ SC.Gastgeber = function(o){
     }
   };
   function zahl(v){ return typeof v === "number" && isFinite(v); }
+  function vekF(v){ return Array.isArray(v) && v.length === 3 && zahl(v[0]) && zahl(v[1]) && zahl(v[2]) ? v.slice() : null; }
 })();
 
 // --- Gast ---
@@ -291,9 +297,10 @@ SC.Gast = function(o){
     if(s._takt < SC.RAUM_TAKT) return;
     s._takt -= SC.RAUM_TAKT; if(s._takt >= SC.RAUM_TAKT) s._takt = 0;
     if(!s.verb || !ich || s.status !== "verbunden") return;
-    var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false, hieb: ich.hieb, blockt: !!ich.blockt },
+    var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false, hieb: ich.hieb, blockt: !!ich.blockt, sitzt: typeof ich.sitzt === "number" ? ich.sitzt : null },
       j = JSON.stringify(ich.ausr === undefined ? null : ich.ausr);
     if(j !== s._ausr){ s._ausr = j; n.ausr = ich.ausr; }
+    if(ich.fz) n.fz = ich.fz; // als Fahrer: Lage des Fahrzeugs
     s.verb.sende(n);
   };
   // Gastgeber hat alle Wünsche bis nr verarbeitet: angenommene vergessen; abgelehnte (Liste, nur bei willkommen) bleiben
@@ -487,6 +494,9 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
   };
   // Treffer an einen Gast melden (Hieb, Stampfen oder Geschoss); der Gast verrechnet ihn selbst
   H.treffer = function(id, schaden, von, geschoss, pvpVon){
+    // Sitzt der Gast im Fahrzeug, trifft es die Panzerung (rechnet der Gastgeber, kein treffer an den Gast)
+    var fzs = this.welt && SC.Fahrzeug.sitzVon(this.welt, id);
+    if(fzs){ this.fahrzeugSchaden(fzs.f, schaden * (SC.SCHWIERIGKEIT[this.daten.schwierigkeit] || SC.SCHWIERIGKEIT.normal).schaden, this.daten.spielzeit || 0); return; }
     var gs = null;
     if(geschoss){
       gs = { id: geschoss.id, typ: geschoss.typ || geschoss.art, pos: geschoss.pos.slice(), richtung: (geschoss.richtung || geschoss.geschw).slice() };
@@ -603,5 +613,83 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
     var auf = zahl(n.erfahrung) && n.erfahrung > 0 ? k.kampf.gibErfahrung(n.erfahrung) : 0;
     if(n.beute && n.beute.length && n.pos) ruf(k.o.beiBeute, n.pos.slice(), n.beute);
     ruf(k.o.beiBesiegt, n, auf);
+  };
+})();
+
+// --- Fahrzeuge im Raum (Stufe 4) ---
+// Der Gastgeber hält Sitze und Panzerung; der Fahrer rechnet sein Fahrzeug selbst und schickt die Lage mit seinem zustand (fz).
+// Nachrichten: einsteigen G→H {id}, aussteigen G→H, fzHinstellen G→H {art, pos, blick}, fzEntfernen G→H {id},
+// fahrzeuge H→G (15 Hz, Umkreis SC.RAUM_FZ_NAH) {liste: [{id, art, pos, blick, geschw, tempo, panzerung, sitze, weg, frei}]}, verpufft H→G {id, pos}.
+SC.RAUM_FZ_NAH = 96;
+(function(){
+  var H = SC.Gastgeber.prototype, G = SC.Gast.prototype, HN = SC.Gastgeber.NACHRICHTEN, GN = SC.Gast.NACHRICHTEN;
+  function ruf(f){ if(typeof f === "function") return f.apply(null, Array.prototype.slice.call(arguments, 1)); }
+  function zahl(v){ return typeof v === "number" && isFinite(v); }
+  function vek(v){ return Array.isArray(v) && v.length === 3 && zahl(v[0]) && zahl(v[1]) && zahl(v[2]) ? v.slice() : null; }
+  function r2(v){ return Math.round(v * 100) / 100; }
+
+  SC.Raum.fahrzeugListe = function(welt){
+    var l = [];
+    welt.fahrzeuge.forEach(function(f){ l.push({ id: f.id, art: f.art, pos: f.pos.map(r2), blick: r2(f.blick), geschw: f.geschw.map(r2), tempo: r2(f.tempo), panzerung: Math.round(f.panzerung), sitze: f.sitze.slice(), weg: !!f.weg, frei: !f.fundort }); });
+    return l;
+  };
+  SC.Raum.fahrzeugeNah = function(welt, liste, pos){
+    var P = welt.planet.groesse;
+    return liste.filter(function(e){ return Math.hypot(SC.mod(e.pos[0] - pos[0] + P / 2, P) - P / 2, SC.mod(e.pos[2] - pos[2] + P / 2, P) - P / 2) <= SC.RAUM_FZ_NAH; });
+  };
+
+  // --- Gastgeber ---
+  H._fzRaus = function(id){ var s = this.welt && SC.Fahrzeug.sitzVon(this.welt, id); if(s) SC.Fahrzeug.aussteigen(s.f, id); };
+  // Schaden aufs Fahrzeug; verpufft es, erfahren es alle Gäste und das eigene Spiel (o.beiVerpufft) → Ergebnis von SC.Fahrzeug.schaden
+  H.fahrzeugSchaden = function(f, menge, spielzeit){
+    var r = SC.Fahrzeug.schaden(this.welt, f, menge, spielzeit);
+    if(r.verpufft){ if(!this._zu) this.sendeAlle({ t: "verpufft", id: f.id, pos: f.pos.slice() }); ruf(this.o.beiVerpufft, f, r); }
+    return r;
+  };
+  HN.einsteigen = function(c, n){
+    var w = this.welt, f = w && w.fahrzeuge.get(n.id), e = this._eintrag(c.id);
+    if(!f || f.weg || !e || !e.pos || e.modus === "zuschauer" || e.lebt === false) return;
+    if(SC.Fahrzeug.abstand(w, f, e.pos).waagerecht > 6) return;
+    var alt = SC.Fahrzeug.sitzVon(w, c.id); if(alt && alt.f !== f) SC.Fahrzeug.aussteigen(alt.f, c.id);
+    SC.Fahrzeug.einsteigen(f, c.id);
+  };
+  HN.aussteigen = function(c){ this._fzRaus(c.id); };
+  HN.fzHinstellen = function(c, n){ var p = vek(n.pos); if(this.welt && SC.FAHRZEUGE[n.art] && p) SC.Fahrzeug.neu(this.welt, n.art, p, zahl(n.blick) ? n.blick : 0); };
+  HN.fzEntfernen = function(c, n){ var f = this.welt && this.welt.fahrzeuge.get(n.id); if(f && !f.fundort && f.sitze.every(function(x){ return x === null; })) this.welt.fahrzeuge.delete(f.id); };
+
+  // --- Gast ---
+  G.einsteigen = function(id){ this.sende({ t: "einsteigen", id: id }); };
+  // Selbst ausgestiegen: bis die Liste des Gastgebers das zeigt, den eigenen Sitz darin nicht mehr beachten
+  G.aussteigen = function(id){ this._fzRaus = id || true; this.sende({ t: "aussteigen" }); };
+  G.fzHinstellen = function(art, pos, blick){ this.sende({ t: "fzHinstellen", art: art, pos: pos.slice(), blick: blick }); };
+  G.fzEntfernen = function(id){ this.sende({ t: "fzEntfernen", id: id }); };
+  GN.fahrzeuge = function(n){
+    var ich = this.figur.figurId, raus = this._fzRaus, noch = false, l = (n.liste || []).filter(function(e){ return e && SC.FAHRZEUGE[e.art] && vek(e.pos) && Array.isArray(e.sitze); });
+    if(raus) l = l.map(function(e){
+      if(e.sitze.indexOf(ich) < 0 || (raus !== true && e.id !== raus)) return e;
+      noch = true; var k = {}; for(var x in e) k[x] = e[x]; k.sitze = e.sitze.map(function(s){ return s === ich ? null : s; }); return k;
+    });
+    if(!noch) this._fzRaus = null;
+    this.fahrzeuge = l;
+  };
+  GN.verpufft = function(n){ ruf(this.o.beiNachricht, n); };
+
+  // Gast, pro Bild: Fahrzeuge des Gastgebers spiegeln (Felder sofort, Lage gleitet; Sprung bei > 8 Blöcken).
+  // Das selbst gefahrene Fahrzeug behält seine eigene Lage. Fahrzeuge, die nicht mehr in der Liste stehen, verschwinden.
+  SC.Raum.spiegleFahrzeuge = function(welt, liste, dt, ichId){
+    var da = {}, k = Math.min(1, (dt || 0) * 12), P = welt.planet.groesse;
+    (liste || []).forEach(function(e){
+      da[e.id] = true;
+      var f = welt.fahrzeuge.get(e.id);
+      if(!f || f.art !== e.art){ f = SC.Fahrzeug.neu(welt, e.art, e.pos, e.blick, { id: e.id }); }
+      var selbst = e.sitze[0] === ichId && f.sitze[0] === ichId;
+      f.panzerung = e.panzerung; f.weg = !!e.weg; f.fundort = e.frei ? null : e.id; f.sitze = e.sitze.slice();
+      if(selbst) return;
+      var dx = SC.mod(e.pos[0] - f.pos[0] + P / 2, P) - P / 2, dz = SC.mod(e.pos[2] - f.pos[2] + P / 2, P) - P / 2, dy = e.pos[1] - f.pos[1];
+      if(Math.hypot(dx, dy, dz) > 8){ f.pos = e.pos.slice(); f.blick = e.blick; }
+      else { f.pos = [SC.mod(f.pos[0] + dx * k, P), f.pos[1] + dy * k, SC.mod(f.pos[2] + dz * k, P)]; f.blick += (e.blick - f.blick) * k; }
+      f.geschw = e.geschw.slice(); f.tempo = e.tempo;
+    });
+    welt.fahrzeuge.forEach(function(f, id){ if(!da[id]) welt.fahrzeuge.delete(id); });
   };
 })();

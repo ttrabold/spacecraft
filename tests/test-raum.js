@@ -208,3 +208,60 @@ test("Raum: Zweite Verbindung derselben Figur ersetzt die alte", function(){
     r2.g.sende({ t: "zustand", pos: [9, 70, 9] }); return raumLauf(u.netz);
   }).then(function(){ gleich(u.h.spieler[0].pos[0], 9, "neue Verbindung ist die gültige"); });
 });
+
+// --- Fahrzeuge im Raum (Stufe 4, Protokoll 2) ---
+test("Raum: Protokoll 1 wird abgelehnt", function(){
+  var u, r;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Alt", { protokoll: 1 }); return raumBeitritt(u, r); }).then(function(e){ gleich(SC.NETZ_PROTOKOLL, 2); gleich(e.fehler && e.fehler.art, "version"); });
+});
+function rfMehr(u, namen){ var l = []; return namen.reduce(function(p, n){ return p.then(function(){ var r = raumGast(u, n); l.push(r); return raumBeitritt(u, r); }); }, Promise.resolve()).then(function(){ return l; }); }
+test("Raum: Vier Spieler in einem Fahrzeug, Liste geht an die Gäste", function(){
+  var u, gs, f;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; f = SC.Fahrzeug.neu(u.welt, "gleiter", [3, 80, 2], 0); SC.Fahrzeug.einsteigen(f, u.daten.spieler.figurId); return rfMehr(u, ["Ben", "Cem", "Dana"]); }).then(function(l){
+    gs = l; gs.forEach(function(r){ r.g.einsteigen(f.id); }); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(f.sitze[0], u.daten.spieler.figurId, "Gastgeber fährt"); gs.forEach(function(r, i){ gleich(f.sitze[i + 1], r.figur.figurId); });
+    gs[0].g.einsteigen(f.id); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(f.sitze.filter(function(x){ return x === gs[0].figur.figurId; }).length, 1, "nicht doppelt");
+    u.h.takt(0.1, { pos: [1, 80, 2], blick: [0, 0], modus: "survival", stufe: 1, lebt: true }); return raumLauf(u.netz);
+  }).then(function(){
+    var l = gs[1].g.fahrzeuge, e = l && l.filter(function(x){ return x.id === f.id; })[0]; wahr(e, "Liste beim Gast"); gleich(JSON.stringify(e.sitze), JSON.stringify(f.sitze)); gleich(e.art, "gleiter"); gleich(e.frei, true);
+    gs[1].g.aussteigen(); return raumLauf(u.netz);
+  }).then(function(){ gleich(f.sitze[2], null, "ausgestiegen"); });
+});
+test("Raum: Gast fährt, Gastgeber übernimmt die Lage nur vom Fahrer", function(){
+  var u, gs, f;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; f = SC.Fahrzeug.neu(u.welt, "buggy", [3, 80, 2], 0); return rfMehr(u, ["Ben", "Cem"]); }).then(function(l){
+    gs = l; gs[0].g.einsteigen(f.id); return raumLauf(u.netz);
+  }).then(function(){
+    gs[1].g.einsteigen(f.id); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(f.sitze[0], gs[0].figur.figurId); gleich(f.sitze[1], gs[1].figur.figurId);
+    gs[0].g.takt(0.1, { pos: [3, 80, 1], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, fz: { id: f.id, pos: [9, 81, 4], blick: 0.5, geschw: [1, 0, 2], tempo: 3 } });
+    gs[1].g.takt(0.1, { pos: [3, 80, 1], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, fz: { id: f.id, pos: [99, 81, 4], blick: 2, geschw: [0, 0, 0], tempo: 0 } });
+    return raumLauf(u.netz);
+  }).then(function(){ gleich(JSON.stringify(f.pos), "[9,81,4]"); gleich(f.blick, 0.5); gleich(f.tempo, 3); });
+});
+test("Raum: Abriss gibt Sitz frei, Mitfahrer bleiben", function(){
+  var u, gs, f;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; f = SC.Fahrzeug.neu(u.welt, "flieger", [3, 90, 2], 0); return rfMehr(u, ["Ben", "Cem"]); }).then(function(l){
+    gs = l; gs[0].g.einsteigen(f.id); return raumLauf(u.netz);
+  }).then(function(){ gs[1].g.einsteigen(f.id); return raumLauf(u.netz); }).then(function(){
+    u.netz.trenne(gs[0].g.verb); return raumLauf(u.netz);
+  }).then(function(){ gleich(f.sitze[0], null, "Fahrersitz frei"); gleich(f.sitze[1], gs[1].figur.figurId, "Mitfahrer bleibt"); wahr(u.welt.fahrzeuge.has(f.id)); });
+});
+test("Raum: Treffer auf sitzenden Gast gehen aufs Fahrzeug, Verpuffen geht an alle", function(){
+  var u, gs, f, verpufft = [];
+  return raumOffen({ antwort: true }).then(function(x){ u = x; u.h.o.beiVerpufft = function(fz, r){ verpufft.push(r); }; f = SC.Fahrzeug.neu(u.welt, "gleiter", [3, 80, 2], 0); return rfMehr(u, ["Ben", "Cem"]); }).then(function(l){
+    gs = l; gs.forEach(function(r){ r.nachr = []; r.g.o.beiNachricht = function(n){ r.nachr.push(n); }; }); gs[0].g.einsteigen(f.id); return raumLauf(u.netz);
+  }).then(function(){
+    u.h.treffer(gs[0].figur.figurId, 10, [0, 0, 1], null); return raumLauf(u.netz);
+  }).then(function(){
+    wahr(f.panzerung < SC.FAHRZEUGE.gleiter.panzerung, "Panzerung sinkt"); gleich(gs[0].nachr.filter(function(n){ return n.t === "treffer"; }).length, 0, "kein treffer an den Gast");
+    u.h.treffer(gs[0].figur.figurId, 9999, [0, 0, 1], null); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.welt.fahrzeuge.has(f.id), false, "freies Fahrzeug verpufft"); gleich(verpufft.length, 1); gleich(verpufft[0].sitze[0], gs[0].figur.figurId);
+    gs.forEach(function(r){ wahr(r.nachr.some(function(n){ return n.t === "verpufft" && n.id === f.id; }), "verpufft an " + r.figur.name); });
+  });
+});

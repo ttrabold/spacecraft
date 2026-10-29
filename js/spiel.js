@@ -332,7 +332,8 @@ SC.Spiel.startpunkt = function(planet){
       beiAnfrage: function(info, antwort){ s._anfrage(info, antwort); },
       beiAnfrageWeg: function(info){ s._anfrageWeg(info); },
       beiSpieler: function(l){ rueck(s, "spieler", l); s.speichere("mitspieler"); }, // Beitritt und Abgang: speichern (Position der Gastfigur)
-      beiNachricht: function(){} });
+      beiNachricht: function(){},
+      beiVerpufft: function(f, r){ s._fahrzeugVerpufft(f, r); } });
     gg.bindeKampf(this.kampf, {
       ich: function(){ return s.raumIch(s._menueOffen); },
       beiBeute: function(pos, l){ s.beuteAuswerfen(pos, l.map(function(b){ return { gegenstand: b }; })); },
@@ -472,6 +473,8 @@ SC.Spiel.startpunkt = function(planet){
       if(this.daten && n.schwierigkeit) this.daten.schwierigkeit = n.schwierigkeit;
       if(n.modus && n.modus !== this._raumModus && this.spieler){ this._raumModus = n.modus; this.modus(n.modus); } // Modus legt der Gastgeber fest
     } else if(n.t === "spieler") rueck(this, "spieler", gast.spieler);
+    else if(n.t === "verpufft" && n.pos && this.render && this.render.wesen){ this.render.wesen.funken([n.pos[0], n.pos[1] + 1, n.pos[2]], "#ffd95c", 30, this.spieler.pos); this.audio.spiele("zerfall");
+      var war = this._fzWar; if(war && war.f.id === n.id) this.ui.hinweis(SC.T.fahrzeugVerpufft.replace("{name}", SC.FAHRZEUGE[war.f.art].name), 4000); } // absetzen übernimmt _gastFahrzeuge
   };
   // Gast, Survival: abgelehnter Block-Wunsch zurück in den Rucksack; passt ein gesetzter Block nicht mehr hinein, fliegt er als Kugel heraus
   SC.Spiel.prototype._blockZurueck = function(id, wunsch){
@@ -495,6 +498,7 @@ SC.Spiel.startpunkt = function(planet){
     else if(r instanceof SC.Gast){
       if(r.wesen !== this._wesenRoh){ var mein = r.figur.figurId; this._wesenRoh = r.wesen; this._wesenListe = (r.wesen || []).filter(function(n){ return !n || n.schuetze !== mein; }); } // eigene Schüsse zeigt der Gast schon selbst
       SC.Raum.spiegleWesen(this.welt, this._wesenListe, dt, this.kampf.uhr);
+      this._gastFahrzeuge(r, dt);
       r.takt(dt, ich);
       var a = JSON.stringify(this.kampf.ausruestung);
       if(a !== this._ausrSpeicher){ this._ausrSpeicher = a; this.speichere("ausruestung"); }
@@ -510,7 +514,7 @@ SC.Spiel.startpunkt = function(planet){
       for(var id in r.mitspieler){
         var m = r.mitspieler[id], e = null; if(id === mein || !m.pos) continue;
         r.spieler.forEach(function(x){ if(x.id === id) e = x; });
-        l.push({ id: id, name: e ? e.name : "", farbe: e ? e.farbe : SC.RAUM_FARBEN[0], pos: m.pos, blick: m.blick, modus: m.modus, ausr: m.ausr, lebt: m.lebt, menue: m.menue, hieb: m.hieb, blockt: m.blockt, verbunden: true });
+        l.push({ id: id, name: e ? e.name : "", farbe: e ? e.farbe : SC.RAUM_FARBEN[0], pos: m.pos, blick: m.blick, modus: m.modus, ausr: m.ausr, lebt: m.lebt, menue: m.menue, hieb: m.hieb, blockt: m.blockt, sitzt: m.sitzt, verbunden: true });
       }
     }
     return l;

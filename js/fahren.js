@@ -14,6 +14,10 @@
     if(sp.modus === "zuschauer" || (this.kampf && this.kampf.besiegt())) return false;
     var f = SC.Fahrzeug.naechstes(this.welt, sp.pos);
     if(!f) return false;
+    if(this.raum instanceof SC.Gast){ // der Gastgeber vergibt die Sitze; eingestiegen wird, wenn seine Liste es zeigt
+      if(f.sitze.indexOf(null) < 0){ this.ui.hinweis(SC.T.fahrzeugVoll, 2000); return false; }
+      this.raum.einsteigen(f.id); return true;
+    }
     var sitz = SC.Fahrzeug.einsteigen(f, this._fzId());
     if(sitz < 0){ this.ui.hinweis(SC.T.fahrzeugVoll, 2000); return false; }
     this._eingestiegen(f, sitz);
@@ -30,7 +34,8 @@
   S.aussteigen = function(){
     var sp = this.spieler, im = this._imFahrzeug();
     if(!im) return false;
-    SC.Fahrzeug.aussteigen(im.f, this._fzId());
+    if(this.raum instanceof SC.Gast) this.raum.aussteigen(im.f.id);
+    SC.Fahrzeug.aussteigen(im.f, this._fzId()); this._fzWar = null;
     this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, im.f, im.sitz));
     return true;
   };
@@ -71,11 +76,25 @@
     });
   };
 
+  // --- Gemeinsam spielen ---
+  // Für den zustand: Lage des Fahrzeugs, wenn man es selbst fährt (sonst undefined)
+  S._fzLage = function(){ var im = this._imFahrzeug(); if(!im || im.sitz !== 0) return undefined; var f = im.f; return { id: f.id, pos: f.pos.slice(), blick: f.blick, geschw: f.geschw.slice(), tempo: f.tempo }; };
+  // Gast, pro Bild: Fahrzeuge des Gastgebers spiegeln; hat der Gastgeber einen gesetzt oder abgesetzt (Verpuffen), entsprechend ein- bzw. aussteigen
+  S._gastFahrzeuge = function(gast, dt){
+    var war = this._fzWar;
+    SC.Raum.spiegleFahrzeuge(this.welt, gast.fahrzeuge, dt, this._fzId());
+    var im = this._imFahrzeug();
+    if(im && !war) this._eingestiegen(im.f, im.sitz);
+    else if(!im && war) this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, war.f, war.sitz));
+    this._fzWar = im;
+  };
+
   // --- Kreativ und Entwicklerwerkzeuge ---
   // Frei hingestelltes Fahrzeug 5 Blöcke vor dem Spieler (Blickrichtung), auf freiem Boden in der Nähe
   S.fahrzeugHinstellen = function(art){
     var sp = this.spieler, g = sp.blick[0], p = SC.Fahrzeug.freieStelle(this.welt, sp.pos[0] - Math.sin(g) * 5, sp.pos[2] - Math.cos(g) * 5, art, 0, 6);
     if(!p){ this.ui.hinweis(SC.T.fahrzeugKeinPlatz, 2000); return null; }
+    if(this.raum instanceof SC.Gast){ this.raum.fzHinstellen(art, p, g); return null; }
     return SC.Fahrzeug.neu(this.welt, art, p, g);
   };
   // Freie Fahrzeuge im Umkreis 64 entfernen (wer drin sitzt, steigt aus), unbesetzte Fundort-Fahrzeuge heimschicken
@@ -83,6 +102,7 @@
     var s = this, w = this.welt, sp = this.spieler, im = this._imFahrzeug();
     w.fahrzeuge.forEach(function(f, id){
       if(SC.Fahrzeug.abstand(w, f, sp.pos).waagerecht > 64) return;
+      if(s.raum instanceof SC.Gast){ if(!f.fundort) s.raum.fzEntfernen(id); return; } // Gast: Fundort-Fahrzeuge bleiben
       if(f.fundort){ SC.Fahrzeug.heimholen(f); return; }
       if(im && im.f === f) s.aussteigen();
       if(f.sitze.every(function(x){ return x === null; })) w.fahrzeuge.delete(id);
@@ -93,7 +113,8 @@
     var sp = this.spieler, a = sp.augen(), r = sp.richtung(), h = SC.Fahrzeug.anvisiert(this.welt, a, r, 6);
     if(!h || h.f.fundort || h.f.sitze.some(function(x){ return x !== null; })) return false;
     if(ziel){ var P = this.welt.planet.groesse, mx = ziel.x + 0.5 + P * Math.round((a[0] - ziel.x - 0.5) / P), mz = ziel.z + 0.5 + P * Math.round((a[2] - ziel.z - 0.5) / P); if(Math.hypot(mx - a[0], ziel.y + 0.5 - a[1], mz - a[2]) < h.t) return false; }
-    this.welt.fahrzeuge.delete(h.f.id); this.audio.spiele("abbauen", { material: "metall" });
+    if(this.raum instanceof SC.Gast) this.raum.fzEntfernen(h.f.id); else this.welt.fahrzeuge.delete(h.f.id);
+    this.audio.spiele("abbauen", { material: "metall" });
     return true;
   };
 
@@ -101,16 +122,25 @@
   // Treffer auf den Spieler im Fahrzeug → Panzerung (true = umgeleitet)
   S._fahrzeugTreffer = function(menge){
     var im = this._imFahrzeug(); if(!im) return false;
-    var r = SC.Fahrzeug.schaden(this.welt, im.f, menge, this.daten.spielzeit || 0);
-    if(r.verpufft) this._fahrzeugVerpufft(im.f, im.sitz, r);
+    if(this.raum instanceof SC.Gast) return true; // die Panzerung rechnet der Gastgeber
+    this._fahrzeugSchaden(im.f, menge);
     return true;
   };
-  // Verpufft: Funken wie bei Gegnern, Hinweis; wer drin saß, steht neben dem Fahrzeug (sitz: eigener Sitz)
-  S._fahrzeugVerpufft = function(f, sitz, r){
+  // Schaden aufs Fahrzeug; als Gastgeber über den Raum (der meldet das Verpuffen allen und ruft _fahrzeugVerpufft)
+  S._fahrzeugSchaden = function(f, menge){
+    var z = this.daten.spielzeit || 0;
+    if(this.raum instanceof SC.Gastgeber) return this.raum.fahrzeugSchaden(f, menge, z);
+    var r = SC.Fahrzeug.schaden(this.welt, f, menge, z);
+    if(r.verpufft) this._fahrzeugVerpufft(f, r);
+    return r;
+  };
+  // Verpufft: Funken wie bei Gegnern, Hinweis; wer drin saß (r.sitze), steht neben dem Fahrzeug
+  S._fahrzeugVerpufft = function(f, r){
+    var sitz = r.sitze ? r.sitze.indexOf(this._fzId()) : -1;
     var sp = this.spieler, name = SC.FAHRZEUGE[f.art].name;
     if(this.render && this.render.wesen) this.render.wesen.funken([f.pos[0], f.pos[1] + 1, f.pos[2]], "#ffd95c", 30, sp.pos);
     this.audio.spiele("zerfall");
-    if(r.ausgestiegen.indexOf(this._fzId()) >= 0){ this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, f, sitz)); this.ui.hinweis((f.fundort ? SC.T.fahrzeugVerpufftFundort : SC.T.fahrzeugVerpufft).replace("{name}", name), 4000); }
+    if(sitz >= 0){ this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, f, sitz)); this.ui.hinweis((f.fundort ? SC.T.fahrzeugVerpufftFundort : SC.T.fahrzeugVerpufft).replace("{name}", name), 4000); }
   };
   // Bordgeschütz des Fahrers (Angriffstaste), mit Abklingzeit; t in ms
   S._bordschuss = function(f, t){

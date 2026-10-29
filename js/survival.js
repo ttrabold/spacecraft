@@ -57,7 +57,7 @@
 
   // Eigener Zustand für den Raum (Ziele der Gegner, „in der Nähe“, zustand-Nachricht)
   S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf, surv = sp.modus === "survival";
-    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, tageszeit: this.tageszeit }; };
+    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, tageszeit: this.tageszeit, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage() }; };
   // Gast: Blöcke nur ändern, solange die Verbindung steht (sonst ginge der Wunsch verloren)
   S._blockErlaubt = function(){ return !(this.raum instanceof SC.Gast) || this.raum.status === "verbunden"; };
 

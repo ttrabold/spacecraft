@@ -85,7 +85,7 @@
   // Gast, pro Bild: Fahrzeuge des Gastgebers spiegeln; hat der Gastgeber einen gesetzt oder abgesetzt (Verpuffen), entsprechend ein- bzw. aussteigen
   S._gastFahrzeuge = function(gast, dt){
     var war = this._fzWar;
-    SC.Raum.spiegleFahrzeuge(this.welt, gast.fahrzeuge, dt, this._fzId());
+    SC.Raum.spiegleFahrzeuge(this.welt, gast.fahrzeuge, dt, this._fzId(), gast.latenz);
     var im = this._imFahrzeug();
     if(im && !war) this._eingestiegen(im.f, im.sitz);
     else if(!im && war) this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, war.f, war.sitz));

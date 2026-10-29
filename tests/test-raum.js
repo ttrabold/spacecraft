@@ -265,3 +265,21 @@ test("Raum: Treffer auf sitzenden Gast gehen aufs Fahrzeug, Verpuffen geht an al
     gs.forEach(function(r){ wahr(r.nachr.some(function(n){ return n.t === "verpufft" && n.id === f.id; }), "verpufft an " + r.figur.name); });
   });
 });
+test("Raum: Gast misst die Laufzeit per Ping, Gastgeber rechnet die Fahrerlage um sie voraus", function(){
+  var u, gs, f;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; f = SC.Fahrzeug.neu(u.welt, "buggy", [3, 80, 2], 0); return rfMehr(u, ["Ben"]); }).then(function(l){
+    gs = l; var r = gs[0]; gleich(r.g.latenz, null, "anfangs unbekannt");
+    r.g.takt(1.1, { pos: [3, 80, 1], blick: [0, 0], modus: "survival", stufe: 1, lebt: true }); r.uhr.vor(200); // Antwort trifft 200 ms später ein
+    return raumLauf(u.netz).then(function(){ return r; });
+  }).then(function(r){
+    // Speicher-Netz stellt sofort zu; Laufzeit aus der unechten Uhr: Ping bei t, Antwort verarbeitet bei t+200 → 0,1 s
+    wahr(Math.abs(r.g.latenz - 0.1) < 1e-6, "Laufzeit 0,1 s: " + r.g.latenz);
+    r.g.einsteigen(f.id); return raumLauf(u.netz).then(function(){ return r; });
+  }).then(function(r){
+    r.g.takt(0.1, { pos: [3, 80, 1], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, fz: { id: f.id, pos: [10, 81, 4], blick: 0, geschw: [10, 0, 0], tempo: 10 } }); return raumLauf(u.netz);
+  }).then(function(){ wahr(Math.abs(f.pos[0] - 11) < 1e-6, "um 0,1 s vorausgerechnet: " + f.pos[0]); });
+});
+test("Raum: Spiegel rechnet Fahrzeuge um die Laufzeit voraus", function(){
+  var w = { planet: { groesse: 2048 }, fahrzeuge: new Map() }, l = [{ id: "a", art: "gleiter", pos: [100, 60, 100], blick: 0, geschw: [10, 0, 0], tempo: 10, panzerung: 120, sitze: ["x", null, null, null], weg: false, frei: true }];
+  SC.Raum.spiegleFahrzeuge(w, l, 0, "ich", 0.15); wahr(Math.abs(w.fahrzeuge.get("a").pos[0] - 101.5) < 1e-6, "neu angelegt schon vorausgerechnet: " + w.fahrzeuge.get("a").pos[0]);
+});

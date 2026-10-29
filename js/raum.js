@@ -196,7 +196,9 @@ SC.Gastgeber = function(o){
       if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt", "hieb", "blockt", "sitzt"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
       // Fahrer: Lage seines Fahrzeugs übernehmen (nur vom Fahrer selbst)
       var fz = n.fz, f = fz && this.welt && this.welt.fahrzeuge.get(fz.id);
-      if(f && f.sitze[0] === c.id && !f.weg){ var p = vekF(fz.pos), g = vekF(fz.geschw); if(p) f.pos = p; if(g) f.geschw = g; if(zahl(fz.blick)) f.blick = fz.blick; if(zahl(fz.tempo)) f.tempo = fz.tempo; }
+      if(f && f.sitze[0] === c.id && !f.weg){ var p = vekF(fz.pos), g = vekF(fz.geschw), lat = zahl(n.latenz) ? Math.max(0, Math.min(0.5, n.latenz)) : 0;
+        if(p && g) p = [p[0] + g[0] * lat, p[1] + g[1] * lat, p[2] + g[2] * lat]; // um die Laufzeit der Meldung vorausrechnen
+        if(p) f.pos = p; if(g) f.geschw = g; if(zahl(fz.blick)) f.blick = fz.blick; if(zahl(fz.tempo)) f.tempo = fz.tempo; }
       if(m){ if(n.pos) m.pos = n.pos.slice(); if(n.blick) m.blick = n.blick.slice(); }
       if(typeof this.o.beiNachricht === "function") this.o.beiNachricht(c.id, n);
     },
@@ -223,6 +225,7 @@ SC.Gast = function(o){
   this._fertig = true; this._ende = true; this._runde = 0; this._start = 0;
   this.welt = null; this.mitspieler = {}; this.wesen = []; this.tageszeit = null; // mitspieler: id → letzter zustand (ohne Gast selbst)
   this._wuensche = {}; this._nr = 0; this._takt = 0; this._ausr = undefined;
+  this.latenz = null; this._pingTakt = 0; // Laufzeit einer Meldung in s (halbe Antwortzeit eines Pings), für das Vorausrechnen der Fahrzeuge
 };
 (function(){
   var G = SC.Gast.prototype;
@@ -293,14 +296,15 @@ SC.Gast = function(o){
   };
   // Pro Bild aufrufen. ich: {pos, blick, modus, stufe, ausr, menue, lebt}; sendet 15 Hz den eigenen zustand (ausr nur bei Änderung)
   G.takt = function(dt, ich){
-    var s = this; s._takt += dt;
+    var s = this; s._takt += dt; s._pingTakt += dt;
+    if(s._pingTakt >= 1 && s.verb && s.status === "verbunden"){ s._pingTakt = 0; s.verb.sende({ t: "ping", z: s.jetzt() }); }
     if(s._takt < SC.RAUM_TAKT) return;
     s._takt -= SC.RAUM_TAKT; if(s._takt >= SC.RAUM_TAKT) s._takt = 0;
     if(!s.verb || !ich || s.status !== "verbunden") return;
     var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false, hieb: ich.hieb, blockt: !!ich.blockt, sitzt: typeof ich.sitzt === "number" ? ich.sitzt : null },
       j = JSON.stringify(ich.ausr === undefined ? null : ich.ausr);
     if(j !== s._ausr){ s._ausr = j; n.ausr = ich.ausr; }
-    if(ich.fz) n.fz = ich.fz; // als Fahrer: Lage des Fahrzeugs
+    if(ich.fz){ n.fz = ich.fz; if(s.latenz !== null) n.latenz = s.latenz; } // als Fahrer: Lage des Fahrzeugs und Laufzeit
     s.verb.sende(n);
   };
   // Gastgeber hat alle Wünsche bis nr verarbeitet: angenommene vergessen; abgelehnte (Liste, nur bei willkommen) bleiben
@@ -654,6 +658,7 @@ SC.RAUM_FZ_NAH = 96;
     SC.Fahrzeug.einsteigen(f, c.id);
   };
   HN.aussteigen = function(c){ this._fzRaus(c.id); };
+  HN.ping = function(c, n){ c.verb.sende({ t: "pong", z: n.z }); };
   HN.fzHinstellen = function(c, n){ var p = vek(n.pos); if(this.welt && SC.FAHRZEUGE[n.art] && p) SC.Fahrzeug.neu(this.welt, n.art, p, zahl(n.blick) ? n.blick : 0); };
   HN.fzEntfernen = function(c, n){ var f = this.welt && this.welt.fahrzeuge.get(n.id); if(f && !f.fundort && f.sitze.every(function(x){ return x === null; })) this.welt.fahrzeuge.delete(f.id); };
 
@@ -673,24 +678,28 @@ SC.RAUM_FZ_NAH = 96;
     this.fahrzeuge = l;
   };
   GN.verpufft = function(n){ ruf(this.o.beiNachricht, n); };
+  // Antwort auf den eigenen Ping: halbe Antwortzeit ist die Laufzeit einer Meldung (geglättet, höchstens 0,5 s)
+  GN.pong = function(n){ var l = (this.jetzt() - n.z) / 2000; if(!(l >= 0 && l < 5)) return; l = Math.min(0.5, l); this.latenz = this.latenz === null ? l : this.latenz * 0.8 + l * 0.2; };
 
   // Gast, pro Bild: Fahrzeuge des Gastgebers spiegeln (Felder sofort, Lage gleitet; Sprung bei > 8 Blöcken).
   // Das selbst gefahrene Fahrzeug behält seine eigene Lage. Fahrzeuge, die nicht mehr in der Liste stehen, verschwinden.
   // Zwischen zwei Listen fährt jedes Fahrzeug mit seiner Geschwindigkeit weiter (Ziel = gemeldete Lage + geschw · Alter der Liste).
-  SC.Raum.spiegleFahrzeuge = function(welt, liste, dt, ichId){
+  // latenz (s): Laufzeit der Meldungen, um die zusätzlich vorausgerechnet wird
+  SC.Raum.spiegleFahrzeuge = function(welt, liste, dt, ichId, latenz){
     var da = {}, k = Math.min(1, (dt || 0) * 12), P = welt.planet.groesse;
     if(welt._fzListe !== liste){ welt._fzListe = liste; welt._fzAlter = 0; } else welt._fzAlter += dt || 0;
-    var alter = welt._fzAlter;
+    var alter = welt._fzAlter + (latenz || 0);
     (liste || []).forEach(function(e){
       da[e.id] = true;
       var f = welt.fahrzeuge.get(e.id);
-      if(!f || f.art !== e.art){ f = SC.Fahrzeug.neu(welt, e.art, e.pos, e.blick, { id: e.id }); }
+      var neu = !f || f.art !== e.art;
+      if(neu) f = SC.Fahrzeug.neu(welt, e.art, e.pos, e.blick, { id: e.id });
       var selbst = e.sitze[0] === ichId && f.sitze[0] === ichId;
       f.panzerung = e.panzerung; f.weg = !!e.weg; f.fundort = e.frei ? null : e.id; f.sitze = e.sitze.slice();
       if(selbst) return;
       var g = e.geschw || [0, 0, 0], z = [e.pos[0] + g[0] * alter, e.pos[1] + g[1] * alter, e.pos[2] + g[2] * alter];
       var dx = SC.mod(z[0] - f.pos[0] + P / 2, P) - P / 2, dz = SC.mod(z[2] - f.pos[2] + P / 2, P) - P / 2, dy = z[1] - f.pos[1], t = dt || 0;
-      if(Math.hypot(dx, dy, dz) > 8){ f.pos = [SC.mod(z[0], P), z[1], SC.mod(z[2], P)]; f.blick = e.blick; }
+      if(neu || Math.hypot(dx, dy, dz) > 8){ f.pos = [SC.mod(z[0], P), z[1], SC.mod(z[2], P)]; f.blick = e.blick; }
       else { f.pos = [SC.mod(f.pos[0] + g[0] * t + dx * k, P), f.pos[1] + g[1] * t + dy * k, SC.mod(f.pos[2] + g[2] * t + dz * k, P)]; f.blick += (e.blick - f.blick) * k; }
       f.geschw = e.geschw.slice(); f.tempo = e.tempo;
     });

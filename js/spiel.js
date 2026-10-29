@@ -282,13 +282,17 @@ SC.Spiel.startpunkt = function(planet){
     return this._verlaesst = this.speichere("verlassen").then(function(){
       var r = s.raum;
       if(r instanceof SC.Gastgeber){ s._anfragenSchliessen(); r.schliesse(); } else if(r instanceof SC.Gast) r.trenne();
-      s.raum = null; s.rolle = "allein"; s._eigen = null; s._wesenRoh = null; s._verlaesst = null;
-      s._laeuft = false; clearInterval(s._takt); s.lebenszyklusAbmelden(document);
-      s.eingabe.gebeMausFrei(); s.ui.verbergeHud(); s.entwickler.verberge(); s.audio.musikTakt(null, false);
-      if(s.render){ s.render.welt(s.welt); s.render.renderer.clear(); }
-      s.daten = null; s.welt = null;
+      s.raum = null; s.rolle = "allein"; s._eigen = null; s._verlaesst = null;
+      s._abbauen();
       return s.ui.zeigeWeltliste();
     });
+  };
+  // Laufendes (oder halb gestartetes) Spiel ohne Speichern abbauen
+  SC.Spiel.prototype._abbauen = function(){
+    this._wesenRoh = null; this._laeuft = false; clearInterval(this._takt); this.lebenszyklusAbmelden(document);
+    this.eingabe.gebeMausFrei(); this.ui.verbergeHud(); this.entwickler.verberge(); this.audio.musikTakt(null, false);
+    if(this.render){ this.render.welt(this.welt); this.render.renderer.clear(); }
+    this.daten = null; this.welt = null;
   };
 
   // --- Gemeinsam spielen: Rollen Gastgeber und Gast ---
@@ -396,6 +400,11 @@ SC.Spiel.startpunkt = function(planet){
     var s = this;
     if(this.raum !== gast) return;
     if(this.daten && this.daten.id === "gast" && this.welt){ this._gastWiederkehr(gast, chunks); return; }
+    // Scheitert der erste Eintritt, wird das halb gestartete Spiel abgebaut; der Fehler beendet den Beitritt (SC.Gast lehnt ihn ab)
+    try{ this._gastErsterEintritt(gast, chunks); }catch(e){ if(this.daten) this._abbauen(); throw e; }
+  };
+  SC.Spiel.prototype._gastErsterEintritt = function(gast, chunks){
+    var s = this;
     var will = gast.willkommen, wk = will;
     if(!will.pos){ wk = {}; for(var x in will) wk[x] = will[x]; wk.pos = will.welt.startpunkt || [0, 0, 0]; }
     var d = SC.Spielstand.gastDaten(wk, SC.Spielstand.figur(this._eigen));

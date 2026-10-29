@@ -13,6 +13,7 @@ SC.RAUM_GAST_ID = 1e9;          // Gast: eigene Wesen (Beutekugeln) ab dieser ID
 SC.RAUM_WUNSCH_MAX = 512;       // Gast: höchstens so viele unbestätigte Block-Wünsche (älteste fallen weg); bestätigt wird über wunschNr
 SC.RAUM_ABGELEHNT_MERKEN = 128; // Gastgeber: so viele abgelehnte Wunsch-Nummern je Gast (für willkommen nach Neuverbinden)
 SC.Raum = {};
+SC.Raum.meldeFehler = function(e){ if(typeof console !== "undefined" && console.error) console.error("Raum:", e); };
 
 // --- Gastgeber ---
 // Rückrufe: beiAnfrage(info, antwort), beiAnfrageWeg(info) (Wartender ging vor der Antwort), beiSpieler(liste), beiNachricht(id, n)
@@ -49,7 +50,9 @@ SC.Gastgeber = function(o){
       if(!n || typeof n !== "object" || c.weg) return;
       if(n.t !== "hallo" && !c.drin) return; // vor dem Annehmen zählt nur „hallo“
       var f = SC.Gastgeber.NACHRICHTEN[n.t];
-      if(f) f.call(s, c, n); else ruf(s.o.beiNachricht, c.id, n);
+      // Ein Fehler in einer Nachricht darf die Verbindung nicht lahmlegen; vor dem Annehmen wird der Gast abgelehnt, statt ihn warten zu lassen
+      try{ if(f) f.call(s, c, n); else ruf(s.o.beiNachricht, c.id, n); }
+      catch(e){ SC.Raum.meldeFehler(e); if(!c.drin && !c.weg) s._ablehnen(c, "fehler"); }
     });
     v.an("zu", function(){
       // Wartender Gast geht, bevor der Gastgeber antwortet: Anfrage verfällt, das Spiel schließt seinen Dialog
@@ -73,7 +76,16 @@ SC.Gastgeber = function(o){
   G._listeGeaendert = function(ausserId){ if(this._zu) return; this.sendeAlle({ t: "spieler", liste: this.liste() }, ausserId); ruf(this.o.beiSpieler, this.spieler); };
 
   // Annehmen: willkommen, je geändertem Chunk eine chunk-Nachricht, dann bereit
+  // Scheitert das Annehmen (z. B. kaputte Welt), wird der Gast abgelehnt statt auf „bereit“ zu warten
   G._annehmen = function(c){
+    try{ this._annehmenRoh(c); }
+    catch(e){
+      SC.Raum.meldeFehler(e);
+      if(this._verb[c.id] === c) delete this._verb[c.id];
+      c.drin = false; if(!c.weg) this._ablehnen(c, "fehler");
+    }
+  };
+  G._annehmenRoh = function(c){
     var s = this, d = s.daten, id = c.id, alt = s._verb[id];
     if(alt && alt !== c){ alt.weg = true; alt.verb.schliesse(); } // alte, noch nicht bemerkt abgerissene Verbindung derselben Figur
     c.drin = true; s._verb[id] = c; s._bestaetigt[id] = true;
@@ -234,7 +246,9 @@ SC.Gast = function(o){
     v.an("daten", function(n){
       if(s.verb !== v || !n || typeof n !== "object") return;
       var f = SC.Gast.NACHRICHTEN[n.t];
-      if(f) f.call(s, n); else ruf(s.o.beiNachricht, n);
+      // Fehler vor dem ersten „bereit“ beenden den Beitritt (statt auf „Verbinde …“ hängen zu bleiben); danach nur melden
+      try{ if(f) f.call(s, n); else ruf(s.o.beiNachricht, n); }
+      catch(e){ SC.Raum.meldeFehler(e); if(!s._fertig){ s._ende = true; s._loese(); s._abschluss(new SC.Netz.Fehler("unbekannt", e && e.message)); } }
     });
     v.an("zu", function(){ if(s.verb !== v) return; s.verb = null; s._zu(); });
   };

@@ -18,7 +18,7 @@ function raumGast(u, name, o){
   var r = { status: [], infos: [], willkommen: [], chunks: [], bereit: 0, uhr: raumUhr() };
   r.figur = o.figur || SC.Spielstand.figur(SC.Spielstand.neu({ name: "x", figurName: name }));
   r.g = new SC.Gast({ adapter: u.netz.adapter(), figur: r.figur, protokoll: o.protokoll, jetzt: r.uhr.jetzt, warte: r.uhr.warte,
-    beiWillkommen: function(w){ r.willkommen.push(w); }, beiChunk: function(k, u8){ r.chunks.push({ k: k, u8: u8 }); }, beiBereit: function(){ r.bereit++; },
+    beiWillkommen: function(w){ r.willkommen.push(w); }, beiChunk: function(k, u8){ r.chunks.push({ k: k, u8: u8 }); }, beiBereit: function(){ r.bereit++; if(o.bereitWirft) throw new Error("Testfehler"); },
     beiNachricht: function(){}, beiStatus: function(s, info){ r.status.push(s); r.infos.push(info || {}); } });
   return r;
 }
@@ -41,6 +41,24 @@ test("Raum: Beitritt mit Bestätigung", function(){
     // gastDaten versteht das willkommen
     var gd = SC.Spielstand.gastDaten(w, r.figur); gleich(gd.planeten.start.seed, u.welt.planet.seed); gleich(gd.spieler.name, "Ben");
   });
+});
+
+test("Raum: Fehler im Rückruf des Gastes lässt den Beitritt nicht hängen", function(){
+  var u, r, alt = console.error; console.error = function(){};
+  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Ben", { bereitWirft: true }); return raumBeitritt(u, r); }).then(function(e){
+    console.error = alt;
+    wahr(e.fehler instanceof SC.Netz.Fehler, "abgelehnt statt hängen"); gleich(e.fehler.art, "unbekannt"); gleich(r.g.verb, null);
+    r.uhr.vor(20000); return raumLauf(u.netz);
+  }).then(function(){ wahr(r.status.indexOf("neuverbinden") < 0, "kein Neuverbinden"); gleich(u.h.spieler.length === 0 || u.h.spieler[0].verbunden === false, true); },
+    function(f){ console.error = alt; throw f; });
+});
+
+test("Raum: Fehler beim Annehmen lehnt den Gast ab", function(){
+  var u, r, alt = console.error; console.error = function(){};
+  return raumOffen({ antwort: true }).then(function(x){ u = x; u.h._weltInfo = function(){ throw new Error("Testfehler"); }; r = raumGast(u, "Ben"); return raumBeitritt(u, r); }).then(function(e){
+    console.error = alt;
+    wahr(e.fehler instanceof SC.Netz.Fehler, "abgelehnt statt hängen"); gleich(e.fehler.art, "fehler"); gleich(Object.keys(u.h._verb).length, 0);
+  }, function(f){ console.error = alt; throw f; });
 });
 
 test("Raum: Nein lehnt ab", function(){

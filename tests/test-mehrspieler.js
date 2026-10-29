@@ -606,6 +606,18 @@ test("Mehrspieler: Spiel: Anfrage offen, Gastgeber schließt: Dialog-Rückruf", 
   }).then(function(){ gleich(weg.length, 0); return u.h.verlasse(); }).then(function(){ gleich(weg.length, 1); gleich(weg[0].name, "Ben"); }).then(mspFertig, mspFehler);
 });
 
+test("Mehrspieler: Spiel: Fehler beim ersten Eintritt endet mit Fehler statt „Verbinde …“", function(){
+  var u, e = {}, alt = SC.Spiel.prototype._gastErsterEintritt, altErr = console.error;
+  console.error = function(){};
+  SC.Spiel.prototype._gastErsterEintritt = function(){ this.daten = { id: "gast" }; throw new Error("Testfehler"); };
+  function zurueck(){ SC.Spiel.prototype._gastErsterEintritt = alt; console.error = altErr; }
+  return mspZwei({ ohneBeitritt: true }).then(function(x){ u = x;
+    u.g.beitreten(u.code, u.eigen.id, "Ben").then(function(){ e.ok = true; }, function(f){ e.f = f; }); return mspLauf(u.netz, 4);
+  }).then(function(){
+    zurueck(); wahr(!e.ok, "nicht eingetreten"); gleich(e.f && e.f.art, "unbekannt"); gleich(u.g.rolle, "allein"); gleich(u.g.raum, null); gleich(u.g.daten, null, "halbes Spiel abgebaut");
+  }, function(f){ zurueck(); throw f; }).then(mspFertig, mspFehler);
+});
+
 test("Mehrspieler: Spiel: Warten abbrechen setzt zurück", function(){
   var u, e = {};
   return mspZwei({ ohneBeitritt: true }).then(function(x){ u = x; u.h.raumRueckrufe = { anfrage: function(){} };

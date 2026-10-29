@@ -136,3 +136,30 @@ test("Mehrspieler: Verpuffen setzt den Gast ab", function(){
     u.g._raumBild(0.1, false); gleich(u.g._imFahrzeug(), null, "abgesetzt"); gleich(u.g.spieler.sitzt, null); wahr(SC.Fahrzeug.frei(u.g.welt, u.g.spieler.pos), "steht frei"); gleich(f.weg, true);
   }).then(mspFertig, mspFehler);
 });
+test("Mehrspieler: Mitspieler im Fahrzeug sitzt auf seinem Sitz, nicht an seiner gemeldeten Position", function(){
+  var u, f;
+  return mspZwei().then(function(x){ u = x; f = u.h.welt.fahrzeuge.get("start"); SC.Fahrzeug.einsteigen(f, u.h.daten.spieler.figurId); SC.Fahrzeug.einsteigen(f, u.eigen.spieler.figurId); u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){
+    u.g._raumBild(0.1, false); u.g._raumBild(0.1, false); u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){
+    u.g._raumBild(0.1, false);
+    // Gastgeber-Sicht: Gast (Sitz 1) an seinem Sitz, auch wenn seine gemeldete Position veraltet ist
+    u.h.raum.spieler[0].pos = [0, 0, 0];
+    var eh = u.h._mitspielerListe().filter(function(e){ return e.id === u.eigen.spieler.figurId; })[0];
+    gleich(JSON.stringify(eh.pos), JSON.stringify(SC.Fahrzeug.sitzPos(f, 1, 2048)), "Gast auf Sitz 1"); gleich(eh.sitzt, f.blick); wahr(eh.imFahrzeug, "markiert");
+    // Gast-Sicht: Gastgeber (Sitz 0) am Sitz im gespiegelten Fahrzeug
+    var fg = u.g.welt.fahrzeuge.get("start"), eg = u.g._mitspielerListe().filter(function(e){ return e.id === u.h.daten.spieler.figurId; })[0];
+    gleich(JSON.stringify(eg.pos), JSON.stringify(SC.Fahrzeug.sitzPos(fg, 0, 2048)), "Gastgeber auf Sitz 0");
+  }).then(mspFertig, mspFehler);
+});
+test("Mehrspieler: fremd gefahrenes Fahrzeug fährt zwischen den Meldungen weiter", function(){
+  var u = fhSpiel(), s = u.s, f = u.f; SC.Fahrzeug.einsteigen(f, "anderer"); f.geschw = [10, 0, 0]; f.tempo = 10; f.aufBoden = true; var x0 = f.pos[0];
+  s._fahrzeugeBild(0.1); wahr(Math.abs(f.pos[0] - (x0 + 1)) < 1e-6, "Gastgeber rechnet weiter: " + (f.pos[0] - x0));
+  var w = fzWelt(), l = [{ id: "a", art: "gleiter", pos: [100, 60.6, 100], blick: 0, geschw: [10, 0, 0], tempo: 10, panzerung: 120, sitze: ["x", null, null, null], weg: false, frei: true }];
+  SC.Raum.spiegleFahrzeuge(w, l, 1 / 60, "ich"); for(var i = 0; i < 12; i++) SC.Raum.spiegleFahrzeuge(w, l, 1 / 60, "ich");
+  var g = w.fahrzeuge.get("a"); wahr(g.pos[0] > 101.5, "Gast hinkt nicht hinterher: " + g.pos[0]);
+});
+test("Mitspieler-Figur im Fahrzeug folgt ohne Verzögerung", function(){
+  var sz = new THREE.Scene(), rm = new SC.RenderMitspieler(sz, { groesse: 2048 }), e = { id: "a", name: "A", farbe: "#e0533a", pos: [10, 70, 10], blick: [0, 0], modus: "survival", lebt: true, imFahrzeug: true, sitzt: 0 };
+  rm.aktualisiere([e], [10, 70, 10], 1 / 60); e.pos = [14, 70, 10]; rm.aktualisiere([e], [10, 70, 10], 1 / 60);
+  gleich(rm.figuren.get("a").p[0], 14);
+});

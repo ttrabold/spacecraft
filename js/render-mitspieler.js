@@ -105,7 +105,7 @@ SC.RenderMitspieler = function(szene, planet){
       if(o && (o.farbe !== e.farbe)){ r._weg(o); o = null; }
       if(!o){ o = r._neu(e); r.figuren.set(e.id, o); }
       if(o.name !== e.name){ o.name = e.name; o.schild.userData.name = e.name; o.schild.material.map.dispose(); o.schild.material.map = new THREE.CanvasTexture(RM.schildBild(e.name, e.farbe)); o.schild.material.needsUpdate = true; }
-      var k = k0, alt = o.p ? o.p.slice() : null;
+      var k = e.imFahrzeug ? 1 : k0, alt = o.p ? o.p.slice() : null; // im Fahrzeug: schon am Sitz, nicht glätten
       if(!o.p) o.p = e.pos.slice();
       else { var tx = nah(e.pos[0], o.p[0], P), tz = nah(e.pos[2], o.p[2], P); if(Math.abs(tx - o.p[0]) + Math.abs(tz - o.p[2]) + Math.abs(e.pos[1] - o.p[1]) > 8) k = 1; o.p[0] += (tx - o.p[0]) * k; o.p[1] += (e.pos[1] - o.p[1]) * k; o.p[2] += (tz - o.p[2]) * k; o.p[0] = (o.p[0] % P + P) % P; o.p[2] = (o.p[2] % P + P) % P; }
       var x = nah(o.p[0], ichPos[0], P), z = nah(o.p[2], ichPos[2], P), g = o.f.gruppe, blick = e.blick || [0, 0];

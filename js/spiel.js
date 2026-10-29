@@ -519,6 +519,9 @@ SC.Spiel.startpunkt = function(planet){
         l.push({ id: id, name: e ? e.name : "", farbe: e ? e.farbe : SC.RAUM_FARBEN[0], pos: m.pos, blick: m.blick, modus: m.modus, ausr: m.ausr, lebt: m.lebt, menue: m.menue, hieb: m.hieb, blockt: m.blockt, sitzt: m.sitzt, verbunden: true });
       }
     }
+    // Wer im Fahrzeug sitzt, wird an seinem Sitz im hier gezeichneten Fahrzeug gezeigt (sonst hinkt die Figur dem Fahrzeug hinterher)
+    var w = this.welt;
+    if(w) l = l.map(function(e){ var fs = SC.Fahrzeug.sitzVon(w, e.id); if(!fs) return e; var k = {}; for(var x in e) k[x] = e[x]; k.pos = SC.Fahrzeug.sitzPos(fs.f, fs.sitz, w.planet.groesse); k.sitzt = fs.f.blick; k.imFahrzeug = true; return k; });
     return l;
   };
 

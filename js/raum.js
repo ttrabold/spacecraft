@@ -676,8 +676,11 @@ SC.RAUM_FZ_NAH = 96;
 
   // Gast, pro Bild: Fahrzeuge des Gastgebers spiegeln (Felder sofort, Lage gleitet; Sprung bei > 8 Blöcken).
   // Das selbst gefahrene Fahrzeug behält seine eigene Lage. Fahrzeuge, die nicht mehr in der Liste stehen, verschwinden.
+  // Zwischen zwei Listen fährt jedes Fahrzeug mit seiner Geschwindigkeit weiter (Ziel = gemeldete Lage + geschw · Alter der Liste).
   SC.Raum.spiegleFahrzeuge = function(welt, liste, dt, ichId){
     var da = {}, k = Math.min(1, (dt || 0) * 12), P = welt.planet.groesse;
+    if(welt._fzListe !== liste){ welt._fzListe = liste; welt._fzAlter = 0; } else welt._fzAlter += dt || 0;
+    var alter = welt._fzAlter;
     (liste || []).forEach(function(e){
       da[e.id] = true;
       var f = welt.fahrzeuge.get(e.id);
@@ -685,9 +688,10 @@ SC.RAUM_FZ_NAH = 96;
       var selbst = e.sitze[0] === ichId && f.sitze[0] === ichId;
       f.panzerung = e.panzerung; f.weg = !!e.weg; f.fundort = e.frei ? null : e.id; f.sitze = e.sitze.slice();
       if(selbst) return;
-      var dx = SC.mod(e.pos[0] - f.pos[0] + P / 2, P) - P / 2, dz = SC.mod(e.pos[2] - f.pos[2] + P / 2, P) - P / 2, dy = e.pos[1] - f.pos[1];
-      if(Math.hypot(dx, dy, dz) > 8){ f.pos = e.pos.slice(); f.blick = e.blick; }
-      else { f.pos = [SC.mod(f.pos[0] + dx * k, P), f.pos[1] + dy * k, SC.mod(f.pos[2] + dz * k, P)]; f.blick += (e.blick - f.blick) * k; }
+      var g = e.geschw || [0, 0, 0], z = [e.pos[0] + g[0] * alter, e.pos[1] + g[1] * alter, e.pos[2] + g[2] * alter];
+      var dx = SC.mod(z[0] - f.pos[0] + P / 2, P) - P / 2, dz = SC.mod(z[2] - f.pos[2] + P / 2, P) - P / 2, dy = z[1] - f.pos[1], t = dt || 0;
+      if(Math.hypot(dx, dy, dz) > 8){ f.pos = [SC.mod(z[0], P), z[1], SC.mod(z[2], P)]; f.blick = e.blick; }
+      else { f.pos = [SC.mod(f.pos[0] + g[0] * t + dx * k, P), f.pos[1] + g[1] * t + dy * k, SC.mod(f.pos[2] + g[2] * t + dz * k, P)]; f.blick += (e.blick - f.blick) * k; }
       f.geschw = e.geschw.slice(); f.tempo = e.tempo;
     });
     welt.fahrzeuge.forEach(function(f, id){ if(!da[id]) welt.fahrzeuge.delete(id); });

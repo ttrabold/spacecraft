@@ -89,7 +89,7 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 - Den Schwebeflitzer findest du am Startpunkt. Kraterkäfer stehen bei Lagern, Kometenjäger bei Stationen, Schwebeflitzer auch bei Herrenhäusern.
 - Geh nah heran und drück F (oder 🚗). Wer zuerst einsteigt, fährt; bis zu vier Spieler passen hinein.
 - Mit G (oder 💺) wechselst du den Platz, zum Beispiel ans Steuer, wenn es frei ist.
-- Manche Fahrzeuge haben ein Bordgeschütz: Der Fahrer schießt mit der Angriffstaste.
+- Manche Fahrzeuge haben ein Bordgeschütz: Der Fahrer schießt mit der Angriffstaste. Der Schuss fliegt dorthin, wo der Zielkreis zeigt; er wird rot, wenn ein Gegner darunter ist.
 - Fahrzeuge haben Panzerung. Ist sie leer, zerfällt das Fahrzeug, und du stehst wieder auf dem Boden. Gefundene Fahrzeuge kehren nach einer Weile an ihren Platz zurück.
 - In Kreativ kannst du unter Blöcke wählen auch Fahrzeuge hinstellen.
 

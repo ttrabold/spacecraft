@@ -178,7 +178,7 @@ SC.Spiel.prototype.all = null;
     if(this.ui.cockpit){
       var ziel = a.ziel ? SC.ALL.planeten[a.ziel] : null;
       this.ui.cockpit({ ziel: a.ziel ? SC.PLANETEN[a.ziel].name : null, sekunden: ziel ? flugzeit(ziel, a.pos) : null,
-        schild: Math.round(100 * (typeof a.schild === "number" ? a.schild : SC.FAHRZEUGE.raumschiff.panzerung) / SC.FAHRZEUGE.raumschiff.panzerung), sprung: a.phase === "sprung", mahnen: this._mahnen > 0 });
+        schild: Math.round(100 * (typeof a.schild === "number" ? a.schild : SC.FAHRZEUGE.raumschiff.panzerung) / SC.FAHRZEUGE.raumschiff.panzerung), sprung: a.phase === "sprung", mahnen: this._mahnen > 0, keinZiel: this._tasten(SC.T.allKeinZiel) });
     }
     // Sternenkarte (von oben, x/z) und Planetenmarker im Bild; Antippen eines Planeten auf der Karte setzt das Ziel
     if(this.ui.allKarte && a.pos){

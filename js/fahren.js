@@ -5,6 +5,8 @@
 
   // Eigene ID in den Sitzen: die Figur-ID (im Raum gleich für alle Geräte)
   S._fzId = function(){ return this.daten.spieler.figurId; };
+  // Hinweistext mit den Tastennamen des gerade benutzten Eingabegeräts
+  S._tasten = function(t){ return SC.tastenText(t, SC.eingabeModus(this.eingabe)); };
   S._imFahrzeug = function(){ return this.welt ? SC.Fahrzeug.sitzVon(this.welt, this._fzId()) : null; };
 
   // Benutzen-Taste: im Fahrzeug aussteigen, sonst in das nächste Fahrzeug in Reichweite einsteigen → true, wenn etwas passiert ist
@@ -30,7 +32,7 @@
     sp._ansichtVorher = sp.ansicht; sp.ansicht = "aussen"; sp.blick[0] = f.blick; sp.geschw = [0, 0, 0];
     this._fahrzeugFolgen(SC.Fahrzeug.sitzVon(this.welt, this._fzId()), true);
     this.audio.spiele("einsteigen");
-    this.ui.hinweis((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.FAHRZEUGE[f.art].name), 3000);
+    this.ui.hinweis(this._tasten((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.FAHRZEUGE[f.art].name)), 3000);
   };
   S.aussteigen = function(){
     var sp = this.spieler, im = this._imFahrzeug();
@@ -54,7 +56,7 @@
   };
   S._platzGewechselt = function(f, sitz){
     this._fahrzeugFolgen({ f: f, sitz: sitz }, true);
-    this.ui.hinweis((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.FAHRZEUGE[f.art].name), 2500);
+    this.ui.hinweis(this._tasten((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.FAHRZEUGE[f.art].name)), 2500);
   };
   // Spieler steht wieder (pos: Aussteigeposition)
   S._ausgestiegen = function(pos){
@@ -218,7 +220,7 @@
   // Hinweis, sobald man neben einem Fahrzeug steht; liefert, ob der Benutzen-Knopf sichtbar sein soll
   S._fahrzeugNah = function(){
     var sp = this.spieler, im = this._imFahrzeug(), f = im ? null : SC.Fahrzeug.naechstes(this.welt, sp.pos);
-    if(f && f !== this._fzHinweis && sp.modus !== "zuschauer") this.ui.hinweis(SC.T.fahrzeugEinsteigen.replace("{name}", SC.FAHRZEUGE[f.art].name), 2500);
+    if(f && f !== this._fzHinweis && sp.modus !== "zuschauer") this.ui.hinweis(this._tasten(SC.T.fahrzeugEinsteigen.replace("{name}", SC.FAHRZEUGE[f.art].name)), 2500);
     this._fzHinweis = f;
     return !!(im || (f && sp.modus !== "zuschauer"));
   };

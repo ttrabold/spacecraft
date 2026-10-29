@@ -68,9 +68,17 @@ SC.Touch.prototype.wiederhole = function(k, jetzt){ if(this._knopf[k] && jetzt -
 SC.Touch.prototype.setzeGroesse = function(g){ this.groesse = g; this.el.style.setProperty("--touch-skala", g); };
 SC.Touch.prototype.sichtbar = function(an){ this.el.hidden = !an; };
 // Beschriftung je nach gewählter Sache: Waffe → ⚔, Laserschwert → 🛡 (Blocken); Ausweichen nur im Survival
+// Mit verbundenem Controller (o.controller): Xbox-Tasten statt Symbolen
+var XBOX = { springen: "Ⓐ", sinken: "Ⓑ", abbauen: "RT", setzen: "LT", ausweichen: "Ⓑ", blockauswahl: "Ⓧ", ansicht: "Ⓨ", menue: "☰", benutzen: "✚↑", platz: "✚↓", ziel: "LB", sprung: "RB" };
+var SYMBOL = { springen: "⤒", sinken: "⤓", ausweichen: "⇆", blockauswahl: "▦", ansicht: "👁", menue: "☰", benutzen: "🚗", platz: "💺", ziel: "🎯", sprung: "⚡" };
 SC.Touch.prototype.beschrifte = function(o){
   var a = this.el.querySelector('[data-k="abbauen"]'), s = this.el.querySelector('[data-k="setzen"]'), w = this.el.querySelector('[data-k="ausweichen"]');
   a.textContent = o.angriff ? "⚔" : "⛏"; this.el.querySelector('[data-k="benutzen"]').hidden = !o.benutzen; this.el.querySelector('[data-k="platz"]').hidden = !o.platz; this.el.querySelector('[data-k="ziel"]').hidden = this.el.querySelector('[data-k="sprung"]').hidden = !o.all; s.textContent = o.blocken ? "🛡" : "■"; w.hidden = !o.ausweichen && o.ausweichen !== undefined;
+  var el = this.el; Object.keys(XBOX).forEach(function(k){
+    var b = el.querySelector('[data-k="' + k + '"]'); if(!b) return;
+    if(o.controller) b.textContent = XBOX[k]; else if(SYMBOL[k]) b.textContent = SYMBOL[k]; // abbauen/setzen oben schon gesetzt
+  });
+  el.classList.toggle("controller", !!o.controller);
 };
 SC.Touch.prototype.entferne = function(){
   var h = this._h;

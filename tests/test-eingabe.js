@@ -20,3 +20,16 @@ test("Touch: Benutzen-Knopf nur in der Nähe eines Fahrzeugs", function(){ var u
 test("Touch: Overlay startet ausgeblendet (erste Berührung im Menü darf nichts verdecken)", function(){ var ui=document.createElement("div"),e=new SC.Eingabe(document.createElement("canvas"),ui),t=new SC.Touch(e,ui); wahr(t.el.hidden,"ausgeblendet"); t.sichtbar(true); wahr(!t.el.hidden); t.entferne(); e.entferne(); });
 test("Touch: Ziel- und Sprungknopf nur im All", function(){ var ui=document.createElement("div"),e=new SC.Eingabe(document.createElement("canvas"),ui),t=new SC.Touch(e,ui),z=t.el.querySelector('[data-k="ziel"]'),s=t.el.querySelector('[data-k="sprung"]'); t.beschrifte({angriff:false,blocken:false}); wahr(z.hidden&&s.hidden,"am Boden aus"); t.beschrifte({angriff:false,blocken:false,all:true}); wahr(!z.hidden&&!s.hidden,"im All an"); t._einmal={ziel:true,sprung:true}; var x=t.einmal(); wahr(x.ziel&&x.sprung); t.entferne(); e.entferne(); });
 test("Eingabe: G ist Platz wechseln, Touch 💺 nur im Fahrzeug (#86)", function(){ var ui=document.createElement("div"),e=new SC.Eingabe(document.createElement("canvas"),ui); e._druecke("KeyG"); wahr(e.zustand().platz,"G"); wahr(!e.zustand().platz,"nur einmal"); e._los("KeyG"); var t=new SC.Touch(e,ui),k=t.el.querySelector('[data-k="platz"]'); wahr(k&&k.hidden,"anfangs aus"); t.beschrifte({angriff:false,blocken:false,platz:true}); wahr(!k.hidden,"im Fahrzeug an"); t._einmal={platz:true}; wahr(t.einmal().platz,"löst aus"); t.entferne(); e.entferne(); });
+test("Tastennamen je Eingabegerät in Hinweisen", function(){
+  gleich(SC.tastenText("Aussteigen mit {benutzen}, Platz {platz}, Ziel {ziel}", "tastatur"), "Aussteigen mit F, Platz G, Ziel T");
+  gleich(SC.tastenText("Aussteigen mit {benutzen}, Platz {platz}, Ziel {ziel}", "touch"), "Aussteigen mit 🚗, Platz 💺, Ziel 🎯");
+  gleich(SC.tastenText("Aussteigen mit {benutzen}, Platz {platz}, Ziel {ziel}", "gamepad"), "Aussteigen mit Steuerkreuz ↑, Platz Steuerkreuz ↓, Ziel LB");
+  var e = new SC.Eingabe(document.createElement("canvas"), document.createElement("div")); gleich(e.modus(), "tastatur"); e.gamepadAktiv = true; gleich(e.modus(), "gamepad"); e.entferne();
+});
+test("Touch-Knöpfe zeigen Xbox-Tasten, wenn ein Controller verbunden ist", function(){
+  var ui = document.createElement("div"), e = new SC.Eingabe(document.createElement("canvas"), ui), t = new SC.Touch(e, ui), k = function(n){ return t.el.querySelector('[data-k="' + n + '"]').textContent; };
+  t.beschrifte({ angriff: false, blocken: false, all: true }); gleich(k("springen"), "⤒"); gleich(k("ziel"), "🎯");
+  t.beschrifte({ angriff: true, blocken: false, all: true, controller: true });
+  gleich(k("springen"), "Ⓐ"); gleich(k("abbauen"), "RT"); gleich(k("setzen"), "LT"); gleich(k("blockauswahl"), "Ⓧ"); gleich(k("ziel"), "LB"); gleich(k("sprung"), "RB"); gleich(k("platz"), "✚↓");
+  t.beschrifte({ angriff: true, blocken: false, all: true }); gleich(k("abbauen"), "⚔", "ohne Controller wieder Symbole"); t.entferne(); e.entferne();
+});

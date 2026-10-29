@@ -196,7 +196,7 @@
     var aKey = JSON.stringify([k.ausruestung, waffe && waffe.id]);
     if(aKey !== this._ausrKey){ this._ausrKey = aKey; this.render.ausruestung(survival ? k.ausruestung : null, waffe); }
     var fzNah = this._fahrzeugNah();
-    if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah && !this.all, platz: !this.all && !!this._imFahrzeug(), all: !!this.all });
+    if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah && !this.all, platz: !this.all && !!this._imFahrzeug(), all: !!this.all, controller: !!(SC.Gamepad && SC.Gamepad.erstes && SC.Gamepad.erstes()) });
     var ui = this.ui;
     // Fahrer eines bewaffneten Fahrzeugs im Survival: Zielkreis, rot mit Gegner darunter
     var imFz = this._imFahrzeug(), kreuz = null;

@@ -1,5 +1,14 @@
 // Eingabe: Tastatur und Maus wie in Minecraft; Touch kommt aus touch.js dazu.
 // zustand() liefert pro Bild Bewegung, Blickänderung und Einmal-Aktionen.
+// Tastennamen je Eingabegerät; SC.tastenText ersetzt {benutzen}, {platz}, {ziel}, {sprung} in Hinweisen
+SC.TASTEN = {
+  tastatur: { benutzen: "F", platz: "G", ziel: "T", sprung: "J" },
+  touch: { benutzen: "🚗", platz: "💺", ziel: "🎯", sprung: "⚡" },
+  gamepad: { benutzen: "Steuerkreuz ↑", platz: "Steuerkreuz ↓", ziel: "LB", sprung: "RB" }
+};
+// Ein verbundener Controller zählt schon, bevor er benutzt wird
+SC.eingabeModus = function(e){ return (e && e.gamepadAktiv) || (SC.Gamepad && SC.Gamepad.erstes && SC.Gamepad.erstes()) ? "gamepad" : e && e.touchAktiv ? "touch" : "tastatur"; };
+SC.tastenText = function(t, modus){ var n = SC.TASTEN[modus] || SC.TASTEN.tastatur; return t.replace(/\{(benutzen|platz|ziel|sprung)\}/g, function(x, k){ return n[k]; }); };
 SC.tastenZuEingabe = function(t){
   return {
     vor: t.has("KeyW") || t.has("ArrowUp"), zurueck: t.has("KeyS") || t.has("ArrowDown"),
@@ -68,6 +77,8 @@ SC.Eingabe = function(leinwand, uiWurzel){
 
   function gpBenutzt(p){ for(var i = 0; i < p.buttons.length; i++) if(p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > 0.5)) return true; return (p.axes || []).some(function(a){ return Math.abs(a) > 0.3; }); }
   // Touch-Knöpfe nur, solange nicht mit dem Controller gespielt wird (Issue #21)
+  // Gerade benutztes Eingabegerät: "gamepad", "touch" oder "tastatur" (für Tastennamen in Hinweisen)
+  SC.Eingabe.prototype.modus = function(){ return SC.eingabeModus(this); };
   SC.Eingabe.prototype.touchSichtbar = function(){ return this.touchAktiv && !this.gamepadAktiv; };
 
   // Gedrückt gehaltene Aktion alle 0,25 s wiederholen

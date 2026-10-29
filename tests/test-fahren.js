@@ -238,3 +238,7 @@ test("Fahrzeug: Gegner direkt vor einer Wand wird erfasst", function(){
   w.holeBlock = function(x, y, z){ return Math.floor(x) === wx && Math.floor(y) === wy && Math.floor(z) === wz ? SC.B.STEIN : alt.call(w, x, y, z); };
   var z = s._bordZiel(u.f); w.holeBlock = alt; wahr(z && z.gegner === u.g, "Gegner vor der Wand");
 });
+test("Fahren: Hinweis nennt die Controller-Taste, wenn mit Controller gespielt wird", function(){
+  var u = fhSpiel(), s = u.s; s.eingabe.gamepadAktiv = true; s.hinweise.length = 0; s.benutzen();
+  wahr(s.hinweise.some(function(h){ return h.indexOf("Steuerkreuz ↑") >= 0 && h.indexOf(" F") < 0; }), s.hinweise.join(" | "));
+});

@@ -55,7 +55,7 @@ SC.Geschoss = {};
 SC.Geschoss.schritt = function(welt, g, dt, spieler){
   if(!g._fliegt){ g.geschw = [g.richtung[0] * g.tempo, g.richtung[1] * g.tempo, g.richtung[2] * g.tempo]; g._fliegt = true; }
   var typ = g.typ || g.art;
-  if(typ === "spucke") g.geschw[1] -= 12 * dt;
+  if(typ === "spucke" || typ === "glut") g.geschw[1] -= 12 * dt; // im Bogen
   g.lebensdauer -= dt;
   if(g.lebensdauer <= 0) return { treffer: "ende" };
   var a = g.pos, b = [a[0] + g.geschw[0] * dt, a[1] + g.geschw[1] * dt, a[2] + g.geschw[2] * dt];

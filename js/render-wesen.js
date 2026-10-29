@@ -41,8 +41,8 @@ SC.RenderWesen = function(szene, planet){
   };
 
   RW.prototype._geschoss = function(e){
-    var spucke = e.typ === "spucke", m = new THREE.Mesh(this.box, new THREE.MeshBasicMaterial({ color: e.farbe || "#ff4f4f" }));
-    if(spucke) m.scale.set(0.28, 0.28, 0.28); else m.scale.set(0.07, 0.07, 0.9);
+    var spucke = e.typ === "spucke" || e.typ === "glut", m = new THREE.Mesh(this.box, new THREE.MeshBasicMaterial({ color: e.farbe || "#ff4f4f" }));
+    if(spucke) m.scale.set(e.typ === "glut" ? 0.42 : 0.28, e.typ === "glut" ? 0.42 : 0.28, e.typ === "glut" ? 0.42 : 0.28); else m.scale.set(0.07, 0.07, 0.9);
     this.gruppe.add(m); return { g: m };
   };
 

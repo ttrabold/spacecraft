@@ -139,6 +139,7 @@
         if(!gast){
           if(g.entfernen){ s.auftauchen._entferne(g, false); s.auftauchen.gegnerBesiegt(g, s.daten.spielzeit || 0); return; }
           SC.KI.schritt(w, g, ziele ? SC.Raum.zielFuer(w, g, ziele) : zielSp, dt, zf, schw).forEach(function(akt){
+            if(akt.art === "ruf"){ var rd = SC.GEGNER[akt.gegnerArt], rs = Math.max(1, g.stufe - 2), re = SC.Wesen.neu(w, "gegner", { gegnerArt: akt.gegnerArt, stufe: rs, pos: akt.pos, heim: akt.pos.slice(), lp: rd.lp(rs), lpMax: rd.lp(rs), breite: rd.breite, hoehe: rd.hoehe, ort: g.ort, gerufenVon: g.id, bemerkt: true }); return; }
             if(akt.art === "schuss"){ SC.Wesen.neu(w, "geschoss", { pos: akt.pos, richtung: akt.richtung, tempo: akt.tempo, schaden: akt.schaden, team: "gegner", art: akt.geschossArt, lebensdauer: 3, farbe: akt.farbe }); a.spiele(akt.geschossArt === "spucke" ? "spucker" : "blaster"); }
             else { var r = gastgeber ? gastgeber.gegnerAktion(g, akt, ziele) : k.gegnerAktion(g, akt); if(r && r.schaden > 0) a.spiele("getroffen"); else if(r && r.abgeprallt) a.spiele("blocken"); }
           });

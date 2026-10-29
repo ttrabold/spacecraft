@@ -89,3 +89,20 @@ test("Gleiter schwebt über Lava, Buggy nimmt Schaden", function(){
   var g = SC.Fahrzeug.neu(w, "gleiter", [20, 63, 20], 0); fzLauf(w, g, {}, 3); wahr(g.pos[1] >= 60.5, "schwebt: " + g.pos[1]);
   var b = SC.Fahrzeug.neu(w, "buggy", [30, 63, 30], 0); fzLauf(w, b, {}, 3); wahr(SC.Fahrzeug.inLava(w, b), "Buggy steckt in Lava"); wahr(!SC.Fahrzeug.inLava(w, g), "Gleiter nicht");
 });
+
+// --- Gegner und Bosse ---
+test("Neue Gegner haben Modelle mit Leuchtteilen und Texte", function(){
+  ["lavagolem", "frostkrabbler", "magmakoenig", "rankenschleicher", "sumpfspucker", "sumpfkoloss"].forEach(function(a){
+    var d = SC.GEGNER[a]; wahr(d && d.modell.length >= 6, a); wahr(d.modell.some(function(t){ return t.leuchtet; }), a + " leuchtet"); wahr(SC.T.gegner[a], a + " Name"); gleich(typeof d.lp, "function");
+  });
+  wahr(SC.GEGNER.magmakoenig.boss && SC.GEGNER.sumpfkoloss.boss, "Bosse"); gleich(SC.T.gegner.magmakoenig, "Magmakönig");
+  SC.PLANET_REIHENFOLGE.forEach(function(id){ var d = SC.PLANETEN[id]; for(var o in d.gegner) d.gegner[o].forEach(function(a){ wahr(SC.GEGNER[a], id + ": " + a); }); for(var b in d.boss) d.boss[b].forEach(function(a){ wahr(SC.GEGNER[a] && SC.GEGNER[a].boss, id + ": Boss " + a); }); });
+});
+test("Bauwerke auf Glutfrost haben Magmakönig, Stufen mit Aufschlag", function(){
+  var p = new SC.Planet({ id: "glutfrost", seed: 99 }), n = 0;
+  for(var rx = 0; rx < 4; rx++) for(var rz = 0; rz < 2; rz++) SC.Bauwerke.inRegion(p, rx, rz).forEach(function(b){
+    if(b.bossArt) gleich(b.bossArt, "magmakoenig"); n++;
+    wahr(b.stufe >= Math.min(SC.Werte.MAX_STUFE, SC.ORTSSTUFE[b.typ][0] + 8), b.typ + " Stufe " + b.stufe); wahr(b.stufe <= SC.Werte.MAX_STUFE);
+  });
+  wahr(n > 4, "Bauwerke vorhanden");
+});

@@ -118,12 +118,13 @@ SC.Bauwerke = {};
       liste.push(baue(planet, "dungeon", dx, dy, dz, dungeon(Math.max(0, oben - dy))));
     }
     // Stufe und Boss mit eigenem Zufall, damit die Lage der Bauwerke gleich bleibt
-    var zs = SC.zufall(SC.hash3(planet.seed, rx, rz, 7002));
+    // Bosse und Stufenaufschlag aus der Planetentabelle; bei zwei Bossen wird gewürfelt, bei einem nicht (Startplanet bleibt gleich)
+    var zs = SC.zufall(SC.hash3(planet.seed, rx, rz, 7002)), pd = SC.Planeten.def(planet);
     liste.forEach(function(b){
-      var sp = SC.ORTSSTUFE[b.typ], lo = sp[0], hi = sp[1];
+      var sp = SC.ORTSSTUFE[b.typ], lo = sp[0], hi = sp[1], bl = pd.boss[b.typ];
       if(b.typ === "dungeon" && b.y < 16) lo = Math.ceil((lo + hi) / 2);
-      b.stufe = lo + Math.floor(zs() * (hi - lo + 1));
-      b.bossArt = b.typ === "herrenhaus" ? "schattenritter" : b.typ === "dungeon" ? (zs() < 0.5 ? "schattenritter" : "panzerkoloss") : null;
+      b.stufe = Math.min(SC.Werte.MAX_STUFE, lo + Math.floor(zs() * (hi - lo + 1)) + pd.stufenBonus);
+      b.bossArt = !bl ? null : bl.length === 1 ? bl[0] : (zs() < 0.5 ? bl[0] : bl[1]);
     });
     cache[k] = liste;
     return liste;

@@ -10,7 +10,8 @@ SC.Auftauchen = function(welt, daten, zf){
 
 (function(){
   var NAH = 40, WEG = 80, NACHT = 0.55;
-  var ARTEN = { station: ["patrouillendroide"], lager: ["weltraumbandit"], herrenhaus: ["weltraumbandit", "patrouillendroide"], dungeon: ["krabbler", "spucker"] };
+  // Gegnerarten je Bauwerkstyp und nachts kommen aus der Planetentabelle (js/planeten.js)
+  function arten(welt, typ){ var g = SC.Planeten.def(welt.planet).gegner; return g[typ] || g.dungeon; }
   var A = SC.Auftauchen.prototype;
 
   function ring(welt, a, x, z){ var P = welt.planet.groesse; return [SC.mod(x - a[0] + P / 2, P) - P / 2, SC.mod(z - a[2] + P / 2, P) - P / 2]; }
@@ -57,7 +58,7 @@ SC.Auftauchen = function(welt, daten, zf){
       var x = Math.floor(SC.mod(sp.pos[0] + dx * ab, w.planet.groesse)), z = Math.floor(SC.mod(sp.pos[2] + dz * ab, w.planet.groesse));
       var y = w.generator.hoehe(x, z) + 1;
       if(y <= SC.MEER + 1 || SC.BLOECKE[w.holeBlock(x, y, z)].fest || SC.BLOECKE[w.holeBlock(x, y + 1, z)].fest || !SC.BLOECKE[w.holeBlock(x, y - 1, z)].fest) continue;
-      var art2 = zf() < 0.6 ? "krabbler" : "spucker", st = Math.max(1, Math.min(12, ss + Math.floor(zf() * 3) - 1));
+      var na = arten(w, "nacht"), art2 = zf() < 0.6 ? na[0] : na[1] || na[0], st = Math.max(1, Math.min(12, ss + Math.floor(zf() * 3) - 1));
       if(this._neu(art2, st, [x + 0.5, y, z + 0.5], { nacht: true, ort: "dungeon" })) nacht++;
     }
   };
@@ -78,11 +79,11 @@ SC.Auftauchen = function(welt, daten, zf){
       var liste = normale.slice(0, anzahl).concat(plaetze.filter(function(q){ return q.typ === "boss"; }));
       if(anzahl > normale.length && normale.length) liste.push({ typ: "gegner", x: normale[0].x + 1, y: normale[0].y, z: normale[0].z, extra: true });
       a.plaetze[b.schluessel] = liste.length;
-      var arten = ARTEN[b.typ] || ARTEN.dungeon, bes = a.besiegt[b.schluessel] || {};
+      var ba = arten(w, b.typ), bes = a.besiegt[b.schluessel] || {};
       liste.forEach(function(q, k){
         var key = b.schluessel + "#" + k;
         if(bes[k] || (a.platzGegner[key] && w.wesen.has(a.platzGegner[key]))) return;
-        var boss = q.typ === "boss", art = boss ? b.bossArt : arten[Math.floor(zf() * arten.length)];
+        var boss = q.typ === "boss", art = boss ? b.bossArt : ba[Math.floor(zf() * ba.length)];
         var stufe = Math.max(1, b.stufe + Math.floor(zf() * 3) - 1 + (boss ? 2 : 0));
         var e = a._neu(art, stufe, [q.x + 0.5, q.y, q.z + 0.5], { ort: b.typ, bauwerk: b.schluessel, platzKey: key, platzIndex: k });
         if(e) a.platzGegner[key] = e.id;

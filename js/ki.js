@@ -50,7 +50,7 @@ SC.KI = {};
     var w = def.waffe, gen = SC.SCHWIERIGKEIT[schw] ? SC.SCHWIERIGKEIT[schw].genauigkeit : 0.6;
     var str = w.streuung * (1.6 - gen), auge = [g.pos[0], g.pos[1] + g.hoehe * 0.75, g.pos[2]];
     var dz = [d[0], d[1] + 1.1 - g.hoehe * 0.75, d[2]];
-    if(w.art === "spucke"){ var hd = Math.hypot(dz[0], dz[2]); dz[1] += hd * hd * 6 / (w.tempo * w.tempo); }   // im Bogen zielen
+    if(w.art === "spucke" || w.art === "glut"){ var hd = Math.hypot(dz[0], dz[2]); dz[1] += hd * hd * 6 / (w.tempo * w.tempo); }   // im Bogen zielen
     var l = Math.hypot(dz[0], dz[1], dz[2]) || 1, r = [dz[0] / l + (zf() - 0.5) * str, dz[1] / l + (zf() - 0.5) * str, dz[2] / l + (zf() - 0.5) * str];
     var rl = Math.hypot(r[0], r[1], r[2]);
     return { art: "schuss", pos: auge, richtung: [r[0] / rl, r[1] / rl, r[2] / rl], tempo: w.tempo, schaden: def.schaden(g.stufe), geschossArt: w.art, farbe: w.farbe };
@@ -61,7 +61,7 @@ SC.KI = {};
     if(!def){ g.entfernen = true; return akt; }
     var drin = SC.BLOECKE[welt.holeBlock(g.pos[0], g.pos[1] + 0.3, g.pos[2])];
     if(drin && drin.fest){ aufgeben(g); if(g.entfernen) return akt; }
-    g.cd = Math.max(0, (g.cd || 0) - dt); g.cd2 = Math.max(0, (g.cd2 || 0) - dt); g.zeit = (g.zeit || 0) + dt;
+    g.cd = Math.max(0, (g.cd || 0) - dt); g.cd2 = Math.max(0, (g.cd2 || 0) - dt); g.cd3 = Math.max(0, (g.cd3 || 0) - dt); g.zeit = (g.zeit || 0) + dt;
     if(g.sturmBis > 0) g.sturmBis -= dt;
     var heim = ring(welt, g.pos, g.heim || g.pos), heimAbst = Math.hypot(heim[0], heim[2]);
     var d = ziel ? ring(welt, g.pos, ziel.pos) : null, abst = d ? Math.hypot(d[0], d[2]) : Infinity;
@@ -86,6 +86,9 @@ SC.KI = {};
         if(sieht && g.cd <= 0 && abst <= a[1] + 6){ akt.push(schuss(g, def, ziel, d, zf, schw)); g.cd = def.waffe.rate * (0.8 + zf() * 0.4); }
       } else if(v === "nahkampf"){
         if(abst > def.hieb.reichweite * 0.8){ vx = r[0] * tempo; vz = r[1] * tempo; if(g.aufBoden && zf() < 0.03) g.geschw[1] = 6; }
+        // Anspringen (Rankenschleicher): aus mittlerer Entfernung hoch und schnell auf das Ziel zu
+        if(def.sprung && sieht && abst > 2.5 && abst <= def.sprung.reichweite && g.cd2 <= 0 && g.aufBoden){ g.geschw[1] = 10; g.sprungRichtung = r; g.sprungZeit = 0.5; g.cd2 = def.sprung.rate; }
+        if(def.sprung && g.sprungZeit > 0){ g.sprungZeit -= dt; vx = g.sprungRichtung[0] * tempo * 2.5; vz = g.sprungRichtung[1] * tempo * 2.5; }
         if(abst <= def.hieb.reichweite && g.cd <= 0){ akt.push({ art: "hieb", reichweite: def.hieb.reichweite, schaden: def.schaden(g.stufe) }); g.cd = def.hieb.rate; }
       } else if(v === "ritter"){
         g.blockt = g.cd > 0.3;                     // blockt, solange er nicht selbst angreift
@@ -100,6 +103,14 @@ SC.KI = {};
           if(abst < def.stampf.radius && g.cd2 <= 0){ akt.push({ art: "stampf", radius: def.stampf.radius, schaden: def.schaden(g.stufe) }); g.cd2 = def.stampf.rate; }
           else if(abst > 7 && abst < 16 && g.cd <= 0){ g.sturmBis = 1.2; g.sturmRichtung = r; g.cd = 6; }
           if(abst <= def.hieb.reichweite && g.cd <= 0){ akt.push({ art: "hieb", reichweite: def.hieb.reichweite, schaden: def.schaden(g.stufe) }); g.cd = def.hieb.rate; }
+          // Magmakönig: Glutbrocken auf Ziele außerhalb der Hiebreichweite
+          if(def.waffe && sieht && abst > def.hieb.reichweite + 1 && abst < 22 && g.cd3 <= 0){ akt.push(schuss(g, def, ziel, d, zf, schw)); g.cd3 = def.waffe.rate * (0.8 + zf() * 0.4); }
+          // Sumpfkoloss: ruft Helfer (höchstens def.ruft.max gleichzeitig; das Spiel legt sie an und setzt gerufenVon)
+          if(def.ruft && g.cd3 <= 0){
+            var dabei = 0; welt.wesen.forEach(function(e){ if(e.gerufenVon === g.id) dabei++; });
+            if(dabei < def.ruft.max){ var wk = zf() * Math.PI * 2; akt.push({ art: "ruf", gegnerArt: def.ruft.art, pos: [g.pos[0] + Math.sin(wk) * 3, g.pos[1] + 0.5, g.pos[2] + Math.cos(wk) * 3] }); }
+            g.cd3 = def.ruft.rate;
+          }
         }
       }
     } else if(heimAbst > 2 && !g.bemerkt){

@@ -69,14 +69,15 @@
   // Pro Bild (nicht als Gast): Fahrzeuge ohne Fahrer weiterrechnen, solange sie rollen oder in der Luft sind
   S._fahrzeugeBild = function(dt){
     if(this.rolle === "gast") return;
-    var w = this.welt, ich = this._fzId(), P = w.planet.groesse;
+    var w = this.welt, ich = this._fzId(), P = w.planet.groesse, mit = null;
     w.fahrzeuge.forEach(function(f){
       if(f.weg) return;
       // Fährt ein Gast: zwischen seinen Meldungen (15 pro Sekunde) mit seiner Geschwindigkeit weiter, statt zu springen
-      if(f.sitze[0] !== null && f.sitze[0] !== ich){ f.pos = [SC.mod(f.pos[0] + f.geschw[0] * dt, P), f.pos[1] + f.geschw[1] * dt, SC.mod(f.pos[2] + f.geschw[2] * dt, P)]; return; }
+      if(f.sitze[0] !== null && f.sitze[0] !== ich){ f.pos = [SC.mod(f.pos[0] + f.geschw[0] * dt, P), f.pos[1] + f.geschw[1] * dt, SC.mod(f.pos[2] + f.geschw[2] * dt, P)]; if(f.sitze.indexOf(ich) > 0) mit = f; return; }
       if(f.sitze[0] !== null) return;
       if(f.tempo !== 0 || !f.aufBoden || f.geschw[1] !== 0) SC.Fahrzeug.schritt(w, f, null, dt);
     });
+    if(mit) this._fahrzeugFolgen(this._imFahrzeug(), false); // als Mitfahrer eines Gastes: Sitz nach dem Vorausrechnen im selben Bild
   };
 
   // --- Gemeinsam spielen ---
@@ -89,6 +90,7 @@
     var im = this._imFahrzeug();
     if(im && !war) this._eingestiegen(im.f, im.sitz);
     else if(!im && war) this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, war.f, war.sitz));
+    else if(im) this._fahrzeugFolgen(im, false); // gespiegeltes Fahrzeug hat sich bewegt: Sitz im selben Bild nachziehen
     this._fzWar = im;
   };
 

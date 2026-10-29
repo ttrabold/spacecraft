@@ -167,3 +167,17 @@ test("Touch: beim Verlassen der Welt wird das Overlay ausgeblendet", function(){
   var u = fhSpiel(), s = u.s, ui = document.createElement("div"), e = new SC.Eingabe(document.createElement("canvas"), ui); s.eingabe.touch = new SC.Touch(e, ui); s.eingabe.touch.sichtbar(true);
   s._abbauen(); wahr(s.eingabe.touch.el.hidden, "ausgeblendet"); s.eingabe.touch.entferne(); e.entferne();
 });
+test("Mehrspieler: eigener Sitz folgt dem Fahrzeug im selben Bild, nicht ein Bild später", function(){
+  var u, f, fg;
+  return mspZwei().then(function(x){ u = x; f = u.h.welt.fahrzeuge.get("start"); SC.Fahrzeug.einsteigen(f, u.h.daten.spieler.figurId); SC.Fahrzeug.einsteigen(f, u.eigen.spieler.figurId); u.h._raumBild(0.1, false); return mspLauf(u.netz); }).then(function(){
+    u.g._raumBild(0.1, false); fg = u.g.welt.fahrzeuge.get("start"); wahr(u.g._imFahrzeug(), "Gast sitzt");
+    f.pos = [f.pos[0] + 3, f.pos[1], f.pos[2]]; f.geschw = [0, 0, 0]; u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){
+    u.g._raumBild(0.1, false);
+    gleich(JSON.stringify(u.g.spieler.pos), JSON.stringify(SC.Fahrzeug.sitzPos(fg, 1, 2048)), "Gast: Sitz nach dem Abgleich");
+    // Gastgeber als Mitfahrer, ein anderer fährt: nach dem Vorausrechnen sitzt er am neuen Platz
+    var s = u.h; SC.Fahrzeug.aussteigen(f, s.daten.spieler.figurId); SC.Fahrzeug.aussteigen(f, u.eigen.spieler.figurId); SC.Fahrzeug.einsteigen(f, "anderer"); SC.Fahrzeug.einsteigen(f, s.daten.spieler.figurId);
+    s._fahren({}, 1 / 60, false); f.geschw = [10, 0, 0]; s._fahrzeugeBild(0.1);
+    gleich(JSON.stringify(s.spieler.pos), JSON.stringify(SC.Fahrzeug.sitzPos(f, 1, 2048)), "Gastgeber: Sitz nach dem Vorausrechnen");
+  }).then(mspFertig, mspFehler);
+});

@@ -8,3 +8,9 @@ test("Löschen braucht zwei Klicks", function(){ var w=document.createElement("d
 test("Blockauswahl zeigt nur auswählbare Blöcke", function(){ var w=document.createElement("div"),ui=leereUI(w),gewaehlt=null; ui.zeigeBlockauswahl(function(id){gewaehlt=id;}); wahr(!w.querySelector('[data-block="'+SC.B.GRUNDGESTEIN+'"]')); w.querySelector('[data-block="'+SC.B.GLAS+'"]').click(); gleich(gewaehlt,SC.B.GLAS); });
 test("Schnellleiste im HUD", function(){ var w=document.createElement("div"),ui=leereUI(w),s=new SC.Spieler({id:"a",pos:[0,0,0],modus:"kreativ",schnellleiste:[1,2,3,4,5,6,7,8,9]}); s.auswahl=4; ui.hud(s,{fps:60}); gleich(w.querySelectorAll(".leiste-platz").length,9); wahr(w.querySelectorAll(".leiste-platz")[4].classList.contains("gewaehlt")); });
 test("Neue Welt hat Feld Figurname und übergibt es", function(){ var w=document.createElement("div"),gest=null,ui=new SC.UI(w,{slots:new SC.Slots(uiBackend()),beiStart:function(d){gest=d;},beiImport:function(){},beiExport:function(){}}); ui.zeigeNeueWelt(); var f=w.querySelector("#nw-figur"); wahr(!!f); gleich(f.getAttribute("maxlength"),"16"); f.value="Ben"; return ui._klick(w.querySelector('[data-aktion="los"]')).then(function(){ gleich(gest.spieler.name,"Ben"); }); });
+test("Einstellungen: Bildrate standardmäßig 60, wählbar 30 / 60 / unbegrenzt", function(){
+  gleich(SC.Einstellungen.standard().bildrate, 60);
+  var w = document.createElement("div"), e = SC.Einstellungen.standard(), neu = null, ui = new SC.UI(w, { einstellungen: e, beiEinstellungen: function(x){ neu = x; } });
+  ui.zeigeEinstellungen(function(){}); var sel = w.querySelector("#e-bildrate"); wahr(sel, "Auswahl da"); gleich(sel.options.length, 3); gleich(sel.value, "60");
+  sel.value = "0"; sel.dispatchEvent(new Event("change")); gleich(neu && neu.bildrate, 0, "unbegrenzt");
+});

@@ -76,7 +76,7 @@ SC.T = {
   sichtweite: "Sichtweite",
   empfindlichkeit: "Maus-/Wischempfindlichkeit",
   touchGroesse: "Größe der Touch-Knöpfe",
-  fpsAnzeigen: "FPS anzeigen",
+  fpsAnzeigen: "FPS anzeigen", bildrate: "Höchste Bildrate (Bilder pro Sekunde)", bildrateFrei: "Unbegrenzt",
   fertig: "Fertig",
   bloeckeTitel: "Blöcke",
   speichernFehlgeschlagen: "Speichern hat nicht geklappt. Bitte die Welt exportieren!",

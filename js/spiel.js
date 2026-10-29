@@ -59,6 +59,8 @@ SC.Spiel.prototype.rolle = "allein";   // "allein" | "gastgeber" | "gast"
 SC.Spiel.prototype.raum = null;        // SC.Gastgeber, SC.Gast oder null
 // Netz-Adapter für Räume (in Tests ersetzbar, z. B. durch SC.Netz.speicherNetz().adapter())
 SC.Spiel.adapter = function(){ return SC.Netz.peerjs(); };
+// Bildrate begrenzen: Bild zur Zeit t fällig, wenn seit dem letzten gezeichneten genug Zeit vergangen ist (2 ms Spielraum für schwankende Bildtakte)
+SC.Spiel.bildFaellig = function(t, letzte, max){ return !max || t - letzte >= 1000 / max - 2; };
 
 // Startpunkt neuer Welten: Spalte über Land, spiralförmig um die Planetenmitte gesucht
 SC.Spiel.startpunkt = function(planet){
@@ -143,7 +145,7 @@ SC.Spiel.startpunkt = function(planet){
     this.eingabe.sperreMaus();
     this._laeuft = true; this._t0 = performance.now();
     if(!daten.spieler.pos) this.speichere("auto");
-    requestAnimationFrame(function bild(t){ if(!s._laeuft) return; s._bild(t); requestAnimationFrame(bild); });
+    requestAnimationFrame(function bild(t){ if(!s._laeuft) return; if(SC.Spiel.bildFaellig(t, s._t0, +s.einstellungen.bildrate)) s._bild(t); requestAnimationFrame(bild); });
   };
 
   SC.Spiel.prototype._bild = function(t){

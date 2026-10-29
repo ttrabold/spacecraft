@@ -36,3 +36,13 @@ test("Ich-Ansicht und Figur: Block hält Schwert und Arm quer, Loslassen löst",
 test("Figur von außen: Hieb schwingt den rechten Arm mit", function(){
   var r = _rb(); r.hieb(2); r._schwungBild(0.06, 0); wahr(Math.abs(r.armR.rotation.x) > 0.3, "Arm schwingt"); r._schwungBild(0.2, 0); gleich(r.armR.rotation.x, 0);
 });
+// Sonderkraft Leuchten (Issue #55): Punktlicht im Block-Shader statt Lichtschein vor der Kamera
+test("Leuchten: Licht um die Figur nur mit Leuchten-Ausrüstung, kein Schein-Sprite", function(){
+  var r = _rb(); r.ausruestung = SC.Render.prototype.ausruestung; r._fig = SC.Figur.baue("#3a6fd8"); r.szene = new THREE.Scene();
+  r.uniforms = { leuchtPos: { value: new THREE.Vector3() }, leuchtStaerke: { value: 0 } };
+  r.ausruestung({ helm: { sonder: "leuchten" } }, null); r._leuchtBild(4, 70, 9);
+  wahr(r.uniforms.leuchtStaerke.value > 0, "leuchtet"); gleich(r.uniforms.leuchtPos.value.x, 4); gleich(r.uniforms.leuchtPos.value.z, 9); wahr(r.uniforms.leuchtPos.value.y > 70, "auf Brusthöhe");
+  wahr(!r.schein, "kein Sprite mehr");
+  r.ausruestung({ helm: { sonder: "schnell" } }, null); r._leuchtBild(4, 70, 9); gleich(r.uniforms.leuchtStaerke.value, 0);
+  wahr(/leuchtStaerke/.test(SC.Render.FS), "Shader kennt das Licht");
+});

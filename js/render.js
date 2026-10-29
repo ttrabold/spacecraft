@@ -17,15 +17,19 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
 
   var VS = [
     "attribute vec2 licht; attribute vec3 farbe;",
-    "varying vec2 vUv; varying vec2 vLicht; varying vec3 vFarbe; varying float vTiefe;",
-    "void main(){ vUv = uv; vLicht = licht; vFarbe = farbe;",
+    "varying vec2 vUv; varying vec2 vLicht; varying vec3 vFarbe; varying float vTiefe; varying vec3 vWelt;",
+    "void main(){ vUv = uv; vLicht = licht; vFarbe = farbe; vWelt = (modelMatrix * vec4(position, 1.0)).xyz;",
     "  vec4 mv = modelViewMatrix * vec4(position, 1.0); vTiefe = -mv.z; gl_Position = projectionMatrix * mv; }"
   ].join("\n");
+  // leuchtPos/leuchtStaerke: Sonderkraft Leuchten, Punktlicht um die eigene Figur (linear bis SC.LEUCHT_RADIUS, ohne Schatten)
+  SC.LEUCHT_RADIUS = 8; SC.LEUCHT_STAERKE = 0.75;
   var FS = [
     "uniform sampler2D atlas; uniform float tageslicht; uniform vec3 nebelFarbe; uniform float nebelNah; uniform float nebelFern; uniform float alphaMin;",
-    "varying vec2 vUv; varying vec2 vLicht; varying vec3 vFarbe; varying float vTiefe;",
+    "uniform vec3 leuchtPos; uniform float leuchtStaerke;",
+    "varying vec2 vUv; varying vec2 vLicht; varying vec3 vFarbe; varying float vTiefe; varying vec3 vWelt;",
     "void main(){ vec4 t = texture2D(atlas, vUv); if(t.a < alphaMin) discard;",
     "  vec3 hell = max(vec3(vLicht.x * tageslicht), vLicht.y * vFarbe * 1.15); hell = max(hell, vec3(0.06));",
+    "  hell = max(hell, leuchtStaerke * clamp(1.0 - distance(vWelt, leuchtPos) / " + SC.LEUCHT_RADIUS.toFixed(1) + ", 0.0, 1.0) * vec3(0.85, 0.95, 1.0));",
     "  vec3 c = t.rgb * hell; float n = smoothstep(nebelNah, nebelFern, vTiefe);",
     "  gl_FragColor = vec4(mix(c, nebelFarbe, n), t.a); }"
   ].join("\n");
@@ -46,7 +50,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var atlas = new THREE.CanvasTexture(SC.Texturen.atlas(SC.PALETTEN[planet.palette] || SC.PALETTEN.start));
     atlas.magFilter = THREE.NearestFilter; atlas.minFilter = THREE.NearestFilter; atlas.generateMipmaps = false; atlas.colorSpace = THREE.NoColorSpace;
     this.atlas = atlas;
-    var uni = { atlas: { value: atlas }, tageslicht: { value: 1 }, nebelFarbe: { value: new THREE.Color() }, nebelNah: { value: 100 }, nebelFern: { value: 150 }, alphaMin: { value: 0.5 } };
+    var uni = { atlas: { value: atlas }, tageslicht: { value: 1 }, nebelFarbe: { value: new THREE.Color() }, nebelNah: { value: 100 }, nebelFern: { value: 150 }, alphaMin: { value: 0.5 }, leuchtPos: { value: new THREE.Vector3() }, leuchtStaerke: { value: 0 } };
     this.uniforms = uni;
     this.matFest = new THREE.ShaderMaterial({ uniforms: uni, vertexShader: VS, fragmentShader: FS });
     var uniD = Object.assign({}, uni, { alphaMin: { value: 0.02 } });
@@ -64,6 +68,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var r = this; this._groesse = function(){ r.renderer.setSize(window.innerWidth, window.innerHeight, false); r.kamera.aspect = window.innerWidth / window.innerHeight; r.kamera.updateProjectionMatrix(); };
     window.addEventListener("resize", this._groesse); this._groesse();
   };
+  SC.Render.FS = FS;
 
   SC.Render.prototype._baueHimmel = function(){
     var g = new THREE.SphereGeometry(500, 24, 12);
@@ -133,14 +138,12 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     SC.Figur.waffeStil(this.handWaffe, waffe);
     if(waffe && waffe.art === "laserschwert") this.schweif.material.color.copy(this.handWaffe.klinge.material.color);
     this._mitWaffe = !!waffe;
-    // Sonderkraft Leuchten: sanfter Lichtschein um die Figur bei Nacht
+    // Sonderkraft Leuchten: Licht um die Figur (siehe _leuchtBild)
     this._leuchtet = !!a && ["helm", "brust"].some(function(p){ return a[p] && a[p].sonder === "leuchten"; });
-    if(!this.schein){
-      var c = document.createElement("canvas"); c.width = c.height = 64; var x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 2, 32, 32, 32);
-      g.addColorStop(0, "rgba(200,240,255,0.55)"); g.addColorStop(1, "rgba(200,240,255,0)"); x.fillStyle = g; x.fillRect(0, 0, 64, 64);
-      this.schein = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-      this.schein.scale.set(9, 9, 1); this.schein.visible = false; this.szene.add(this.schein);
-    }
+  };
+  SC.Render.prototype._leuchtBild = function(px, py, pz){
+    this.uniforms.leuchtStaerke.value = this._leuchtet ? SC.LEUCHT_STAERKE : 0;
+    if(this._leuchtet) this.uniforms.leuchtPos.value.set(px, py + 1.2, pz);
   };
 
   // Chunk-Grenzen (Entwicklerwerkzeuge): Gitter um den Chunk des Spielers
@@ -274,7 +277,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.mond.position.set(k.position.x - sx * 400, k.position.y - sy * 400, k.position.z + 60); this.mond.lookAt(k.position);
     this.sterne.position.copy(k.position); this.sterneMat.opacity = Math.max(0, 1 - h.tageslicht * 1.6);
     this.hand.material.color.setScalar(Math.max(0.35, h.tageslicht));
-    if(this.schein){ this.schein.visible = this._leuchtet && h.tageslicht < 0.6; if(this.schein.visible) this.schein.position.set(px, spieler.pos[1] + 1.2, pz); }
+    this._leuchtBild(px, spieler.pos[1], pz);
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);
     this.uniforms.nebelNah.value = this.sichtweite * 16 * 0.55; this.uniforms.nebelFern.value = this.sichtweite * 16 * 0.95;
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());

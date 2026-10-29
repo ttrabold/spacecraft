@@ -258,7 +258,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var sitzt = typeof spieler.sitzt === "number";
     this.figur.position.set(px, spieler.pos[1], pz); this.figur.rotation.y = sitzt ? spieler.sitzt : spieler.blick[0];
     this.kopf.rotation.x = spieler.blick[1];
-    var gehen = Math.hypot(spieler.geschw[0], spieler.geschw[2]) > 0.5 && spieler.aufBoden, schw = gehen ? Math.sin(performance.now() / 120) * 0.6 : 0;
+    var schw = SC.Figur.laufSchwung(spieler, performance.now());
     this.armL.rotation.x = schw; this.beinL.rotation.x = sitzt ? SC.Figur.SITZEN : -schw; this.beinR.rotation.x = sitzt ? SC.Figur.SITZEN : schw;
     this._schwungBild(dt, -schw);
     this._handBlock(spieler.modus === "zuschauer" ? -1 : spieler.schnellleiste[spieler.auswahl]);

@@ -1,6 +1,8 @@
 // Figuren-Fabrik (eigene Figur und Mitspieler) und Darstellung der Mitspieler mit Namensschild
 SC.Figur = {
   SITZEN: 1.4, // Beinwinkel im Fahrzeug (Füße nach vorn)
+  // Schwung von Armen und Beinen der eigenen Figur beim Laufen; im Fahrzeug (sitzt) und im Stand keiner
+  laufSchwung: function(sp, jetzt){ return typeof sp.sitzt !== "number" && sp.aufBoden && Math.hypot(sp.geschw[0], sp.geschw[2]) > 0.5 ? Math.sin(jetzt / 120) * 0.6 : 0; },
   // Farbe (CSS-Text oder Zahl) in sRGB-Kanälen abdunkeln
   dunkler: function(farbe, f){
     var h = new THREE.Color(farbe).getHex(), r = (h >> 16) & 255, g = (h >> 8) & 255, b = h & 255;

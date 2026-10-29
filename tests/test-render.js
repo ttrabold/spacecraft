@@ -46,3 +46,9 @@ test("Leuchten: Licht um die Figur nur mit Leuchten-Ausrüstung, kein Schein-Spr
   r.ausruestung({ helm: { sonder: "schnell" } }, null); r._leuchtBild(4, 70, 9); gleich(r.uniforms.leuchtStaerke.value, 0);
   wahr(/leuchtStaerke/.test(SC.Render.FS), "Shader kennt das Licht");
 });
+test("Figur: im Fahrzeug keine Laufanimation, zu Fuß schon", function(){
+  var sp = { geschw: [5, 0, 0], aufBoden: true, sitzt: null };
+  wahr(Math.abs(SC.Figur.laufSchwung(sp, 188)) > 0.1, "zu Fuß schwingen Arme und Beine");
+  sp.sitzt = 0.4; gleich(SC.Figur.laufSchwung(sp, 188), 0, "sitzend nicht");
+  gleich(SC.Figur.laufSchwung({ geschw: [0, 0, 0], aufBoden: true }, 188), 0, "im Stand nicht");
+});

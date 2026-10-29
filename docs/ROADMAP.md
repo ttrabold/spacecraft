@@ -29,7 +29,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 | 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | live als 0.4.0 (inkl. Entwicklerwerkzeuge, Gamepad, Musik und Geräusche); offen nur noch #18 (Test auf echtem iPad) | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | live als 0.5.1; offen: kleinere Punkte #38–#42 und Balance nach Feedback | [Design](superpowers/specs/2026-10-23-stufe-2-survival-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-2-survival.md) |
 | 3 | Gemeinsam spielen per Raumcode | fertig, live als 0.6.1 | [Design](superpowers/specs/2026-10-24-stufe-3-gemeinsam-spielen-design.md) | [Plan](superpowers/plans/2026-10-24-stufe-3-gemeinsam-spielen.md) |
-| 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | umgesetzt als 0.7.0 auf Branch `stufe-4` (nicht gepusht); Gerätetest offen | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | [Plan](superpowers/plans/2026-10-29-stufe-4-fahrzeuge.md) |
+| 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | umgesetzt als 0.7.1 auf Branch `stufe-4`, in der Test-Vorschau; Gerätetest läuft | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | [Plan](superpowers/plans/2026-10-29-stufe-4-fahrzeuge.md) |
 | 5 | Raumschiffe, nahtloser Flug zu anderen Planeten | offen | – | – |
 | später | Crafting: aus Rohstoffen Dinge herstellen (gewünscht, Zeitpunkt offen) | offen | – | – |
 

@@ -79,3 +79,28 @@ test("Bordgeschütz: Buggy schießt mit Abklingzeit, Gleiter hat keins", functio
   sp.pos = SC.Fahrzeug.aussteigePos(s.welt, u.f, 0); s.benutzen(); gleich(s._imFahrzeug().f, u.f);
   s._survival(fhE({ abbauen: true }), 1 / 60, false, 5000); gleich(schuesse(), 0, "Gleiter schießt nicht");
 });
+
+// --- Kreativ und Entwicklerwerkzeuge ---
+function fhZiele(s, f){ var sp = s.spieler, d = SC.FAHRZEUGE[f.art], dx = f.pos[0] - sp.pos[0], dz = f.pos[2] - sp.pos[2], a = sp.augen(), dy = f.pos[1] + d.hoehe / 2 - a[1]; sp.blick = [Math.atan2(-dx, -dz), Math.atan2(dy, Math.hypot(dx, dz))]; }
+test("Kreativ: Fahrzeug hinstellen und wieder entfernen", function(){
+  var u = fhSpiel("kreativ"), s = u.s, sp = s.spieler; sp.blick = [Math.PI, 0];
+  var f = s.fahrzeugHinstellen("buggy"); wahr(f && s.welt.fahrzeuge.get(f.id) === f, "steht"); wahr(/^frei-/.test(f.id)); gleich(f.fundort, null);
+  var ab = SC.Fahrzeug.abstand(s.welt, f, sp.pos).waagerecht; wahr(ab > 1 && ab < 7, "vor dem Spieler: " + ab); wahr(SC.Fahrzeug.frei(s.welt, f.pos, 2.6, 2), "frei");
+  fhZiele(s, f); s._survival(fhE({ abbauen: true, abbauenGehalten: true }), 1 / 60, false, 1000); gleich(s.welt.fahrzeuge.has(f.id), false, "entfernt");
+});
+test("Kreativ: Fundort-Fahrzeug und besetztes Fahrzeug lassen sich nicht entfernen", function(){
+  var u = fhSpiel("kreativ"), s = u.s; fhZiele(s, u.f); s._survival(fhE({ abbauen: true, abbauenGehalten: true }), 1 / 60, false, 1000); wahr(s.welt.fahrzeuge.has("start"), "Fundort bleibt");
+  s.spieler.blick = [Math.PI, 0]; var f = s.fahrzeugHinstellen("gleiter"); SC.Fahrzeug.einsteigen(f, "jemand"); fhZiele(s, f); s._survival(fhE({ abbauen: true, abbauenGehalten: true }), 1 / 60, false, 2000); wahr(s.welt.fahrzeuge.has(f.id), "besetzt bleibt");
+});
+test("Entwickler: Fahrzeug erscheinen lassen, Fahrzeuge weg schickt Fundort-Fahrzeuge heim", function(){
+  var u = fhSpiel("survival"), s = u.s, div = document.createElement("div"); s.render.sichtweite = 6; s.render.chunks = new Map(); s.render.chunkGrenzen = false;
+  var pn = new SC.Entwickler.Panel(div, s); pn.zeige(); div.querySelector("#ew-fz").value = "flieger"; div.querySelector('[data-ew="fahrzeug"]').click();
+  var frei = []; s.welt.fahrzeuge.forEach(function(f){ if(!f.fundort) frei.push(f); }); gleich(frei.length, 1); gleich(frei[0].art, "flieger");
+  u.f.pos = [u.f.pos[0] + 7, u.f.pos[1] + 3, u.f.pos[2]]; u.f.panzerung = 3;
+  div.querySelector('[data-ew="fahrzeuge-weg"]').click(); gleich(s.welt.fahrzeuge.has(frei[0].id), false, "freies weg");
+  gleich(JSON.stringify(u.f.pos), JSON.stringify(u.f.heim), "Fundort-Fahrzeug daheim"); gleich(u.f.panzerung, SC.FAHRZEUGE.gleiter.panzerung);
+});
+test("Blockauswahl: Reiter Fahrzeuge stellt hin", function(){
+  var w = document.createElement("div"), ui = new SC.UI(w, {}), gew = []; ui.zeigeBlockauswahl(function(){}, { ausruestung: true, beiFahrzeug: function(a){ gew.push(a); } });
+  var k = w.querySelectorAll('[data-aktion="fahrzeug"]'); gleich(k.length, 3); ui._klick(k[1]); gleich(gew[0], "buggy");
+});

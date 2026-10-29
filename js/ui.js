@@ -239,11 +239,15 @@ SC.UI = function(wurzel, o){
     var ausr = opt.ausruestung ? '<div class="raster ausr" hidden>' + Object.keys(SC.GEGENSTAENDE).map(function(a){
       return [0, 1, 2, 3, 4].map(function(s){ return '<button class="block" data-aktion="gegenstand" data-art="' + a + '" data-selt="' + s + '" style="border-color:' + SC.SELTENHEIT[s].farbe + '"><img src="' + SC.UI.gegenstandBild({ art: a, seltenheit: s }) + '" alt=""><span>' + esc(SC.T.gegenstand[a][0]) + "</span></button>"; }).join("");
     }).join("") + "</div>" : "";
-    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl">' + kacheln + "</div>" + ausr + '<div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+    // Kreativ: dritter Reiter mit den Fahrzeugen zum Hinstellen
+    if(opt.beiFahrzeug) reiter = reiter.replace("</div>", '<button class="modus" data-aktion="reiter" data-id="fahrzeuge">' + esc(SC.T.fahrzeugeTitel) + "</button></div>");
+    var fz = opt.beiFahrzeug ? '<div class="raster fz" hidden>' + Object.keys(SC.FAHRZEUGE).map(function(a){ return '<button class="block" data-aktion="fahrzeug" data-art="' + a + '"><span>' + esc(SC.FAHRZEUGE[a].name) + "</span></button>"; }).join("") + "</div>" : "";
+    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl">' + kacheln + "</div>" + ausr + fz + '<div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
       {
         block: function(el){ beiWahl(+el.getAttribute("data-block")); },
+        fahrzeug: function(el){ opt.beiFahrzeug(el.getAttribute("data-art")); },
         gegenstand: function(el){ opt.beiGegenstand && opt.beiGegenstand(el.getAttribute("data-art"), +el.getAttribute("data-selt")); },
-        reiter: function(el){ var a = el.getAttribute("data-id") === "ausruestung"; ui.ebene.querySelector(".raster.bl").hidden = a; ui.ebene.querySelector(".raster.ausr").hidden = !a; Array.prototype.forEach.call(ui.ebene.querySelectorAll(".reiter button"), function(b){ b.classList.toggle("an", b === el); }); },
+        reiter: function(el){ var id = el.getAttribute("data-id"), a = id === "ausruestung", fzr = ui.ebene.querySelector(".raster.fz"); ui.ebene.querySelector(".raster.bl").hidden = id !== "bloecke"; ui.ebene.querySelector(".raster.ausr").hidden = !a; if(fzr) fzr.hidden = id !== "fahrzeuge"; Array.prototype.forEach.call(ui.ebene.querySelectorAll(".reiter button"), function(b){ b.classList.toggle("an", b === el); }); },
         fertig: function(){ ui.schliesse(); ui.o.beiWeiter && ui.o.beiWeiter(); }
       });
   };

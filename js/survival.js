@@ -118,6 +118,8 @@
           if(beute.length){ a.spiele("kiste"); this.beuteAuswerfen([ziel.x + 0.5, ziel.y + 0.5, ziel.z + 0.5], beute.map(function(b){ return { gegenstand: b }; })); }
         } else if(!(wdef && wdef.typ === "schwert")) this.setzeAusRucksack(ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz);
       }
+    } else if(!survival && !offen && !imFz && e.abbauen && this._fahrzeugAbbauen(ziel)){
+      // Kreativ: frei hingestelltes Fahrzeug entfernt
     } else if(!survival && ziel && !offen){
       // Kreativ: sofort abbauen, Blöcke aus der Leiste setzen
       if(e.abbauen && SC.BLOECKE[w.holeBlock(ziel.x, ziel.y, ziel.z)].zerstoerbar) w.setzeBlock(ziel.x, ziel.y, ziel.z, SC.B.LUFT, "spieler");

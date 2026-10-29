@@ -201,6 +201,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     }
     return null;
   }
+  F.freieStelle = freieStelle;
   F.fundortPos = function(welt, b){
     var art = F.FUNDORT_ART[b.typ];
     return freieStelle(welt, b.x + b.breite + 2 + SC.FAHRZEUGE[art].breite / 2, b.z + (b.tiefe >> 1), art, 0, 8);
@@ -231,6 +232,19 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
       f.pos = f.heim.slice(); f.blick = 0; f.geschw = [0, 0, 0]; f.tempo = 0; f.panzerung = SC.FAHRZEUGE[f.art].panzerung;
       f.weg = false; f.wiederBei = null; f.sitze = [null, null, null, null];
     });
+  };
+
+  // Unbesetztes Fundort-Fahrzeug sofort an den Fundort zurück (auch ein verpufftes)
+  F.heimholen = function(f){ if(f.heim && f.sitze.every(function(x){ return x === null; })){ f.wiederBei = 0; f.weg = true; F.wiederkehr({ fahrzeuge: new Map([[f.id, f]]) }, 0); } };
+  // Erstes Fahrzeug auf dem Strahl a + r·t (t ≤ reichweite) → { f, t } oder null
+  F.anvisiert = function(welt, a, r, reichweite){
+    var P = welt.planet.groesse, b = [a[0] + r[0] * reichweite, a[1] + r[1] * reichweite, a[2] + r[2] * reichweite], best = null;
+    welt.fahrzeuge.forEach(function(f){
+      if(f.weg) return;
+      var d = SC.FAHRZEUGE[f.art], p = [a[0] + SC.mod(f.pos[0] - a[0] + P / 2, P) - P / 2, f.pos[1], a[2] + SC.mod(f.pos[2] - a[2] + P / 2, P) - P / 2], t = SC.Wesen.strecke(a, b, p, d.breite, d.hoehe);
+      if(t >= 0 && (!best || t < best.t)) best = { f: f, t: t * reichweite };
+    });
+    return best;
   };
 
   // --- Kampf: Panzerung, Verpuffen, Erholung, Rammen ---

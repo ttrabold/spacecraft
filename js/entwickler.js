@@ -61,7 +61,9 @@ SC.Entwickler = {};
       '<div class="ew-reihe"><select id="ew-art">' + Object.keys(SC.GEGNER).map(function(a){ return '<option value="' + a + '">' + esc(T.gegner[a]) + "</option>"; }).join("") + '</select><input id="ew-gstufe" type="number" min="1" max="30" value="3"><button data-ew="gegner">' + esc(T.ewErscheinen) + '</button><button data-ew="gegner-weg">' + esc(T.ewGegnerWeg) + "</button></div>" +
       '<div class="ew-reihe"><select id="ew-gart">' + Object.keys(SC.GEGENSTAENDE).map(function(a){ return '<option value="' + a + '">' + esc(T.gegenstand[a][0]) + "</option>"; }).join("") + '</select><select id="ew-selt">' + [0, 1, 2, 3, 4].map(function(i){ return '<option value="' + i + '">' + esc(T.seltenheitName[i]) + "</option>"; }).join("") + '</select><button data-ew="gegenstand">' + esc(T.ewErzeugen) + "</button></div>" +
       '<div class="ew-reihe"><input id="ew-sstufe" type="number" min="1" max="30" value="' + (s.kampf ? s.kampf.werte.stufe : 1) + '"><button data-ew="stufe">' + esc(T.ewStufeSetzen) + '</button><button data-ew="bauwerke">' + esc(T.ewBauwerkeReset) + "</button></div>" +
-      '<label class="ew-zeile"><input type="checkbox" id="ew-unverwundbar"' + (s.kampf && s.kampf.unverwundbar ? " checked" : "") + "> " + esc(T.ewUnverwundbar) + "</label></div>";
+      '<label class="ew-zeile"><input type="checkbox" id="ew-unverwundbar"' + (s.kampf && s.kampf.unverwundbar ? " checked" : "") + "> " + esc(T.ewUnverwundbar) + "</label></div>" +
+      // Fahrzeuge
+      '<div class="ew-gruppe"><b>' + esc(T.fahrzeugeTitel) + '</b><div class="ew-reihe"><select id="ew-fz">' + Object.keys(SC.FAHRZEUGE).map(function(a){ return '<option value="' + a + '">' + esc(SC.FAHRZEUGE[a].name) + "</option>"; }).join("") + '</select><button data-ew="fahrzeug">' + esc(T.ewErscheinen) + '</button><button data-ew="fahrzeuge-weg">' + esc(T.ewFahrzeugeWeg) + "</button></div></div>";
     this.el.hidden = false;
     var q = function(id){ return p.el.querySelector(id); };
     q("#ew-zeit").addEventListener("input", function(){ s.tageszeit = +this.value; });
@@ -100,6 +102,8 @@ SC.Entwickler = {};
     }
     if(a === "stufe" && s.kampf){ s.kampf.werte.stufe = Math.max(1, Math.min(30, +this.el.querySelector("#ew-sstufe").value || 1)); s.kampf.werte.erfahrung = 0; s.kampf.ruestungAnwenden(); s.kampf.werte.lp = s.kampf.werte.lpMax; }
     if(a === "bauwerke" && s.daten.planeten){ var pl = s.daten.planeten[s.welt.planet.id]; pl.geraeumt = {}; if(s.auftauchen){ s.auftauchen.besiegt = {}; } }
+    if(a === "fahrzeug" && s.fahrzeugHinstellen) s.fahrzeugHinstellen(this.el.querySelector("#ew-fz").value);
+    if(a === "fahrzeuge-weg" && s.fahrzeugeWeg) s.fahrzeugeWeg();
     if(a.indexOf("m-") === 0){ var m = a.slice(2); if(s.modus) s.modus(m); else sp.modus = m; }
     this.aktualisiere();
   };

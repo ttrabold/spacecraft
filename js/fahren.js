@@ -71,6 +71,32 @@
     });
   };
 
+  // --- Kreativ und Entwicklerwerkzeuge ---
+  // Frei hingestelltes Fahrzeug 5 Blöcke vor dem Spieler (Blickrichtung), auf freiem Boden in der Nähe
+  S.fahrzeugHinstellen = function(art){
+    var sp = this.spieler, g = sp.blick[0], p = SC.Fahrzeug.freieStelle(this.welt, sp.pos[0] - Math.sin(g) * 5, sp.pos[2] - Math.cos(g) * 5, art, 0, 6);
+    if(!p){ this.ui.hinweis(SC.T.fahrzeugKeinPlatz, 2000); return null; }
+    return SC.Fahrzeug.neu(this.welt, art, p, g);
+  };
+  // Freie Fahrzeuge im Umkreis 64 entfernen (wer drin sitzt, steigt aus), unbesetzte Fundort-Fahrzeuge heimschicken
+  S.fahrzeugeWeg = function(){
+    var s = this, w = this.welt, sp = this.spieler, im = this._imFahrzeug();
+    w.fahrzeuge.forEach(function(f, id){
+      if(SC.Fahrzeug.abstand(w, f, sp.pos).waagerecht > 64) return;
+      if(f.fundort){ SC.Fahrzeug.heimholen(f); return; }
+      if(im && im.f === f) s.aussteigen();
+      if(f.sitze.every(function(x){ return x === null; })) w.fahrzeuge.delete(id);
+    });
+  };
+  // Kreativ: Abbauen auf ein leeres, frei hingestelltes Fahrzeug in 6 Blöcken entfernt es (sofern kein Block näher ist) → true
+  S._fahrzeugAbbauen = function(ziel){
+    var sp = this.spieler, a = sp.augen(), r = sp.richtung(), h = SC.Fahrzeug.anvisiert(this.welt, a, r, 6);
+    if(!h || h.f.fundort || h.f.sitze.some(function(x){ return x !== null; })) return false;
+    if(ziel){ var P = this.welt.planet.groesse, mx = ziel.x + 0.5 + P * Math.round((a[0] - ziel.x - 0.5) / P), mz = ziel.z + 0.5 + P * Math.round((a[2] - ziel.z - 0.5) / P); if(Math.hypot(mx - a[0], ziel.y + 0.5 - a[1], mz - a[2]) < h.t) return false; }
+    this.welt.fahrzeuge.delete(h.f.id); this.audio.spiele("abbauen", { material: "metall" });
+    return true;
+  };
+
   // --- Kampf ---
   // Treffer auf den Spieler im Fahrzeug → Panzerung (true = umgeleitet)
   S._fahrzeugTreffer = function(menge){

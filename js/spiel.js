@@ -164,9 +164,10 @@ SC.Spiel.startpunkt = function(planet){
       if(e.menue){ this.pause(); return; }
       if(e.blockauswahl && sp.modus === "survival"){ this.eingabe.gebeMausFrei(); this.zeigeRucksack(); }
       else if(e.blockauswahl && sp.modus !== "zuschauer"){
-        var kp = this.kampf; this.eingabe.gebeMausFrei();
+        var kp = this.kampf, ich = this; this.eingabe.gebeMausFrei();
         ui.zeigeBlockauswahl(function(id){ sp.schnellleiste[sp.auswahl] = id; ui.hinweis(SC.BLOECKE[id].name, 1200); }, {
           ausruestung: true,
+          beiFahrzeug: function(art){ var f = ich.fahrzeugHinstellen(art); if(f) ui.hinweis(SC.FAHRZEUGE[art].name, 1500); },
           beiGegenstand: function(art, selt){ var g = SC.Beute.erzeuge(SC.zufall((Math.random() * 4294967296) >>> 0), { stufe: kp.werte.stufe, art: art, mindest: selt }); g.seltenheit = selt; if(kp.rucksack.lege({ gegenstand: g })) ui.hinweis(SC.T.rucksackVoll); else ui.hinweis(g.name + " → " + SC.T.rucksackTitel, 1500); }
         });
       }

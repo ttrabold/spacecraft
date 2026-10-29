@@ -4,7 +4,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0e0b2e;color:#eef2fa;
 #ui{position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 
 /* Touch-Steuerung */
-.touch{position:absolute;inset:0;pointer-events:none;--touch-skala:1}
+.touch{position:absolute;inset:0;pointer-events:none;--touch-skala:1;z-index:1}
 .touch[hidden]{display:none}
 .touch-blick{position:absolute;right:0;top:0;width:55%;height:100%;pointer-events:auto}
 .touch-joy{position:absolute;left:calc(32px + env(safe-area-inset-left));bottom:calc(32px + env(safe-area-inset-bottom));width:calc(140px * var(--touch-skala));height:calc(140px * var(--touch-skala));border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(62,240,255,.5);pointer-events:auto;display:flex;align-items:center;justify-content:center}
@@ -15,7 +15,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0e0b2e;color:#eef2fa;
 
 /* Menüs: dunkler Grund, Pixel-Rahmen, Akzent Cyan */
 [hidden]{display:none!important}
-.ebene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(7,11,36,.72);pointer-events:auto;padding:16px;box-sizing:border-box;overflow:auto}
+.ebene{z-index:3;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(7,11,36,.72);pointer-events:auto;padding:16px;box-sizing:border-box;overflow:auto}
 .fenster{background:#151236;border:3px solid #3ef0ff;box-shadow:0 0 0 3px #0e0b2e,0 0 24px rgba(62,240,255,.35);padding:20px 24px;max-width:860px;width:100%;max-height:100%;overflow:auto;box-sizing:border-box;-webkit-user-select:text;user-select:text}
 .titel{margin:0 0 12px;font-size:44px;letter-spacing:6px;color:#3ef0ff;text-shadow:0 0 12px rgba(62,240,255,.6);text-align:center}
 h2{margin:0 0 14px;color:#3ef0ff}

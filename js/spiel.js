@@ -312,7 +312,7 @@ SC.Spiel.startpunkt = function(planet){
   // Laufendes (oder halb gestartetes) Spiel ohne Speichern abbauen
   SC.Spiel.prototype._abbauen = function(){
     this._wesenRoh = null; this._laeuft = false; clearInterval(this._takt); this.lebenszyklusAbmelden(document);
-    this.eingabe.gebeMausFrei(); this.ui.verbergeHud(); this.entwickler.verberge(); this.audio.musikTakt(null, false);
+    this.eingabe.gebeMausFrei(); if(this.eingabe.touch) this.eingabe.touch.sichtbar(false); this.ui.verbergeHud(); this.entwickler.verberge(); this.audio.musikTakt(null, false);
     if(this.render){ this.render.welt(this.welt); this.render.renderer.clear(); }
     this.daten = null; this.welt = null;
   };

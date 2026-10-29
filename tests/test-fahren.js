@@ -163,3 +163,7 @@ test("Mitspieler-Figur im Fahrzeug folgt ohne Verzögerung", function(){
   rm.aktualisiere([e], [10, 70, 10], 1 / 60); e.pos = [14, 70, 10]; rm.aktualisiere([e], [10, 70, 10], 1 / 60);
   gleich(rm.figuren.get("a").p[0], 14);
 });
+test("Touch: beim Verlassen der Welt wird das Overlay ausgeblendet", function(){
+  var u = fhSpiel(), s = u.s, ui = document.createElement("div"), e = new SC.Eingabe(document.createElement("canvas"), ui); s.eingabe.touch = new SC.Touch(e, ui); s.eingabe.touch.sichtbar(true);
+  s._abbauen(); wahr(s.eingabe.touch.el.hidden, "ausgeblendet"); s.eingabe.touch.entferne(); e.entferne();
+});

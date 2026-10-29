@@ -5,7 +5,8 @@ SC.Touch = function(eingabe, wurzel){
   this.wurzel = wurzel; this.groesse = 1;
   this._j = { id: null, x0: 0, y0: 0, dx: 0, dy: 0 }; this._b = { id: null, x: 0, y: 0, dx: 0, dy: 0 };
   this._knopf = {}; this._einmal = {}; this._zeit = {};
-  var el = document.createElement("div"); el.className = "touch"; this.el = el;
+  // Ausgeblendet, bis das Spiel läuft (SC.Spiel#_bild): sonst verdeckt die Wischfläche Menüs wie Weltliste und Beitreten
+  var el = document.createElement("div"); el.className = "touch"; el.hidden = true; this.el = el;
   el.innerHTML =
     '<div class="touch-blick"></div>' +
     '<div class="touch-joy"><div class="touch-joy-knauf"></div></div>' +

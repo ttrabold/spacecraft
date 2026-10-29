@@ -30,6 +30,18 @@ SC.Entwickler = {};
     return [x + 0.5, y, z + 0.5];
   };
 
+  // Gast: Stehplatz neben dem Gastgeber (Position aus seinem letzten Zustand) → [x, y, z] oder null (kein Gast, Gastgeber unbekannt)
+  SC.Entwickler.gastgeberZiel = function(spiel){
+    var r = spiel.raum, h = r instanceof SC.Gast && r.spieler[0], m = h && r.mitspieler[h.id], w = spiel.welt;
+    if(!m || !Array.isArray(m.pos)) return null;
+    var p = m.pos, fest = function(x, y, z){ var b = SC.BLOECKE[w.holeBlock(x, y, z)]; return !!(b && b.fest); }, ziele = [[2, 0], [-2, 0], [0, 2], [0, -2]];
+    for(var i = 0; i < ziele.length; i++){
+      var x = p[0] + ziele[i][0], z = p[2] + ziele[i][1];
+      for(var dy = 2; dy >= -3; dy--){ var y = Math.floor(p[1]) + dy; if(fest(x, y - 1, z) && !fest(x, y, z) && !fest(x, y + 1, z)) return [SC.mod(x, w.planet.groesse), y, SC.mod(z, w.planet.groesse)]; }
+    }
+    return p.slice(); // kein freier Platz daneben (oder Gegend noch nicht geladen): dorthin, wo der Gastgeber steht
+  };
+
   SC.Entwickler.Panel = function(wurzel, spiel){
     var p = this;
     this.spiel = spiel;
@@ -51,7 +63,8 @@ SC.Entwickler = {};
       '<div class="ew-reihe"><button data-ew="morgen">' + esc(T.ewMorgen) + '</button><button data-ew="mittag">' + esc(T.ewMittag) + '</button><button data-ew="abend">' + esc(T.ewAbend) + '</button><button data-ew="mitternacht">' + esc(T.ewMitternacht) + "</button></div>" +
       '<div class="ew-reihe"><button data-ew="anhalten">' + esc(T.ewAnhalten) + '</button><button data-ew="normal">×1</button><button data-ew="x10">×10</button><button data-ew="x60">×60</button></div></div>' +
       '<div class="ew-gruppe"><b>' + esc(T.ewTeleport) + '</b><div class="ew-reihe"><input id="ew-x" type="number" placeholder="x"><input id="ew-y" type="number" placeholder="y"><input id="ew-z" type="number" placeholder="z"><button data-ew="tp">' + esc(T.ewLos) + "</button></div>" +
-      '<div class="ew-reihe">' + TYPEN.map(function(t){ return '<button data-ew="tp-' + t + '">' + esc(T.ewBauwerk[t]) + "</button>"; }).join("") + "</div></div>" +
+      '<div class="ew-reihe">' + TYPEN.map(function(t){ return '<button data-ew="tp-' + t + '">' + esc(T.ewBauwerk[t]) + "</button>"; }).join("") + "</div>" +
+      (s.raum instanceof SC.Gast ? '<div class="ew-reihe"><button data-ew="zum-gastgeber">' + esc(T.ewZumGastgeber) + "</button></div>" : "") + "</div>" +
       '<div class="ew-gruppe"><b>' + esc(T.modus) + '</b><div class="ew-reihe"><button data-ew="m-kreativ">' + esc(T.kreativ) + '</button><button data-ew="m-zuschauer">' + esc(T.zuschauer) + "</button></div></div>" +
       '<div class="ew-gruppe"><label>' + esc(T.sichtweite) + ' <b id="ew-sicht-w">' + s.render.sichtweite + '</b><input type="range" id="ew-sicht" min="2" max="16" step="1" value="' + s.render.sichtweite + '"></label>' +
       '<label>' + esc(T.ewFlug) + ' <b id="ew-flug-w">' + (s.spieler.flugFaktor || 1) + '</b><input type="range" id="ew-flug" min="0.5" max="5" step="0.5" value="' + (s.spieler.flugFaktor || 1) + '"></label>' +
@@ -89,6 +102,10 @@ SC.Entwickler = {};
     if(a.indexOf("tp-") === 0){
       var b = SC.Entwickler.naechstesBauwerk(s.welt.planet, sp.pos[0], sp.pos[2], a.slice(3));
       if(b){ sp.pos = SC.Entwickler.teleportZiel(s.welt, b); sp.geschw = [0, 0, 0]; }
+    }
+    if(a === "zum-gastgeber" && !s.all){
+      var gz = SC.Entwickler.gastgeberZiel(s);
+      if(gz){ if(s._imFahrzeug && s._imFahrzeug()) s.aussteigen(); sp.pos = gz; sp.geschw = [0, 0, 0]; }
     }
     if(a === "gegner"){
       var art = this.el.querySelector("#ew-art").value, st = Math.max(1, +this.el.querySelector("#ew-gstufe").value || 1), def = SC.GEGNER[art];

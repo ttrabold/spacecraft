@@ -130,7 +130,7 @@ SC.T = {
   ewZeit: "Tageszeit",
   ewMorgen: "Morgen", ewMittag: "Mittag", ewAbend: "Abend", ewMitternacht: "Mitternacht",
   ewAnhalten: "Anhalten",
-  ewTeleport: "Teleport",
+  ewTeleport: "Teleport", ewZumGastgeber: "Zum Gastgeber",
   ewLos: "Los",
   ewBauwerk: { dungeon: "Dungeon", herrenhaus: "Herrenhaus", station: "Station", lager: "Lager" },
   ewFlug: "Fluggeschwindigkeit",

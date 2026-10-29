@@ -12,3 +12,18 @@ test("F3 reist zu Glutfrost", function(){
   sel.value = "glutfrost"; div.querySelector('[data-ew="planet"]').click();
   return new Promise(function(ok){ setTimeout(ok, 50); }).then(function(){ gleich(s.welt.planet.id, "glutfrost"); });
 });
+test("Entwickler: Gast teleportiert sich zum Gastgeber, Gastgeber sieht den Knopf nicht (#85)", function(){
+  var u;
+  return mspZwei().then(function(x){
+    u = x; [u.h, u.g].forEach(function(s){ s.render.sichtweite = 6; s.render.chunks = new Map(); s.render.chunkGrenzen = false; });
+    var dh = document.createElement("div"), ph = new SC.Entwickler.Panel(dh, u.h); ph.zeige(); wahr(!dh.querySelector('[data-ew="zum-gastgeber"]'), "Gastgeber ohne Knopf");
+    var sp = u.h.spieler; sp.pos = [sp.pos[0] + 300, sp.pos[1], sp.pos[2] + 200];
+    u.h._raumBild(0.1, false); return mspLauf(u.netz);
+  }).then(function(){
+    u.g._raumBild(0.1, false);
+    var d = document.createElement("div"), p = new SC.Entwickler.Panel(d, u.g); p.zeige(); var k = d.querySelector('[data-ew="zum-gastgeber"]'); wahr(k, "Knopf beim Gast"); k.click();
+    var a = u.g.spieler.pos, b = u.h.spieler.pos, P = 2048, dx = SC.mod(a[0] - b[0] + P / 2, P) - P / 2, dz = SC.mod(a[2] - b[2] + P / 2, P) - P / 2;
+    wahr(Math.hypot(dx, dz) < 4, "neben dem Gastgeber: " + a + " / " + b); gleich(u.g.spieler.geschw.join(), "0,0,0");
+    mspFertig();
+  }, mspFehler);
+});

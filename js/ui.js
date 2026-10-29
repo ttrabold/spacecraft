@@ -131,12 +131,14 @@ SC.UI = function(wurzel, o){
         '<div class="welten">' + (zeilen || '<p class="leer">' + esc(SC.T.nochKeineWelt) + "</p>") + "</div>" +
         '<div class="reihe"><button class="haupt" data-aktion="neu">' + esc(SC.T.neueWelt) + '</button>' +
         '<button class="haupt" data-aktion="mitspielen">' + esc(SC.T.mitspielen) + "</button>" +
-        '<label class="knopf" tabindex="0">' + esc(SC.T.importieren) + '<input type="file" accept=".spacecraft,application/json,application/octet-stream" hidden></label></div>' +
+        '<label class="knopf" tabindex="0">' + esc(SC.T.importieren) + '<input type="file" accept=".spacecraft,application/json,application/octet-stream" hidden></label>' +
+        '<button data-aktion="anleitung">' + esc(SC.T.anleitung.knopf) + "</button></div>" +
         '<div class="version">Version ' + esc(window.V || "") + "</div>",
         {
           spielen: function(el, id){ return ui.slots.lade(id).then(function(d){ ui.schliesse(); ui.o.beiStart(d); }, function(f){ ui.hinweis(f.message || String(f)); }); },
           neu: function(){ ui.zeigeNeueWelt(); },
           mitspielen: function(){ ui.zeigeBeitreten(); },
+          anleitung: function(){ ui.zeigeAnleitung(function(){ ui.zeigeWeltliste(); }); },
           kopieren: function(el, id){ return ui.slots.kopiere(id).then(function(){ return ui.zeigeWeltliste(); }); },
           exportieren: function(el, id){ return Promise.resolve(ui.o.beiExport(id)).then(function(){ return ui.zeigeWeltliste(); }); },
           umbenennen: function(el, id){
@@ -205,6 +207,7 @@ SC.UI = function(wurzel, o){
       '<button class="modus' + (daten.modus === "survival" ? " an" : "") + '" data-aktion="modus" data-modus="survival">' + esc(SC.T.survival) + "</button></div>" +
       '<div class="reihe modi"><span>' + esc(SC.T.schwierigkeit) + ":</span>" + schwierigkeitsKnoepfe(daten.schwierigkeit || "leicht") + "</div>") +
       '<button data-aktion="einstellungen">' + esc(SC.T.einstellungen) + "</button>" +
+      '<button data-aktion="anleitung">' + esc(SC.T.anleitung.knopf) + "</button>" +
       ((o.einstellungen || {}).entwickler ? '<button data-aktion="entwickler">' + esc(SC.T.entwickler) + "</button>" : "") +
       '<button data-aktion="export">' + esc(SC.T.weltExportieren) + "</button>" +
       '<button data-aktion="verlassen">' + esc(SC.T.zurWeltliste) + "</button></div>",
@@ -214,10 +217,22 @@ SC.UI = function(wurzel, o){
         schwierigkeit: function(el){ var n = el.getAttribute("data-schwierigkeit"); daten.schwierigkeit = n; o.beiSchwierigkeit && o.beiSchwierigkeit(n); ui.zeigePause(daten); },
         einladen: function(){ return ui._einladen(daten); },
         einstellungen: function(){ ui.zeigeEinstellungen(function(){ ui.zeigePause(daten); }); },
+        anleitung: function(){ ui.zeigeAnleitung(function(){ ui.zeigePause(daten); }); },
         entwickler: function(){ ui.schliesse(); o.beiEntwickler && o.beiEntwickler(); },
         export: function(){ return Promise.resolve(o.beiExport(daten.id)); },
         verlassen: function(){ return Promise.resolve(o.beiVerlassen && o.beiVerlassen()); }
       });
+  };
+
+  // --- Spielanleitung (Inhalt in SC.T.anleitung); zurueck: Rückkehr ins aufrufende Menü ---
+  SC.UI.prototype.zeigeAnleitung = function(zurueck){
+    var A = SC.T.anleitung;
+    function punkt(t){ var i = t.indexOf(" – "); return "<li>" + (i > 0 ? "<b>" + esc(t.slice(0, i)) + "</b> – " + esc(t.slice(i + 3)) : esc(t)) + "</li>"; }
+    this._zeige(
+      "<h2>" + esc(A.titel) + "</h2>" +
+      '<div class="anleitung">' + A.abschnitte.map(function(a){ return "<h3>" + esc(a[0]) + "</h3><ul>" + a[1].map(punkt).join("") + "</ul>"; }).join("") + "</div>" +
+      '<div class="reihe"><button class="haupt" data-aktion="zurueck">' + esc(SC.T.zurueck) + "</button></div>",
+      { zurueck: function(){ zurueck(); } });
   };
 
   // --- Einstellungen ---

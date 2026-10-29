@@ -34,3 +34,16 @@ test("Touch: Schnellleiste und Entwicklerfenster liegen über der Blickfläche (
     gleich(fehl.join(","), "", "verdeckte Plätze"); wahr(el === e, "Entwicklerfenster frei");
   });
 });
+test("Spielanleitung über Pausenmenü und Weltliste, Zurück führt zurück (#88)", function(){
+  var A = SC.T.anleitung; wahr(A && A.abschnitte.length >= 8, "Abschnitte da");
+  var w = document.createElement("div"), zur = 0, ui = leereUI(w);
+  ui.zeigeAnleitung(function(){ zur++; });
+  A.abschnitte.forEach(function(a){ wahr(w.textContent.indexOf(a[0]) >= 0, "Abschnitt " + a[0]); });
+  wahr(w.textContent.indexOf("Platz wechseln") >= 0, "Sitzwechsel erwähnt");
+  w.querySelector('[data-aktion="zurueck"]').click(); gleich(zur, 1);
+  var w2 = document.createElement("div"), ui2 = leereUI(w2); ui2.zeigePause({ name: "Welt", modus: "kreativ", schwierigkeit: "leicht" });
+  w2.querySelector('[data-aktion="anleitung"]').click(); wahr(w2.textContent.indexOf(A.titel) >= 0, "aus der Pause");
+  w2.querySelector('[data-aktion="zurueck"]').click(); wahr(w2.querySelector('[data-aktion="weiter"]'), "zurück in der Pause");
+  var w3 = document.createElement("div"), s = new SC.Slots(uiBackend()), ui3 = leereUI(w3, s);
+  return ui3.zeigeWeltliste().then(function(){ w3.querySelector('[data-aktion="anleitung"]').click(); wahr(w3.textContent.indexOf(A.titel) >= 0, "aus der Weltliste"); });
+});

@@ -29,12 +29,13 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 | 1 | Blockwelt: Abbauen/Bauen, Kreativ- und Zuschauermodus, Speichern, Tastatur/Maus + Touch (Welt schon mehrspielertauglich aufbauen) | live als 0.4.0 (inkl. Entwicklerwerkzeuge, Gamepad, Musik und Geräusche); offen nur noch #18 (Test auf echtem iPad) | [Design](superpowers/specs/2026-10-23-stufe-1-blockwelt-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-1-blockwelt.md) |
 | 2 | Survival: Gegner, Laserschwert/Laserwaffen, Beute mit Seltenheitsstufen | live als 0.5.1; offen: kleinere Punkte #38–#42 und Balance nach Feedback | [Design](superpowers/specs/2026-10-23-stufe-2-survival-design.md) | [Plan](superpowers/plans/2026-10-23-stufe-2-survival.md) |
 | 3 | Gemeinsam spielen per Raumcode | fertig, live als 0.6.1 | [Design](superpowers/specs/2026-10-24-stufe-3-gemeinsam-spielen-design.md) | [Plan](superpowers/plans/2026-10-24-stufe-3-gemeinsam-spielen.md) |
-| 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | Design zur Freigabe | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | – |
+| 4 | Fahrzeuge finden und fahren (Gleiter, Buggy, Flieger; Bauen kommt mit Crafting nach Stufe 5) | Plan steht, Umsetzung offen (#60–#67) | [Design](superpowers/specs/2026-10-29-stufe-4-fahrzeuge-design.md) | [Plan](superpowers/plans/2026-10-29-stufe-4-fahrzeuge.md) |
 | 5 | Raumschiffe, nahtloser Flug zu anderen Planeten | offen | – | – |
 | später | Crafting: aus Rohstoffen Dinge herstellen (gewünscht, Zeitpunkt offen) | offen | – | – |
 
 ## Aktueller Stand
 
+- 2026-10-29: Stufe 3 abgeschlossen (Gerätetest durch den Nutzer ok, Meilenstein zu, Restpunkte #59 unter „Später“). Stufe 4 neu zugeschnitten: Fahrzeuge werden gefunden statt gebaut (Bauen kommt mit Crafting nach Stufe 5). Design und Plan geschrieben, Issues #60–#67 angelegt. Kein itch.io-Release und kein Devlog für 0.6.x (Wunsch des Nutzers).
 - 2026-10-29: Version 0.6.1 (live auf Test und `main`, 337 Tests grün): Beitritt hängt nicht mehr auf „Verbinde …“, wenn beim Eintritt intern ein Fehler auftritt (Gast und Gastgeber fangen Fehler ab, halb gestartetes Spiel wird abgebaut); Gastgeber meldet sich nach Verlust der PeerJS-Vermittlung neu an; #55: Leuchten ist jetzt ein Punktlicht im Block-Shader statt eines Scheins vor der Kamera (im Browser geprüft). Übrige Review-Kleinpunkte als #59.
 - 2026-10-24: Stufe 3 umgesetzt (Branch `stufe-3`, Version 0.6.0, 332 Tests grün): Raumcode „WORT ZAHL“, Gastgeber bestätigt Gäste, gemeinsames Bauen/Kämpfen, Beute für alle in 40 Blöcken, Spaßkampf (PvP), Figur der Gäste wird in ihrer eigenen Welt gespeichert, Neuverbinden mit Quittung der Bauwünsche, Namensschilder. Dazu #54 (Schwung-Animation Laserschwert) und #56 (Weltliste beim Speichern). Echte Verbindung mit zwei Browserfenstern geprüft (PeerJS-Cloud). Das abschließende Gesamt-Review wurde auf Wunsch abgebrochen und steht noch aus. Auf Wunsch des Nutzers nach `test` und `main` (live) gepusht.
 - 2026-10-23: Vision und Reihenfolge der Stufen mit dem Nutzer abgestimmt. Repo enthält nur das Gerüst (Workflows, AGENTS.md), noch keinen Spielcode. Auf GitHub noch keine Commits, Issues, Meilensteine oder Board. `gh` hat jetzt den Scope `project`.
@@ -47,10 +48,9 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Nächster Schritt
 
-- Gerätetest durch den Nutzer: iPad, Handy, Laptop im selben WLAN über die Test-Vorschau (https://ttrabold.github.io/spacecraft-test/). Achtung: gleicher Speicher wie die Live-Seite, nichts löschen.
-- Nach dem Gerätetest: #52 schließen, Meilenstein Stufe 3 schließen (#59 vorher erledigen oder nach „Später“ verschieben), itch.io-Release und Devlog `docs/itch-devlog-0.6.x.md` anbieten.
+- **Stufe 4 umsetzen** nach dem Plan (Task 1 = #60 zuerst), auf einem Branch `stufe-4`. Ergebnis: Version 0.7.0.
 - Weiterhin: Feedback der Kinder zu Kampf und Balance (Werte in js/gegner.js, js/gegenstaende.js).
-- Offene Frage an den Nutzer: Was als Nächstes – #58 (Lebensanzeige für Mitspieler), #57 (Survival im Entwicklerpanel) oder Stufe 4?
+- Offen, aber nicht in Stufe 4: #57 (Survival im Entwicklerpanel), #58 (Lebensanzeige für Mitspieler).
 
 ## Offene Punkte Stufe 3
 

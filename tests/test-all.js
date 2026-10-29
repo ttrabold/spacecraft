@@ -82,3 +82,30 @@ test("Speichern im All lädt am Landepunkt", function(){
     wahr(s.all, "Flug läuft weiter");
   });
 });
+
+// --- Asteroiden und Piraten ---
+test("Asteroidenfelder deterministisch und zwischen den Planeten", function(){
+  var a = SC.All.asteroiden(5), b = SC.All.asteroiden(5), P = SC.ALL.planeten; gleich(JSON.stringify(a), JSON.stringify(b)); wahr(a.length >= 120 && a.length <= 240, "Anzahl " + a.length);
+  var mitten = [["start", "glutfrost"], ["start", "rankenmoor"], ["glutfrost", "rankenmoor"]].map(function(p){ var x = P[p[0]], y = P[p[1]]; return [(x[0] + y[0]) / 2, (x[1] + y[1]) / 2, (x[2] + y[2]) / 2]; });
+  a.forEach(function(s){ wahr(s.r >= 6 && s.r <= 20); wahr(mitten.some(function(m){ return Math.hypot(s.pos[0] - m[0], s.pos[1] - m[1], s.pos[2] - m[2]) <= 650; }), "nahe einer Feldmitte"); });
+  gleich(JSON.stringify(SC.All.asteroiden(6)) === JSON.stringify(a), false, "anderer Seed, andere Felder");
+});
+function alVor(s, d){ var a = s.all, f = [-Math.sin(a.blick) * Math.cos(a.neigung), Math.sin(a.neigung), -Math.cos(a.blick) * Math.cos(a.neigung)]; return [a.pos[0] + f[0] * d, a.pos[1] + f[1] * d, a.pos[2] + f[2] * d]; }
+test("Asteroid kostet Schild, prallt ab", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u); s.all.tempo = 100; s._allAsteroiden = [{ pos: alVor(s, 12), r: 10 }];
+  s._allBild(alE(), 0.05, false); gleich(u.f.panzerung, SC.FAHRZEUGE.raumschiff.panzerung - 25); wahr(s.all.tempo <= 20, "abgebremst");
+  s._allBild(alE(), 0.05, false); gleich(u.f.panzerung, SC.FAHRZEUGE.raumschiff.panzerung - 25, "nicht gleich nochmal");
+});
+test("Piraten greifen an, Bordlaser besiegt sie, Beute im Rucksack", function(){
+  var u = alSpiel(), s = u.s; alAustritt(u); s.all.tempo = 0; s._allAsteroiden = [];
+  s._piratenRufen(); wahr(s._allPiraten.length >= 2 && s._allPiraten.length <= 3, "Gruppe"); s._allPiraten = s._allPiraten.slice(0, 1); s._allPiraten[0].pos = alVor(s, 60); s._allPiraten[0].halt = true;
+  var vorher = s.kampf.rucksack.plaetze.filter(function(p){ return p && p.gegenstand; }).length;
+  for(var i = 0; i < 80 && s._allPiraten.length; i++) s._allBild(alE({ abbauen: true, abbauenGehalten: true }), 0.05, false);
+  gleich(s._allPiraten.length, 0, "besiegt"); wahr(s.kampf.rucksack.plaetze.filter(function(p){ return p && p.gegenstand; }).length > vorher, "Beute im Rucksack");
+});
+test("Notsprung statt Verpuffen", function(){
+  var u = alSpiel(), s = u.s, lp = s.landepunkt(), ruck = JSON.stringify(s.kampf.rucksack.alsDaten()); alAustritt(u); s.all.tempo = 100; u.f.panzerung = 10; s._allAsteroiden = [{ pos: alVor(s, 12), r: 10 }];
+  s._allBild(alE(), 0.05, false);
+  gleich(s.all, null, "zurück"); gleich(s.welt.planet.id, "start"); var f = s.welt.fahrzeuge.get("schiff"); wahr(f && !f.weg, "Schiff da"); wahr(Math.hypot(f.pos[0] - lp[0], f.pos[2] - lp[2]) < 30 && f.pos[1] < 120, "am Landepunkt am Boden");
+  var im = s._imFahrzeug(); wahr(im && im.f === f, "sitzt im Schiff"); gleich(JSON.stringify(s.kampf.rucksack.alsDaten()), ruck); wahr(s.hinweise.indexOf(SC.T.allNotsprung) >= 0);
+});

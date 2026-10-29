@@ -89,3 +89,58 @@ test("Fahrzeug: über die Ringgrenze", function(){
   var w = fzWelt(), f = SC.Fahrzeug.neu(w, "gleiter", [20, 60.6, 2], 0); fzLauf(w, f, { vor: true }, 1);
   wahr(f.pos[2] >= 0 && f.pos[2] < 2048 && f.pos[2] > 2000, "umgeschlagen: " + f.pos[2]);
 });
+
+// --- Sitze, Ein- und Aussteigen ---
+function fzKoerperFrei(w, p){
+  var hb = SC.PHYSIK.breite / 2 - 0.01, frei = true;
+  [-hb, hb].forEach(function(dx){ [-hb, hb].forEach(function(dz){ [0.01, 0.9, SC.PHYSIK.hoehe - 0.01].forEach(function(dy){
+    var b = SC.BLOECKE[w.holeBlock(p[0] + dx, p[1] + dy, p[2] + dz)]; if(b && b.fest) frei = false; }); }); });
+  return frei;
+}
+test("Sitze: erster wird Fahrer, weitere Mitfahrer, fünfter passt nicht", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "gleiter", [20, 60.6, 20], 0);
+  gleich(SC.Fahrzeug.einsteigen(f, "a"), 0); gleich(SC.Fahrzeug.einsteigen(f, "b"), 1); gleich(SC.Fahrzeug.einsteigen(f, "c"), 2); gleich(SC.Fahrzeug.einsteigen(f, "d"), 3);
+  gleich(SC.Fahrzeug.einsteigen(f, "e"), -1); gleich(JSON.stringify(f.sitze), '["a","b","c","d"]');
+  var s = SC.Fahrzeug.sitzVon(w, "c"); wahr(s && s.f === f && s.sitz === 2, "sitzVon"); gleich(SC.Fahrzeug.sitzVon(w, "e"), null);
+});
+test("Sitze: Fahrer steigt aus, niemand rückt nach", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "buggy", [20, 60, 20], 0);
+  SC.Fahrzeug.einsteigen(f, "a"); SC.Fahrzeug.einsteigen(f, "b");
+  gleich(SC.Fahrzeug.aussteigen(f, "a"), true); gleich(f.sitze[0], null); gleich(f.sitze[1], "b"); gleich(SC.Fahrzeug.aussteigen(f, "a"), false);
+  gleich(SC.Fahrzeug.einsteigen(f, "e"), 0, "neuer Einsteiger fährt");
+});
+test("Sitze: Doppeltes Einsteigen ändert nichts", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "flieger", [20, 60, 20], 0);
+  SC.Fahrzeug.einsteigen(f, "x"); gleich(SC.Fahrzeug.einsteigen(f, "a"), 1); gleich(SC.Fahrzeug.einsteigen(f, "a"), 1);
+  gleich(f.sitze.filter(function(s){ return s === "a"; }).length, 1);
+});
+test("Sitze: sitzPos dreht mit blick", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "gleiter", [100, 60.6, 100], 0), o = SC.FAHRZEUGE.gleiter.sitze[0];
+  var p0 = SC.Fahrzeug.sitzPos(f, 0, 2048); wahr(Math.abs(p0[0] - (100 + o[0])) < 1e-6 && Math.abs(p0[2] - (100 + o[2])) < 1e-6, "blick 0"); wahr(Math.abs(p0[1] - (60.6 + o[1])) < 1e-6, "Höhe");
+  f.blick = Math.PI / 2; var p1 = SC.Fahrzeug.sitzPos(f, 0, 2048);
+  // vorn zeigt jetzt nach -x: lokales z (vorn = -z) wird zu x, lokales x zu -z
+  wahr(Math.abs(p1[0] - (100 + o[2])) < 1e-6 && Math.abs(p1[2] - (100 - o[0])) < 1e-6, "gedreht: " + p1);
+  f.pos = [0.1, 60.6, 0.1]; f.blick = 0; var p2 = SC.Fahrzeug.sitzPos(f, 0, 2048); wahr(p2[0] > 2000, "Ring: " + p2[0]);
+});
+test("aussteigePos findet freien Platz, nie im Block", function(){
+  // Höhle 3×3 Blöcke Grundfläche um das Fahrzeug, 3 hoch
+  var w = fzWelt(); for(var x = 14; x < 27; x++) for(var z = 14; z < 27; z++) for(var y = 60; y < 70; y++) if(x < 18 || x > 22 || z < 18 || z > 22 || y > 62) w.setze(x, y, z, SC.B.STEIN);
+  var f = SC.Fahrzeug.neu(w, "gleiter", [20.5, 60, 20.5], 0);
+  for(var s = 0; s < 4; s++){ var p = SC.Fahrzeug.aussteigePos(w, f, s); wahr(fzKoerperFrei(w, p), "Höhle Sitz " + s + ": " + p); }
+  // An einer Wand: links neben dem Fahrzeug Stein
+  var w2 = fzWelt(); for(var z2 = 0; z2 < 40; z2++) for(var y2 = 60; y2 < 64; y2++) w2.setze(18, y2, z2, SC.B.STEIN);
+  var g = SC.Fahrzeug.neu(w2, "buggy", [20.4, 60, 20], 0), pg = SC.Fahrzeug.aussteigePos(w2, g, 0); wahr(fzKoerperFrei(w2, pg), "Wand: " + pg);
+  // Über Wasser und hoch in der Luft: frei, auch wenn man fällt oder schwimmt
+  var w3 = fzWelt({ wasser: [0, 4096] }), h = SC.Fahrzeug.neu(w3, "gleiter", [20, 60.6, 20], 0); wahr(fzKoerperFrei(w3, SC.Fahrzeug.aussteigePos(w3, h, 1)), "Wasser");
+  var k = SC.Fahrzeug.neu(w, "flieger", [100, 110, 100], 0), pk = SC.Fahrzeug.aussteigePos(w, k, 0); wahr(fzKoerperFrei(w, pk), "Luft"); wahr(Math.abs(pk[1] - 110) < 2, "in Fahrzeughöhe");
+  // Ganz eingemauert: obenauf
+  var w4 = fzWelt(); for(var x4 = 10; x4 < 31; x4++) for(var z4 = 10; z4 < 31; z4++) for(var y4 = 60; y4 < 64; y4++) if(Math.abs(x4 - 20) > 1 || Math.abs(z4 - 20) > 1) w4.setze(x4, y4, z4, SC.B.STEIN);
+  var m = SC.Fahrzeug.neu(w4, "gleiter", [20.5, 60, 20.5], 0), pm = SC.Fahrzeug.aussteigePos(w4, m, 0); wahr(fzKoerperFrei(w4, pm), "eingemauert: " + pm);
+});
+test("naechstes: findet nur in Reichweite, nicht verpuffte, über die Ringgrenze", function(){
+  var w = fzWelt(), f = SC.Fahrzeug.neu(w, "gleiter", [2047, 60.6, 10], 0);
+  gleich(SC.Fahrzeug.naechstes(w, [1, 60, 10]), f, "über die Grenze"); gleich(SC.Fahrzeug.naechstes(w, [10, 60, 10]), null, "zu weit");
+  var g = SC.Fahrzeug.neu(w, "buggy", [500, 60, 500], 0); gleich(SC.Fahrzeug.naechstes(w, [503, 60, 500]), g);
+  g.weg = true; gleich(SC.Fahrzeug.naechstes(w, [503, 60, 500]), null, "verpufft");
+  gleich(SC.Fahrzeug.naechstes(w, [1, 80, 10]), null, "weit darüber");
+});

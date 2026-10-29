@@ -129,4 +129,57 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     if(d.maxHoehe && f.pos[1] > d.maxHoehe){ f.pos[1] = d.maxHoehe; if(f.geschw[1] > 0) f.geschw[1] = 0; }
     f.pos[0] = SC.mod(f.pos[0], P); f.pos[2] = SC.mod(f.pos[2], P);
   };
+
+  // --- Sitze: 0 = Fahrer, 1–3 Mitfahrer; ein freier Fahrersitz wird nie automatisch nachbesetzt ---
+  // → Sitznummer oder -1 (voll); wer schon drin ist, behält seinen Sitz
+  F.einsteigen = function(f, id){
+    var i = f.sitze.indexOf(id); if(i >= 0) return i;
+    if(f.weg) return -1;
+    if(f.sitze[0] === null){ f.sitze[0] = id; return 0; }
+    for(i = 1; i < f.sitze.length; i++) if(f.sitze[i] === null){ f.sitze[i] = id; return i; }
+    return -1;
+  };
+  F.aussteigen = function(f, id){ var i = f.sitze.indexOf(id); if(i < 0) return false; f.sitze[i] = null; return true; };
+  F.sitzVon = function(welt, id){ var r = null; welt.fahrzeuge.forEach(function(f){ var i = f.sitze.indexOf(id); if(i >= 0 && !r) r = { f: f, sitz: i }; }); return r; };
+  // Lokalen Versatz [x, y, z] mit blick drehen → Weltposition
+  function dreh(f, o, P){
+    var c = Math.cos(f.blick), s = Math.sin(f.blick);
+    return [SC.mod(f.pos[0] + o[0] * c + o[2] * s, P), f.pos[1] + o[1], SC.mod(f.pos[2] - o[0] * s + o[2] * c, P)];
+  }
+  F.dreh = dreh;
+  F.sitzPos = function(f, sitz, P){ return dreh(f, SC.FAHRZEUGE[f.art].sitze[sitz], P); };
+  // Waagerechter Abstand (Ring) von pos zur Grundfläche, dazu der senkrechte Abstand zum Fahrzeugkörper
+  function abstand(welt, f, pos){
+    var P = welt.planet.groesse, d = SC.FAHRZEUGE[f.art], hb = d.breite / 2;
+    var dx = Math.max(0, Math.abs(SC.mod(pos[0] - f.pos[0] + P / 2, P) - P / 2) - hb), dz = Math.max(0, Math.abs(SC.mod(pos[2] - f.pos[2] + P / 2, P) - P / 2) - hb);
+    var dy = pos[1] < f.pos[1] - SC.PHYSIK.hoehe ? f.pos[1] - SC.PHYSIK.hoehe - pos[1] : pos[1] > f.pos[1] + d.hoehe ? pos[1] - f.pos[1] - d.hoehe : 0;
+    return { waagerecht: Math.hypot(dx, dz), senkrecht: dy };
+  }
+  F.abstand = abstand;
+  F.naechstes = function(welt, pos, reichweite){
+    var r = reichweite === undefined ? 3.5 : reichweite, best = null, bd = Infinity;
+    welt.fahrzeuge.forEach(function(f){ if(f.weg) return; var a = abstand(welt, f, pos); if(a.senkrecht <= 1.5 && a.waagerecht <= r && a.waagerecht < bd){ bd = a.waagerecht; best = f; } });
+    return best;
+  };
+  // Passt ein Spielerkörper an p, ohne einen festen Block zu schneiden?
+  function frei(welt, p){
+    var hb = SC.PHYSIK.breite / 2 - 0.01, xs = [p[0] - hb, p[0] + hb], zs = [p[2] - hb, p[2] + hb];
+    for(var y = Math.floor(p[1]); y <= Math.floor(p[1] + SC.PHYSIK.hoehe - 0.01); y++)
+      for(var i = 0; i < 2; i++) for(var j = 0; j < 2; j++){ var b = SC.BLOECKE[welt.holeBlock(xs[i], y, zs[j])]; if(b && b.fest) return false; }
+    return true;
+  }
+  // Freier Platz zum Aussteigen: neben dem Sitz, dann im Umkreis bis 3 Blöcke um das Fahrzeug (je auf Fahrzeug- und eine Blockhöhe darüber),
+  // sonst obenauf (notfalls höher)
+  F.aussteigePos = function(welt, f, sitz){
+    var d = SC.FAHRZEUGE[f.art], P = welt.planet.groesse, o = d.sitze[sitz] || d.sitze[0], hb = d.breite / 2, kand = [];
+    kand.push([(o[0] < 0 ? -1 : 1) * (hb + 0.45), 0, o[2]], [(o[0] < 0 ? 1 : -1) * (hb + 0.45), 0, o[2]]);
+    for(var r = hb + 0.45; r <= hb + 3; r += 0.75) for(var k = 0; k < 16; k++){ var a = k / 16 * Math.PI * 2; kand.push([Math.sin(a) * r, 0, Math.cos(a) * r]); }
+    for(var i = 0; i < kand.length; i++) for(var h = 0; h <= 1; h++){
+      var p = dreh(f, kand[i], P); p[1] = h ? Math.floor(f.pos[1]) + 1 : f.pos[1];
+      if(frei(welt, p)) return p;
+    }
+    var oben = [f.pos[0], f.pos[1] + d.hoehe, f.pos[2]];
+    for(var n = 0; n < 12 && !frei(welt, oben); n++) oben[1] += 1;
+    return oben;
+  };
 })();

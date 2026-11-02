@@ -55,7 +55,7 @@ test("Setzen aus dem Rucksack: Leiter an die Wand, Tür nach Blick, Menge sinkt 
   sp.pos = [5.5, 64, 12.5]; sp.auswahl = 1; sp.blick = [-Math.PI / 2, 0];   // Blick entlang x
   gleich(setze.call(fake, 9, 64, 5, { x: 9, y: 63, z: 5, nx: 0, ny: 1, nz: 0 }), true); wahr([SC.B.TUER_X, SC.B.TUER_Z].indexOf(w.holeBlock(9, 64, 5)) >= 0, "Tür steht"); gleich(rs.hat(SC.B.TUER_X), 0);
 });
-test("Tür umschalten: auf, zu, nicht in den Spieler hinein (#104)", function(){
+test("Tür umschalten: auf, zu, nicht in den Spieler hinein (#103)", function(){
   var w = leereWelt(), U = SC.Bauteile.tuerUmschalten; w.setzeBlock(5, 64, 5, SC.B.TUER_X, "system"); w.setzeBlock(8, 64, 5, SC.B.TUER_Z_OFFEN, "system");
   var ereignisse = []; w.ereignisse.an("block", function(e){ ereignisse.push(e); });
   gleich(U(w, 5, 64, 5, []), true); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X_OFFEN); gleich(U(w, 5, 64, 5, []), true); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X);
@@ -63,13 +63,13 @@ test("Tür umschalten: auf, zu, nicht in den Spieler hinein (#104)", function(){
   w.setzeBlock(5, 64, 5, SC.B.TUER_X_OFFEN, "system"); gleich(U(w, 5, 64, 5, [{ pos: [5.5, 64, 5.5] }]), false, "zu, aber Spieler steht in der Tür"); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X_OFFEN);
   gleich(U(w, 5, 64, 5, [{ pos: [5.5, 64, 7.5] }]), true, "Spieler daneben"); gleich(U(w, 6, 64, 5, []), false, "keine Tür");
 });
-test("Tür antippen schaltet um, auch als Gast mit Verbindung (#104)", function(){
+test("Tür antippen schaltet um, auch als Gast mit Verbindung (#103)", function(){
   var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.TUER_Z, "system"); var sp = new SC.Spieler({ id: "a", pos: [5.5, 64, 8.5], modus: "survival" });
   var fake = { welt: w, spieler: sp, kampf: {}, eingabe: { gebeMausFrei: function(){} }, ui: {}, _blockErlaubt: function(){ return fake.ok; }, ok: true };
   gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 5, y: 64, z: 5 }), true); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_Z_OFFEN);
   fake.ok = false; gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 5, y: 64, z: 5 }), true, "behandelt, aber ohne Verbindung unverändert"); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_Z_OFFEN);
 });
-test("Leiter: Spieler hängt, steigt mit Vorwärts und sinkt mit Rückwärts (#104)", function(){
+test("Leiter: Spieler hängt, steigt mit Vorwärts und sinkt mit Rückwärts (#103)", function(){
   var w = flacheWelt(); for(var y = 61; y <= 66; y++){ w.setzeBlock(4, y, 4, SC.B.LEITER_N, "system"); w.setzeBlock(4, y, 3, SC.B.STEIN, "system"); }   // Wand im Norden
   var s = new SC.Spieler({ id: "a", pos: [4.5, 61, 4.5], blick: [0, 0], modus: "survival" }); s.schritt(w, ruhe, 1 / 60);
   var hoch = Object.assign({}, ruhe, { vor: true }); for(var i = 0; i < 60; i++) s.schritt(w, hoch, 1 / 60); wahr(s.pos[1] > 62.5, "steigt: " + s.pos[1]); gleich(s.klettert, true);
@@ -83,11 +83,11 @@ function netzWarte(u, p){
   return (function schleife(i){ return raumLauf(u.netz).then(function(){ if(fertig){ if(fehl) throw fehl; return res; } if(i > 30) throw new Error("keine Antwort vom Gastgeber"); return schleife(i + 1); }); })(0);
 }
 function tdaten(){ return SC.Spielstand.neu({ name: "T", seedText: "t", modus: "survival" }); }
-test("Rucksack mit anderer Größe (Truhe: 18 Plätze) (#105)", function(){
+test("Rucksack mit anderer Größe (Truhe: 18 Plätze) (#104)", function(){
   var r = new SC.Rucksack(null, 18); gleich(r.plaetze.length, 18); gleich(r.lege({ block: SC.B.STEIN, anzahl: 18 * 64 }), 0); gleich(r.lege({ block: SC.B.STEIN, anzahl: 1 }), 1, "voll nach 18 Plätzen");
   gleich(new SC.Rucksack().plaetze.length, 36, "Standard bleibt 36");
 });
-test("Truhen-Daten: legen, nehmen, speichern, leeren, alter Spielstand ohne Feld (#105)", function(){
+test("Truhen-Daten: legen, nehmen, speichern, leeren, alter Spielstand ohne Feld (#104)", function(){
   var d = tdaten(), planet = new SC.Planet(d.planeten.start); gleich(d.planeten.start.truhen, undefined, "alter Stand hat das Feld nicht");
   var T = SC.Truhen.von(d, planet); gleich(T.inhalt(3, 60, 3).length, 18); gleich(T.inhalt(3, 60, 3).every(function(s){ return s === null; }), true);
   gleich(T.lege(3, 60, 3, { block: SC.B.STEIN, anzahl: 70 }), 0); gleich(T.lege(3, 60, 3, { gegenstand: { id: "g1", art: "helm" } }), 0);
@@ -97,7 +97,7 @@ test("Truhen-Daten: legen, nehmen, speichern, leeren, alter Spielstand ohne Feld
   var wickel = SC.Truhen.von(d, planet); wickel.lege(-1, 60, 5, { block: SC.B.ERDE, anzahl: 1 }); gleich(wickel.inhalt(planet.groesse - 1, 60, 5)[0].anzahl, 1, "Koordinaten laufen um den Planeten");
   var voll = SC.Truhen.von(d, planet); for(var i = 0; i < 18; i++) voll.lege(1, 1, 1, { gegenstand: { id: "v" + i } }); gleich(voll.lege(1, 1, 1, { gegenstand: { id: "extra" } }), 1, "volle Truhe nimmt nichts");
 });
-test("Truhen-Menü: nehmen und hineinlegen über den Anbieter (#105)", function(){
+test("Truhen-Menü: nehmen und hineinlegen über den Anbieter (#104)", function(){
   var a = wb(), d = tdaten(), T = SC.Truhen.von(d, new SC.Planet(d.planeten.start)); T.lege(1, 60, 1, { block: SC.B.EISENERZ, anzahl: 5 });
   var anb = { hole: function(){ return Promise.resolve({ plaetze: T.inhalt(1, 60, 1) }); }, nimm: function(i){ var s = T.nimm(1, 60, 1, i); return Promise.resolve({ sache: s, plaetze: T.inhalt(1, 60, 1) }); }, lege: function(s){ var r = T.lege(1, 60, 1, s); return Promise.resolve({ rest: r, plaetze: T.inhalt(1, 60, 1) }); } };
   a.k.rucksack.lege({ block: SC.B.TITAN, anzahl: 3 });
@@ -111,13 +111,13 @@ test("Truhen-Menü: nehmen und hineinlegen über den Anbieter (#105)", function(
     a.w.querySelector('[data-aktion="rplatz"][data-i="' + ti + '"]').click(); return new Promise(function(ok){ setTimeout(ok, 0); });
   }).then(function(){ gleich(a.k.rucksack.hat(SC.B.TITAN), 0, "aus dem Rucksack"); gleich(T.inhalt(1, 60, 1)[0].anzahl, 3, "in der Truhe"); });
 });
-test("Truhen-Menü: voller Rucksack nimmt nichts heraus (#105)", function(){
+test("Truhen-Menü: voller Rucksack nimmt nichts heraus (#104)", function(){
   var a = wb(), d = tdaten(), T = SC.Truhen.von(d, new SC.Planet(d.planeten.start)); T.lege(1, 60, 1, { gegenstand: { id: "schatz", art: "helm", seltenheit: 1 } });
   for(var i = 0; i < 36; i++) a.k.rucksack.lege({ gegenstand: { id: "r" + i } });
   var anb = { hole: function(){ return Promise.resolve({ plaetze: T.inhalt(1, 60, 1) }); }, nimm: function(i){ throw new Error("darf nicht gerufen werden"); }, lege: function(){ throw new Error("nein"); } };
   a.ui.zeigeTruhe(a.k, anb, {}); return new Promise(function(ok){ setTimeout(ok, 0); }).then(function(){ a.w.querySelector('[data-aktion="tplatz"][data-i="0"]').click(); gleich(T.inhalt(1, 60, 1)[0].gegenstand.id, "schatz"); });
 });
-test("Truhe im Mehrspieler: Gast öffnet, legt und nimmt über den Gastgeber (#105)", function(){
+test("Truhe im Mehrspieler: Gast öffnet, legt und nimmt über den Gastgeber (#104)", function(){
   var u, a, b, H;
   return mspRaum(2).then(function(x){ u = x; a = u.gs[0]; b = u.gs[1]; u.welt.setzeBlock(5, 62, 5, SC.B.TRUHE, "system"); H = SC.Truhen.von(u.daten, u.welt.planet); return netzWarte(u, a.g.truhe(5, 62, 5)); }).then(function(r){
     gleich(r.plaetze.length, 18); return netzWarte(u, a.g.truheLege(5, 62, 5, { block: SC.B.TITAN, anzahl: 7 }));
@@ -128,7 +128,7 @@ test("Truhe im Mehrspieler: Gast öffnet, legt und nimmt über den Gastgeber (#1
     var gesamt = rs.filter(function(r){ return r.sache; }); gleich(gesamt.length, 1, "nur einer bekommt die Sache"); gleich(gesamt[0].sache.anzahl, 7); gleich(H.inhalt(5, 62, 5)[0], null);
   });
 });
-test("Truhe im Mehrspieler: Anfragen an Blöcke, die keine Truhe sind, bleiben leer (#105)", function(){
+test("Truhe im Mehrspieler: Anfragen an Blöcke, die keine Truhe sind, bleiben leer (#104)", function(){
   var u, a;
   return mspRaum(1).then(function(x){ u = x; a = u.gs[0]; return netzWarte(u, a.g.truheLege(7, 62, 7, { block: SC.B.TITAN, anzahl: 1 })); }).then(function(r){
     gleich(r.plaetze, null, "keine Truhe"); gleich(r.rest, 1, "nichts abgelegt"); return netzWarte(u, a.g.truhe(7, 62, 7));
@@ -136,7 +136,7 @@ test("Truhe im Mehrspieler: Anfragen an Blöcke, die keine Truhe sind, bleiben l
   .then(function(r){ gleich(r.plaetze, null, "ungültige Sache abgelehnt"); gleich(r.rest, 1); return netzWarte(u, a.g.truheLege(7, 62, 7, { block: SC.B.TITAN, anzahl: -5 })); })
   .then(function(r){ gleich(r.plaetze, null, "negative Menge abgelehnt"); });
 });
-test("Truhe abgebaut: Inhalt fällt als Beute heraus (#105)", function(){
+test("Truhe abgebaut: Inhalt fällt als Beute heraus (#104)", function(){
   var d = tdaten(), planet = new SC.Planet(d.planeten.start), w = new SC.Welt(planet), T = SC.Truhen.von(d, planet), kugeln = [];
   T.lege(3, 60, 3, { block: SC.B.TITAN, anzahl: 4 }); T.lege(3, 60, 3, { gegenstand: { id: "h", art: "helm" } });
   var fake = { daten: d, welt: w, beuteAuswerfen: function(pos, sachen){ kugeln = kugeln.concat(sachen); } };

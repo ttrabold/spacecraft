@@ -175,11 +175,11 @@ test("Rüstungsfarbe nach Metall, Glutstahl und Moorsilber unterscheidbar (#101)
   function helmFarbe(g){ rm.aktualisiere([{ id: 1, name: "A", farbe: "#e0533a", pos: [10, 5, 10], blick: [0, 0], modus: "survival", ausr: { ruestung: { helm: g }, waffe: null }, lebt: true }], [0, 0, 0], 0.1); return rm.figuren.get(1).f.ruestung.helm[0].material.color.getHexString(); }
   var glut = helmFarbe({ art: "helm", metall: SC.B.GLUTSTAHL, seltenheit: 3, werte: {} }), moor = helmFarbe({ art: "helm", metall: SC.B.MOORSILBER, seltenheit: 3, werte: {} }); wahr(glut !== moor, "Glut und Moor im Spiel verschieden");
 });
-test("Entwicklerwerkzeuge: Rohstoffe geben (#106)", function(){
+test("Entwicklerwerkzeuge: Rohstoffe geben (#105)", function(){
   var w = document.createElement("div"), sp = new SC.Spieler({ id: "a", pos: [1, 70, 1], modus: "survival" }), k = k2(),
     spiel = { tageszeit: 0.25, zeitTempo: 1, spieler: sp, kampf: k, welt: new SC.Welt(new SC.Planet({ id: "start", seed: 3 })), render: { fps: 60, chunks: new Map(), chunkGrenzen: false, sichtweite: 6 }, daten: { seed: "x" } },
     pn = new SC.Entwickler.Panel(w, spiel); pn.zeige(); var kn = w.querySelector('[data-ew="rohstoffe"]'); wahr(kn, "Knopf"); kn.click();
   [SC.B.EISENERZ, SC.B.STERNENMETALL, SC.B.KRISTALL_WEISS, SC.B.KRISTALL_ROT, SC.B.SCHALTKREIS, SC.B.CHITIN].forEach(function(id){ gleich(k.rucksack.hat(id), 16, SC.BLOECKE[id].name); });
   wahr(k.rucksack.hat(SC.B.STAMM) >= 32 && k.rucksack.hat(SC.B.STEIN) >= 32);
 });
-test("Anleitung erklärt Rohstoffe und Handwerk (#106)", function(){ var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Rohstoffe und Handwerk"; })[0]; wahr(a && a[1].length >= 6); wahr(a[1].join(" ").indexOf("Werkbank") >= 0 && a[1].join(" ").indexOf("Kristall") >= 0); });
+test("Anleitung erklärt Rohstoffe und Handwerk (#105)", function(){ var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Rohstoffe und Handwerk"; })[0]; wahr(a && a[1].length >= 6); wahr(a[1].join(" ").indexOf("Werkbank") >= 0 && a[1].join(" ").indexOf("Kristall") >= 0); });

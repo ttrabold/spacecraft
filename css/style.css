@@ -16,7 +16,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0e0b2e;color:#eef2fa;
 /* Menüs: dunkler Grund, Pixel-Rahmen, Akzent Cyan */
 [hidden]{display:none!important}
 .ebene{z-index:3;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(7,11,36,.72);pointer-events:auto;padding:16px;box-sizing:border-box;overflow:auto}
-.fenster{background:#151236;border:3px solid #3ef0ff;box-shadow:0 0 0 3px #0e0b2e,0 0 24px rgba(62,240,255,.35);padding:20px 24px;max-width:860px;width:100%;max-height:100%;overflow:auto;box-sizing:border-box;-webkit-user-select:text;user-select:text}
+.fenster{background:#151236;border:3px solid #3ef0ff;box-shadow:0 0 0 3px #0e0b2e,0 0 24px rgba(62,240,255,.35);padding:20px 24px;max-width:860px;width:100%;max-height:100%;overflow-x:hidden;overflow-y:auto;box-sizing:border-box;-webkit-user-select:text;user-select:text}
 .titel{margin:0 0 12px;font-size:44px;letter-spacing:6px;color:#3ef0ff;text-shadow:0 0 12px rgba(62,240,255,.6);text-align:center}
 h2{margin:0 0 14px;color:#3ef0ff}
 button,.knopf{box-sizing:border-box;font:inherit;font-size:17px;min-height:48px;padding:8px 16px;border:2px solid #4a5a8a;background:#232056;color:#eef2fa;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border-radius:0}
@@ -90,14 +90,14 @@ input[type=range].regeln{outline:3px solid #3ef0ff}
 .leiste-platz .anzahl,.rs-platz .anzahl{position:absolute;left:3px;bottom:1px;font-size:12px;color:#fff;text-shadow:0 1px 2px #000}
 /* Rucksack */
 .rs{display:flex;flex-wrap:wrap;gap:14px}
-.rs-links{flex:1 1 240px;display:flex;flex-direction:column;gap:10px}
+.rs-links{flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:10px}
 .rs-ausruestung{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .rs-aplatz{flex-direction:column;justify-content:center;min-height:70px;padding:4px;font-size:11px}
-.rs-aplatz img,.rs-platz img{width:34px;height:34px;image-rendering:pixelated}
+.rs-aplatz img,.rs-platz img{width:34px;height:34px;max-width:100%;object-fit:contain;image-rendering:pixelated}
 .rs-werte{font-size:14px;color:#aab3d6}
 .rs-detail{min-height:90px;font-size:14px}.rs-detail h3{margin:0 0 4px}
 .besser{color:#5fdc5f}.schlechter{color:#ff6f6f}.sonder{color:#ffd95c}
-.rs-raster{flex:2 1 320px;display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.rs-raster{flex:2 1 320px;min-width:0;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
 .rs-platz{position:relative;min-height:0;aspect-ratio:1;padding:2px;justify-content:center}
 .rs-platz.leiste{background:#2b2766}.rs-platz.gewaehlt{outline:3px solid #ffd95c}
 .besiegt{text-align:center}.besiegt h1{color:#ffd95c;font-size:44px;margin:4px 0 10px}

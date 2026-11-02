@@ -564,7 +564,7 @@ SC.Spiel.startpunkt = function(planet){
       for(var id in r.mitspieler){
         var m = r.mitspieler[id], e = null; if(id === mein || !m.pos) continue;
         r.spieler.forEach(function(x){ if(x.id === id) e = x; });
-        l.push({ id: id, name: e ? e.name : "", farbe: e ? e.farbe : SC.RAUM_FARBEN[0], pos: m.pos, blick: m.blick, modus: m.modus, ausr: m.ausr, lebt: m.lebt, menue: m.menue, hieb: m.hieb, blockt: m.blockt, sitzt: m.sitzt, verbunden: true });
+        l.push({ id: id, name: e ? e.name : "", farbe: e ? e.farbe : SC.RAUM_FARBEN[0], pos: m.pos, blick: m.blick, modus: m.modus, ausr: m.ausr, lebt: m.lebt, menue: m.menue, hieb: m.hieb, blockt: m.blockt, lp: m.lp, lpMax: m.lpMax, schild: m.schild, schildMax: m.schildMax, sitzt: m.sitzt, verbunden: true });
       }
     }
     // Wer im Fahrzeug sitzt, wird an seinem Sitz im hier gezeichneten Fahrzeug gezeigt (sonst hinkt die Figur dem Fahrzeug hinterher)

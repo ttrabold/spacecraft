@@ -20,7 +20,7 @@ SC.bewegeKoerper = function(welt, pos, achse, d, breite, hoehe, durch){
   return false;
 };
 
-SC.Wesen = { GRENZE: { gegner: 12, geschoss: 60, kugel: 40 } };
+SC.Wesen = { GRENZE: { gegner: 20, geschoss: 60, kugel: 40 } };
 SC.Wesen.anzahl = function(welt, art){ var n = 0; welt.wesen.forEach(function(e){ if(e.art === art) n++; }); return n; };
 SC.Wesen.neu = function(welt, art, daten){
   if(SC.Wesen.anzahl(welt, art) >= (SC.Wesen.GRENZE[art] || Infinity)){

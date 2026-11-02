@@ -79,18 +79,31 @@ SC.RenderMitspieler = function(szene, planet){
 (function(){
   var RM = SC.RenderMitspieler, nah = function(x, b, P){ return x + P * Math.round((b - x) / P); };
   // Namensschild: weiße Schrift auf halbtransparentem dunklem Grund, Rand in Spielerfarbe
-  RM.schildBild = function(name, farbe){
+  // balken (optional): { lp, schild } als Anteil 0..1 – Leben (grün/gelb/rot) und darunter Schild (blau); ohne balken nur der Name
+  RM.schildBild = function(name, farbe, balken){
     var c = document.createElement("canvas"); c.width = 256; c.height = 64; var x = c.getContext("2d");
     x.fillStyle = "rgba(0,0,0,.55)"; x.fillRect(4, 8, 248, 48);
     x.strokeStyle = farbe; x.lineWidth = 5; x.strokeRect(4, 8, 248, 48);
-    x.font = "bold 26px system-ui, sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = "#ffffff"; x.fillText(name || "", 128, 33, 236);
+    x.font = "bold " + (balken ? 22 : 26) + "px system-ui, sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = "#ffffff"; x.fillText(name || "", 128, balken ? 24 : 33, 236);
+    if(balken){
+      x.fillStyle = "rgba(255,255,255,.18)"; x.fillRect(16, 36, 224, 9); if(balken.schild !== null) x.fillRect(16, 47, 224, 5);
+      x.fillStyle = balken.lp > 0.5 ? "#4cd964" : balken.lp > 0.25 ? "#ffd93d" : "#ff5a5a"; x.fillRect(16, 36, 224 * balken.lp, 9);
+      if(balken.schild !== null){ x.fillStyle = "#58b4ff"; x.fillRect(16, 47, 224 * balken.schild, 5); }
+    }
     return c;
   };
+  // Anteile aus den übertragenen Werten (nur Survival, lebend, mit Leben); sonst null. In Zwanzigstel gerundet, damit das Bild nicht dauernd neu entsteht.
+  RM.balken = function(e){
+    if(e.modus !== "survival" || e.lebt === false || !(e.lpMax > 0) || typeof e.lp !== "number") return null;
+    var q = function(a, b){ return Math.round(Math.max(0, Math.min(1, a / b)) * 20) / 20; };
+    return { lp: q(e.lp, e.lpMax), schild: e.schildMax > 0 && typeof e.schild === "number" ? q(e.schild, e.schildMax) : null };
+  };
+  RM.schildSchluessel = function(e){ var b = RM.balken(e); return e.name + "|" + e.farbe + (b ? "|" + b.lp + "|" + b.schild : ""); };
   RM.prototype._neu = function(e){
-    var f = SC.Figur.baue(e.farbe), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(RM.schildBild(e.name, e.farbe)), transparent: true, depthWrite: false }));
+    var f = SC.Figur.baue(e.farbe), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(RM.schildBild(e.name, e.farbe, RM.balken(e))), transparent: true, depthWrite: false }));
     sp.renderOrder = 2; // nach Laub (renderOrder 1), sonst verdeckt es das Schild; feste Blöcke verdecken weiterhin (Tiefentest bleibt an)
     sp.userData.name = e.name; sp.position.y = 2.0 + 0.5 + 0.2; f.gruppe.add(sp); this.gruppe.add(f.gruppe);
-    var o = { f: f, schild: sp, name: e.name, farbe: e.farbe, p: null, schlag: 0, ausr: null, hN: undefined, hK: -1, hT: 0, sw: { x: 0, y: 0, z: 0 } };
+    var o = { f: f, schild: sp, name: e.name, schildKey: RM.schildSchluessel(e), farbe: e.farbe, p: null, schlag: 0, ausr: null, hN: undefined, hK: -1, hT: 0, sw: { x: 0, y: 0, z: 0 } };
     f.schild = sp; return o;
   };
   RM.prototype._weg = function(o){
@@ -104,7 +117,8 @@ SC.RenderMitspieler = function(szene, planet){
       var o = r.figuren.get(e.id);
       if(o && (o.farbe !== e.farbe)){ r._weg(o); o = null; }
       if(!o){ o = r._neu(e); r.figuren.set(e.id, o); }
-      if(o.name !== e.name){ o.name = e.name; o.schild.userData.name = e.name; o.schild.material.map.dispose(); o.schild.material.map = new THREE.CanvasTexture(RM.schildBild(e.name, e.farbe)); o.schild.material.needsUpdate = true; }
+      var sk = RM.schildSchluessel(e);
+      if(o.schildKey !== sk){ o.schildKey = sk; o.name = e.name; o.schild.userData.name = e.name; o.schild.material.map.dispose(); o.schild.material.map = new THREE.CanvasTexture(RM.schildBild(e.name, e.farbe, RM.balken(e))); o.schild.material.needsUpdate = true; }
       var k = e.imFahrzeug ? 1 : k0, alt = o.p ? o.p.slice() : null; // im Fahrzeug: schon am Sitz, nicht glätten
       if(!o.p) o.p = e.pos.slice();
       else { var tx = nah(e.pos[0], o.p[0], P), tz = nah(e.pos[2], o.p[2], P); if(Math.abs(tx - o.p[0]) + Math.abs(tz - o.p[2]) + Math.abs(e.pos[1] - o.p[1]) > 8) k = 1; o.p[0] += (tx - o.p[0]) * k; o.p[1] += (e.pos[1] - o.p[1]) * k; o.p[2] += (tz - o.p[2]) * k; o.p[0] = (o.p[0] % P + P) % P; o.p[2] = (o.p[2] % P + P) % P; }

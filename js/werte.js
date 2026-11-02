@@ -16,8 +16,8 @@ SC.Werte.gibErfahrung = function(w, menge){
 
 SC.SCHWIERIGKEIT = {
   friedlich: { schaden: 0, nachtMax: 0, gruppenBonus: 0, genauigkeit: 0, seltenheitBonus: 0, gegner: false },
-  leicht: { schaden: 0.5, nachtMax: 3, gruppenBonus: -1, genauigkeit: 0.35, seltenheitBonus: 0, gegner: true },
-  normal: { schaden: 1, nachtMax: 6, gruppenBonus: 0, genauigkeit: 0.6, seltenheitBonus: 0, gegner: true },
-  schwer: { schaden: 1.5, nachtMax: 9, gruppenBonus: 1, genauigkeit: 0.85, seltenheitBonus: 1, gegner: true }
+  leicht: { schaden: 0.5, nachtMax: 5, gruppenBonus: -1, genauigkeit: 0.35, seltenheitBonus: 0, gegner: true },
+  normal: { schaden: 1, nachtMax: 10, gruppenBonus: 0, genauigkeit: 0.6, seltenheitBonus: 0, gegner: true },
+  schwer: { schaden: 1.5, nachtMax: 14, gruppenBonus: 1, genauigkeit: 0.85, seltenheitBonus: 1, gegner: true }
 };
 SC.ORTSSTUFE = { lager: [1, 5], station: [5, 12], herrenhaus: [10, 20], dungeon: [15, 25] };

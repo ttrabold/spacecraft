@@ -11,7 +11,9 @@ const nur = process.argv[2]; // optional: nur Tests, deren Name diesen Text enth
 const datei = path.resolve(__dirname, "../tests/index.html");
 const seite = (wsl ? "file:" + (win(datei).startsWith("\\\\") ? "" : "///") + win(datei).replace(/\\/g, "/") : "file://" + datei) + (nur ? "?nur=" + encodeURIComponent(nur) : "");
 const p = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-first-run", "--user-data-dir=" + (wsl ? win(profil) : profil), "--allow-file-access-from-files", "--remote-debugging-port=0", "about:blank"], { stdio: "ignore" });
-const ende = (code) => { try { p.kill(); } catch (e) {} setTimeout(() => { try { fs.rmSync(profil, { recursive: true, force: true }); } catch (e) {} process.exit(code); }, 300); };
+// WSL: p.kill() trifft nur den Starter, nicht das Windows-Chrome – alle Prozesse mit diesem Profil beenden (sonst läuft Chrome weiter, auch mit Ton)
+const beendeWindowsChrome = () => { if (!wsl) return; try { require("child_process").execFileSync("powershell.exe", ["-NoProfile", "-Command", "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object { $_.CommandLine -like '*" + path.basename(profil) + "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"], { stdio: "ignore" }); } catch (e) {} };
+const ende = (code) => { try { p.kill(); } catch (e) {} beendeWindowsChrome(); setTimeout(() => { try { fs.rmSync(profil, { recursive: true, force: true }); } catch (e) {} process.exit(code); }, 300); };
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   let port;

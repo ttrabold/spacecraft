@@ -50,7 +50,7 @@ SC.Auftauchen = function(welt, daten, zf){
     var surv = alle.filter(function(sp){ return sp.modus === "survival"; });
     if(!surv.length || tageslicht >= NACHT) return;
     var nacht = 0; w.wesen.forEach(function(e){ if(e.nacht) nacht++; });
-    for(var v = 0; v < 3 && nacht < schw.nachtMax; v++){
+    for(var v = 0; v < 5 && nacht < schw.nachtMax; v++){
       var sp = surv.length === 1 ? surv[0] : surv[Math.floor(zf() * surv.length)];
       var blick = [-Math.sin(sp.blick[0]), -Math.cos(sp.blick[0])], ss = (mehr ? sp.stufe : this.daten.spieler.stufe) || 1;
       var win = zf() * Math.PI * 2, ab = 24 + zf() * 24, dx = Math.sin(win), dz = Math.cos(win);

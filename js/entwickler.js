@@ -65,7 +65,7 @@ SC.Entwickler = {};
       '<div class="ew-gruppe"><b>' + esc(T.ewTeleport) + '</b><div class="ew-reihe"><input id="ew-x" type="number" placeholder="x"><input id="ew-y" type="number" placeholder="y"><input id="ew-z" type="number" placeholder="z"><button data-ew="tp">' + esc(T.ewLos) + "</button></div>" +
       '<div class="ew-reihe">' + TYPEN.map(function(t){ return '<button data-ew="tp-' + t + '">' + esc(T.ewBauwerk[t]) + "</button>"; }).join("") + "</div>" +
       (s.raum instanceof SC.Gast ? '<div class="ew-reihe"><button data-ew="zum-gastgeber">' + esc(T.ewZumGastgeber) + "</button></div>" : "") + "</div>" +
-      '<div class="ew-gruppe"><b>' + esc(T.modus) + '</b><div class="ew-reihe"><button data-ew="m-kreativ">' + esc(T.kreativ) + '</button><button data-ew="m-zuschauer">' + esc(T.zuschauer) + "</button></div></div>" +
+      '<div class="ew-gruppe"><b>' + esc(T.modus) + '</b><div class="ew-reihe"><button data-ew="m-kreativ">' + esc(T.kreativ) + '</button><button data-ew="m-survival">' + esc(T.survival) + '</button><button data-ew="m-zuschauer">' + esc(T.zuschauer) + "</button></div></div>" +
       '<div class="ew-gruppe"><label>' + esc(T.sichtweite) + ' <b id="ew-sicht-w">' + s.render.sichtweite + '</b><input type="range" id="ew-sicht" min="2" max="16" step="1" value="' + s.render.sichtweite + '"></label>' +
       '<label>' + esc(T.ewFlug) + ' <b id="ew-flug-w">' + (s.spieler.flugFaktor || 1) + '</b><input type="range" id="ew-flug" min="0.5" max="5" step="0.5" value="' + (s.spieler.flugFaktor || 1) + '"></label>' +
       '<label class="ew-zeile"><input type="checkbox" id="ew-grenzen"' + (s.render.chunkGrenzen ? " checked" : "") + "> " + esc(T.ewGrenzen) + "</label></div>" +

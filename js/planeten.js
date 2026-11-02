@@ -2,13 +2,13 @@
 // Weitere Planeten sind später nur weitere Einträge. Die Landschaftsregeln stehen in js/landschaft.js.
 SC.PLANETEN = {
   start: { palette: "start", stufenBonus: 0,
-    gegner: { station: ["patrouillendroide"], lager: ["weltraumbandit"], herrenhaus: ["weltraumbandit", "patrouillendroide"], dungeon: ["krabbler", "spucker"], nacht: ["krabbler", "spucker"] },
+    gegner: { station: ["patrouillendroide", "flatterdroide", "schildwaechter", "reparaturdroide"], lager: ["weltraumbandit", "spaeher", "flatterdroide", "reparaturdroide"], herrenhaus: ["weltraumbandit", "patrouillendroide", "schildwaechter", "spaeher"], dungeon: ["krabbler", "spucker", "funkenling"], nacht: ["krabbler", "spucker", "funkenling"] },
     boss: { herrenhaus: ["schattenritter"], dungeon: ["schattenritter", "panzerkoloss"] } },
   glutfrost: { palette: "glutfrost", stufenBonus: 8,
-    gegner: { station: ["frostkrabbler", "patrouillendroide"], lager: ["lavagolem", "weltraumbandit"], herrenhaus: ["lavagolem", "frostkrabbler"], dungeon: ["lavagolem", "frostkrabbler"], nacht: ["frostkrabbler", "lavagolem"] },
+    gegner: { station: ["frostkrabbler", "patrouillendroide", "schneewerfer", "glutflatterer"], lager: ["lavagolem", "weltraumbandit", "eisrutscher", "schneewerfer"], herrenhaus: ["lavagolem", "frostkrabbler", "frostgolem"], dungeon: ["lavagolem", "frostkrabbler", "frostgolem", "eisrutscher", "glutfunke"], nacht: ["frostkrabbler", "lavagolem", "eisrutscher", "glutfunke", "glutflatterer"] },
     boss: { herrenhaus: ["magmakoenig"], dungeon: ["magmakoenig"] } },
   rankenmoor: { palette: "rankenmoor", stufenBonus: 15,
-    gegner: { station: ["sumpfspucker", "patrouillendroide"], lager: ["rankenschleicher", "weltraumbandit"], herrenhaus: ["rankenschleicher", "sumpfspucker"], dungeon: ["rankenschleicher", "sumpfspucker"], nacht: ["rankenschleicher", "sumpfspucker"] },
+    gegner: { station: ["sumpfspucker", "patrouillendroide", "moosmutter"], lager: ["rankenschleicher", "weltraumbandit", "dornenbock", "pilzling"], herrenhaus: ["rankenschleicher", "sumpfspucker", "lianenwuerger", "moosmutter"], dungeon: ["rankenschleicher", "sumpfspucker", "lianenwuerger", "moorirrlicht"], nacht: ["rankenschleicher", "sumpfspucker", "moorirrlicht", "pilzling", "dornenbock"] },
     boss: { herrenhaus: ["sumpfkoloss"], dungeon: ["sumpfkoloss"] } }
 };
 SC.PLANET_REIHENFOLGE = ["start", "glutfrost", "rankenmoor"];

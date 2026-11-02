@@ -58,7 +58,7 @@ SC.Auftauchen = function(welt, daten, zf){
       var x = Math.floor(SC.mod(sp.pos[0] + dx * ab, w.planet.groesse)), z = Math.floor(SC.mod(sp.pos[2] + dz * ab, w.planet.groesse));
       var y = w.generator.hoehe(x, z) + 1;
       if(y <= SC.MEER + 1 || SC.BLOECKE[w.holeBlock(x, y, z)].fest || SC.BLOECKE[w.holeBlock(x, y + 1, z)].fest || !SC.BLOECKE[w.holeBlock(x, y - 1, z)].fest) continue;
-      var na = arten(w, "nacht"), art2 = zf() < 0.6 ? na[0] : na[1] || na[0], st = Math.max(1, Math.min(12, ss + Math.floor(zf() * 3) - 1));
+      var na = arten(w, "nacht"), art2 = na[Math.floor(zf() * na.length)], st = Math.max(1, Math.min(12, ss + Math.floor(zf() * 3) - 1));
       if(this._neu(art2, st, [x + 0.5, y, z + 0.5], { nacht: true, ort: "dungeon" })) nacht++;
     }
   };

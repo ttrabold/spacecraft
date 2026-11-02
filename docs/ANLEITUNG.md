@@ -83,6 +83,9 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 - Im Rucksack (E oder ▦) legst du Waffen und Rüstung an. Mit dem Schwert kannst du blocken.
 - In Dungeons, Herrenhäusern, Stationen und Lagern warten Schatzkisten, stärkere Gegner und Bosse.
 - Ausweichen (Q) hilft, wenn es eng wird.
+- Es gibt viele Gegnerarten, auf jedem Planeten andere. Funkenlinge, Glutfunken und Pilzlinge explodieren, wenn sie nahe kommen: Lauf weg oder schieß sie vorher ab.
+- Flatterdroiden, Glutflatterer und Moorirrlichter schweben über dir. Schildwächter schützt sein Schild von vorn, geh um ihn herum.
+- Späher schießen aus großer Entfernung, Lianenwürger schlagen weit, bewegen sich aber nicht. Reparaturdroiden und Moosmütter heilen andere Gegner: Schalte sie zuerst aus.
 
 ## Rohstoffe und Handwerk
 

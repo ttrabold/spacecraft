@@ -119,7 +119,10 @@ SC.T = {
   allBeute: "Beute: {name}", allPiraten: "Weltraumpiraten!", allNotsprung: "Notsprung! Der Schild ist leer.",
   fahrzeugVerpufft: "Der {name} ist verpufft.", fahrzeugVerpufftFundort: "Der {name} ist verpufft. Bald steht er wieder an seinem Fundort.",
   gegner: { patrouillendroide: "Patrouillendroide", weltraumbandit: "Weltraumbandit", krabbler: "Krabbler", spucker: "Spucker", schattenritter: "Schattenritter", panzerkoloss: "Panzerkoloss",
-    lavagolem: "Lavagolem", frostkrabbler: "Frostkrabbler", magmakoenig: "Magmakönig", rankenschleicher: "Rankenschleicher", sumpfspucker: "Sumpfspucker", sumpfkoloss: "Sumpfkoloss" },
+    lavagolem: "Lavagolem", frostkrabbler: "Frostkrabbler", magmakoenig: "Magmakönig", rankenschleicher: "Rankenschleicher", sumpfspucker: "Sumpfspucker", sumpfkoloss: "Sumpfkoloss",
+    funkenling: "Funkenling", flatterdroide: "Flatterdroide", schildwaechter: "Schildwächter", spaeher: "Späher", reparaturdroide: "Reparaturdroide",
+    eisrutscher: "Eisrutscher", glutfunke: "Glutfunke", schneewerfer: "Schneewerfer", frostgolem: "Frostgolem", glutflatterer: "Glutflatterer",
+    moorirrlicht: "Moorirrlicht", pilzling: "Pilzling", lianenwuerger: "Lianenwürger", moosmutter: "Moosmutter", dornenbock: "Dornenbock" },
   gegenstand: {
     laserschwert: ["Laserschwert", "n"], blasterpistole: ["Blasterpistole", "f"], blastergewehr: ["Blastergewehr", "n"],
     helm: ["Helm", "m"], brust: ["Brustpanzer", "m"], handschuhe: ["Handschuhe", "pl"], stiefel: ["Stiefel", "pl"], schildgenerator: ["Schildgenerator", "m"]
@@ -234,7 +237,10 @@ SC.T = {
         "Im Bild siehst du deine Lebenspunkte und deine Stufe. Besiegte Gegner geben Erfahrung.",
         "Im Rucksack (E oder ▦) legst du Waffen und Rüstung an. Mit dem Schwert kannst du blocken.",
         "In Dungeons, Herrenhäusern, Stationen und Lagern warten Schatzkisten, stärkere Gegner und Bosse.",
-        "Ausweichen (Q) hilft, wenn es eng wird."
+        "Ausweichen (Q) hilft, wenn es eng wird.",
+        "Es gibt viele Gegnerarten, auf jedem Planeten andere. Funkenlinge, Glutfunken und Pilzlinge explodieren, wenn sie nahe kommen: Lauf weg oder schieß sie vorher ab.",
+        "Flatterdroiden, Glutflatterer und Moorirrlichter schweben über dir. Schildwächter schützt sein Schild von vorn, geh um ihn herum.",
+        "Späher schießen aus großer Entfernung, Lianenwürger schlagen weit, bewegen sich aber nicht. Reparaturdroiden und Moosmütter heilen andere Gegner: Schalte sie zuerst aus."
       ]],
       ["Rohstoffe und Handwerk", [
         "Erze und Kristalle liegen in Höhlen, in Bauwerken und auf fremden Planeten. Je tiefer und weiter weg, desto seltener.",

@@ -44,7 +44,7 @@ SC.CRAFTING = {};
       var k = SC.Crafting.kosten(rz, wahl), gratis = o && o.gratis, sache;
       if(rz.art === "bauteil") sache = { block: rz.ergibt.block, anzahl: rz.ergibt.anzahl };
       else {
-        var def = SC.GEGENSTAENDE[rz.gegenstand], opt = { art: rz.gegenstand, seltenheit: wahl.metallStufe, stufe: spielerStufe, material: wahl.metallStufe };
+        var def = SC.GEGENSTAENDE[rz.gegenstand], opt = { art: rz.gegenstand, seltenheit: wahl.metallStufe, stufe: spielerStufe, material: wahl.metallStufe, metall: wahl.metallBlock };
         if(def.platz === "waffe") opt.klinge = SC.CRAFTING_KRISTALLE[wahl.kristall].farbe;
         sache = { gegenstand: SC.Beute.baue(zf, opt) };
       }

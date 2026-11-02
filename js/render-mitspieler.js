@@ -66,7 +66,7 @@ SC.Figur = {
   },
   // Rüstung (Platz -> Gegenstand oder null) und Waffe in Seltenheitsfarben zeigen
   ausruestung: function(figur, ruestung, waffe){
-    Object.keys(figur.ruestung).forEach(function(p){ var g = ruestung && ruestung[p]; figur.ruestung[p].forEach(function(m){ m.visible = !!g; if(g) m.material.color.set(SC.SELTENHEIT[g.seltenheit || 0].farbe); }); });
+    Object.keys(figur.ruestung).forEach(function(p){ var g = ruestung && ruestung[p]; figur.ruestung[p].forEach(function(m){ m.visible = !!g; if(g) m.material.color.set(SC.Beute.stoffFarbe(g)); }); });
     SC.Figur.waffeStil(figur.waffe, waffe);
   }
 };

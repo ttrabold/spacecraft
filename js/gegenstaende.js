@@ -22,6 +22,11 @@ SC.Beute = {};
 // Eine Beute-Position (Gegenstand oder Rohstoff {block, anzahl}) als Sache für eine Beutekugel
 // Farbe der Klinge (Laserschwert) bzw. des Strahls (Blaster): gebaute Waffen tragen die Farbe ihres Kristalls, sonst gilt die Seltenheit
 SC.Beute.klingenFarbe = function(g){ if(g && g.klinge) return g.klinge; var s = (g && g.seltenheit) || 0; return s === 0 ? "#bfe8ff" : SC.SELTENHEIT[s].farbe; };
+// Farbe der Rüstung und des Waffenbilds: Kristall, sonst Metall des Herstellers, sonst Seltenheit (gefundene Sachen)
+SC.Beute.METALLFARBE = {};
+SC.Beute.METALLFARBE[SC.B.STEIN] = "#9aa0a8"; SC.Beute.METALLFARBE[SC.B.EISENERZ] = "#6f8fb8"; SC.Beute.METALLFARBE[SC.B.TITAN] = "#dfe6ee";
+SC.Beute.METALLFARBE[SC.B.GLUTSTAHL] = "#e0502a"; SC.Beute.METALLFARBE[SC.B.MOORSILBER] = "#7fd8b0"; SC.Beute.METALLFARBE[SC.B.STERNENMETALL] = "#c9a0ff";
+SC.Beute.stoffFarbe = function(g){ return g.klinge || SC.Beute.METALLFARBE[g.metall] || SC.SELTENHEIT[g.seltenheit || 0].farbe; };
 SC.Beute.strahlFarbe = function(g){ return g.klinge || SC.SELTENHEIT[g.seltenheit || 0].farbe; };
 SC.Beute.alsSache = function(b){ return b.block !== undefined ? { block: b.block, anzahl: b.anzahl } : { gegenstand: b }; };
 (function(){
@@ -74,6 +79,7 @@ SC.Beute.alsSache = function(b){ return b.block !== undefined ? { block: b.block
     var g = bau(zf, o.art, SC.GEGENSTAENDE[o.art], Math.max(1, o.stufe || 1), o.seltenheit);
     if(o.klinge) g.klinge = o.klinge;
     if(o.material !== undefined) g.material = o.material;
+    if(o.metall !== undefined) g.metall = o.metall;
     return g;
   };
 

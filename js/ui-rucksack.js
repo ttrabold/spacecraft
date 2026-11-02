@@ -16,8 +16,8 @@
   };
   var bilder = {};
   SC.UI.gegenstandBild = function(g){
-    var k = g.art + ":" + (g.seltenheit || 0) + ":" + (g.klinge || ""); if(bilder[k]) return bilder[k];
-    var farbe = g.klinge || SC.SELTENHEIT[g.seltenheit || 0].farbe;
+    var k = g.art + ":" + (g.seltenheit || 0) + ":" + (g.klinge || "") + ":" + (g.metall || ""); if(bilder[k]) return bilder[k];
+    var farbe = SC.Beute.stoffFarbe(g);
     var c = document.createElement("canvas"); c.width = c.height = 14; var x = c.getContext("2d"), m = MUSTER[g.art] || MUSTER.helm;
     m.forEach(function(z, y){ for(var i = 0; i < z.length; i++){ if(z[i] === ".") continue; x.fillStyle = z[i] === "F" ? farbe : "#5a6070"; x.fillRect(i * 2, y * 2, 2, 2); } });
     return (bilder[k] = c.toDataURL());

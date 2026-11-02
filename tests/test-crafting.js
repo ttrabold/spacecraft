@@ -159,3 +159,19 @@ test("Gebauter Blaster schießt in Kristallfarbe, Mitspieler sehen sie (#100)", 
   gleich("#" + rm.figuren.get(1).f.waffe.klinge.material.color.getHexString(), "#b46bff");
 });
 test("Waffenbild nutzt die Klingenfarbe (#100)", function(){ var a = SC.UI.gegenstandBild({ art: "laserschwert", seltenheit: 2 }), b = SC.UI.gegenstandBild({ art: "laserschwert", seltenheit: 2, klinge: "#ff4a4a" }), c = SC.UI.gegenstandBild({ art: "laserschwert", seltenheit: 2, klinge: "#ff4a4a" }); wahr(a !== b, "andere Farbe, anderes Bild"); gleich(b, c, "gleiches Bild aus dem Cache"); });
+test("Rüstung: Werkbank-Menü, Stärke nach Metall (#101)", function(){
+  var a = wb(); a.k.rucksack.lege({ block: SC.B.TITAN, anzahl: 5 }); a.k.rucksack.lege({ block: SC.B.STEIN, anzahl: 5 });
+  a.ui.zeigeWerkbank(a.k, a.o); a.w.querySelector('[data-aktion="rezept"][data-id="helm"]').click(); gleich(a.w.querySelectorAll('[data-aktion="kristall"]').length, 0, "Rüstung braucht keinen Kristall");
+  a.w.querySelector('[data-aktion="metall"][data-id="2:' + SC.B.TITAN + '"]').click(); a.w.querySelector('[data-aktion="herstellen"]').click();
+  a.w.querySelector('[data-aktion="metall"][data-id="0:' + SC.B.STEIN + '"]').click(); a.w.querySelector('[data-aktion="herstellen"]').click();
+  var helme = a.k.rucksack.plaetze.filter(function(s){ return s && s.gegenstand && s.gegenstand.art === "helm"; }).map(function(s){ return s.gegenstand; }).sort(function(x, y){ return x.seltenheit - y.seltenheit; });
+  gleich(helme.length, 2); gleich(helme[0].seltenheit, 0); gleich(helme[1].seltenheit, 2); wahr(helme[1].werte.schutz > helme[0].werte.schutz, "Titan schützt mehr als Stein");
+  gleich(helme[1].metall, SC.B.TITAN); gleich(helme[1].material, 2);
+});
+test("Rüstungsfarbe nach Metall, Glutstahl und Moorsilber unterscheidbar (#101)", function(){
+  var farben = {}; [SC.B.STEIN, SC.B.EISENERZ, SC.B.TITAN, SC.B.GLUTSTAHL, SC.B.MOORSILBER, SC.B.STERNENMETALL].forEach(function(b){ farben[SC.Beute.stoffFarbe({ art: "helm", metall: b, seltenheit: 1 })] = 1; });
+  gleich(Object.keys(farben).length, 6, "sechs verschiedene Farben"); gleich(SC.Beute.stoffFarbe({ art: "helm", seltenheit: 3 }), SC.SELTENHEIT[3].farbe, "gefundene Rüstung wie bisher");
+  var sz = new THREE.Scene(), rm = new SC.RenderMitspieler(sz, { groesse: 2048 });
+  function helmFarbe(g){ rm.aktualisiere([{ id: 1, name: "A", farbe: "#e0533a", pos: [10, 5, 10], blick: [0, 0], modus: "survival", ausr: { ruestung: { helm: g }, waffe: null }, lebt: true }], [0, 0, 0], 0.1); return rm.figuren.get(1).f.ruestung.helm[0].material.color.getHexString(); }
+  var glut = helmFarbe({ art: "helm", metall: SC.B.GLUTSTAHL, seltenheit: 3, werte: {} }), moor = helmFarbe({ art: "helm", metall: SC.B.MOORSILBER, seltenheit: 3, werte: {} }); wahr(glut !== moor, "Glut und Moor im Spiel verschieden");
+});

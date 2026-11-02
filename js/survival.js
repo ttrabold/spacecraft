@@ -165,7 +165,7 @@
     } else if(!survival && ziel && !offen){
       // Kreativ: sofort abbauen, Blöcke aus der Leiste setzen
       if(e.abbauen && SC.BLOECKE[w.holeBlock(ziel.x, ziel.y, ziel.z)].zerstoerbar) w.setzeBlock(ziel.x, ziel.y, ziel.z, SC.B.LUFT, "spieler");
-      else if(e.setzen && SC.Bauteile.istTuer(w.holeBlock(ziel.x, ziel.y, ziel.z))) this.benutzeBlock(ziel);   // Kreativ: Türen auf und zu
+      else if(e.setzen && this.benutzeBlock(ziel)){ /* Kreativ: Türen, Werkbank und Truhe benutzen */ }
       else if(e.setzen){ var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz; var bid = SC.Bauteile.aufstellId(w, sp.schnellleiste[sp.auswahl], ziel, sp.richtung()); if(bid && SC.kannSetzen(w, sp, x, y, z, bid)) w.setzeBlock(x, y, z, bid, "spieler"); }
     }
     if(!(survival && !offen && lebt)){ k.blocken(false); this.render.blocke(false); } // Blockhaltung löst sich bei Menü oder Niederlage

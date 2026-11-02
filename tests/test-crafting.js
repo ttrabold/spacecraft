@@ -183,3 +183,20 @@ test("Entwicklerwerkzeuge: Rohstoffe geben (#105)", function(){
   wahr(k.rucksack.hat(SC.B.STAMM) >= 32 && k.rucksack.hat(SC.B.STEIN) >= 32);
 });
 test("Anleitung erklärt Rohstoffe und Handwerk (#105)", function(){ var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Rohstoffe und Handwerk"; })[0]; wahr(a && a[1].length >= 6); wahr(a[1].join(" ").indexOf("Werkbank") >= 0 && a[1].join(" ").indexOf("Kristall") >= 0); });
+test("Kreativ: Reiter Materialien legt Rohstoffe in den Rucksack (#99)", function(){
+  var w = document.createElement("div"), ui = ui2(w), gewaehlt = [];
+  wahr(SC.CRAFTING_MATERIALIEN.indexOf(SC.B.EISENERZ) >= 0 && SC.CRAFTING_MATERIALIEN.indexOf(SC.B.STERNENMETALL) >= 0 && SC.CRAFTING_MATERIALIEN.indexOf(SC.B.KRISTALL_WEISS) >= 0 && SC.CRAFTING_MATERIALIEN.indexOf(SC.B.SCHALTKREIS) >= 0 && SC.CRAFTING_MATERIALIEN.indexOf(SC.B.STAMM) >= 0, "Erze, Kristalle, Teile und Holz");
+  ui.zeigeBlockauswahl(function(){}, { ausruestung: true, beiMaterial: function(id){ gewaehlt.push(id); } });
+  var reiter = w.querySelector('[data-aktion="reiter"][data-id="material"]'); wahr(reiter, "Reiter Materialien"); reiter.click();
+  wahr(!w.querySelector(".raster.mat").hidden && w.querySelector(".raster.bl").hidden && w.querySelector(".raster.ausr").hidden, "nur die Materialien sichtbar");
+  gleich(w.querySelectorAll('[data-aktion="material"]').length, SC.CRAFTING_MATERIALIEN.length); w.querySelector('[data-aktion="material"][data-block="' + SC.B.TITAN + '"]').click(); gleich(gewaehlt.join(), String(SC.B.TITAN));
+  w.querySelector('[data-aktion="reiter"][data-id="bloecke"]').click(); wahr(w.querySelector(".raster.mat").hidden && !w.querySelector(".raster.bl").hidden, "zurück zu den Blöcken");
+  var w2 = document.createElement("div"); ui2(w2).zeigeBlockauswahl(function(){}, {}); gleich(w2.querySelector('[data-id="material"]'), null, "ohne Rückruf kein Reiter");
+});
+test("Kreativ: Werkbank und Truhe lassen sich antippen (#99)", function(){
+  var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), offen = [];
+  w.setzeBlock(3, 60, 3, SC.B.WERKBANK, "system"); w.setzeBlock(4, 60, 3, SC.B.TRUHE, "system");
+  var fake = { welt: w, daten: SC.Spielstand.neu({ name: "K", seedText: "k", modus: "kreativ" }), spieler: new SC.Spieler({ id: "a", pos: [3.5, 61, 6.5], modus: "kreativ" }), kampf: k2(), eingabe: { gebeMausFrei: function(){} }, _weiter: function(){},
+    ui: { zeigeWerkbank: function(){ offen.push("werkbank"); }, zeigeTruhe: function(){ offen.push("truhe"); } }, truheOeffnen: SC.Spiel.prototype.truheOeffnen };
+  gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 60, z: 3 }), true); gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 4, y: 60, z: 3 }), true); gleich(offen.join(), "werkbank,truhe");
+});

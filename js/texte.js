@@ -105,7 +105,7 @@ SC.T = {
   metallWahl: "Metall", kristallWahl: "Kristall", wahlTipp: "Wähle ein Rezept.", wahlMetallKristall: "Wähle Metall und Kristall.", fehltMaterial: "Dir fehlen noch Rohstoffe.",
   rezeptName: { bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
   kristallName: { blau: "Blau", gruen: "Grün", rot: "Rot", gelb: "Gelb", violett: "Violett", weiss: "Weiß" },
-  ausruestungTitel: "Ausrüstung",
+  ausruestungTitel: "Ausrüstung", materialienTitel: "Materialien",
   anlegen: "Anlegen", ablegen: "Ablegen", inSchnellleiste: "In die Schnellleiste", wegwerfen: "Wegwerfen",
   platzName: { waffe: "Waffe", helm: "Helm", brust: "Brust", handschuhe: "Hände", stiefel: "Stiefel", schild: "Schild" },
   ueberhitzt: "Überhitzt!",

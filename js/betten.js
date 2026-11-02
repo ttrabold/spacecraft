@@ -60,6 +60,23 @@
     }
     this.ui.hinweis(T.bettBlockiert, 4000); return null;
   };
+  // Steht das Bett b (aus daten.spieler.bett) auf seinem Planeten noch? Prüft eine kurz geladene Kopie des Planeten.
+  S._bettDa = function(b){
+    var pd = this.daten.planeten[b.planet]; if(!pd) return false;
+    var w = new SC.Welt(new SC.Planet(pd), SC.Spielstand.chunksLaden(pd));
+    return SC.Bauteile.istBettKopf(w.holeBlock(b.x, b.y, b.z));
+  };
+  // Nach dem Besiegtwerden: am Bett wieder einsteigen, auch von einem anderen Planeten aus (dorthin wechseln). → Versprechen
+  // Ausnahmen: Gäste (die Welt gehört dem Gastgeber) und ein Gastgeber mit Gästen (ein Tod soll nicht alle auf einen anderen Planeten bringen) bleiben auf dem Planeten.
+  S._wiederEinstieg = function(){
+    var s = this, k = this.kampf, b = this.daten.spieler.bett, w = this.welt;
+    function hier(){ k.wiederbeleben(s.bettPunkt() || s.landepunkt() || SC.Spiel.startpunkt(w.planet)); return Promise.resolve(); }
+    var gaeste = this.raum instanceof SC.Gastgeber && this.raum.spieler.some(function(e){ return e.verbunden; });
+    if(!b || b.planet === w.planet.id || this.rolle === "gast" || gaeste || !SC.PLANETEN[b.planet]) return hier();
+    if(!this._bettDa(b)){ this.daten.spieler.bett = null; this.ui.hinweis(SC.T.bettFehlte, 4000); return hier(); }
+    k.wiederbeleben(this.spieler.pos.slice());   // erst wiederbeleben, sonst wäre der Spieler nach dem Wechsel noch besiegt
+    return this.wechslePlanet(b.planet, { bett: true }).catch(function(){ /* Wechsel nicht möglich: hier weiterspielen */ });
+  };
   // Alle, die mitzählen, liegen im Bett? Einzelspieler und Gastgeber entscheiden selbst; ein Gast wartet auf die Zeit des Gastgebers
   S._alleSchlafen = function(){
     var r = this.raum; if(r instanceof SC.Gast) return false;

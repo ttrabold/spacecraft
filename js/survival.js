@@ -239,7 +239,7 @@
     // Besiegt
     if(survival && k.besiegt() && !this._besiegtOffen){
       this._besiegtOffen = true; a.spiele("besiegt"); this.eingabe.gebeMausFrei();
-      this.ui.zeigeBesiegt(function(){ k.wiederbeleben(s.bettPunkt() || s.landepunkt() || SC.Spiel.startpunkt(w.planet)); s._besiegtOffen = false; s._weiter(); });
+      this.ui.zeigeBesiegt(function(){ s._wiederEinstieg().then(function(){ s._besiegtOffen = false; s._weiter(); }); });
     }
     this._hudSurvival(survival, waffe, wdef);
   };

@@ -257,7 +257,7 @@ SC.T = {
       ]],
       ["Betten", [
         "Ein Bett baust du an der Werkbank aus drei Wolle und drei Brettern. Wolle gibt es aus Blättern.",
-        "Stell das Bett hin und tippe es an: Das Bett wird dein Wiedereinstiegspunkt. Wirst du besiegt, geht es dort weiter. Fehlt das Bett, startest du am Startpunkt.",
+        "Stell das Bett hin und tippe es an: Das Bett wird dein Wiedereinstiegspunkt. Wirst du besiegt, geht es dort weiter, auch wenn du auf einem anderen Planeten warst. Fehlt das Bett, startest du am Startpunkt.",
         "Nachts kannst du im Bett schlafen: Dann vergeht die Nacht. Das geht nicht, wenn Gegner in der Nähe sind.",
         "Spielt ihr zusammen, wird es erst Morgen, wenn alle schlafen (Zuschauer zählen nicht).",
         "Zum Aufwachen reicht eine Bewegung."

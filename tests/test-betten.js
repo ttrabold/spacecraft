@@ -106,3 +106,35 @@ test("Schlafende Mitspieler liegen im Bild (#120)", function(){
   m.r.aktualisiere([_e(1, { schlaeft: false })], [0, 0, 0], 0.1); wahr(Math.abs(g.rotation.x) < 0.01, "steht wieder");
 });
 test("Netzprotokoll 6 wegen der Betten (#120)", function(){ gleich(SC.NETZ_PROTOKOLL, 6); });
+// --- Wiedereinstieg von anderen Planeten (#123) ---
+function wiederSpiel(o){
+  var s = schlafSpiel(), log = [];
+  s.daten = SC.Spielstand.neu({ name: "W", seedText: "w", modus: "survival" }); SC.Planeten.anlegen(s.daten, "glutfrost"); s.rolle = (o && o.rolle) || "einzel"; s.raum = (o && o.raum) || null; s.log = log;
+  s.kampf = { zuletztGetroffen: -1e9, uhr: 0, wiederbeleben: function(p){ log.push(["wiederbeleben", p && p.map(Math.round)]); } }; s.landepunkt = function(){ return [100, 70, 100]; }; s.welt.planet.groesse = s.welt.planet.groesse;
+  s.wechslePlanet = function(id, opt){ log.push(["wechsel", id, JSON.stringify(opt)]); return Promise.resolve(); };
+  ["_wiederEinstieg", "_bettDa", "bettPunkt"].forEach(function(n){ s[n] = SC.Spiel.prototype[n]; }); return s;
+}
+function bettAufPlanet(s, planetId, x, y, z){
+  var pd = s.daten.planeten[planetId], welt = new SC.Welt(new SC.Planet(pd)); SC.Bauteile.setze(welt, new SC.Spieler({ id: "b", pos: [x - 3.5, y, z + 0.5], modus: "survival" }), x - 1, y, z, SC.B.BETT_FUSS_O);
+  for(var i = x - 3; i <= x + 3; i++) for(var j = z - 3; j <= z + 3; j++) if(welt.holeBlock(i, y - 1, j) === SC.B.LUFT) welt.setzeBlock(i, y - 1, j, SC.B.STEIN, "system");
+  SC.Bauteile.setze(welt, new SC.Spieler({ id: "b", pos: [x - 3.5, y, z + 0.5], modus: "survival" }), x - 1, y, z, SC.B.BETT_FUSS_O); SC.Spielstand.ausWelt(s.daten, welt, null, null); return welt;
+}
+test("Wiedereinstieg: Bett auf anderem Planeten, wiederbeleben und dorthin wechseln (#123)", function(){
+  var s = wiederSpiel(); var w = bettAufPlanet(s, "glutfrost", 500, 70, 500); gleich(SC.Bauteile.istBettKopf(w.holeBlock(500, 70, 500)), true, "Bett steht dort");
+  s.daten.spieler.bett = { planet: "glutfrost", x: 500, y: 70, z: 500 }; return s._wiederEinstieg().then(function(){
+    gleich(s.log.length, 2); gleich(s.log[0][0], "wiederbeleben", "erst wiederbeleben (sonst bleibt er beim Wechsel besiegt)"); gleich(s.log[1][0], "wechsel"); gleich(s.log[1][1], "glutfrost"); gleich(JSON.parse(s.log[1][2]).bett, true, "am Ziel zum Bett setzen"); wahr(s.daten.spieler.bett, "Bett bleibt gemerkt");
+  });
+});
+test("Wiedereinstieg: fehlendes Bett auf anderem Planeten wird vergessen, kein Wechsel (#123)", function(){
+  var s = wiederSpiel(); s.daten.spieler.bett = { planet: "glutfrost", x: 500, y: 70, z: 500 };
+  return s._wiederEinstieg().then(function(){ gleich(s.log.length, 1); gleich(s.log[0][0], "wiederbeleben"); gleich(JSON.stringify(s.log[0][1]), "[100,70,100]", "wie bisher am Landepunkt"); gleich(s.daten.spieler.bett, null); gleich(s.hinweise[0], SC.T.bettFehlte); });
+});
+test("Wiedereinstieg: Bett auf diesem Planeten, Gast und Gastgeber mit Gästen bleiben hier (#123)", function(){
+  var s = wiederSpiel(); s.welt.setzeBlock(20, 64, 20, SC.B.LUFT, "system"); s.daten.spieler.bett = { planet: "start", x: 9, y: 64, z: 8 };
+  return s._wiederEinstieg().then(function(){ gleich(s.log.length, 1); gleich(s.log[0][0], "wiederbeleben"); wahr(Math.abs(s.log[0][1][0] - 9) <= 2, "neben dem Bett: " + s.log[0][1]);
+    var g = wiederSpiel({ rolle: "gast" }); bettAufPlanet(g, "glutfrost", 500, 70, 500); g.daten.spieler.bett = { planet: "glutfrost", x: 500, y: 70, z: 500 }; return g._wiederEinstieg().then(function(){ gleich(g.log.length, 1, "Gast bleibt in der Welt des Gastgebers"); gleich(g.log[0][0], "wiederbeleben"); wahr(g.daten.spieler.bett, "Bett bleibt für später gemerkt"); });
+  }).then(function(){
+    var h = Object.create(SC.Gastgeber.prototype); h.spieler = [{ id: "g1", verbunden: true }]; var m = wiederSpiel({ raum: h }); bettAufPlanet(m, "glutfrost", 500, 70, 500); m.daten.spieler.bett = { planet: "glutfrost", x: 500, y: 70, z: 500 };
+    return m._wiederEinstieg().then(function(){ gleich(m.log.length, 1, "kein Planetenwechsel für alle Gäste wegen eines Todes"); gleich(m.log[0][0], "wiederbeleben"); });
+  });
+});

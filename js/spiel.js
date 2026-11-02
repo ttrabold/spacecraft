@@ -216,7 +216,7 @@ SC.Spiel.startpunkt = function(planet){
 
   SC.Spiel.prototype.landepunkt = function(){ return SC.Planeten.landepunkt(this.daten); };
   // Zu Planet id wechseln (nicht als Gast): aussteigen, alten Planeten speichern, neuen anlegen, am Landepunkt neu starten, Ankunft zeigen
-  // o (optional, Raumflug): { ort: [x, z] auf dem neuen Planeten, schiff: Fahrzeug, das samt Insassen mitkommt (in Höhe SC.ALL_GRENZE − 10) }
+  // o (optional): { ort: [x, z] auf dem neuen Planeten, schiff: Fahrzeug, das samt Insassen mitkommt (in Höhe SC.ALL_GRENZE − 10) (Raumflug), bett: true = nach dem Besiegtwerden am Bett ankommen }
   SC.Spiel.prototype.wechslePlanet = function(id, o){
     var s = this, schiff = o && o.schiff, sitze = schiff ? schiff.sitze.slice() : null;
     if(!this.daten || this.rolle === "gast" || !SC.PLANETEN[id] || (this.all && !schiff)) return Promise.reject(new Error("Planetenwechsel nicht möglich"));
@@ -227,6 +227,7 @@ SC.Spiel.startpunkt = function(planet){
       var d = s.daten, ort = o && o.ort; SC.Planeten.anlegen(d, id); d.aktuellerPlanet = id; d.spieler.blick = [0, 0];
       d.spieler.pos = ort ? [ort[0], SC.ALL_GRENZE - 10, ort[1]] : null;
       s.lebenszyklusAbmelden(document); s.starte(d);
+      if(o && o.bett){ var bp = s.bettPunkt(); if(bp) s.spieler.pos = bp; }   // Wiedereinstieg am Bett (Stelle neben dem Bett), sonst Landepunkt
       if(schiff){
         var f = SC.Fahrzeug.neu(s.welt, schiff.art, [ort ? ort[0] : s.spieler.pos[0], SC.ALL_GRENZE - 10, ort ? ort[1] : s.spieler.pos[2]], schiff.blick, SC.Fahrzeug.reiseOptionen(schiff));
         f.panzerung = schiff.panzerung; f.sitze = sitze;

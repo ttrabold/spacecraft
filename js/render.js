@@ -179,6 +179,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     }
     if(b.form === "kreuz"){ viereck([[-0.13, -0.15, -0.13], [0.13, -0.15, 0.13], [0.13, 0.15, 0.13], [-0.13, 0.15, -0.13]]); viereck([[0.13, -0.15, -0.13], [-0.13, -0.15, 0.13], [-0.13, 0.15, 0.13], [0.13, 0.15, -0.13]]); }
     else if(b.form === "pfosten"){ kasten([-0.035, -0.15, -0.035], [0.035, 0.15, 0.035]); kasten([-0.15, -0.07, -0.015], [0.15, -0.02, 0.015]); kasten([-0.15, 0.05, -0.015], [0.15, 0.1, 0.015]); }
+    else if(b.form.typ === "mehrteilig") b.form.teile.forEach(function(p){ kasten([(p.a[0] - 0.5) * 0.3, (p.a[1] - 0.5) * 0.3, (p.a[2] - 0.5) * 0.3], [(p.b[0] - 0.5) * 0.3, (p.b[1] - 0.5) * 0.3, (p.b[2] - 0.5) * 0.3]); });   // Tisch mit Kugel
     else if(b.form.typ === "kasten") kasten([-0.15, -0.15, -0.15], [0.15, -0.15 + (b.form.b[1] - b.form.a[1]) * 0.3, 0.15]);   // flacher Kasten: Bett
     else kasten([-0.11, -0.15, -0.015], [0.11, 0.15, 0.015]);   // Platte: Leiter, Tür
     var g = new THREE.BufferGeometry();

@@ -59,6 +59,9 @@ SC.Texturen = {};
         case "bettfuss": c = y % 5 === 4 ? d : (x === 0 || x === 15 || y === 0) ? d : g; break;
         case "bettkopf": c = (x === 0 || x === 15 || y === 15) ? d : (x >= 2 && x <= 13 && y >= 1 && y <= 6) ? h : g; if(y === 7 && x >= 2 && x <= 13) c = d; break;
         case "bettseite": c = y < 6 ? (y === 5 ? d : h) : (y % 4 === 3 ? d : g); break;
+        case "zaubertisch": c = (x === 0 || x === 15 || y === 0 || y === 15) ? d : ((x + y) % 4 === 0 ? h : g); break;
+        case "zaubertischseite": c = y % 5 === 4 ? d : (x % 4 === 1 ? h : g); break;
+        case "zauberkugel": var dd = Math.hypot(x - 7.5, y - 7.5); c = dd < 3 ? h : dd < 6.5 ? ((x * 3 + y * 5) % 7 === 0 ? h : g) : d; break;
         case "basalt": r = zf(); c = r < 0.25 ? d : r < 0.33 ? h : g; if(x % 5 === 0 && y % 4 !== 0) c = d; break;
       }
       setze(x, y, c, a);

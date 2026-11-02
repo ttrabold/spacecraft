@@ -78,6 +78,12 @@ SC.Mesher = {};
             kasten(puf, x, y, z, a, b, uv, L, gl, true);
           });
         });
+      } else if(fm.typ === "mehrteilig"){
+        // Mehrere Kästen mit je eigener Kachel (Tisch, Kugel); leuchtende Teile bleiben bei Nacht hell
+        fm.teile.forEach(function(p){
+          var uT = SC.Mesher.uvFuer(def.seiten[p.t]), uO = p.o ? SC.Mesher.uvFuer(def.seiten[p.o]) : null;
+          kasten(puf, x, y, z, p.a, p.b, uT, L, gl || !!p.leuchtet, false, uO ? function(f){ return f === 2 ? uO : uT; } : null);
+        });
       } else if(fm.typ === "kasten"){
         var uO = SC.Mesher.uvFuer(def.seiten.oben), uU = SC.Mesher.uvFuer(def.seiten.unten);
         kasten(puf, x, y, z, fm.a, fm.b, uv, L, gl, false, function(f){ return f === 2 ? uO : f === 3 ? uU : uv; });

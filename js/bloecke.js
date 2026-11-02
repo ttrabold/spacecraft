@@ -12,7 +12,7 @@ SC.B = {
   LEITER_N: 49, LEITER_S: 50, LEITER_O: 51, LEITER_W: 52, TUER_X: 53, TUER_Z: 54, TUER_X_OFFEN: 55, TUER_Z_OFFEN: 56, TRUHE: 57,
   TUER_X_OBEN: 58, TUER_Z_OBEN: 59, TUER_X_OFFEN_OBEN: 60, TUER_Z_OFFEN_OBEN: 61,   // obere Türhälften (die Tür ist zwei Blöcke hoch)
   // Betten: Fuß und Kopf je Richtung; N/S/O/W sagt, auf welcher Seite des Fußes der Kopf liegt (Norden = z−1)
-  BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
+  ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
 // Muster je Textur (Farben kommen aus der Palette des Planeten)
@@ -28,13 +28,21 @@ SC.TEXTUREN = {
   eisenerz: "erz", titan: "erz", glutstahl: "erz", moorsilber: "erz", sternenmetall: "erz",
   kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
   schaltkreis: "schaltkreis", chitin: "chitin", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
-  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste"
+  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste"
 };
 
 SC.BLOECKE = {};
 (function(){
   function alle(t){ return { oben: t, seite: t, unten: t }; }
   var BETT = { typ: "kasten", a: [0, 0, 0], b: [1, 0.56, 1] };
+  // Zauberkugel: Tisch (Platte mit Rand, vier Beine) und eine Kristallkugel aus Kästen darauf; t = Kachel aus seiten, o = andere Kachel für die Oberseite
+  var ZAUBER = { typ: "mehrteilig", teile: [
+    { a: [0.02, 0.7, 0.02], b: [0.98, 0.82, 0.98], t: "seite", o: "oben" },
+    { a: [0.08, 0, 0.08], b: [0.2, 0.7, 0.2], t: "seite" }, { a: [0.8, 0, 0.08], b: [0.92, 0.7, 0.2], t: "seite" },
+    { a: [0.08, 0, 0.8], b: [0.2, 0.7, 0.92], t: "seite" }, { a: [0.8, 0, 0.8], b: [0.92, 0.7, 0.92], t: "seite" },
+    { a: [0.36, 0.82, 0.36], b: [0.64, 0.9, 0.64], t: "seite" },
+    { a: [0.3, 0.9, 0.3], b: [0.7, 1.26, 0.7], t: "kugel", leuchtet: true }, { a: [0.37, 1.26, 0.37], b: [0.63, 1.32, 0.63], t: "kugel", leuchtet: true }
+  ] };
   // [id, Textname, Seiten, fest, durchsichtig, leuchten, Lichtfarbe, zerstörbar, in Auswahl]
   var D = [
     [SC.B.LUFT, "luft", null, false, true, 0, null, false, false],
@@ -108,6 +116,7 @@ SC.BLOECKE = {};
     [SC.B.BETT_KOPF_S, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
     [SC.B.BETT_KOPF_O, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
     [SC.B.BETT_KOPF_W, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
+    [SC.B.ZAUBERKUGEL, "zauberkugel", { oben: "zauber_tisch_oben", seite: "zauber_tisch", unten: "zauber_tisch", kugel: "zauber_kugel" }, true, true, 9, [0.7, 0.5, 1.0], true, true, { form: ZAUBER }],
     [SC.B.TRUHE, "truhe", { oben: "truhe_oben", seite: "truhe_seite", unten: "truhe_seite" }, true, false, 0, null, true, true]
   ];
   D.forEach(function(d){

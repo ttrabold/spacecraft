@@ -143,3 +143,13 @@ test("Truhe abgebaut: Inhalt fällt als Beute heraus (#104)", function(){
   SC.Spiel.prototype._truheWeg.call(fake, { x: 3, y: 60, z: 3, id: SC.B.LUFT, alt: SC.B.TRUHE }); gleich(kugeln.length, 2); gleich(T.inhalt(3, 60, 3).every(function(s){ return s === null; }), true);
   kugeln = []; SC.Spiel.prototype._truheWeg.call(fake, { x: 3, y: 60, z: 3, id: SC.B.STEIN, alt: SC.B.ERDE }); gleich(kugeln.length, 0, "andere Blockänderungen ignorieren");
 });
+test("Block in der Hand: Fackel, Zaun, Leiter und Tür haben eigene Formen (#102)", function(){
+  function geo(id){ return SC.Render.handForm(SC.BLOECKE[id]); }
+  gleich(geo(SC.B.STEIN), null, "Würfel bleiben ein Würfel");
+  var fackel = geo(SC.B.FACKEL), zaun = geo(SC.B.ZAUN), leiter = geo(SC.B.LEITER_N), tuer = geo(SC.B.TUER_X);
+  wahr(fackel && zaun && leiter && tuer, "alle vier haben eine Form");
+  gleich(fackel.attributes.position.count, 8, "Fackel: zwei Kreuzflächen"); wahr(zaun.attributes.position.count > 24, "Zaun: Pfosten mit Latten");
+  [fackel, zaun, leiter, tuer].forEach(function(g){ gleich(g.attributes.uv.count, g.attributes.position.count, "UV je Ecke"); gleich(g.index.count % 3, 0); });
+  leiter.computeBoundingBox(); var d = leiter.boundingBox.max.z - leiter.boundingBox.min.z; wahr(d < 0.06, "Leiter ist dünn: " + d);
+  var uvF = SC.Mesher.uvFuer(SC.BLOECKE[SC.B.FACKEL].seiten.seite), u = fackel.attributes.uv; for(var i = 0; i < u.count; i++) wahr(u.getX(i) >= uvF[0] - 1e-6 && u.getX(i) <= uvF[2] + 1e-6, "UV liegt in der Fackelkachel");
+});

@@ -168,12 +168,33 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.hand.position.set(0.42, -0.36, -0.7); this.hand.rotation.set(0.2, -0.6, 0);
     this.kamera.add(this.hand); this._handId = -1;
   };
+  // Form eines Blocks in der Hand (Fackel, Zaun, Leiter, Tür): ein Geometrie-Puffer mit der Kachel des Blocks; null = normaler Würfel
+  SC.Render.handForm = function(b){
+    if(!b || !b.seiten || !b.form || b.form === "wuerfel") return null;
+    var q = SC.Mesher.uvFuer(b.seiten.seite), pos = [], uv = [], idx = [];
+    function viereck(c){ var n = pos.length / 3; c.forEach(function(p, e){ pos.push(p[0], p[1], p[2]); uv.push(e === 0 || e === 3 ? q[0] : q[2], e < 2 ? q[1] : q[3]); }); idx.push(n, n + 1, n + 2, n, n + 2, n + 3); }
+    function kasten(a, c){   // sechs Flächen eines Quaders von a bis c
+      [[[1,0,1],[1,0,0],[1,1,0],[1,1,1]], [[0,0,0],[0,0,1],[0,1,1],[0,1,0]], [[0,1,1],[1,1,1],[1,1,0],[0,1,0]], [[0,0,0],[1,0,0],[1,0,1],[0,0,1]], [[0,0,1],[1,0,1],[1,1,1],[0,1,1]], [[1,0,0],[0,0,0],[0,1,0],[1,1,0]]]
+        .forEach(function(f){ viereck(f.map(function(k){ return [k[0] ? c[0] : a[0], k[1] ? c[1] : a[1], k[2] ? c[2] : a[2]]; })); });
+    }
+    if(b.form === "kreuz"){ viereck([[-0.13, -0.15, -0.13], [0.13, -0.15, 0.13], [0.13, 0.15, 0.13], [-0.13, 0.15, -0.13]]); viereck([[0.13, -0.15, -0.13], [-0.13, -0.15, 0.13], [-0.13, 0.15, 0.13], [0.13, 0.15, -0.13]]); }
+    else if(b.form === "pfosten"){ kasten([-0.035, -0.15, -0.035], [0.035, 0.15, 0.035]); kasten([-0.15, -0.07, -0.015], [0.15, -0.02, 0.015]); kasten([-0.15, 0.05, -0.015], [0.15, 0.1, 0.015]); }
+    else kasten([-0.11, -0.15, -0.015], [0.11, 0.15, 0.015]);   // Platte: Leiter, Tür
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    return g;
+  };
   SC.Render.prototype._handBlock = function(id){
     if(id === this._handId) return;
     this._handId = id;
     var b = SC.BLOECKE[id];
     this.hand.visible = !!(b && b.seiten);
     if(!this.hand.visible) return;
+    // Sonderformen bekommen eine eigene Geometrie, Würfel wieder die Box
+    var form = SC.Render.handForm(b), alt = this.hand.geometry;
+    if(!this._handWuerfel) this._handWuerfel = alt;
+    if(form){ if(alt !== this._handWuerfel) alt.dispose(); this.hand.geometry = form; this.hand.material.side = THREE.DoubleSide; this.hand.material.needsUpdate = true; return; }
+    if(alt !== this._handWuerfel){ alt.dispose(); this.hand.geometry = this._handWuerfel; this.hand.material.side = THREE.FrontSide; this.hand.material.needsUpdate = true; }
     var seiten = ["seite", "seite", "oben", "unten", "seite", "seite"], uv = this.hand.geometry.attributes.uv;
     for(var f = 0; f < 6; f++){
       var q = SC.Mesher.uvFuer(b.seiten[seiten[f]]);

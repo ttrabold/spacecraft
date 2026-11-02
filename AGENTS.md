@@ -18,6 +18,7 @@ css/, js/           Spiel (klassische Skripte unter dem Namensraum SC, keine ES-
 js/lib/three.min.js three.js r158 (UMD-Build, unverändert eingecheckt)
 tests/index.html    Testseite (Browser), lädt dieselbe Skriptliste; SC_TEST verhindert den Spielstart
 scripts/tests.sh    führt die Testseite in Chrome ohne Fenster aus (Node ≥ 22, kein npm)
+scripts/tests-wsl.sh wie tests.sh, aber mit Windows-Chrome unter WSL2 (.wslconfig: networkingMode=mirrored)
 scripts/itch-zip.sh baut das itch.io-ZIP aus den in index.html referenzierten Dateien
 docs/ROADMAP.md     Vision, Stufen, aktueller Stand – Einstieg jeder Session
 Survival (Stufe 2)  js/werte, gegenstaende, rucksack, wesen, gegner, ki, kampf, auftauchen, render-wesen, ui-rucksack, survival

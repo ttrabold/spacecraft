@@ -3,10 +3,14 @@
 const { spawn } = require("child_process");
 const fs = require("fs"), path = require("path"), os = require("os");
 const chrome = process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const profil = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), "sc-tests-"));
+// WSL: ein Windows-Chrome (.exe) braucht Windows-Pfade; Profil liegt dann auf C: (von WSL lesbar), Port erreichbar über localhost (networkingMode=mirrored)
+const wsl = /\.exe$/i.test(chrome);
+const win = (q) => require("child_process").execFileSync("wslpath", ["-w", q]).toString().trim();
+const profil = fs.mkdtempSync(path.join(wsl ? "/mnt/c/Users/Public" : process.env.TMPDIR || os.tmpdir(), "sc-tests-"));
 const nur = process.argv[2]; // optional: nur Tests, deren Name diesen Text enthält
-const seite = "file://" + path.resolve(__dirname, "../tests/index.html") + (nur ? "?nur=" + encodeURIComponent(nur) : "");
-const p = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-first-run", "--user-data-dir=" + profil, "--allow-file-access-from-files", "--remote-debugging-port=0", "about:blank"], { stdio: "ignore" });
+const datei = path.resolve(__dirname, "../tests/index.html");
+const seite = (wsl ? "file:" + (win(datei).startsWith("\\\\") ? "" : "///") + win(datei).replace(/\\/g, "/") : "file://" + datei) + (nur ? "?nur=" + encodeURIComponent(nur) : "");
+const p = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-first-run", "--user-data-dir=" + (wsl ? win(profil) : profil), "--allow-file-access-from-files", "--remote-debugging-port=0", "about:blank"], { stdio: "ignore" });
 const ende = (code) => { try { p.kill(); } catch (e) {} setTimeout(() => { try { fs.rmSync(profil, { recursive: true, force: true }); } catch (e) {} process.exit(code); }, 300); };
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {

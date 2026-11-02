@@ -23,7 +23,12 @@ SC.bewegeKoerper = function(welt, pos, achse, d, breite, hoehe, durch){
 SC.Wesen = { GRENZE: { gegner: 12, geschoss: 60, kugel: 40 } };
 SC.Wesen.anzahl = function(welt, art){ var n = 0; welt.wesen.forEach(function(e){ if(e.art === art) n++; }); return n; };
 SC.Wesen.neu = function(welt, art, daten){
-  if(SC.Wesen.anzahl(welt, art) >= (SC.Wesen.GRENZE[art] || Infinity)) return null;
+  if(SC.Wesen.anzahl(welt, art) >= (SC.Wesen.GRENZE[art] || Infinity)){
+    if(art !== "kugel") return null;
+    // Beutekugeln: die älteste verdrängen, damit neue Beute nie verloren geht
+    var alt = null; welt.wesen.forEach(function(e){ if(!alt && e.art === "kugel") alt = e; });
+    if(alt) welt.wesen.delete(alt.id);
+  }
   var e = { id: welt.naechsteId++, art: art, pos: [0, 0, 0], geschw: [0, 0, 0], breite: 0.8, hoehe: 1.8, alter: 0 };
   for(var k in daten) e[k] = daten[k];
   // Bei Geschossen heißt die Geschossart "typ"; "art" bleibt die Kategorie

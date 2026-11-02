@@ -77,13 +77,14 @@
     var waffe = survival ? k.waffe() : null, wdef = waffe && SC.GEGENSTAENDE[waffe.art].waffe;
     var imFz = this._imFahrzeug(), ziel = sp.modus === "zuschauer" || imFz || !this._blockErlaubt() ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
     this.render.markiere(ziel);
+    sp.blockt = false;
     if(survival && !offen && lebt){
       if(e.ausweichen && !sp.fliegt && !imFz){
         var bw = [(e.rechts ? 1 : 0) - (e.links ? 1 : 0), (e.zurueck ? 1 : 0) - (e.vor ? 1 : 0)], g0 = sp.blick[0];
         var dir = bw[0] || bw[1] ? [Math.cos(g0) * bw[0] + Math.sin(g0) * bw[1], 0, -Math.sin(g0) * bw[0] + Math.cos(g0) * bw[1]] : [-Math.sin(g0), 0, -Math.cos(g0)];
         if(k.ausweichen(t, dir)) a.spiele("springen");
       }
-      k.blocken(e.setzenGehalten && wdef && wdef.typ === "schwert"); s.render.blocke(k.blockt);
+      k.blocken(e.setzenGehalten && wdef && wdef.typ === "schwert"); sp.blockt = k.blockt; s.render.blocke(k.blockt);
       if(sp.imLava && !imFz){ var lr = k.lava(dt); if(lr.schaden > 0) a.spiele("getroffen"); }
       // Angreifen bzw. Abbauen
       if(imFz && imFz.sitz === 0){ if(e.abbauen || e.abbauenGehalten) this._bordschuss(imFz.f, t); } // Fahrer: Bordgeschütz statt eigener Waffe
@@ -154,7 +155,7 @@
         if(r2.treffer === "wesen" && g.optisch){ SC.Wesen.entferne(w, g.id); return; } // optisch: verschwindet am Gegner
         if(r2.treffer === "wesen"){
           var ziel2 = w.wesen.get(r2.id), tg = k.trifftGegner(ziel2, g.schaden, g.geschw || g.richtung, g);
-          if(tg.abgeprallt){ g.team = "gegner"; g.geschw = [-g.geschw[0], -g.geschw[1], -g.geschw[2]]; g.lebensdauer = 2; a.spiele("abprall"); return; }
+          if(tg.abgeprallt){ g.team = "gegner"; g.geschw = [-g.geschw[0], -g.geschw[1], -g.geschw[2]]; g.richtung = [-g.richtung[0], -g.richtung[1], -g.richtung[2]]; g.lebensdauer = 2; a.spiele("abprall"); return; }
           s._zahl(ziel2, tg.schaden); if(tg.besiegt) s.besiege(ziel2); else a.spiele("treffer");
         } else if(r2.treffer === "spieler"){
           var ts = gastgeber && g.team === "spieler" ? gastgeber.pvpTrifft(r2.id, g.schaden, g.geschw || g.richtung, g.schuetze, g) : gastgeber ? gastgeber.geschossTrifft(g, r2.id) : k.trifftSpieler(g.schaden, g.geschw || g.richtung, g);

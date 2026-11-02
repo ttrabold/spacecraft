@@ -55,6 +55,7 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     if(this.imWasser && !this.fliegt) tempo *= 0.6;
     if(unter === SC.B.SCHLAMM) tempo *= 0.6;
     tempo *= this.tempoFaktor || 1;
+    if(this.blockt) tempo *= 0.5; // Blocken verlangsamt
     if(unter === SC.B.EIS){ var k = Math.min(1, 3 * dt); this.geschw[0] += (vx * tempo - this.geschw[0]) * k; this.geschw[2] += (vz * tempo - this.geschw[2]) * k; }
     else { this.geschw[0] = vx * tempo; this.geschw[2] = vz * tempo; }
     // Ausweichen: kurzer Schub zusätzlich zur Laufrichtung

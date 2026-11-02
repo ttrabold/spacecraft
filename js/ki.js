@@ -91,7 +91,7 @@ SC.KI = {};
         if(def.sprung && g.sprungZeit > 0){ g.sprungZeit -= dt; vx = g.sprungRichtung[0] * tempo * 2.5; vz = g.sprungRichtung[1] * tempo * 2.5; }
         if(abst <= def.hieb.reichweite && g.cd <= 0){ akt.push({ art: "hieb", reichweite: def.hieb.reichweite, schaden: def.schaden(g.stufe) }); g.cd = def.hieb.rate; }
       } else if(v === "ritter"){
-        g.blockt = g.cd > 0.3;                     // blockt, solange er nicht selbst angreift
+        g.blockt = g.cd < def.hieb.rate - 0.5;      // direkt nach seinem Hieb kurz verwundbar, sonst blockt er
         if(abst > 2){ vx = r[0] * tempo; vz = r[1] * tempo; }
         if(abst > 4 && abst < 9 && g.cd2 <= 0 && g.aufBoden){ g.geschw[1] = 9; g.sprungRichtung = r; g.sprungZeit = 0.6; g.cd2 = 4; }
         if(g.sprungZeit > 0){ g.sprungZeit -= dt; vx = g.sprungRichtung[0] * tempo * 3; vz = g.sprungRichtung[1] * tempo * 3; }

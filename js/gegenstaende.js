@@ -16,7 +16,7 @@ SC.GEGENSTAENDE = {
 };
 
 // Crafting (Stufe 6a): gefundene Gegenstände sind seltener, damit sich Bauen lohnt. Bosse bleiben ausgenommen.
-SC.CRAFTING_FUND = { gegenstandChance: 0.25, maxSeltenheit: 2 };
+SC.CRAFTING_FUND = { gegenstandChance: 0.25, maxSeltenheit: 2, fahrzeugChance: 0.25 };   // fahrzeugChance: Anteil der Lager, Stationen und Herrenhäuser mit Fundort-Fahrzeug
 
 SC.Beute = {};
 // Eine Beute-Position (Gegenstand oder Rohstoff {block, anzahl}) als Sache für eine Beutekugel

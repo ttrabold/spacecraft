@@ -267,7 +267,10 @@ SC.T = {
         "Mit G (oder 💺) wechselst du den Platz, zum Beispiel ans Steuer, wenn es frei ist.",
         "Manche Fahrzeuge haben ein Bordgeschütz: Der Fahrer schießt mit der Angriffstaste. Der Schuss fliegt dorthin, wo der Zielkreis zeigt; er wird rot, wenn ein Gegner darunter ist.",
         "Fahrzeuge haben Panzerung. Ist sie leer, zerfällt das Fahrzeug, und du stehst wieder auf dem Boden. Gefundene Fahrzeuge kehren nach einer Weile an ihren Platz zurück.",
-        "In Kreativ kannst du unter Blöcke wählen auch Fahrzeuge hinstellen."
+        "In Kreativ kannst du unter Blöcke wählen auch Fahrzeuge hinstellen.",
+        "Eigene Fahrzeuge baust du an der Werkbank: Schwebeflitzer, Kraterkäfer oder Kometenjäger. Du wählst Motor (Tempo), Panzerung, Bordwaffe und Farbe.",
+        "Je seltener das Metall, desto besser das Teil. Die Bordwaffe schießt in der Farbe ihres Kristalls. Das Fahrzeug steht dann vor dir und kehrt nach dem Verpuffen an seinen Bauplatz zurück.",
+        "Gefundene Fahrzeuge gibt es nur noch an manchen Lagern, Stationen und Herrenhäusern, der Schwebeflitzer am Startpunkt bleibt."
       ]],
       ["Raumflug", [
         "Das Raumschiff Sternenläufer steht auf dem Heimatplaneten in der Nähe des Startpunkts.",

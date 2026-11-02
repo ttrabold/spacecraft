@@ -155,7 +155,7 @@ test("naechstes: findet nur in Reichweite, nicht verpuffte, über die Ringgrenze
 
 // --- Fundorte, Start-Gleiter, Speichern ---
 function fzEchteWelt(seed){ return new SC.Welt(new SC.Planet({ id: "start", seed: seed || 1234 })); }
-function fzBauwerkMitFundort(w){ for(var r = 0; r < 16; r++){ var l = SC.Bauwerke.inRegion(w.planet, r, 0).filter(function(b){ return SC.Fahrzeug.FUNDORT_ART[b.typ]; }); if(l.length) return l[0]; } return null; }
+function fzBauwerkMitFundort(w){ for(var r = 0; r < 16; r++){ var l = SC.Bauwerke.inRegion(w.planet, r, 0).filter(function(b){ return SC.Fahrzeug.FUNDORT_ART[b.typ] && SC.Fahrzeug.hatFundFahrzeug(w.planet, b); }); if(l.length) return l[0]; } return null; }
 test("Fundort liefert genau einmal", function(){
   var w = fzEchteWelt(), b = fzBauwerkMitFundort(w), pos = [b.x, 80, b.z];
   SC.Fahrzeug.fundorteNah(w, pos); SC.Fahrzeug.fundorteNah(w, pos);

@@ -272,6 +272,8 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     return null;
   }
   F.freieStelle = freieStelle;
+  // Fundort-Fahrzeuge sind seltener, damit sich Bauen lohnt: nur an etwa jedem vierten Ort (feste Auswahl aus Planet und Ort); der Start-Schwebeflitzer bleibt
+  F.hatFundFahrzeug = function(planet, b){ return SC.hash3(planet.seed, b.x, b.z, 4711) % 1000 < SC.CRAFTING_FUND.fahrzeugChance * 1000; };
   F.fundortPos = function(welt, b){
     var art = F.FUNDORT_ART[b.typ];
     return freieStelle(welt, b.x + b.breite + 2 + SC.FAHRZEUGE[art].breite / 2, b.z + (b.tiefe >> 1), art, 0, 8);
@@ -284,7 +286,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     for(var i = -1; i <= 1; i++) for(var j = -1; j <= 1; j++) SC.Bauwerke.inRegion(pl, rx + i, rz + j).forEach(function(b){
       var art = F.FUNDORT_ART[b.typ];
       var ohne = welt._fundortOhnePlatz || (welt._fundortOhnePlatz = {}); // ohne freien Platz: in dieser Sitzung nicht erneut suchen
-      if(!art || welt.fahrzeuge.has(b.schluessel) || ohne[b.schluessel]) return;
+      if(!art || !F.hatFundFahrzeug(pl, b) || welt.fahrzeuge.has(b.schluessel) || ohne[b.schluessel]) return;
       var dx = SC.mod(b.x + b.breite / 2 - pos[0] + P / 2, P) - P / 2, dz = SC.mod(b.z + b.tiefe / 2 - pos[2] + P / 2, P) - P / 2;
       if(Math.hypot(dx, dz) > r) return;
       var p = F.fundortPos(welt, b);

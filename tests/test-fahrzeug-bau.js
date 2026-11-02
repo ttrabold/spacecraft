@@ -126,3 +126,19 @@ test("Werkbank übergibt den Fahrzeugbauer ans Menü (#116)", function(){
   var s = fzSpiel(), geoeffnet = null; s.kampf = {}; s.eingabe = { gebeMausFrei: function(){} }; s._weiter = function(){}; s.ui.zeigeWerkbank = function(k, o){ geoeffnet = o; }; s.welt.setzeBlock(3, 61, 3, SC.B.WERKBANK, "system");
   gleich(SC.Spiel.prototype.benutzeBlock.call(s, { x: 3, y: 61, z: 3 }), true); wahr(geoeffnet && typeof geoeffnet.fahrzeug.platz === "function" && typeof geoeffnet.fahrzeug.setze === "function", "o.fahrzeug da");
 });
+// --- Gefundene Fahrzeuge seltener (#117) ---
+test("Fundort-Fahrzeuge gibt es nur an etwa jedem vierten Ort, fest je Welt (#117)", function(){
+  gleich(SC.CRAFTING_FUND.fahrzeugChance, 0.25); var p = new SC.Planet({ id: "start", seed: 1234 }), mit = 0, ges = 0;
+  for(var rx = 0; rx < 16; rx++) for(var rz = 0; rz < 16; rz++) SC.Bauwerke.inRegion(p, rx, rz).forEach(function(b){ if(!SC.Fahrzeug.FUNDORT_ART[b.typ]) return; ges++; var a = SC.Fahrzeug.hatFundFahrzeug(p, b); gleich(a, SC.Fahrzeug.hatFundFahrzeug(p, b), "deterministisch"); if(a) mit++; });
+  wahr(ges > 100, "genug Orte: " + ges); wahr(Math.abs(mit / ges - 0.25) < 0.08, "ein Viertel: " + (mit / ges).toFixed(3));
+  var q = new SC.Planet({ id: "start", seed: 99 }), unterschied = false; for(var i = 0; i < 6; i++) SC.Bauwerke.inRegion(p, i, 2).forEach(function(b){ if(SC.Fahrzeug.hatFundFahrzeug(p, b) !== SC.Fahrzeug.hatFundFahrzeug(q, b)) unterschied = true; }); wahr(unterschied, "andere Welt, andere Auswahl");
+});
+test("Fundort-Fahrzeuge: Orte ohne Auswahl bekommen keins, der Start-Schwebeflitzer bleibt (#117)", function(){
+  var w = fzEchteWelt(), mitEins = 0, ohneEins = 0;
+  for(var r = 0; r < 16; r++) SC.Bauwerke.inRegion(w.planet, r, 0).forEach(function(b){
+    if(!SC.Fahrzeug.FUNDORT_ART[b.typ]) return; var v = new SC.Welt(new SC.Planet({ id: "start", seed: 1234 })); SC.Fahrzeug.fundorteNah(v, [b.x, 80, b.z]);
+    if(SC.Fahrzeug.hatFundFahrzeug(w.planet, b)){ gleich(v.fahrzeuge.has(b.schluessel), true, "ausgewählter Ort hat es"); mitEins++; } else { gleich(v.fahrzeuge.has(b.schluessel), false, "andere Orte nicht"); ohneEins++; }
+  });
+  wahr(mitEins > 0 && ohneEins > mitEins, "beides kommt vor: " + mitEins + " mit, " + ohneEins + " ohne");
+  var start = new SC.Welt(new SC.Planet({ id: "start", seed: 1234 })); wahr(SC.Fahrzeug.startPos(start, [1024, 70, 1024]), "Startpunkt hat weiter Platz für den Gleiter"); gleich(SC.Fahrzeug.FUNDORT_ART.herrenhaus, "gleiter");
+});

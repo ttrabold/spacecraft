@@ -89,6 +89,7 @@ SC.Landschaft = {};
       for(var y = 1; y <= h; y++){
         var id = y === h ? sl.oben : y > h - (sl.tiefe || 3) ? sl.unter : B.STEIN;
         if(id === B.STEIN && y < h - 6 && ader(x, y, z) > 0.55) id = B.KRISTALL;
+        if(id === B.STEIN){ var er = g.erzAn(wx, y, wz, h - y, biom); if(er) id = er; }
         if(y > 4 && y < h - 1 + (h > MEER + 3 ? 2 : -6) && hoehle(x, y, z) > 0.42) id = B.LUFT;
         c[SC.idx(x, y, z)] = id;
       }

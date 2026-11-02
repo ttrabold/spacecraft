@@ -1,5 +1,5 @@
 // Weltgenerator: rechnet jeden Chunk nur aus Seed und Koordinaten (kein Math.random)
-SC.GENERATOR_VERSION = 2;
+SC.GENERATOR_VERSION = 3;   // 3: Erze und Kristalle für das Crafting (Welten mit Version 2 bleiben unverändert)
 SC.MEER = 48;
 
 SC.Generator = function(planet){
@@ -94,6 +94,19 @@ SC.Generator = function(planet){
   }
 
   SC.Generator.grobFeld = grobFeld;
+  // Erze und Kristalle (ab Generator 3) in Stein, in Nestern von 2×2×2 Blöcken; tiefe = Blöcke unter der Oberfläche. Liefert eine Block-ID oder 0.
+  SC.Generator.prototype.erzAn = function(wx, y, wz, tiefe, biom){
+    if(this.planet.generatorVersion < 3) return 0;
+    var z = SC.hash3(this.planet.seed, wx >> 1, (wz >> 1) + 4001, (y >> 1) + 7001) & 1023, id = this.planet.id;
+    if(id === "glutfrost") return tiefe >= 8 && z < 24 ? B.GLUTSTAHL : tiefe >= 6 && z >= 24 && z < 34 ? B.KRISTALL_ROT : 0;
+    if(id === "rankenmoor") return tiefe >= 8 && z < 24 ? B.MOORSILBER : tiefe >= 6 && z >= 24 && z < 34 ? B.KRISTALL_VIOLETT : 0;
+    if(id !== "start") return 0;
+    if(tiefe >= 24 && z < 12) return B.TITAN;
+    if(tiefe >= 8 && z >= 12 && z < 36) return B.EISENERZ;
+    if(tiefe >= 6 && z >= 40 && z < 48) return z < 44 ? B.KRISTALL_BLAU : B.KRISTALL_GRUEN;
+    if(biom === "wueste" && tiefe >= 4 && z >= 50 && z < 70) return B.KRISTALL_GELB;
+    return 0;
+  };
   SC.Generator.prototype.chunk = function(cx, cz){
     if(this._land()) return SC.Landschaft.chunk(this, cx, cz);
     var P = this.planet.groesse, n = P / 16, s = this.planet.seed;
@@ -110,6 +123,7 @@ SC.Generator = function(planet){
       for(var y = 1; y <= h; y++){
         var id = y === h ? oben : y > h - 4 ? unter : B.STEIN;
         if(id === B.STEIN && y < h - 6 && ader(x, y, z) > 0.55) id = B.KRISTALL;
+        if(id === B.STEIN){ var er = this.erzAn(wx, y, wz, h - y, biom); if(er) id = er; }
         // Höhlen nicht dicht unter Wasserflächen öffnen
         if(y > 4 && y < h - 1 + (h > SC.MEER + 3 ? 2 : -6) && hoehle(x, y, z) > 0.42) id = B.LUFT;
         c[SC.idx(x, y, z)] = id;

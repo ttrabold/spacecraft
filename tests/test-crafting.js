@@ -15,3 +15,30 @@ test("Abbau liefert Grund-Blöcke statt Varianten", function(){
   gleich(SC.Abbau.ergibt(SC.B.LEITER_O),SC.B.LEITER_N); gleich(SC.Abbau.ergibt(SC.B.LEITER_W),SC.B.LEITER_N); gleich(SC.Abbau.ergibt(SC.B.KRISTALL_ROT),SC.B.KRISTALL_ROT);
 });
 test("Kristallfarben für Waffen", function(){ var k=SC.CRAFTING_KRISTALLE; gleich(Object.keys(k).join(),"blau,gruen,rot,gelb,violett,weiss"); gleich(k.blau.farbe,"#3fa0ff"); gleich(k.blau.block,SC.B.KRISTALL_BLAU); gleich(k.weiss.block,SC.B.KRISTALL_WEISS); });
+function zaehleErze(planet, n){
+  var g = new SC.Generator(planet), z = {}, tiefeMin = {};
+  for(var cx = 0; cx < n; cx++) for(var cz = 0; cz < n; cz++){
+    var c = g.chunk(cx * 7, cz * 7);
+    for(var y = 0; y < 128; y++) for(var zz = 0; zz < 16; zz++) for(var x = 0; x < 16; x++){
+      var id = c[SC.idx(x, y, zz)]; if(id < 33 || id > 43) continue;
+      z[id] = (z[id] || 0) + 1; var t = g.hoehe(cx * 7 * 16 + x, cz * 7 * 16 + zz) - y; tiefeMin[id] = Math.min(tiefeMin[id] === undefined ? 1e9 : tiefeMin[id], t);
+    }
+  }
+  return { z: z, tiefe: tiefeMin };
+}
+test("Erze und Kristalle: Startplanet ab Generator 3 (#96)", function(){
+  var r = zaehleErze(new SC.Planet({ id: "start", seed: 5, generatorVersion: 3 }), 8);
+  wahr(r.z[SC.B.EISENERZ] > 0, "Eisenerz"); wahr(r.z[SC.B.TITAN] > 0, "Titan"); wahr(r.z[SC.B.KRISTALL_BLAU] > 0 && r.z[SC.B.KRISTALL_GRUEN] > 0, "Blau und Grün");
+  wahr(r.tiefe[SC.B.EISENERZ] >= 8, "Eisenerz erst ab 8 Blöcken Tiefe: " + r.tiefe[SC.B.EISENERZ]); wahr(r.tiefe[SC.B.TITAN] >= 24, "Titan erst ab 24: " + r.tiefe[SC.B.TITAN]);
+  [SC.B.GLUTSTAHL, SC.B.MOORSILBER, SC.B.STERNENMETALL, SC.B.KRISTALL_ROT, SC.B.KRISTALL_VIOLETT, SC.B.KRISTALL_WEISS].forEach(function(id){ wahr(!r.z[id], "Startplanet ohne " + SC.BLOECKE[id].name); });
+});
+test("Erze: Welten mit Generator 2 bekommen keine neuen Blöcke (#96)", function(){
+  var r = zaehleErze(new SC.Planet({ id: "start", seed: 5, generatorVersion: 2 }), 6); gleich(Object.keys(r.z).length, 0);
+  var f = zaehleErze(new SC.Planet({ id: "glutfrost", seed: 5, palette: "glutfrost", generatorVersion: 2 }), 4); gleich(Object.keys(f.z).length, 0);
+});
+test("Erze: Glutfrost und Rankenmoor haben eigene Metalle und Kristalle (#96)", function(){
+  var g = zaehleErze(new SC.Planet({ id: "glutfrost", seed: 9, palette: "glutfrost", generatorVersion: 3 }), 8);
+  wahr(g.z[SC.B.GLUTSTAHL] > 0 && g.z[SC.B.KRISTALL_ROT] > 0, "Glutfrost: Glutstahl und roter Kristall"); wahr(!g.z[SC.B.MOORSILBER] && !g.z[SC.B.KRISTALL_VIOLETT], "Glutfrost ohne Moor-Funde");
+  var m = zaehleErze(new SC.Planet({ id: "rankenmoor", seed: 9, palette: "rankenmoor", generatorVersion: 3 }), 8);
+  wahr(m.z[SC.B.MOORSILBER] > 0 && m.z[SC.B.KRISTALL_VIOLETT] > 0, "Rankenmoor: Moorsilber und violetter Kristall"); wahr(!m.z[SC.B.GLUTSTAHL] && !m.z[SC.B.KRISTALL_ROT], "Rankenmoor ohne Glut-Funde");
+});

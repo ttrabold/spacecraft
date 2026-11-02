@@ -228,7 +228,7 @@ SC.Spiel.startpunkt = function(planet){
       d.spieler.pos = ort ? [ort[0], SC.ALL_GRENZE - 10, ort[1]] : null;
       s.lebenszyklusAbmelden(document); s.starte(d);
       if(schiff){
-        var f = SC.Fahrzeug.neu(s.welt, schiff.art, [ort ? ort[0] : s.spieler.pos[0], SC.ALL_GRENZE - 10, ort ? ort[1] : s.spieler.pos[2]], schiff.blick, { id: schiff.id, fundort: schiff.fundort });
+        var f = SC.Fahrzeug.neu(s.welt, schiff.art, [ort ? ort[0] : s.spieler.pos[0], SC.ALL_GRENZE - 10, ort ? ort[1] : s.spieler.pos[2]], schiff.blick, SC.Fahrzeug.reiseOptionen(schiff));
         f.panzerung = schiff.panzerung; f.sitze = sitze;
         var im = SC.Fahrzeug.sitzVon(s.welt, s._fzId()); if(im){ s.spieler.ansicht = "aussen"; s._fahrzeugFolgen(im, true); }
       }

@@ -17,7 +17,7 @@
       }).join("");
     }
     function karte(rz){
-      var bild = rz.art === "fahrzeug" ? '<span class="wb-fz">' + { gleiter: "🛷", buggy: "🚙", flieger: "🛩️" }[rz.fahrzeug] + "</span>" : rz.art === "bauteil" ? '<img src="' + SC.UI.blockBild(rz.ergibt.block) + '" alt="">' : '<img src="' + SC.UI.gegenstandBild({ art: rz.gegenstand, seltenheit: 0 }) + '" alt="">';
+      var bild = rz.art === "fahrzeug" ? '<span class="wb-fz">' + { gleiter: "🛷", buggy: "🚙", flieger: "🛩️", raumschiff: "🚀" }[rz.fahrzeug] + "</span>" : rz.art === "bauteil" ? '<img src="' + SC.UI.blockBild(rz.ergibt.block) + '" alt="">' : '<img src="' + SC.UI.gegenstandBild({ art: rz.gegenstand, seltenheit: 0 }) + '" alt="">';
       return '<button class="wb-rezept' + (gewaehlt === rz ? " an" : "") + '" data-aktion="rezept" data-id="' + rz.id + '">' + bild + "<small>" + esc(name(rz)) + (rz.art === "bauteil" && rz.ergibt.anzahl > 1 ? " ×" + rz.ergibt.anzahl : "") + "</small></button>";
     }
     // Fahrzeug (Stufe 6b): Motor, Panzerung, Bordwaffe und Farbe wählen; Vorschau der Werte; Vorauswahl = einfachstes Fahrzeug aus Stein

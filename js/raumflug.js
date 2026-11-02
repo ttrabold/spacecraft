@@ -32,6 +32,8 @@ SC.Spiel.prototype.all = null;
     var id = this.welt.planet.id, c = SC.ALL.planeten[id], p = SC.All.zuKugel(id, f.pos[0], f.pos[2], SC.ALL.radius * 0.35); // außerhalb der Eintrittsgrenze (1,25 R)
     var n = [p[0] - c[0], p[1] - c[1], p[2] - c[2]], l = Math.hypot(n[0], n[1], n[2]); n = [n[0] / l, n[1] / l, n[2] / l];
     this.all = { phase: "all", pos: p, blick: Math.atan2(-n[0], -n[2]), neigung: Math.asin(n[1]), tempo: 40, ziel: null, sprungT: 0, vonPlanet: id, schiffId: f.id, schild: f.panzerung };
+    var rw = SC.Fahrzeug.raumWerte(f); this.all.faktor = rw.faktor; this.all.schildMax = rw.schildMax; this.all.lack = rw.lack;   // gebautes Schiff: Triebwerk, Schild und Lack
+    this._astKuehl = {};
     if(this._astDaten !== this.daten){ this._astDaten = this.daten; this._allAsteroiden = SC.All.asteroiden(SC.hashText(this.daten.seed + ":all")); }
     this._allPiraten = []; this._allGeschosse = []; this._allZeit = 0; this._piratZeit = 40 + Math.random() * 30;
     this._laserBereit = this._astBereit = 0; this._mahnen = 0; // Sperren laufen in _allZeit, die bei jedem Flug neu beginnt
@@ -53,7 +55,7 @@ SC.Spiel.prototype.all = null;
       } else { var v = Math.min(l - 2.5 * R, Math.max(0, l - 2.5 * R) * dt * 1.2 + 200 * dt); a.pos = [a.pos[0] + d[0] / l * v, a.pos[1] + d[1] / l * v, a.pos[2] + d[2] / l * v]; }
     } else {
       if(!offen){
-        var gas = (e.vor ? 1 : 0) - (e.zurueck ? 1 : 0); a.tempo = Math.max(0, Math.min(SC.ALL.tempo, a.tempo + gas * 60 * dt));
+        var gas = (e.vor ? 1 : 0) - (e.zurueck ? 1 : 0); a.tempo = Math.max(0, Math.min(SC.ALL.tempo * (a.faktor || 1), a.tempo + gas * 60 * dt));
         // Lenken: Tasten, dazu Maus bzw. Wischen (wie der Blick am Boden)
         a.blick += ((e.links ? 1 : 0) - (e.rechts ? 1 : 0)) * 1.2 * dt + (e.blickDx || 0);
         a.neigung = Math.max(-1.2, Math.min(1.2, a.neigung + ((e.springen ? 1 : 0) - (e.sinken ? 1 : 0)) * 1.0 * dt + (e.blickDy || 0)));
@@ -89,8 +91,8 @@ SC.Spiel.prototype.all = null;
       a.pos = [hit.pos[0] + d[0] / l * (hit.r + 4.5), hit.pos[1] + d[1] / l * (hit.r + 4.5), hit.pos[2] + d[2] / l * (hit.r + 4.5)];
     }
     // Bordlaser des Piloten
-    var g = SC.FAHRZEUGE.raumschiff.geschuetz;
-    if(!offen && (e.abbauen || e.abbauenGehalten) && this._allZeit >= (this._laserBereit || 0)){
+    var g = f ? SC.Fahrzeug.raumWerte(f).laser : SC.FAHRZEUGE.raumschiff.geschuetz;   // gebautes Schiff ohne Bordlaser kann nicht schießen
+    if(g && !offen && (e.abbauen || e.abbauenGehalten) && this._allZeit >= (this._laserBereit || 0)){
       this._laserBereit = this._allZeit + g.abklingen; this.audio.spiele("blaster");
       this._allGeschosse.push({ pos: [a.pos[0] + fw[0] * 5, a.pos[1] + fw[1] * 5, a.pos[2] + fw[2] * 5], richtung: fw, tempo: 300, leben: 2, team: "spieler" });
     }
@@ -107,11 +109,23 @@ SC.Spiel.prototype.all = null;
       q.leben -= dt; if(q.leben <= 0) return false;
       q.pos = [q.pos[0] + q.richtung[0] * q.tempo * dt, q.pos[1] + q.richtung[1] * q.tempo * dt, q.pos[2] + q.richtung[2] * q.tempo * dt];
       if(q.team === "gegner"){ if(Math.hypot(q.pos[0] - a.pos[0], q.pos[1] - a.pos[1], q.pos[2] - a.pos[2]) < 6){ schaden(PIRAT_SCHADEN); return false; } return true; }
+      if(s._asteroidTreffer(q.pos)) return false;   // der Schuss bricht am Asteroiden, manchmal mit Sternenmetall als Lohn
       for(var i = 0; i < s._allPiraten.length; i++){ var p = s._allPiraten[i]; if(Math.hypot(q.pos[0] - p.pos[0], q.pos[1] - p.pos[1], q.pos[2] - p.pos[2]) < 8){ p.lp -= g.schaden; if(p.lp <= 0) s._piratBesiegt(i); else s.audio.spiele("treffer"); return false; } }
       return true;
     });
     if(survival && (gast ? a.schild : f ? f.panzerung : 1) <= 0){ this._notsprung(f); return true; }
     return false;
+  };
+  // Ein Laserschuss an pos trifft einen Asteroiden? → true (Schuss verbraucht). Mit 35 % bricht Sternenmetall heraus, danach 15 s Pause für diesen Brocken.
+  S._asteroidTreffer = function(pos){
+    var ast = this._allAsteroiden || [], hit = SC.All.kollision(pos, ast, 2); if(!hit) return false;
+    if(this.spieler.modus === "zuschauer" || !this.kampf) return true;
+    var i = ast.indexOf(hit), k = this._astKuehl || (this._astKuehl = {});
+    if(this._allZeit >= (k[i] || 0) && this._zf() < 0.35){
+      if(this.kampf.rucksack.lege({ block: SC.B.STERNENMETALL, anzahl: 1 })) this.ui.hinweis(SC.T.rucksackVoll, 2000);
+      else { k[i] = this._allZeit + 15; this.ui.hinweis(SC.T.allSternenmetall, 2500); this.audio.spiele("aufsammeln", { seltenheit: 4 }); }
+    }
+    return true;
   };
   // Pirat verpufft; Beute direkt in den Rucksack (voll: Hinweis, Beute verfällt)
   S._piratBesiegt = function(i){
@@ -168,17 +182,17 @@ SC.Spiel.prototype.all = null;
     var a = this.all; if(!a || a.zuschauer || a.phase !== "all" || !SC.ALL.planeten[id]) return false;
     a.ziel = id; return true; // das Cockpit zeigt das Ziel
   };
-  function flugzeit(c, pos){ return Math.max(0, Math.round((Math.hypot(c[0] - pos[0], c[1] - pos[1], c[2] - pos[2]) - 1.25 * SC.ALL.radius) / SC.ALL.tempo)); }
+  function flugzeit(c, pos, faktor){ return Math.max(0, Math.round((Math.hypot(c[0] - pos[0], c[1] - pos[1], c[2] - pos[2]) - 1.25 * SC.ALL.radius) / (SC.ALL.tempo * (faktor || 1)))); }
   // Raumszene und Cockpit-Anzeige
   S._allAnzeige = function(){
     var a = this.all; if(!a) return;
     if(this._mahnen > 0) this._mahnen -= 1 / 60;
-    if(this.render) this.render.allZustand = { schiff: { pos: a.pos, blick: a.blick, neigung: a.neigung }, sprung: a.phase === "sprung" ? Math.min(1, a.sprungT / 0.6) : 0,
+    if(this.render) this.render.allZustand = { schiff: { pos: a.pos, blick: a.blick, neigung: a.neigung, lack: a.lack || null }, sprung: a.phase === "sprung" ? Math.min(1, a.sprungT / 0.6) : 0,
       asteroiden: this._allAsteroiden || [], piraten: this._allPiraten || [], geschosse: this._allGeschosse || [] };
     if(this.ui.cockpit){
       var ziel = a.ziel ? SC.ALL.planeten[a.ziel] : null;
-      this.ui.cockpit({ ziel: a.ziel ? SC.PLANETEN[a.ziel].name : null, sekunden: ziel ? flugzeit(ziel, a.pos) : null,
-        schild: Math.round(100 * (typeof a.schild === "number" ? a.schild : SC.FAHRZEUGE.raumschiff.panzerung) / SC.FAHRZEUGE.raumschiff.panzerung), sprung: a.phase === "sprung", mahnen: this._mahnen > 0, keinZiel: this._tasten(SC.T.allKeinZiel) });
+      this.ui.cockpit({ ziel: a.ziel ? SC.PLANETEN[a.ziel].name : null, sekunden: ziel ? flugzeit(ziel, a.pos, a.faktor) : null,
+        schild: Math.round(100 * (typeof a.schild === "number" ? a.schild : (a.schildMax || SC.FAHRZEUGE.raumschiff.panzerung)) / (a.schildMax || SC.FAHRZEUGE.raumschiff.panzerung)), sprung: a.phase === "sprung", mahnen: this._mahnen > 0, keinZiel: this._tasten(SC.T.allKeinZiel) });
     }
     // Sternenkarte (von oben, x/z) und Planetenmarker im Bild; Antippen eines Planeten auf der Karte setzt das Ziel
     if(this.ui.allKarte && a.pos){
@@ -186,7 +200,7 @@ SC.Spiel.prototype.all = null;
       this.ui.allKarte({
         planeten: SC.PLANET_REIHENFOLGE.map(function(id){ var c = SC.ALL.planeten[id]; return { id: id, name: SC.PLANETEN[id].name, x: c[0], z: c[2], ziel: a.ziel === id }; }),
         schiff: { x: a.pos[0], z: a.pos[2], blick: a.blick },
-        marker: ms.map(function(m){ var n = SC.PLANETEN[m.id] ? SC.PLANETEN[m.id].name : m.id; return { id: m.id, name: n, text: n + " · " + flugzeit(SC.ALL.planeten[m.id] || a.pos, a.pos) + " s", x: m.x, y: m.y, aussen: m.aussen, winkel: m.winkel, ziel: a.ziel === m.id }; })
+        marker: ms.map(function(m){ var n = SC.PLANETEN[m.id] ? SC.PLANETEN[m.id].name : m.id; return { id: m.id, name: n, text: n + " · " + flugzeit(SC.ALL.planeten[m.id] || a.pos, a.pos, a.faktor) + " s", x: m.x, y: m.y, aussen: m.aussen, winkel: m.winkel, ziel: a.ziel === m.id }; })
       }, a.zuschauer ? null : function(id){ s._zielSetzen(id); });
     }
   };

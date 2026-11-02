@@ -48,7 +48,7 @@ SC.FAHRZEUGE = {
   },
   // Raumschiff (Stufe 5b): kleiner Frachter, fliegt wie der Flieger, steigt bis ins All; Schild statt Panzerung, verpufft nie
   raumschiff: {
-    tempo: 18, beschl: 16, lenk: 1.8, breite: 3.4, hoehe: 2.2, panzerung: 200, fliegt: true, maxHoehe: SC.ALL_GRENZE + 20, steigen: 10, sinken: 4, unzerstoerbar: true,
+    tempo: 18, beschl: 16, lenk: 1.8, breite: 3.4, hoehe: 2.2, panzerung: 200, fliegt: true, maxHoehe: SC.ALL_GRENZE + 20, steigen: 10, sinken: 4, unzerstoerbar: true, lack: [0, 1, 3, 4],
     geschuetz: { schaden: 20, tempo: 50, abklingen: 0.25, farbe: "#ff5a3c", rohr: [0, 1.0, -2.9] },
     sitze: [[-0.4, 0.75, -1.0], [0.4, 0.75, -1.0], [-0.4, 0.75, 0.1], [0.4, 0.75, 0.1]],
     modell: [
@@ -130,6 +130,13 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     d.modell = modell;
     return d;
   };
+  // Raumflug (Stufe 6c): was ein Schiff mit ins All bringt – Triebwerksfaktor, größtes Schild, Bordlaser (oder null) und Lackfarbe (oder null)
+  F.raumWerte = function(f){
+    var d = F.def(f), b = SC.FAHRZEUGE.raumschiff;
+    return { faktor: d.tempo / b.tempo, schildMax: d.panzerung, laser: d.geschuetz, lack: f.bau ? f.bau.farbe : null };
+  };
+  // Optionen für F.neu, wenn ein Schiff mit zum anderen Planeten reist
+  F.reiseOptionen = function(f){ return { id: f.id, fundort: f.fundort, bau: f.bau }; };
   // Die Werte dieses Fahrzeugs (mit Bauplan angepasst, sonst die Vorlage); das Ergebnis wird am Fahrzeug zwischengespeichert
   F.def = function(f){
     if(!f.bau) return SC.FAHRZEUGE[f.art];

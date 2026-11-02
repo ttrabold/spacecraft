@@ -15,7 +15,8 @@ SC.RenderAll = function(){
   this.sonne.position.set(SC.ALL.sonne[0], SC.ALL.sonne[1], SC.ALL.sonne[2]); this.szene.add(this.sonne);
   // Schiff
   this.schiff = new THREE.Group(); this.schiff.rotation.order = "YXZ";
-  SC.FAHRZEUGE.raumschiff.modell.forEach(function(t){ var m = new THREE.Mesh(s.box, new THREE.MeshBasicMaterial({ color: t.farbe })); m.scale.set(t.w, t.h, t.d); m.position.set(t.x, t.y - 1, t.z); s.schiff.add(m); });
+  this.schiffTeile = [];
+  SC.FAHRZEUGE.raumschiff.modell.forEach(function(t){ var m = new THREE.Mesh(s.box, new THREE.MeshBasicMaterial({ color: t.farbe })); m.scale.set(t.w, t.h, t.d); m.position.set(t.x, t.y - 1, t.z); s.schiff.add(m); s.schiffTeile.push(m); });
   this.szene.add(this.schiff);
   // Asteroiden und Geschosse als InstancedMesh, Piraten als kleine Gruppen
   this.asteroiden = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshBasicMaterial({ color: 0x8a8580 }), 150); this.asteroiden.count = 0; this.szene.add(this.asteroiden);
@@ -96,6 +97,8 @@ SC.RenderAll = function(){
   // Ein Bild: zustand = { schiff: {pos, blick, neigung}, asteroiden: [{pos, r}], piraten: [{pos, blick}], geschosse: [{pos, richtung}], sprung: 0..1 }
   RA.bild = function(z, dt){
     var s = this, sch = z.schiff, k = this.kamera, m = this._m, q = this._q;
+    // Lackfarbe eines gebauten Schiffs auf die Lackteile (nur bei Änderung)
+    if(sch.lack !== this._lack){ this._lack = sch.lack; var Rs = SC.FAHRZEUGE.raumschiff; Rs.lack.forEach(function(i){ s.schiffTeile[i].material.color.set(sch.lack || Rs.modell[i].farbe); }); }
     this.schiff.position.set(sch.pos[0], sch.pos[1], sch.pos[2]); this.schiff.rotation.set(sch.neigung || 0, sch.blick || 0, 0);
     var vor = [-Math.sin(sch.blick) * Math.cos(sch.neigung || 0), Math.sin(sch.neigung || 0), -Math.cos(sch.blick) * Math.cos(sch.neigung || 0)];
     k.position.set(sch.pos[0] - vor[0] * 16, sch.pos[1] - vor[1] * 16 + 4, sch.pos[2] - vor[2] * 16); k.rotation.set((sch.neigung || 0) - 0.12, sch.blick, 0);

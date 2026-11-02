@@ -31,7 +31,9 @@ SC.CRAFTING = {};
     gegenstand("schildgenerator", "ruestung", 6, 0, [{ block: B.SCHALTKREIS, anzahl: 1 }]),
     fahrzeug("fz-gleiter", "gleiter", [{ block: B.BRETTER, anzahl: 10 }, { block: B.SCHALTKREIS, anzahl: 3 }]),
     fahrzeug("fz-buggy", "buggy", [{ block: B.BRETTER, anzahl: 14 }, { block: B.STEIN, anzahl: 10 }, { block: B.SCHALTKREIS, anzahl: 5 }]),
-    fahrzeug("fz-flieger", "flieger", [{ block: B.BRETTER, anzahl: 12 }, { block: B.SCHALTKREIS, anzahl: 8 }, { block: B.KRISTALL_BLAU, anzahl: 1 }])
+    fahrzeug("fz-flieger", "flieger", [{ block: B.BRETTER, anzahl: 12 }, { block: B.SCHALTKREIS, anzahl: 8 }, { block: B.KRISTALL_BLAU, anzahl: 1 }]),
+    // Raumschiff (Stufe 6c): Sternenmetall dafür gibt es bei Bossen und aus Asteroiden im All
+    fahrzeug("fz-raumschiff", "raumschiff", [{ block: B.TITAN, anzahl: 10 }, { block: B.SCHALTKREIS, anzahl: 12 }, { block: B.STERNENMETALL, anzahl: 2 }, { block: B.KRISTALL_BLAU, anzahl: 2 }])
   ];
   SC.Crafting = {
     rezept: function(id){ for(var i = 0; i < SC.REZEPTE.length; i++) if(SC.REZEPTE[i].id === id) return SC.REZEPTE[i]; return null; },

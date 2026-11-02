@@ -281,6 +281,8 @@ SC.T = {
         "Die Sternenkarte oben links zeigt alle Planeten und dein Schiff (▲). Am Bildrand zeigen Pfeile, wo die Planeten liegen.",
         "Wähle mit T (oder 🎯) einen Planeten, oder tippe ihn auf der Sternenkarte an. Mit J (oder ⚡) startest du den Sprung.",
         "Weiche Asteroiden aus und schieß Weltraumpiraten ab. Ist der Schild leer, rettet dich ein Notsprung.",
+        "Triffst du einen Asteroiden mit dem Laser, bricht manchmal Sternenmetall heraus. Das brauchst du für ein selbst gebautes Raumschiff.",
+        "Ein eigenes Raumschiff baust du an der Werkbank wie ein Fahrzeug: Triebwerk (schneller), Schild, Bordlaser und Farbe. Ohne Bordlaser kannst du nicht schießen.",
         "Fliegst du auf einen Planeten zu, tritt das Schiff in die Atmosphäre ein und landet."
       ]],
       ["Planeten", [

@@ -25,6 +25,21 @@ SC.Rucksack.STAPEL = 64;
     if(s.gegenstand || anzahl === undefined || anzahl >= s.anzahl){ this.plaetze[platz] = null; return s; }
     s.anzahl -= anzahl; return { block: s.block, anzahl: anzahl };
   };
+  // Entfernt bis zu anzahl Stück eines Blocks (aus den hinteren Plätzen zuerst); liefert, was gefehlt hat
+  R.entferne = function(block, anzahl){
+    for(var i = this.plaetze.length - 1; i >= 0 && anzahl > 0; i--){
+      var s = this.plaetze[i]; if(!s || s.block !== block) continue;
+      var n = Math.min(s.anzahl, anzahl); s.anzahl -= n; anzahl -= n; if(s.anzahl <= 0) this.plaetze[i] = null;
+    }
+    return anzahl;
+  };
+  // Passt die Sache vollständig hinein? sache: { gegenstand } oder { block, anzahl }
+  R.passt = function(sache){
+    var p = this.plaetze, frei = 0, i;
+    if(sache.gegenstand){ for(i = 0; i < p.length; i++) if(!p[i]) return true; return false; }
+    for(i = 0; i < p.length; i++){ if(!p[i]) frei += SC.Rucksack.STAPEL; else if(p[i].block === sache.block) frei += SC.Rucksack.STAPEL - p[i].anzahl; }
+    return frei >= sache.anzahl;
+  };
   R.hat = function(block){ var n = 0; this.plaetze.forEach(function(s){ if(s && s.block === block) n += s.anzahl; }); return n; };
   R.verbrauche = function(platz){
     var s = this.plaetze[platz]; if(!s || s.block === undefined) return false;

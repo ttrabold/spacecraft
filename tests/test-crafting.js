@@ -66,3 +66,46 @@ test("Gefundene Gegenstände sind ohne Boss höchstens selten (#97)", function()
   for(var i = 0; i < 2000; i++){ max = Math.max(max, SC.Beute.erzeuge(zf, { stufe: 5, ort: "herrenhaus", bonus: 1 }).seltenheit); bossMax = Math.max(bossMax, SC.Beute.erzeuge(zf, { stufe: 5, boss: true, mindest: 2, bonus: 1 }).seltenheit); }
   wahr(max <= SC.CRAFTING_FUND.maxSeltenheit, "ohne Boss: " + max); gleich(bossMax, 4, "mit Boss bis legendär");
 });
+function rs(liste){ var r = new SC.Rucksack(); liste.forEach(function(x){ r.lege(x); }); return r; }
+function vorrat(r, block){ return r.hat(block); }
+test("Rucksack: entferne und passt über mehrere Stapel (#98)", function(){
+  var r = rs([{ block: SC.B.STEIN, anzahl: 64 }, { block: SC.B.STEIN, anzahl: 10 }]);
+  gleich(vorrat(r, SC.B.STEIN), 74); gleich(r.entferne(SC.B.STEIN, 70), 0); gleich(vorrat(r, SC.B.STEIN), 4); gleich(r.entferne(SC.B.STEIN, 9), 5, "Rest, der fehlt"); gleich(vorrat(r, SC.B.STEIN), 0);
+  var leer = new SC.Rucksack(); wahr(leer.passt({ block: SC.B.STEIN, anzahl: 36 * 64 }) && !leer.passt({ block: SC.B.STEIN, anzahl: 36 * 64 + 1 }));
+  var teil = rs([{ block: SC.B.STEIN, anzahl: 60 }]); wahr(teil.passt({ block: SC.B.STEIN, anzahl: 4 + 35 * 64 }) && !teil.passt({ block: SC.B.STEIN, anzahl: 5 + 35 * 64 }));
+  wahr(leer.passt({ gegenstand: true })); for(var i = 0; i < 36; i++) leer.lege({ gegenstand: { id: "g" + i } }); wahr(!leer.passt({ gegenstand: true }) && !leer.passt({ block: SC.B.ERDE, anzahl: 1 }));
+});
+test("Rezepte: Werkbank aus Brettern und Stein, fehlende Rohstoffe werden gemeldet (#98)", function(){
+  var r = rs([{ block: SC.B.BRETTER, anzahl: 10 }, { block: SC.B.STEIN, anzahl: 5 }]), rz = SC.REZEPTE.filter(function(x){ return x.id === "werkbank"; })[0];
+  wahr(rz && rz.station === "hand"); gleich(SC.Crafting.baubar(r, rz).ok, true);
+  var e = SC.Crafting.herstelle(r, rz, null, SC.zufall(1), 1); gleich(e.ok, true); gleich(vorrat(r, SC.B.WERKBANK), 1); gleich(vorrat(r, SC.B.BRETTER), 6); gleich(vorrat(r, SC.B.STEIN), 1);
+  var arm = rs([{ block: SC.B.BRETTER, anzahl: 3 }]), b = SC.Crafting.baubar(arm, rz); gleich(b.ok, false); gleich(b.grund, "material");
+  gleich(JSON.stringify(b.fehlt), JSON.stringify([{ block: SC.B.BRETTER, anzahl: 1 }, { block: SC.B.STEIN, anzahl: 4 }]));
+});
+test("Rezepte: voller Rucksack verbraucht nichts (#98)", function(){
+  var r = rs([{ block: SC.B.BRETTER, anzahl: 10 }, { block: SC.B.STEIN, anzahl: 5 }]); for(var i = 0; i < 34; i++) r.lege({ gegenstand: { id: "g" + i } });
+  var vor = JSON.stringify(r.alsDaten()), rz = SC.REZEPTE.filter(function(x){ return x.id === "werkbank"; })[0], e = SC.Crafting.herstelle(r, rz, null, SC.zufall(1), 1);
+  gleich(e.ok, false); gleich(e.grund, "voll"); gleich(JSON.stringify(r.alsDaten()), vor, "Rucksack unverändert");
+  var r2 = rs([{ block: SC.B.BRETTER, anzahl: 4 }, { block: SC.B.STEIN, anzahl: 4 }]); for(var j = 0; j < 34; j++) r2.lege({ gegenstand: { id: "h" + j } });
+  gleich(SC.Crafting.herstelle(r2, rz, null, SC.zufall(1), 1).ok, true, "passt, weil die verbrauchten Stapel Platz machen");
+});
+test("Rezepte: Waffen aus Metall und Kristall mit Klingenfarbe (#98)", function(){
+  var rz = SC.REZEPTE.filter(function(x){ return x.id === "laserschwert"; })[0], wahl = { metallStufe: 2, metallBlock: SC.B.TITAN, kristall: "blau" };
+  var r = rs([{ block: SC.B.TITAN, anzahl: 6 }, { block: SC.B.KRISTALL_BLAU, anzahl: 2 }]); var e = SC.Crafting.herstelle(r, rz, wahl, SC.zufall(3), 5);
+  gleich(e.ok, true); var g = e.ergebnis; gleich(g.art, "laserschwert"); gleich(g.seltenheit, 2); gleich(g.klinge, "#3fa0ff"); gleich(g.material, 2); gleich(g.stufe, 5);
+  wahr(g.werte.schaden > SC.Beute.baue(SC.zufall(3), { art: "laserschwert", seltenheit: 0, stufe: 5 }).werte.schaden, "Titan stärker als Stein"); wahr(r.plaetze.some(function(s){ return s && s.gegenstand === g; }), "liegt im Rucksack");
+  gleich(vorrat(r, SC.B.TITAN), 0); gleich(vorrat(r, SC.B.KRISTALL_BLAU), 0);
+  var falsch = SC.Crafting.baubar(rs([{ block: SC.B.EISENERZ, anzahl: 6 }, { block: SC.B.KRISTALL_BLAU, anzahl: 2 }]), rz, { metallStufe: 2, metallBlock: SC.B.EISENERZ, kristall: "blau" }); gleich(falsch.ok, false); gleich(falsch.grund, "wahl");
+  gleich(SC.Crafting.baubar(rs([]), rz, { metallStufe: 2, metallBlock: SC.B.TITAN, kristall: "pink" }).grund, "wahl", "unbekannter Kristall");
+});
+test("Rezepte: Rüstung, Schildgenerator braucht einen Schaltkreis, Kreativ ist gratis (#98)", function(){
+  var helm = SC.REZEPTE.filter(function(x){ return x.id === "helm"; })[0], sg = SC.REZEPTE.filter(function(x){ return x.id === "schildgenerator"; })[0];
+  var r = rs([{ block: SC.B.GLUTSTAHL, anzahl: 6 }]); var e = SC.Crafting.herstelle(r, sg, { metallStufe: 3, metallBlock: SC.B.GLUTSTAHL }, SC.zufall(2), 1); gleich(e.ok, false); gleich(e.grund, "material");
+  r.lege({ block: SC.B.SCHALTKREIS, anzahl: 1 }); e = SC.Crafting.herstelle(r, sg, { metallStufe: 3, metallBlock: SC.B.GLUTSTAHL }, SC.zufall(2), 1); gleich(e.ok, true); gleich(e.ergebnis.art, "schildgenerator"); gleich(e.ergebnis.seltenheit, 3); wahr(e.ergebnis.werte.schild > 0);
+  var leer = new SC.Rucksack(); e = SC.Crafting.herstelle(leer, helm, { metallStufe: 4, metallBlock: SC.B.STERNENMETALL }, SC.zufall(2), 1, { gratis: true }); gleich(e.ok, true); gleich(e.ergebnis.seltenheit, 4); gleich(e.ergebnis.klinge, undefined, "Rüstung hat keine Klinge");
+});
+test("Beute.baue: gleiches Format wie erzeuge, Seltenheit exakt (#98)", function(){
+  var g = SC.Beute.baue(SC.zufall(9), { art: "blastergewehr", seltenheit: 4, stufe: 3, klinge: "#ff4a4a" }); gleich(g.seltenheit, 4); gleich(g.klinge, "#ff4a4a"); gleich(g.stufe, 3);
+  ["id", "art", "stufe", "seltenheit", "werte", "sonder", "name"].forEach(function(k){ wahr(k in g, k); }); wahr(g.sonder, "legendär hat einen Sondereffekt");
+  gleich(SC.Beute.baue(SC.zufall(9), { art: "helm", seltenheit: 0 }).stufe, 1);
+});

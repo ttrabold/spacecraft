@@ -62,6 +62,19 @@ SC.Beute.alsSache = function(b){ return b.block !== undefined ? { block: b.block
     var art = o.art || waehleArt(zf, o.ort), def = SC.GEGENSTAENDE[art], stufe = Math.max(1, o.stufe || 1);
     var selt = SC.Beute.seltenheit(zf, { mindest: o.mindest, bonus: o.bonus });
     if(!o.boss) selt = Math.min(selt, SC.CRAFTING_FUND.maxSeltenheit);
+    return bau(zf, art, def, stufe, selt);
+  };
+
+  // Gebauter Gegenstand (Crafting): Art und Seltenheit stehen fest, Zusatzwerte und Sondereffekt würfelt zf wie bei Beute.
+  // o: { art, seltenheit, stufe?, klinge? (Hex-Farbe der Klinge/des Strahls), material? (Metallstufe) }
+  SC.Beute.baue = function(zf, o){
+    var g = bau(zf, o.art, SC.GEGENSTAENDE[o.art], Math.max(1, o.stufe || 1), o.seltenheit);
+    if(o.klinge) g.klinge = o.klinge;
+    if(o.material !== undefined) g.material = o.material;
+    return g;
+  };
+
+  function bau(zf, art, def, stufe, selt){
     var faktor = (1 + 0.15 * (stufe - 1)) * (1 + 0.18 * selt), werte = {};
     for(var k in def.haupt) werte[k] = Math.max(1, Math.round(def.haupt[k] * faktor));
     var anzahl = [0, 1, 1, 2, 3][selt], pool = ZUSATZ.slice();
@@ -76,7 +89,7 @@ SC.Beute.alsSache = function(b){ return b.block !== undefined ? { block: b.block
     }
     var id = Math.floor(zf() * 2176782336).toString(36) + Math.floor(zf() * 2176782336).toString(36);
     return { id: id, art: art, stufe: stufe, seltenheit: selt, werte: werte, sonder: sonder, name: name(art, selt, zf) };
-  };
+  }
 
   SC.Beute.vergleiche = function(neu, alt){
     var v = {}, a = (alt && alt.werte) || {}, k;

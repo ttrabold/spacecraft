@@ -81,3 +81,28 @@ test("Schlafen: Kamera liegt tief, Bildschirm blendet ab (#119)", function(){
   var sp = new SC.Spieler({ id: "a", pos: [1, 64, 1], modus: "survival" }); var stehend = sp.augen()[1]; sp.schlaeft = { t: 0 }; wahr(sp.augen()[1] < stehend - 1, "Augen unten im Bett");
   var w = document.createElement("div"), ui = ui2(w); ui.schlafBild(0.6, "Zzz …"); var el = w.querySelector(".schlaf"); wahr(el && !el.hidden, "sichtbar"); wahr(el.textContent.indexOf("Zzz") >= 0); wahr(Math.abs(parseFloat(el.style.opacity) - 0.6) < 0.01); ui.schlafBild(0, ""); wahr(el.hidden || el.style.opacity === "0", "wieder hell");
 });
+// --- Wiedereinstieg und Mehrspieler (#120) ---
+test("Wiedereinstieg am Bett: Stelle neben dem Bett, fehlendes Bett wird vergessen (#120)", function(){
+  var s = schlafSpiel(); s["bettPunkt"] = SC.Spiel.prototype.bettPunkt; s.daten.spieler.bett = { planet: "start", x: 9, y: 64, z: 8 };
+  var p = s.bettPunkt(); wahr(p, "Stelle gefunden"); wahr(Math.abs(p[0] - 9.5) <= 1.6 && Math.abs(p[2] - 8.5) <= 1.6, "neben dem Bett: " + p); gleich(p[1], 64); wahr(!((p[0] === 8.5 || p[0] === 9.5) && p[2] === 8.5), "nicht im Bett");
+  gleich(s.hinweise.length, 0, "keine Meldung, wenn alles in Ordnung ist"); wahr(s.daten.spieler.bett, "Bett bleibt gemerkt");
+  s.welt.setzeBlock(9, 64, 8, SC.B.LUFT, "system"); s.welt.setzeBlock(8, 64, 8, SC.B.LUFT, "system"); gleich(s.bettPunkt(), null, "Bett fehlt"); gleich(s.hinweise[0], SC.T.bettFehlte); gleich(s.daten.spieler.bett, null, "vergessen");
+  var a = schlafSpiel(); a.bettPunkt = SC.Spiel.prototype.bettPunkt; a.daten.spieler.bett = { planet: "glutfrost", x: 9, y: 64, z: 8 }; gleich(a.bettPunkt(), null, "anderer Planet"); gleich(a.hinweise.length, 0); wahr(a.daten.spieler.bett, "bleibt für den Besuch dort gemerkt");
+  var n = schlafSpiel(); n.bettPunkt = SC.Spiel.prototype.bettPunkt; n.daten.spieler.bett = { planet: "start", x: 9, y: 64, z: 8 };
+  for(var x = 6; x <= 11; x++) for(var z = 6; z <= 10; z++) for(var y = 64; y <= 65; y++) if(!SC.Bauteile.istBett(n.welt.holeBlock(x, y, z))) n.welt.setzeBlock(x, y, z, SC.B.STEIN, "system");
+  gleich(n.bettPunkt(), null, "ringsum zugemauert"); gleich(n.hinweise[0], SC.T.bettBlockiert); wahr(n.daten.spieler.bett, "Bett bleibt gemerkt, wenn es nur blockiert ist");
+  var k = schlafSpiel(); k.bettPunkt = SC.Spiel.prototype.bettPunkt; gleich(k.bettPunkt(), null, "ohne Bett nichts"); gleich(k.hinweise.length, 0, "und keine Meldung");
+});
+test("Schlafzustand reist mit: Gastgeber kennt schlafende Gäste, Gäste sehen schlafende Mitspieler (#120)", function(){
+  var u, a;
+  return mspRaum(1).then(function(x){ u = x; a = u.gs[0]; a.g.takt(0.1, mspIch({ schlaeft: true })); return raumLauf(u.netz); }).then(function(){
+    var e = u.h.spieler.filter(function(q){ return q.id === a.id; })[0]; gleich(e.schlaeft, true, "Gastgeber weiß es"); wahr(u.h._zustaende(mspIch({ schlaeft: true })).every(function(z){ return z.schlaeft === true || z.schlaeft === undefined || z.schlaeft === false; }));
+    var z = u.h._zustaende(mspIch({ schlaeft: true })); gleich(z[0].schlaeft, true, "Gastgeber meldet seinen eigenen Schlaf an die Gäste");
+    a.g.takt(0.1, mspIch({ schlaeft: false })); return raumLauf(u.netz);
+  }).then(function(){ var e = u.h.spieler.filter(function(q){ return q.id === a.id; })[0]; wahr(!e.schlaeft, "aufgewacht"); });
+});
+test("Schlafende Mitspieler liegen im Bild (#120)", function(){
+  var m = _ms(); m.r.aktualisiere([_e(1, { schlaeft: true })], [0, 0, 0], 0.1); var g = m.r.figuren.get(1).f.gruppe; wahr(Math.abs(g.rotation.x - Math.PI / 2) < 0.01, "liegt auf dem Rücken: " + g.rotation.x);
+  m.r.aktualisiere([_e(1, { schlaeft: false })], [0, 0, 0], 0.1); wahr(Math.abs(g.rotation.x) < 0.01, "steht wieder");
+});
+test("Netzprotokoll 6 wegen der Betten (#120)", function(){ gleich(SC.NETZ_PROTOKOLL, 6); });

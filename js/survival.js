@@ -108,7 +108,7 @@
 
   // Eigener Zustand für den Raum (Ziele der Gegner, „in der Nähe“, zustand-Nachricht)
   S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf, surv = sp.modus === "survival";
-    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
+    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), schlaeft: !!sp.schlaeft, hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
   // Gast: Blöcke nur ändern, solange die Verbindung steht (sonst ginge der Wunsch verloren)
   S._blockErlaubt = function(){ return !(this.raum instanceof SC.Gast) || this.raum.status === "verbunden"; };
 
@@ -239,7 +239,7 @@
     // Besiegt
     if(survival && k.besiegt() && !this._besiegtOffen){
       this._besiegtOffen = true; a.spiele("besiegt"); this.eingabe.gebeMausFrei();
-      this.ui.zeigeBesiegt(function(){ k.wiederbeleben(s.landepunkt() || SC.Spiel.startpunkt(w.planet)); s._besiegtOffen = false; s._weiter(); });
+      this.ui.zeigeBesiegt(function(){ k.wiederbeleben(s.bettPunkt() || s.landepunkt() || SC.Spiel.startpunkt(w.planet)); s._besiegtOffen = false; s._weiter(); });
     }
     this._hudSurvival(survival, waffe, wdef);
   };

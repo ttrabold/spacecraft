@@ -43,6 +43,23 @@
     this.ui.schlafBild(0, "");
     if(morgen) this.ui.hinweis(SC.T.guterMorgen, 2500);
   };
+  // Wiedereinstieg am Bett: freie Stelle neben dem gemerkten Bett (Kopfende) → Position oder null (Startpunkt). Fehlt das Bett, wird es vergessen;
+  // ist es nur zugebaut, bleibt es gemerkt. Betten auf anderen Planeten gelten dort, hier bleiben sie unberührt.
+  S.bettPunkt = function(){
+    var b = this.daten.spieler.bett, w = this.welt, T = SC.T; if(!b || b.planet !== w.planet.id) return null;
+    var id = w.holeBlock(b.x, b.y, b.z);
+    if(!SC.Bauteile.istBettKopf(id)){ this.daten.spieler.bett = null; this.ui.hinweis(T.bettFehlte, 4000); return null; }
+    var fuss = SC.Bauteile.bettPartner(id, b.x, b.z);
+    function frei(x, y, z){ var f = SC.BLOECKE[w.holeBlock(x, y, z)], k = SC.BLOECKE[w.holeBlock(x, y + 1, z)], u = w.holeBlock(x, y - 1, z); return !f.fest && !k.fest && w.holeBlock(x, y, z) !== SC.B.LAVA && w.holeBlock(x, y, z) !== SC.B.WASSER && SC.BLOECKE[u].fest && u !== SC.B.LAVA; }
+    var zellen = [[b.x, b.z], [fuss.x, fuss.z]];
+    for(var i = 0; i < zellen.length; i++) for(var dx = -1; dx <= 1; dx++) for(var dz = -1; dz <= 1; dz++){
+      if(!dx && !dz) continue;
+      var x = zellen[i][0] + dx, z = zellen[i][1] + dz;
+      if(SC.Bauteile.istBett(w.holeBlock(x, b.y, z))) continue;
+      if(frei(x, b.y, z)) return [w.planet.wickel(x) + 0.5, b.y, w.planet.wickel(z) + 0.5];
+    }
+    this.ui.hinweis(T.bettBlockiert, 4000); return null;
+  };
   // Alle, die mitzählen, liegen im Bett? Einzelspieler und Gastgeber entscheiden selbst; ein Gast wartet auf die Zeit des Gastgebers
   S._alleSchlafen = function(){
     var r = this.raum; if(r instanceof SC.Gast) return false;

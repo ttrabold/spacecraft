@@ -16,6 +16,30 @@ SC.Bauteile = {};
     if(id === B.TUER_X) return Math.abs(blick[0]) >= Math.abs(blick[2]) ? B.TUER_X : B.TUER_Z;
     return id;
   };
+  // Inhalt aufgestellter Truhen (Stufe 6a): daten.planeten[planet].truhen["x,y,z"] = 18 Plätze im Rucksack-Format. Das Feld entsteht erst bei Bedarf,
+  // alte Spielstände brauchen deshalb keine Umstellung. Maßgeblich ist immer der Einzelspieler bzw. der Gastgeber.
+  SC.Truhen = {
+    PLAETZE: 18,
+    von: function(daten, planet){
+      var pl = daten.planeten[planet.id];
+      function schluessel(x, y, z){ return planet.wickel(x) + "," + Math.floor(y) + "," + planet.wickel(z); }
+      function laden(x, y, z){ return new SC.Rucksack(pl.truhen && pl.truhen[schluessel(x, y, z)], SC.Truhen.PLAETZE); }
+      function speichern(x, y, z, rs){ (pl.truhen || (pl.truhen = {}))[schluessel(x, y, z)] = rs.alsDaten(); }
+      return {
+        inhalt: function(x, y, z){ return laden(x, y, z).alsDaten(); },
+        // Legt die Sache hinein → was nicht mehr passt (0 = alles, bei Gegenständen 0 oder 1)
+        lege: function(x, y, z, sache){ var rs = laden(x, y, z), rest = rs.lege(sache); speichern(x, y, z, rs); return rest; },
+        // Nimmt den ganzen Platz heraus → Sache oder null
+        nimm: function(x, y, z, platz){ var rs = laden(x, y, z), s = rs.nimm(platz); if(s) speichern(x, y, z, rs); return s; },
+        // Leert die Truhe (abgebaut) → Liste der Sachen
+        leeren: function(x, y, z){
+          var k = schluessel(x, y, z), d = pl.truhen && pl.truhen[k]; if(!d) return [];
+          delete pl.truhen[k]; return d.filter(function(s){ return !!s; });
+        }
+      };
+    }
+  };
+
   var TUER = {}; TUER[B.TUER_X] = B.TUER_X_OFFEN; TUER[B.TUER_X_OFFEN] = B.TUER_X; TUER[B.TUER_Z] = B.TUER_Z_OFFEN; TUER[B.TUER_Z_OFFEN] = B.TUER_Z;
   SC.Bauteile.istTuer = function(id){ return TUER[id] !== undefined; };
   // Tür auf/zu. spieler: Liste von Figuren mit pos; beim Schließen darf niemand in der Tür stehen. → true, wenn sich etwas geändert hat.

@@ -462,6 +462,7 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
 // Der Gastgeber rechnet Gegner, Treffer auf Gegner, Beute und Kisten; jeder Gast verrechnet Treffer an sich selbst mit seiner Ausrüstung.
 // Beute und Erfahrung: einmal gewürfelt, identisch an jeden Spieler in SC.RAUM_NAH Blöcken (waagerechter Ringabstand), Gastgeber eingeschlossen.
 // Nachrichten: angriff G→H {ziel, schaden, von}, schuss G→H {pos, richtung, tempo, schaden, farbe, abprall, lebensdauer}, kiste G→H {x, y, z},
+// truhe G→H {x, y, z}, truheNimm G→H {x, y, z, platz}, truheLege G→H {x, y, z, sache}; Antwort immer truheInhalt H→G {plaetze | null, sache?, rest?} (der Reihe nach)
 // abprall G→H {geschossId}, treffer H→G {schaden, von, geschoss {id, typ, pos, richtung} | null, pvpVon}, besiegt H→G {nr, pos, erfahrung, beute, boss, kiste?}.
 // besiegt geht nur live hinaus (nie nachgeholt); der Gast verwirft eine schon gesehene Nummer.
 SC.RAUM_NAH = 40;
@@ -603,6 +604,24 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
       lebensdauer: Math.min(3, zahl(n.lebensdauer) ? n.lebensdauer : 1), farbe: n.farbe, abprall: !!n.abprall });
   };
   HN.kiste = function(c, n){ if(this._k && this.welt && zahl(n.x) && zahl(n.y) && zahl(n.z) && this.welt.holeBlock(n.x, n.y, n.z) === SC.B.KISTE) this.oeffneKiste(Math.floor(n.x), Math.floor(n.y), Math.floor(n.z)); };
+  // Truhen (Stufe 6a): Der Gastgeber hält den Inhalt, jede Anfrage bekommt genau eine Antwort truheInhalt (plaetze null = keine Truhe)
+  function gueltigeSache(s){
+    if(!s || typeof s !== "object") return false;
+    if(s.gegenstand) return typeof s.gegenstand === "object" && typeof s.gegenstand.art === "string" && !!SC.GEGENSTAENDE[s.gegenstand.art];
+    return zahl(s.block) && !!SC.BLOECKE[s.block] && zahl(s.anzahl) && s.anzahl >= 1 && s.anzahl <= SC.Rucksack.STAPEL * SC.Truhen.PLAETZE && Math.floor(s.anzahl) === s.anzahl;
+  }
+  function truheAntwort(h, c, n, tun){
+    var w = h.welt, ok = w && h.daten && zahl(n.x) && zahl(n.y) && zahl(n.z) && w.holeBlock(n.x, n.y, n.z) === SC.B.TRUHE, T = ok && SC.Truhen.von(h.daten, w.planet), a = { t: "truheInhalt", plaetze: null };
+    if(ok){ tun(T, Math.floor(n.x), Math.floor(n.y), Math.floor(n.z), a); a.plaetze = T.inhalt(n.x, n.y, n.z); }
+    else if(n.t === "truheLege") a.rest = 1;
+    c.verb.sende(a);
+  }
+  HN.truhe = function(c, n){ truheAntwort(this, c, n, function(){}); };
+  HN.truheNimm = function(c, n){ truheAntwort(this, c, n, function(T, x, y, z, a){ if(zahl(n.platz)) a.sache = T.nimm(x, y, z, Math.floor(n.platz)); }); };
+  HN.truheLege = function(c, n){
+    if(!gueltigeSache(n.sache)){ c.verb.sende({ t: "truheInhalt", plaetze: null, rest: 1 }); return; }
+    truheAntwort(this, c, n, function(T, x, y, z, a){ a.rest = T.lege(x, y, z, n.sache); });
+  };
   // Gast hat einen gemeldeten Laser mit dem Schwert abgewehrt: zurückgeworfen als Spieler-Geschoss (wie im Einzelspiel, nur einmal je Geschoss)
   HN.abprall = function(c, n){
     var m = this._geschosse && this._geschosse[n.geschossId];
@@ -618,7 +637,16 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
   G.pvpAngriff = function(ziel, schaden, von){ if(this.pvp) this.sende({ t: "pvp", ziel: ziel, schaden: schaden, von: von.slice() }); };
   G.schuss = function(d){ this.sende({ t: "schuss", pos: d.pos.slice(), richtung: d.richtung.slice(), tempo: d.tempo, schaden: d.schaden, farbe: d.farbe, abprall: !!d.abprall, lebensdauer: d.lebensdauer }); };
   G.kiste = function(x, y, z){ this.sende({ t: "kiste", x: x, y: y, z: z }); };
+  // Truhen: jede Frage liefert ein Versprechen auf die Antwort { plaetze | null, sache?, rest? }; ohne Verbindung sofort „keine Truhe“
+  G._truheFrage = function(n){
+    var s = this; if(!s.verb || s.status !== "verbunden") return Promise.resolve({ plaetze: null, rest: n.t === "truheLege" ? 1 : undefined });
+    return new Promise(function(ok){ (s._truheWarten || (s._truheWarten = [])).push(ok); s.sende(n); });
+  };
+  G.truhe = function(x, y, z){ return this._truheFrage({ t: "truhe", x: x, y: y, z: z }); };
+  G.truheNimm = function(x, y, z, platz){ return this._truheFrage({ t: "truheNimm", x: x, y: y, z: z, platz: platz }); };
+  G.truheLege = function(x, y, z, sache){ return this._truheFrage({ t: "truheLege", x: x, y: y, z: z, sache: sache }); };
   var GN = SC.Gast.NACHRICHTEN;
+  GN.truheInhalt = function(n){ var f = this._truheWarten && this._truheWarten.shift(); if(f) f(n); };
   GN.treffer = function(n){
     var k = this._k; if(!k){ ruf(this.o.beiNachricht, n); return; }
     var kampf = k.kampf, w = kampf.welt, vorher = w ? w.naechsteId : 0;

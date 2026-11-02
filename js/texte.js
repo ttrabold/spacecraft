@@ -100,6 +100,7 @@ SC.T = {
   rucksackTitel: "Rucksack und Ausrüstung",
   rucksackTipp: "Tippe einen Gegenstand an, um ihn anzusehen, anzulegen oder in die Schnellleiste zu legen.",
   rucksackVoll: "Der Rucksack ist voll.",
+  truheTitel: "Truhe", truheTipp: "Tippe einen Gegenstand an, um ihn zu verschieben.", truheVoll: "Die Truhe ist voll.", truheWeg: "Hier ist keine Truhe mehr.",
   werkbankTitel: "Werkbank", handwerkTitel: "Handwerk", handwerk: "🛠 Handwerk", herstellen: "Herstellen", hergestellt: "Hergestellt",
   metallWahl: "Metall", kristallWahl: "Kristall", wahlTipp: "Wähle ein Rezept.", wahlMetallKristall: "Wähle Metall und Kristall.", fehltMaterial: "Dir fehlen noch Rohstoffe.",
   rezeptName: { bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },

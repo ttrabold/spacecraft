@@ -1,7 +1,7 @@
 // Rucksack: 36 Plätze, die ersten 9 sind die Schnellleiste. Blöcke stapeln bis 64, Gegenstände einzeln.
-SC.Rucksack = function(plaetze){
+SC.Rucksack = function(plaetze, groesse){   // groesse: Standard 36; Truhen haben 18
   this.plaetze = [];
-  for(var i = 0; i < 36; i++) this.plaetze.push(plaetze && plaetze[i] ? plaetze[i] : null);
+  for(var i = 0; i < (groesse || 36); i++) this.plaetze.push(plaetze && plaetze[i] ? plaetze[i] : null);
 };
 SC.Rucksack.STAPEL = 64;
 (function(){
@@ -10,14 +10,14 @@ SC.Rucksack.STAPEL = 64;
   R.lege = function(sache){
     var p = this.plaetze, i;
     if(sache.gegenstand){
-      for(i = 0; i < 36; i++) if(!p[i]){ p[i] = { gegenstand: sache.gegenstand }; return 0; }
+      for(i = 0; i < p.length; i++) if(!p[i]){ p[i] = { gegenstand: sache.gegenstand }; return 0; }
       return 1;
     }
     var rest = sache.anzahl;
-    for(i = 0; i < 36 && rest; i++) if(p[i] && p[i].block === sache.block && p[i].anzahl < SC.Rucksack.STAPEL){
+    for(i = 0; i < p.length && rest; i++) if(p[i] && p[i].block === sache.block && p[i].anzahl < SC.Rucksack.STAPEL){
       var n = Math.min(rest, SC.Rucksack.STAPEL - p[i].anzahl); p[i].anzahl += n; rest -= n;
     }
-    for(i = 0; i < 36 && rest; i++) if(!p[i]){ var m = Math.min(rest, SC.Rucksack.STAPEL); p[i] = { block: sache.block, anzahl: m }; rest -= m; }
+    for(i = 0; i < p.length && rest; i++) if(!p[i]){ var m = Math.min(rest, SC.Rucksack.STAPEL); p[i] = { block: sache.block, anzahl: m }; rest -= m; }
     return rest;
   };
   R.nimm = function(platz, anzahl){

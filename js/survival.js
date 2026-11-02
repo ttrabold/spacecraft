@@ -53,10 +53,33 @@
       if(!this._blockErlaubt || this._blockErlaubt()) SC.Bauteile.tuerUmschalten(this.welt, ziel.x, ziel.y, ziel.z, [this.spieler]);
       return true;
     }
+    if(id === SC.B.TRUHE){ this.truheOeffnen(ziel); return true; }
     if(id !== SC.B.WERKBANK) return false;
     var s = this; this.eingabe.gebeMausFrei();
     this.ui.zeigeWerkbank(this.kampf, { station: "werkbank", beiFertig: function(){ s._weiter(); } });
     return true;
+  };
+
+  // Truhe aufmachen: Einzelspieler und Gastgeber lesen die Daten direkt, ein Gast fragt den Gastgeber
+  S.truheOeffnen = function(ziel){
+    var s = this, x = ziel.x, y = ziel.y, z = ziel.z, gast = this.raum instanceof SC.Gast ? this.raum : null, anbieter;
+    if(gast) anbieter = { hole: function(){ return gast.truhe(x, y, z); }, nimm: function(i){ return gast.truheNimm(x, y, z, i); }, lege: function(sa){ return gast.truheLege(x, y, z, sa); } };
+    else {
+      var T = SC.Truhen.von(this.daten, this.welt.planet);
+      anbieter = {
+        hole: function(){ return Promise.resolve({ plaetze: T.inhalt(x, y, z) }); },
+        nimm: function(i){ var sa = T.nimm(x, y, z, i); return Promise.resolve({ sache: sa, plaetze: T.inhalt(x, y, z) }); },
+        lege: function(sa){ var rest = T.lege(x, y, z, sa); return Promise.resolve({ rest: rest, plaetze: T.inhalt(x, y, z) }); }
+      };
+    }
+    this.eingabe.gebeMausFrei();
+    this.ui.zeigeTruhe(this.kampf, anbieter, { beiFertig: function(){ s._weiter(); } });
+  };
+  // Eine Truhe wurde abgebaut: ihr Inhalt fällt als Beute heraus (nur Einzelspieler und Gastgeber halten Inhalte)
+  S._truheWeg = function(b){
+    if(b.alt !== SC.B.TRUHE || b.id === SC.B.TRUHE || this.raum instanceof SC.Gast || !this.daten || !this.daten.planeten || !this.daten.planeten[this.welt.planet.id]) return;
+    var sachen = SC.Truhen.von(this.daten, this.welt.planet).leeren(b.x, b.y, b.z);
+    if(sachen.length) this.beuteAuswerfen([b.x + 0.5, b.y + 0.5, b.z + 0.5], sachen);
   };
 
   // Im Raum als Gastgeber würfelt und verteilt SC.Gastgeber#besiege (eigener Anteil über den Rückruf beiBeute)
@@ -142,6 +165,7 @@
     } else if(!survival && ziel && !offen){
       // Kreativ: sofort abbauen, Blöcke aus der Leiste setzen
       if(e.abbauen && SC.BLOECKE[w.holeBlock(ziel.x, ziel.y, ziel.z)].zerstoerbar) w.setzeBlock(ziel.x, ziel.y, ziel.z, SC.B.LUFT, "spieler");
+      else if(e.setzen && SC.Bauteile.istTuer(w.holeBlock(ziel.x, ziel.y, ziel.z))) this.benutzeBlock(ziel);   // Kreativ: Türen auf und zu
       else if(e.setzen){ var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz; var bid = SC.Bauteile.aufstellId(w, sp.schnellleiste[sp.auswahl], ziel, sp.richtung()); if(bid && SC.kannSetzen(w, sp, x, y, z, bid)) w.setzeBlock(x, y, z, bid, "spieler"); }
     }
     if(!(survival && !offen && lebt)){ k.blocken(false); this.render.blocke(false); } // Blockhaltung löst sich bei Menü oder Niederlage

@@ -64,4 +64,53 @@
     };
     zeichne();
   };
+
+  // Truhe (Stufe 6a): oben der Inhalt, unten der Rucksack; Antippen verschiebt den ganzen Platz.
+  // anbieter: { hole(), nimm(platz), lege(sache) } liefern Versprechen auf { plaetze | null, sache?, rest? } (Einzelspieler/Gastgeber direkt, Gast über den Gastgeber)
+  SC.UI.prototype.zeigeTruhe = function(kampf, anbieter, o){
+    var ui = this, rs = kampf.rucksack, T = SC.T, plaetze = null;
+    o = o || {};
+    function platz(s, aktion, i){
+      var inhalt = "", stil = "";
+      if(s && s.gegenstand){ inhalt = '<img src="' + SC.UI.gegenstandBild(s.gegenstand) + '" alt="">'; stil = ' style="border-color:' + SC.SELTENHEIT[s.gegenstand.seltenheit || 0].farbe + '"'; }
+      else if(s) inhalt = '<img src="' + SC.UI.blockBild(s.block) + '" alt=""><b class="anzahl">' + s.anzahl + "</b>";
+      return '<button class="rs-platz" data-aktion="' + aktion + '" data-i="' + i + '"' + stil + ">" + inhalt + "</button>";
+    }
+    function zeichne(){
+      ui._zeige("<h2>" + esc(T.truheTitel) + "</h2>" +
+        (plaetze ? '<div class="rs-raster">' + plaetze.map(function(s, i){ return platz(s, "tplatz", i); }).join("") + "</div>" : "<p>…</p>") +
+        "<h3>" + esc(T.rucksackTitel) + '</h3><div class="rs-raster">' + rs.plaetze.map(function(s, i){ return platz(s, "rplatz", i); }).join("") + "</div>" +
+        '<p class="leer">' + esc(T.truheTipp) + '</p><div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen);
+    }
+    function antwort(r){
+      if(r.plaetze === null){ ui.hinweis(T.truheWeg); plaetze = plaetze || []; } else plaetze = r.plaetze;
+      o.beiAenderung && o.beiAenderung(); zeichne();
+    }
+    function ablegen(sache){ return sache.gegenstand ? rs.lege({ gegenstand: sache.gegenstand }) : rs.lege({ block: sache.block, anzahl: sache.anzahl }); }
+    var aktionen = {
+      tplatz: function(el){
+        var s = plaetze && plaetze[+el.getAttribute("data-i")]; if(!s) return;
+        if(!rs.passt(s.gegenstand ? { gegenstand: true } : s)){ ui.hinweis(T.rucksackVoll); return; }
+        return anbieter.nimm(+el.getAttribute("data-i")).then(function(r){
+          if(r.sache){
+            var rest = ablegen(r.sache);
+            if(rest) return anbieter.lege(r.sache.gegenstand ? r.sache : { block: r.sache.block, anzahl: rest }).then(antwort);   // Rest zurücklegen (z. B. nach einem Wettlauf um den Platz)
+          }
+          antwort(r);
+        });
+      },
+      rplatz: function(el){
+        var i = +el.getAttribute("data-i"); if(!rs.plaetze[i]) return;
+        var sache = rs.nimm(i);
+        return anbieter.lege(sache).then(function(r){
+          var zurueck = r.plaetze === null ? sache : r.rest ? (sache.gegenstand ? sache : { block: sache.block, anzahl: r.rest }) : null;
+          if(zurueck){ ablegen(zurueck); if(r.plaetze !== null) ui.hinweis(T.truheVoll); }
+          antwort(r);
+        });
+      },
+      fertig: function(){ ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); }
+    };
+    zeichne();
+    anbieter.hole().then(antwort);
+  };
 })();

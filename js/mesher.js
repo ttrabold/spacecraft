@@ -53,11 +53,11 @@ SC.Mesher = {};
       puf.i.push(basis, basis + 1, basis + 2, basis, basis + 2, basis + 3);
       puf.n += 4;
     }
-    function kasten(puf, x, y, z, a, b, uv, L, glueht, ohneUnten){
+    function kasten(puf, x, y, z, a, b, uv, L, glueht, ohneUnten, uvJeFlaeche){   // uvJeFlaeche(f) (optional): eigene Kachel je Fläche, z. B. Oberseite des Betts
       for(var f = 0; f < 6; f++){
         if(ohneUnten && f === 3) continue;
         var F = FL[f];
-        viereck(puf, x, y, z, F.e.map(function(c){ return [c[0] ? b[0] : a[0], c[1] ? b[1] : a[1], c[2] ? b[2] : a[2]]; }), uv, L, F.h, glueht);
+        viereck(puf, x, y, z, F.e.map(function(c){ return [c[0] ? b[0] : a[0], c[1] ? b[1] : a[1], c[2] ? b[2] : a[2]]; }), uvJeFlaeche ? uvJeFlaeche(f) : uv, L, F.h, glueht);
       }
     }
     function verbunden(id){ var d = SC.BLOECKE[id]; return d.form === "pfosten" || (d.fest && !d.durchsichtig); }
@@ -78,6 +78,9 @@ SC.Mesher = {};
             kasten(puf, x, y, z, a, b, uv, L, gl, true);
           });
         });
+      } else if(fm.typ === "kasten"){
+        var uO = SC.Mesher.uvFuer(def.seiten.oben), uU = SC.Mesher.uvFuer(def.seiten.unten);
+        kasten(puf, x, y, z, fm.a, fm.b, uv, L, gl, false, function(f){ return f === 2 ? uO : f === 3 ? uU : uv; });
       } else if(fm.typ === "platte"){
         var t = 0.08, c = Math.max(t / 2, Math.min(1 - t / 2, fm.versatz));
         kasten(puf, x, y, z, fm.achse === "x" ? [c - t / 2, 0, 0] : [0, 0, c - t / 2], fm.achse === "x" ? [c + t / 2, 1, 1] : [1, 1, c + t / 2], uv, L, gl, false);

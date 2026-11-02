@@ -14,7 +14,19 @@ SC.Bauteile = {};
       return ziel.nz > 0 ? B.LEITER_N : ziel.nz < 0 ? B.LEITER_S : ziel.nx > 0 ? B.LEITER_W : B.LEITER_O;
     }
     if(id === B.TUER_X) return Math.abs(blick[0]) >= Math.abs(blick[2]) ? B.TUER_X : B.TUER_Z;
+    // Bett: Das Kopfende liegt in Blickrichtung vor dem Fußende
+    if(id === B.BETT_FUSS_N) return Math.abs(blick[0]) >= Math.abs(blick[2]) ? (blick[0] > 0 ? B.BETT_FUSS_O : B.BETT_FUSS_W) : (blick[2] > 0 ? B.BETT_FUSS_S : B.BETT_FUSS_N);
     return id;
+  };
+  // Bett: Fußende → { dx, dz, id } des Kopfendes; Kopfende → Richtung zurück zum Fuß
+  var KOPF = {}; KOPF[B.BETT_FUSS_N] = { dx: 0, dz: -1, id: B.BETT_KOPF_N }; KOPF[B.BETT_FUSS_S] = { dx: 0, dz: 1, id: B.BETT_KOPF_S }; KOPF[B.BETT_FUSS_O] = { dx: 1, dz: 0, id: B.BETT_KOPF_O }; KOPF[B.BETT_FUSS_W] = { dx: -1, dz: 0, id: B.BETT_KOPF_W };
+  var FUSS = {}; for(var fid in KOPF) FUSS[KOPF[fid].id] = { dx: -KOPF[fid].dx, dz: -KOPF[fid].dz, id: +fid };
+  SC.Bauteile.istBettFuss = function(id){ return KOPF[id] !== undefined; };
+  SC.Bauteile.istBettKopf = function(id){ return FUSS[id] !== undefined; };
+  SC.Bauteile.istBett = function(id){ return KOPF[id] !== undefined || FUSS[id] !== undefined; };
+  // Die andere Hälfte eines Betts an der Stelle (x, z) → { x, z, id } der erwarteten Nachbarzelle (id = dort erwarteter Blocktyp) oder null
+  SC.Bauteile.bettPartner = function(id, x, z){
+    var k = KOPF[id] || FUSS[id]; return k ? { x: x + k.dx, z: z + k.dz, id: k.id } : null;
   };
   // Inhalt aufgestellter Truhen (Stufe 6a): daten.planeten[planet].truhen["x,y,z"] = 18 Plätze im Rucksack-Format. Das Feld entsteht erst bei Bedarf,
   // alte Spielstände brauchen deshalb keine Umstellung. Maßgeblich ist immer der Einzelspieler bzw. der Gastgeber.
@@ -58,11 +70,18 @@ SC.Bauteile = {};
   };
   // Block setzen; Türen belegen zwei Blöcke und brauchen beide Zellen frei (und keinen Spieler darin). → true, wenn gesetzt
   SC.Bauteile.setze = function(welt, spieler, x, y, z, id){
-    var oben = OBEN[id];
+    var oben = OBEN[id], kopf = KOPF[id];
     if(!SC.kannSetzen(welt, spieler, x, y, z, id)) return false;
     if(oben !== undefined && !SC.kannSetzen(welt, spieler, x, y + 1, z, oben)) return false;
+    if(kopf){
+      // Bett: Kopfzelle frei, unter beiden Hälften fester Boden
+      var kx = x + kopf.dx, kz = z + kopf.dz;
+      if(!SC.kannSetzen(welt, spieler, kx, y, kz, kopf.id)) return false;
+      if(!SC.BLOECKE[welt.holeBlock(x, y - 1, z)].fest || !SC.BLOECKE[welt.holeBlock(kx, y - 1, kz)].fest) return false;
+    }
     if(!welt.setzeBlock(x, y, z, id, "spieler")) return false;
     if(oben !== undefined) welt.setzeBlock(x, y + 1, z, oben, "spieler");
+    if(kopf) welt.setzeBlock(x + kopf.dx, y, z + kopf.dz, kopf.id, "spieler");
     return true;
   };
   // Tür auf/zu, von beiden Hälften aus. spieler: Liste von Figuren mit pos; beim Schließen darf niemand in einer der beiden Zellen stehen.

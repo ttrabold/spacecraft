@@ -56,6 +56,9 @@ SC.Texturen = {};
         case "leiter": a = 0; if(x <= 2 || x >= 13 || y % 4 === 1){ c = x <= 2 || x >= 13 ? g : d; a = 255; } break;
         case "tuer": c = x < 2 || x > 13 || y < 2 || y > 13 ? d : (y === 7 || y === 8) ? d : g; if(x === 12 && (y === 7 || y === 8)) c = h; break;
         case "tueroben": c = x < 2 || x > 13 || y < 2 || y > 13 ? d : (x >= 4 && x <= 11 && y >= 3 && y <= 9) ? h : g; break;
+        case "bettfuss": c = y % 5 === 4 ? d : (x === 0 || x === 15 || y === 0) ? d : g; break;
+        case "bettkopf": c = (x === 0 || x === 15 || y === 15) ? d : (x >= 2 && x <= 13 && y >= 1 && y <= 6) ? h : g; if(y === 7 && x >= 2 && x <= 13) c = d; break;
+        case "bettseite": c = y < 6 ? (y === 5 ? d : h) : (y % 4 === 3 ? d : g); break;
         case "basalt": r = zf(); c = r < 0.25 ? d : r < 0.33 ? h : g; if(x % 5 === 0 && y % 4 !== 0) c = d; break;
       }
       setze(x, y, c, a);

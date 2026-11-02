@@ -110,7 +110,7 @@ SC.Spiel.startpunkt = function(planet){
     var pd = daten.planeten[daten.aktuellerPlanet], planet = new SC.Planet(pd);
     this.welt = new SC.Welt(planet, chunks || SC.Spielstand.chunksLaden(pd));
     this.welt.ereignisse.an("block", function(b){
-      s._truheWeg(b); s._tuerWeg(b);
+      s._truheWeg(b); s._tuerWeg(b); s._bettWeg(b);
       if(b.quelle !== "spieler") return;
       if(b.id === SC.B.LUFT) s.audio.spiele("abbauen", { material: SC.Klang.material(b.alt) });
       else s.audio.spiele("setzen", { material: SC.Klang.material(b.id) });

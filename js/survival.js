@@ -80,6 +80,12 @@
     var py = T.istTuerOben(b.alt) ? b.y - 1 : b.y + 1, nb = this.welt.holeBlock(b.x, py, b.z);
     if(T.istTuer(nb) && T.istTuerOben(nb) !== T.istTuerOben(b.alt)) this.welt.setzeBlock(b.x, py, b.z, SC.B.LUFT, b.quelle);
   };
+  // Eine Betthälfte wurde abgebaut: die andere verschwindet mit (ohne zweites Bett als Beute)
+  S._bettWeg = function(b){
+    var T = SC.Bauteile; if(!T.istBett(b.alt) || T.istBett(b.id)) return;
+    var p = T.bettPartner(b.alt, b.x, b.z), nb = this.welt.holeBlock(p.x, b.y, p.z);
+    if(nb === p.id) this.welt.setzeBlock(p.x, b.y, p.z, SC.B.LUFT, b.quelle);
+  };
   // Eine Truhe wurde abgebaut: ihr Inhalt fällt als Beute heraus (nur Einzelspieler und Gastgeber halten Inhalte)
   S._truheWeg = function(b){
     if(b.alt !== SC.B.TRUHE || b.id === SC.B.TRUHE || this.raum instanceof SC.Gast || !this.daten || !this.daten.planeten || !this.daten.planeten[this.welt.planet.id]) return;

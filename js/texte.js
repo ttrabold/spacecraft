@@ -103,7 +103,7 @@ SC.T = {
   truheTitel: "Truhe", truheTipp: "Tippe einen Gegenstand an, um ihn zu verschieben.", truheVoll: "Die Truhe ist voll.", truheWeg: "Hier ist keine Truhe mehr.",
   werkbankTitel: "Werkbank", handwerkTitel: "Handwerk", handwerk: "🛠 Handwerk", herstellen: "Herstellen", hergestellt: "Hergestellt",
   metallWahl: "Metall", kristallWahl: "Kristall", wahlTipp: "Wähle ein Rezept.", wahlMetallKristall: "Wähle Metall und Kristall.", fehltMaterial: "Dir fehlen noch Rohstoffe.",
-  rezeptName: { bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
+  rezeptName: { wolle: "Rote Wolle", bett: "Bett", bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
   kristallName: { blau: "Blau", gruen: "Grün", rot: "Rot", gelb: "Gelb", violett: "Violett", weiss: "Weiß" },
   ausruestungTitel: "Ausrüstung", materialienTitel: "Materialien",
   anlegen: "Anlegen", ablegen: "Ablegen", inSchnellleiste: "In die Schnellleiste", wegwerfen: "Wegwerfen",
@@ -158,7 +158,7 @@ SC.T = {
     lava: "Lava", eis: "Eis", schlamm: "Schlamm", basalt: "Basalt",
     eisenerz: "Eisenerz", titan: "Titan", glutstahl: "Glutstahl", moorsilber: "Moorsilber", sternenmetall: "Sternenmetall",
     kristallBlau: "Blauer Kristall", kristallGruen: "Grüner Kristall", kristallRot: "Roter Kristall", kristallGelb: "Gelber Kristall", kristallViolett: "Violetter Kristall", kristallWeiss: "Weißer Kristall",
-    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe"
+    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe", bett: "Bett"
   },
   // Spielanleitung (Menü und docs/ANLEITUNG.md): Abschnitte [Titel, Punkte]; „Taste – Bedeutung“ zeigt die Taste fett
   anleitung: {

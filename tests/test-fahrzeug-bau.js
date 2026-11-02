@@ -43,3 +43,53 @@ test("Fahrzeugbau: Speichern, Laden, Gastliste und Spiegel behalten den Bauplan 
   l[0].bau = bauTest({ farbe: SC.BAU_FARBEN[7] }); l = JSON.parse(JSON.stringify(l)); SC.Raum.spiegleFahrzeuge(w3, l, 0.1, "ich", 0); gleich(w3.fahrzeuge.get(f.id).bau.farbe, SC.BAU_FARBEN[7], "geänderter Bauplan wird übernommen");
   l[0].bau = { motor: 99 }; l = JSON.parse(JSON.stringify(l)); SC.Raum.spiegleFahrzeuge(w3, l, 0.1, "ich", 0); gleich(w3.fahrzeuge.get(f.id).bau, undefined, "ungültiger Bauplan wird ignoriert");
 });
+function fzWahl(o){ return Object.assign({ motor: { stufe: 0, block: SC.B.STEIN }, panzerung: { stufe: 0, block: SC.B.STEIN }, waffe: null, farbe: SC.BAU_FARBEN[1] }, o || {}); }
+function fzRs(l){ var r = new SC.Rucksack(); l.forEach(function(x){ r.lege({ block: x[0], anzahl: x[1] }); }); return r; }
+function fzOrt(frei){ var o = { gesetzt: [], fahrzeug: { platz: function(art){ return frei ? [5, 61, 5] : null; }, setze: function(art, bau, pos){ var f = { art: art, bau: bau, pos: pos }; o.gesetzt.push(f); return f; } } }; return o; }
+test("Fahrzeug-Rezepte: Kosten aus Rumpf, Motor, Panzerung und Bordwaffe (#114)", function(){
+  ["fz-gleiter", "fz-buggy", "fz-flieger"].forEach(function(id){ var rz = SC.Crafting.rezept(id); wahr(rz && rz.art === "fahrzeug" && rz.station === "werkbank" && SC.FAHRZEUGE[rz.fahrzeug], id); });
+  var B = SC.B, g = SC.Crafting.rezept("fz-gleiter"), K = SC.Crafting.kosten;
+  function summe(k){ var s = {}; k.forEach(function(x){ s[x.block] = (s[x.block] || 0) + x.anzahl; }); return s; }
+  var k0 = summe(K(g, fzWahl())); gleich(k0[B.BRETTER], 10); gleich(k0[B.SCHALTKREIS], 3); gleich(k0[B.STEIN], 14, "6 für den Motor, 8 für die Panzerung"); gleich(Object.keys(k0).length, 3);
+  var k1 = summe(K(g, fzWahl({ motor: { stufe: 2, block: B.TITAN }, panzerung: { stufe: 3, block: B.MOORSILBER }, waffe: { stufe: 1, block: B.EISENERZ, kristall: "rot" } }))); gleich(k1[B.TITAN], 6); gleich(k1[B.MOORSILBER], 8); gleich(k1[B.EISENERZ], 5); gleich(k1[B.KRISTALL_ROT], 1); gleich(k1[B.STEIN], undefined);
+  var b = summe(K(SC.Crafting.rezept("fz-buggy"), fzWahl())); gleich(b[B.BRETTER], 14); gleich(b[B.SCHALTKREIS], 5); gleich(b[B.STEIN], 10 + 14);
+  var f = summe(K(SC.Crafting.rezept("fz-flieger"), fzWahl())); gleich(f[B.BRETTER], 12); gleich(f[B.SCHALTKREIS], 8); gleich(f[B.KRISTALL_BLAU], 1);
+  gleich(K(g, fzWahl({ motor: { stufe: 2, block: B.EISENERZ } })), null, "falsches Metall"); gleich(K(g, fzWahl({ waffe: { stufe: 0, block: B.STEIN, kristall: "pink" } })), null, "falscher Kristall"); gleich(K(g, fzWahl({ farbe: "#123456" })), null, "falsche Farbe"); gleich(K(g, null), null); gleich(K(g, fzWahl({ motor: null })), null);
+});
+test("Fahrzeug-Rezepte: herstellen zahlt erst nach dem Aufstellen und prüft den Platz (#114)", function(){
+  var B = SC.B, rz = SC.Crafting.rezept("fz-gleiter"), reich = function(){ return fzRs([[B.BRETTER, 20], [B.SCHALTKREIS, 5], [B.STEIN, 30]]); };
+  var rs = reich(), o = fzOrt(true), e = SC.Crafting.herstelle(rs, rz, fzWahl({ farbe: SC.BAU_FARBEN[5] }), SC.zufall(1), 1, o);
+  gleich(e.ok, true); gleich(o.gesetzt.length, 1); gleich(o.gesetzt[0].art, "gleiter"); gleich(JSON.stringify(o.gesetzt[0].bau), JSON.stringify({ motor: 0, panzerung: 0, waffe: null, farbe: SC.BAU_FARBEN[5] })); gleich(e.ergebnis, o.gesetzt[0]);
+  gleich(rs.hat(B.BRETTER), 10); gleich(rs.hat(B.STEIN), 16); gleich(rs.hat(B.SCHALTKREIS), 2);
+  var rs2 = reich(), o2 = fzOrt(false); e = SC.Crafting.herstelle(rs2, rz, fzWahl(), SC.zufall(1), 1, o2); gleich(e.ok, false); gleich(e.grund, "platz"); gleich(rs2.hat(B.BRETTER), 20, "nichts bezahlt"); gleich(o2.gesetzt.length, 0);
+  var arm = fzRs([[B.BRETTER, 3]]), o3 = fzOrt(true); e = SC.Crafting.herstelle(arm, rz, fzWahl(), SC.zufall(1), 1, o3); gleich(e.ok, false); gleich(e.grund, "material"); gleich(o3.gesetzt.length, 0);
+  e = SC.Crafting.herstelle(reich(), rz, fzWahl({ farbe: "#000000" }), SC.zufall(1), 1, fzOrt(true)); gleich(e.grund, "wahl");
+  e = SC.Crafting.herstelle(reich(), rz, fzWahl(), SC.zufall(1), 1, {}); gleich(e.ok, false, "ohne Aufsteller geht es nicht"); gleich(e.grund, "platz");
+  var o4 = fzOrt(true), leer = new SC.Rucksack(); e = SC.Crafting.herstelle(leer, rz, fzWahl({ waffe: { stufe: 4, block: B.STERNENMETALL, kristall: "weiss" } }), SC.zufall(1), 1, Object.assign(o4, { gratis: true })); gleich(e.ok, true, "Entwicklerwerkzeug gratis"); gleich(o4.gesetzt[0].bau.waffe.kristall, "weiss");
+});
+// --- Menü (#115) ---
+function fzMenue(rs, frei){ var a = wb(), ort = fzOrt(frei !== false); a.o.fahrzeug = ort.fahrzeug; (rs || []).forEach(function(x){ a.k.rucksack.lege({ block: x[0], anzahl: x[1] }); }); a.ui.zeigeWerkbank(a.k, a.o); a.ort = ort; return a; }
+test("Fahrzeug-Menü: drei Fahrzeug-Karten, Auswahl mit Voreinstellung (#115)", function(){
+  var a = fzMenue(); ["fz-gleiter", "fz-buggy", "fz-flieger"].forEach(function(id){ wahr(a.w.querySelector('[data-aktion="rezept"][data-id="' + id + '"]'), id); });
+  a.w.querySelector('[data-aktion="rezept"][data-id="fz-buggy"]').click();
+  gleich(a.w.querySelectorAll('[data-aktion="fz-motor"]').length, 6, "Motor: sechs Metalle"); gleich(a.w.querySelectorAll('[data-aktion="fz-panzerung"]').length, 6); gleich(a.w.querySelectorAll('[data-aktion="fz-farbe"]').length, 12);
+  wahr(a.w.querySelector('[data-aktion="fz-waffe"][data-id="keine"]'), "Bordwaffe: keine wählbar"); gleich(a.w.querySelectorAll('[data-aktion="fz-kristall"]').length, 0, "Kristalle erst mit Bordwaffe");
+  ["fz-motor", "fz-panzerung"].forEach(function(t){ gleich(a.w.querySelector('[data-aktion="' + t + '"].an').getAttribute("data-id"), "0:" + SC.B.STEIN, t + " vorgewählt: Stein"); }); gleich(a.w.querySelector('[data-aktion="fz-farbe"].an').getAttribute("data-id"), SC.BAU_FARBEN[0]); wahr(a.w.querySelector('[data-aktion="fz-waffe"][data-id="keine"].an'));
+  wahr(a.w.querySelector(".wb-fzwerte").textContent.indexOf("Tempo") >= 0, "Vorschau der Werte");
+});
+test("Fahrzeug-Menü: Wahl ändert Vorschau und Kosten, Herstellen stellt das Fahrzeug auf (#115)", function(){
+  var B = SC.B, a = fzMenue([[B.BRETTER, 20], [B.SCHALTKREIS, 5], [B.STEIN, 20], [B.TITAN, 14], [B.EISENERZ, 6], [B.KRISTALL_ROT, 2]]);
+  a.w.querySelector('[data-aktion="rezept"][data-id="fz-gleiter"]').click(); var vorher = a.w.querySelector(".wb-fzwerte").textContent;
+  a.w.querySelector('[data-aktion="fz-motor"][data-id="2:' + B.TITAN + '"]').click(); wahr(a.w.querySelector(".wb-fzwerte").textContent !== vorher, "Titan-Motor ändert die Werte");
+  a.w.querySelector('[data-aktion="fz-panzerung"][data-id="2:' + B.TITAN + '"]').click(); a.w.querySelector('[data-aktion="fz-waffe"][data-id="1:' + B.EISENERZ + '"]').click(); gleich(a.w.querySelectorAll('[data-aktion="fz-kristall"]').length, 6, "Kristallwahl erscheint");
+  a.w.querySelector('[data-aktion="fz-kristall"][data-id="rot"]').click(); a.w.querySelector('[data-aktion="fz-farbe"][data-id="' + SC.BAU_FARBEN[5] + '"]').click();
+  var kn = a.w.querySelector('[data-aktion="herstellen"]'); wahr(!kn.disabled, "genug Rohstoffe"); wb.aend = 0; kn.click();
+  gleich(a.ort.gesetzt.length, 1); var bau = a.ort.gesetzt[0].bau; gleich(bau.motor, 2); gleich(bau.panzerung, 2); gleich(bau.waffe.stufe, 1); gleich(bau.waffe.kristall, "rot"); gleich(bau.farbe, SC.BAU_FARBEN[5]);
+  gleich(a.k.rucksack.hat(B.TITAN), 0, "6 + 8 Titan bezahlt"); gleich(a.k.rucksack.hat(B.EISENERZ), 1); gleich(a.k.rucksack.hat(B.KRISTALL_ROT), 1); gleich(wb.aend, 1, "beiAenderung");
+  a.w.querySelector('[data-aktion="fz-waffe"][data-id="keine"]').click(); gleich(a.w.querySelectorAll('[data-aktion="fz-kristall"]').length, 0, "ohne Waffe keine Kristalle");
+});
+test("Fahrzeug-Menü: zu wenig Rohstoffe und kein Platz sperren (#115)", function(){
+  var a = fzMenue([[SC.B.BRETTER, 3]]); a.w.querySelector('[data-aktion="rezept"][data-id="fz-gleiter"]').click(); wahr(a.w.querySelector('[data-aktion="herstellen"]').disabled, "arm"); wahr(a.w.querySelector(".wb-kosten.fehlt"), "Fehlendes rot");
+  var b = fzMenue([[SC.B.BRETTER, 20], [SC.B.SCHALTKREIS, 5], [SC.B.STEIN, 20]], false); b.w.querySelector('[data-aktion="rezept"][data-id="fz-gleiter"]').click(); b.w.querySelector('[data-aktion="herstellen"]').click();
+  gleich(b.ort.gesetzt.length, 0, "ohne Platz nichts aufgestellt"); gleich(b.k.rucksack.hat(SC.B.BRETTER), 20, "nichts bezahlt");
+});

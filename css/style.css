@@ -181,3 +181,8 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
 /* Schlafen */
 .schlaf{position:absolute;inset:0;background:#05060f;color:#9fb3ff;display:flex;align-items:center;justify-content:center;font-size:28px;z-index:6;pointer-events:none}
 .schlaf[hidden]{display:none}
+
+/* Fahrzeugbau (Stufe 6b) */
+.wb-fz{font-size:26px;line-height:1.1}
+.wb-farbe{width:28px;height:28px;min-height:0;padding:0;border:3px solid #3a3a5a;border-radius:6px}.wb-farbe.an{outline:3px solid #ffd95c}
+.wb-fzwerte{margin:8px 0;color:#aab3d6}

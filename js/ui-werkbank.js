@@ -9,7 +9,7 @@
     o = o || {};
     var liste = SC.REZEPTE.filter(function(r){ return o.station !== "hand" || r.station === "hand"; });
 
-    function name(rz){ return rz.art === "bauteil" ? T.rezeptName[rz.id] : T.gegenstand[rz.gegenstand][0]; }
+    function name(rz){ return rz.art === "bauteil" ? T.rezeptName[rz.id] : rz.art === "fahrzeug" ? T.fahrzeuge[rz.fahrzeug] : T.gegenstand[rz.gegenstand][0]; }
     function kostenHtml(k){
       return k.map(function(x){
         var hat = o.gratis ? x.anzahl : rs.hat(x.block);
@@ -17,11 +17,42 @@
       }).join("");
     }
     function karte(rz){
-      var bild = rz.art === "bauteil" ? '<img src="' + SC.UI.blockBild(rz.ergibt.block) + '" alt="">' : '<img src="' + SC.UI.gegenstandBild({ art: rz.gegenstand, seltenheit: 0 }) + '" alt="">';
+      var bild = rz.art === "fahrzeug" ? '<span class="wb-fz">' + { gleiter: "🛷", buggy: "🚙", flieger: "🛩️" }[rz.fahrzeug] + "</span>" : rz.art === "bauteil" ? '<img src="' + SC.UI.blockBild(rz.ergibt.block) + '" alt="">' : '<img src="' + SC.UI.gegenstandBild({ art: rz.gegenstand, seltenheit: 0 }) + '" alt="">';
       return '<button class="wb-rezept' + (gewaehlt === rz ? " an" : "") + '" data-aktion="rezept" data-id="' + rz.id + '">' + bild + "<small>" + esc(name(rz)) + (rz.art === "bauteil" && rz.ergibt.anzahl > 1 ? " ×" + rz.ergibt.anzahl : "") + "</small></button>";
+    }
+    // Fahrzeug (Stufe 6b): Motor, Panzerung, Bordwaffe und Farbe wählen; Vorschau der Werte; Vorauswahl = einfachstes Fahrzeug aus Stein
+    function fzStandard(){ return { motor: { stufe: 0, block: SC.B.STEIN }, panzerung: { stufe: 0, block: SC.B.STEIN }, waffe: null, farbe: SC.BAU_FARBEN[0] }; }
+    function fzMetalle(aktion, aktuell){
+      var h = ""; SC.METALLE.forEach(function(bloecke, s){ bloecke.forEach(function(bl){
+        var an = aktuell && aktuell.stufe === s && aktuell.block === bl;
+        h += '<button class="wb-opt' + (an ? " an" : "") + '" data-aktion="' + aktion + '" data-id="' + s + ":" + bl + '" style="border-color:' + SC.SELTENHEIT[s].farbe + '"><img src="' + SC.UI.blockBild(bl) + '" alt=""><small>' + esc(SC.BLOECKE[bl].name) + "</small></button>";
+      }); });
+      return h;
+    }
+    function fzDetail(){
+      var rz = gewaehlt, k = SC.Crafting.kosten(rz, wahl), b = SC.Crafting.baubar(rs, rz, wahl, o), h = "<h3>" + esc(name(rz)) + "</h3>";
+      h += '<div class="wb-wahl"><b>' + esc(T.fzMotor) + "</b> " + fzMetalle("fz-motor", wahl.motor) + "</div>";
+      h += '<div class="wb-wahl"><b>' + esc(T.fzPanzerung) + "</b> " + fzMetalle("fz-panzerung", wahl.panzerung) + "</div>";
+      h += '<div class="wb-wahl"><b>' + esc(T.fzWaffe) + '</b> <button class="wb-opt' + (wahl.waffe ? "" : " an") + '" data-aktion="fz-waffe" data-id="keine"><small>' + esc(T.fzKeine) + "</small></button>" + fzMetalle("fz-waffe", wahl.waffe) + "</div>";
+      if(wahl.waffe){
+        h += '<div class="wb-wahl"><b>' + esc(T.kristallWahl) + "</b> ";
+        Object.keys(SC.CRAFTING_KRISTALLE).forEach(function(key){
+          h += '<button class="wb-opt' + (wahl.waffe.kristall === key ? " an" : "") + '" data-aktion="fz-kristall" data-id="' + key + '" style="border-color:' + SC.CRAFTING_KRISTALLE[key].farbe + '"><img src="' + SC.UI.blockBild(SC.CRAFTING_KRISTALLE[key].block) + '" alt=""><small>' + esc(T.kristallName[key]) + "</small></button>";
+        });
+        h += "</div>";
+      }
+      h += '<div class="wb-wahl"><b>' + esc(T.fzFarbe) + "</b> ";
+      SC.BAU_FARBEN.forEach(function(c){ h += '<button class="wb-farbe' + (wahl.farbe === c ? " an" : "") + '" data-aktion="fz-farbe" data-id="' + c + '" style="background:' + c + '" title="' + c + '"></button>'; });
+      h += "</div>";
+      var d = SC.Fahrzeug.bauDef(rz.fahrzeug, { motor: wahl.motor.stufe, panzerung: wahl.panzerung.stufe, waffe: wahl.waffe, farbe: wahl.farbe });
+      h += '<div class="wb-fzwerte">' + esc(T.fzTempo) + " " + Math.round(d.tempo * 10) / 10 + " · " + esc(T.fzPanzerungWert) + " " + Math.round(d.panzerung) + " · " + (d.geschuetz ? esc(T.fzSchaden) + " " + Math.round(d.geschuetz.schaden * 10) / 10 : esc(T.fzOhneWaffe)) + "</div>";
+      h += '<div class="wb-kostenzeile">' + kostenHtml(k) + "</div>";
+      if(b.grund === "material") h += "<p>" + esc(T.fehltMaterial) + "</p>";
+      return h + '<button class="haupt" data-aktion="herstellen"' + (b.ok ? "" : " disabled") + ">" + esc(T.herstellen) + "</button>";
     }
     function detail(){
       if(!gewaehlt) return '<p class="leer">' + esc(T.wahlTipp) + "</p>";
+      if(gewaehlt.art === "fahrzeug") return fzDetail();
       var rz = gewaehlt, h = "<h3>" + esc(name(rz)) + "</h3>", k = SC.Crafting.kosten(rz, wahl), b = SC.Crafting.baubar(rs, rz, wahl, o);
       if(rz.art !== "bauteil"){
         h += '<div class="wb-wahl"><b>' + esc(T.metallWahl) + "</b> ";
@@ -51,13 +82,18 @@
         '<div class="reihe"><button data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen);
     }
     var aktionen = {
-      rezept: function(el, id){ gewaehlt = SC.Crafting.rezept(id); wahl = {}; zeichne(); },
+      rezept: function(el, id){ gewaehlt = SC.Crafting.rezept(id); wahl = gewaehlt.art === "fahrzeug" ? fzStandard() : {}; zeichne(); },
+      "fz-motor": function(el, id){ var t = id.split(":"); wahl.motor = { stufe: +t[0], block: +t[1] }; zeichne(); },
+      "fz-panzerung": function(el, id){ var t = id.split(":"); wahl.panzerung = { stufe: +t[0], block: +t[1] }; zeichne(); },
+      "fz-waffe": function(el, id){ if(id === "keine") wahl.waffe = null; else { var t = id.split(":"); wahl.waffe = { stufe: +t[0], block: +t[1], kristall: wahl.waffe ? wahl.waffe.kristall : "blau" }; } zeichne(); },
+      "fz-kristall": function(el, id){ if(wahl.waffe) wahl.waffe.kristall = id; zeichne(); },
+      "fz-farbe": function(el, id){ wahl.farbe = id; zeichne(); },
       metall: function(el, id){ var t = id.split(":"); wahl.metallStufe = +t[0]; wahl.metallBlock = +t[1]; zeichne(); },
       kristall: function(el, id){ wahl.kristall = id; zeichne(); },
       herstellen: function(){
         var r = SC.Crafting.herstelle(rs, gewaehlt, wahl, SC.zufall((Math.random() * 4294967296) >>> 0), kampf.werte ? kampf.werte.stufe : 1, o);
         if(r.ok){ ui.hinweis(T.hergestellt + ": " + name(gewaehlt)); o.beiAenderung && o.beiAenderung(); }
-        else ui.hinweis(r.grund === "voll" ? T.rucksackVoll : T.fehltMaterial);
+        else ui.hinweis(r.grund === "voll" ? T.rucksackVoll : r.grund === "platz" ? T.fahrzeugKeinPlatz : T.fehltMaterial);
         zeichne();
       },
       fertig: function(){ ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); }

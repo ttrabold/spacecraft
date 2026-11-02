@@ -12,6 +12,9 @@ SC.CRAFTING = {};
 
   function bauteil(id, station, kosten, block, anzahl){ return { id: id, art: "bauteil", station: station, kosten: kosten, ergibt: { block: block, anzahl: anzahl } }; }
   function gegenstand(id, art, metall, kristall, extra){ return { id: id, art: art, station: "werkbank", gegenstand: id, metall: metall, kristall: kristall, extra: extra || [] }; }
+  // Fahrzeuge (Stufe 6b): Rumpf mit festen Kosten; Motor (6 Metall), Panzerung (8 Metall) und optional Bordwaffe (5 Metall + 1 Kristall) wählt der Spieler
+  function fahrzeug(id, art, rumpf){ return { id: id, art: "fahrzeug", station: "werkbank", fahrzeug: art, rumpf: rumpf }; }
+  SC.FAHRZEUG_TEILE = { motor: 6, panzerung: 8, waffe: 5 };
   SC.REZEPTE = [
     bauteil("bretter", "hand", [{ block: B.STAMM, anzahl: 1 }], B.BRETTER, 4),
     bauteil("werkbank", "hand", [{ block: B.BRETTER, anzahl: 4 }, { block: B.STEIN, anzahl: 4 }], B.WERKBANK, 1),
@@ -25,13 +28,26 @@ SC.CRAFTING = {};
     bauteil("bett", "werkbank", [{ block: B.WOLLE_ROT, anzahl: 3 }, { block: B.BRETTER, anzahl: 3 }], B.BETT_FUSS_N, 1),
     gegenstand("blasterpistole", "waffe", 4, 1), gegenstand("blastergewehr", "waffe", 8, 1), gegenstand("laserschwert", "waffe", 6, 2),
     gegenstand("helm", "ruestung", 5, 0), gegenstand("brust", "ruestung", 8, 0), gegenstand("handschuhe", "ruestung", 4, 0), gegenstand("stiefel", "ruestung", 4, 0),
-    gegenstand("schildgenerator", "ruestung", 6, 0, [{ block: B.SCHALTKREIS, anzahl: 1 }])
+    gegenstand("schildgenerator", "ruestung", 6, 0, [{ block: B.SCHALTKREIS, anzahl: 1 }]),
+    fahrzeug("fz-gleiter", "gleiter", [{ block: B.BRETTER, anzahl: 10 }, { block: B.SCHALTKREIS, anzahl: 3 }]),
+    fahrzeug("fz-buggy", "buggy", [{ block: B.BRETTER, anzahl: 14 }, { block: B.STEIN, anzahl: 10 }, { block: B.SCHALTKREIS, anzahl: 5 }]),
+    fahrzeug("fz-flieger", "flieger", [{ block: B.BRETTER, anzahl: 12 }, { block: B.SCHALTKREIS, anzahl: 8 }, { block: B.KRISTALL_BLAU, anzahl: 1 }])
   ];
   SC.Crafting = {
     rezept: function(id){ for(var i = 0; i < SC.REZEPTE.length; i++) if(SC.REZEPTE[i].id === id) return SC.REZEPTE[i]; return null; },
     // Kosten als Liste { block, anzahl }; null bei ungültiger Wahl (Metall der falschen Stufe, unbekannter Kristall)
     kosten: function(rz, wahl){
       if(rz.art === "bauteil") return rz.kosten;
+      if(rz.art === "fahrzeug"){
+        if(!wahl || SC.BAU_FARBEN.indexOf(wahl.farbe) < 0) return null;
+        function metall(t){ return t && SC.METALLE[t.stufe] !== undefined && SC.METALLE[t.stufe].indexOf(t.block) >= 0; }
+        if(!metall(wahl.motor) || !metall(wahl.panzerung) || (wahl.waffe && (!metall(wahl.waffe) || !SC.CRAFTING_KRISTALLE[wahl.waffe.kristall]))) return null;
+        var l = rz.rumpf.map(function(x){ return { block: x.block, anzahl: x.anzahl }; });
+        function dazu(block, n){ for(var i = 0; i < l.length; i++) if(l[i].block === block){ l[i].anzahl += n; return; } l.push({ block: block, anzahl: n }); }
+        dazu(wahl.motor.block, SC.FAHRZEUG_TEILE.motor); dazu(wahl.panzerung.block, SC.FAHRZEUG_TEILE.panzerung);
+        if(wahl.waffe){ dazu(wahl.waffe.block, SC.FAHRZEUG_TEILE.waffe); dazu(SC.CRAFTING_KRISTALLE[wahl.waffe.kristall].block, 1); }
+        return l;
+      }
       if(!wahl || SC.METALLE[wahl.metallStufe] === undefined || SC.METALLE[wahl.metallStufe].indexOf(wahl.metallBlock) < 0) return null;
       var k = [{ block: wahl.metallBlock, anzahl: rz.metall }];
       if(rz.kristall){ var kr = SC.CRAFTING_KRISTALLE[wahl.kristall]; if(!kr) return null; k.push({ block: kr.block, anzahl: rz.kristall }); }
@@ -44,9 +60,18 @@ SC.CRAFTING = {};
       var fehlt = []; k.forEach(function(x){ var n = rucksack.hat(x.block); if(n < x.anzahl) fehlt.push({ block: x.block, anzahl: x.anzahl - n }); });
       return fehlt.length ? { ok: false, grund: "material", fehlt: fehlt } : { ok: true };
     },
+    // Fahrzeug: o.fahrzeug = { platz(art) → Stelle | null, setze(art, bau, stelle) → Fahrzeug }. Erst Platz suchen, dann bezahlen, dann aufstellen.
+    herstelleFahrzeug: function(rucksack, rz, wahl, o){
+      if(!o || !o.fahrzeug) return { ok: false, grund: "platz" };
+      var pos = o.fahrzeug.platz(rz.fahrzeug); if(!pos) return { ok: false, grund: "platz" };
+      if(!o.gratis) SC.Crafting.kosten(rz, wahl).forEach(function(x){ rucksack.entferne(x.block, x.anzahl); });
+      var bau = { motor: wahl.motor.stufe, panzerung: wahl.panzerung.stufe, waffe: wahl.waffe ? { stufe: wahl.waffe.stufe, kristall: wahl.waffe.kristall } : null, farbe: wahl.farbe };
+      return { ok: true, ergebnis: o.fahrzeug.setze(rz.fahrzeug, bau, pos) };
+    },
     // Zieht die Kosten ab und legt das Ergebnis in den Rucksack, ganz oder gar nicht → { ok, ergebnis?, grund? }
     herstelle: function(rucksack, rz, wahl, zf, spielerStufe, o){
       var b = SC.Crafting.baubar(rucksack, rz, wahl, o); if(!b.ok) return b;
+      if(rz.art === "fahrzeug") return SC.Crafting.herstelleFahrzeug(rucksack, rz, wahl, o);
       var k = SC.Crafting.kosten(rz, wahl), gratis = o && o.gratis, sache;
       if(rz.art === "bauteil") sache = { block: rz.ergibt.block, anzahl: rz.ergibt.anzahl };
       else {

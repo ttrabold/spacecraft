@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spacecraft – Musik-Hörprobe</title>
+<style>
+  body{font:15px/1.45 system-ui,sans-serif;background:#10131c;color:#dde3f0;margin:0;padding:20px;max-width:1100px}
+  h1{margin:0 0 4px;font-size:22px} h2{font-size:16px;margin:22px 0 8px;color:#9fb3ff}
+  p{margin:6px 0;color:#aab3c8} .klein{font-size:13px;color:#8892a8}
+  .regler{display:flex;flex-wrap:wrap;gap:16px;align-items:center;background:#181d2b;padding:12px 14px;border-radius:10px}
+  label{display:flex;gap:6px;align-items:center} input[type=number]{width:90px;background:#0e1119;color:#dde3f0;border:1px solid #33405e;border-radius:6px;padding:4px 6px}
+  select{background:#0e1119;color:#dde3f0;border:1px solid #33405e;border-radius:6px;padding:4px 6px}
+  .karten{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+  .karte{background:#181d2b;border:1px solid #27304a;border-radius:10px;padding:12px 14px}
+  .karte.an{border-color:#ffd25e;box-shadow:0 0 0 1px #ffd25e}
+  .karte h3{margin:0 0 2px;font-size:16px} .karte .tags{font-size:12px;color:#7d8aa8;margin-bottom:6px}
+  button{background:#2b3a66;color:#fff;border:0;border-radius:7px;padding:7px 12px;font:inherit;cursor:pointer;margin:6px 6px 0 0}
+  button:hover{background:#3a4d8a} button.alt{background:#3a2f3f} button.alt:hover{background:#56405a} button.stopp{background:#7a2c2c}
+  #jetzt{background:#181d2b;border-radius:10px;padding:12px 14px;margin-top:14px}
+  canvas{width:100%;height:230px;background:#0b0e15;border-radius:8px;display:block;margin-top:8px}
+  #info{white-space:pre-wrap;font:13px/1.5 ui-monospace,monospace;color:#b9c4dd}
+  #fehler{color:#ff8a8a;font-weight:bold}
+</style>
+</head>
+<body>
+<h1>Musik-Hörprobe</h1>
+<p>Entwurf für die neue Musik (Spec: <code>docs/superpowers/specs/2026-11-02-musik-design.md</code>). Noch nicht im Spiel. Jede Karte ist ein Konzept: <b>▶ Neu</b> spielt den neuen Komponisten mit den neuen Klängen, <b>▶ Alt</b> die Musik, die heute im Spiel läuft. Hör beide hintereinander und sag mir, was besser und was schlechter klingt.</p>
+
+<div class="regler">
+  <label>Welt-Seed (bestimmt das Thema) <input type="number" id="thema" value="7"></label>
+  <label>Stück Nr. <input type="number" id="stueck" value="1" min="1"></label>
+  <label>Klang <select id="klang"><option value="neu">neu (Vibrato, Hall, Stereo)</option><option value="alt">alt (wie im Spiel)</option></select></label>
+  <label>Lautstärke <input type="range" id="laut" min="0" max="1" step="0.05" value="0.7"></label>
+  <button class="stopp" id="stopp">■ Stopp</button><button id="testton">🔔 Testton</button>
+</div>
+<p class="klein">Gleicher Welt-Seed = gleiches Hauptthema in jeder Stimmung und jedem Stück. „Anderes Stück“ ändert Tonart, Akkorde und Begleitung, das Thema bleibt erkennbar.</p>
+
+<h2>Konzepte</h2>
+<div class="karten" id="karten"></div>
+
+<div id="jetzt">
+  <div id="status" class="klein">Audio: noch nicht gestartet</div><div id="info">Noch nichts gespielt.</div>
+  <canvas id="bild" width="1000" height="230"></canvas>
+  <div class="klein">Gold = Melodie, Blau = Begleitung. Weiße Linie = aktuelle Stelle. Oben die Abschnitte der Form.</div>
+</div>
+<p id="fehler"></p>
+
+<script src="../js/kern.js"></script>
+<script src="../js/musik.js"></script>
+<script src="../js/musik-neu.js"></script>
+<script src="../js/audio.js"></script>
+<script src="../js/klang-neu.js"></script>
+<script>
+var KONZEPTE = [
+  { id: "tag", titel: "Heldenmarsch", tags: "Tag · Dur · Marsch", text: "Thema im Horn, dann im Blech; Mittelteil mit Flöte und Harfe; zum Schluss alles zusammen." },
+  { id: "nacht", titel: "Mondlicht", tags: "Nacht · Moll · ruhig", text: "Celesta-Thema über Harfenarpeggien, Horn im Mittelteil. Geheimnisvoll, nicht gruselig." },
+  { id: "tief", titel: "Tiefe Gänge", tags: "Höhlen · Dungeon · Spannung", text: "Streicher-Ostinato, Pauken, ein tiefes Horn-Thema nur jeden zweiten Takt." },
+  { id: "kampf", titel: "Kampf – treibend", tags: "Gegner · Schleife", text: "Streicher-Achtel, Pauke auf jedem Schlag, Blech-Thema. Läuft in Schleife.", opt: { kampfart: "treibend" } },
+  { id: "kampf", titel: "Kampf – lustig-bedrohlich", tags: "Gegner · Oom-Pah", text: "Tapsiger Bass auf 1 und 3, Tupfer auf 2 und 4, Flöte spielt das Thema kurz abgesetzt.", opt: { kampfart: "lustig" }, nurNeu: true },
+  { id: "boss", titel: "Boss", tags: "Boss · Moll · schwer", text: "Wie Kampf, aber tiefes Blech, Paukenwirbel vor jedem Phrasenende." },
+  { id: "glutfrost", titel: "Glutfrost", tags: "Planet · Mixolydisch", text: "Neu: Blech-Quinten, Pauken, hartes Thema in Blech und Horn. Eisig-glühend.", nurNeu: true },
+  { id: "rankenmoor", titel: "Rankenmoor", tags: "Planet · Dorisch · Dreierfeeling", text: "Neu: Harfen-Triolen, Flöte und Celesta, verspielt-mystisch.", nurNeu: true },
+  { id: "all", titel: "Im All", tags: "Raumflug · Lydisch · weit", text: "Neu: lange Streicherflächen, Celesta-Funken, Horn-Thema. Heute läuft im All die Nachtmusik.", nurNeu: true }
+];
+var AB = { tag: 1, nacht: 1, tief: 1, kampf: 1, boss: 1 };
+var NAMEN = { A: "A", A2: "A′", B: "B", A3: "A″" };
+var ctx = null, laufend = null, timer = null, raf = 0;
+var $ = function(id){ return document.getElementById(id); };
+
+var karten = $("karten");
+KONZEPTE.forEach(function(k, i){
+  var d = document.createElement("div"); d.className = "karte"; d.id = "k" + i;
+  d.innerHTML = "<h3>" + k.titel + "</h3><div class='tags'>" + k.tags + "</div><div>" + k.text + "</div>";
+  var neu = document.createElement("button"); neu.textContent = "▶ Neu"; neu.onclick = function(){ spiele(i, "neu"); }; d.appendChild(neu);
+  if(!k.nurNeu && AB[k.id]){ var alt = document.createElement("button"); alt.className = "alt"; alt.textContent = "▶ Alt (im Spiel)"; alt.onclick = function(){ spiele(i, "alt"); }; d.appendChild(alt); }
+  var weiter = document.createElement("button"); weiter.textContent = "Anderes Stück ▶"; weiter.onclick = function(){ $("stueck").value = (+$("stueck").value || 1) + 1; spiele(i, "neu"); }; d.appendChild(weiter);
+  karten.appendChild(d);
+});
+
+function hall(c, sek, dunkel){
+  var n = Math.floor(c.sampleRate * sek), b = c.createBuffer(2, n, c.sampleRate), zf = SC.zufall(7);
+  for(var ch = 0; ch < 2; ch++){ var d = b.getChannelData(ch), tp = 0; for(var i = 0; i < n; i++){ var x = (zf() * 2 - 1) * Math.pow(1 - i / n, dunkel ? 2.2 : 2.5); tp = dunkel ? tp + (x - tp) * 0.45 : x; d[i] = tp; } }
+  var k = c.createConvolver(); k.buffer = b; return k;
+}
+var PAN = { streicher: -0.35, blech: 0.35, horn: 0.2, floete: -0.15, celesta: 0.3, harfe: -0.5, pauke: 0, trommel: 0.1 };
+var NASS = { streicher: 0.55, blech: 0.4, horn: 0.5, floete: 0.5, celesta: 0.6, harfe: 0.5, pauke: 0.15, trommel: 0.1 };
+
+// Baut Klangkette; ziel = Context (live oder offline). Liefert Funktion zum Einplanen eines Ereignisses.
+function baue(c, klang, lautstaerke){
+  var haupt = c.createGain(), komp = c.createDynamicsCompressor(); haupt.gain.value = lautstaerke * (klang === "neu" ? 1.1 : 0.6); haupt.connect(komp); // neu klingt leiser: Pegel angleichen, damit der Vergleich fair ist
+   komp.connect(c.destination);
+  if(c.createAnalyser){ var an = c.createAnalyser(); an.fftSize = 1024; komp.connect(an); c._analyser = an; }
+  var h = hall(c, klang === "neu" ? 3.4 : 2.6, klang === "neu"), hg = c.createGain(); hg.gain.value = klang === "neu" ? 0.5 : 0.35; h.connect(hg); hg.connect(haupt);
+  var busse = {};
+  function bus(name){
+    if(busse[name]) return busse[name];
+    var b = c.createGain(), ziel = b;
+    if(klang === "neu"){
+      if(c.createStereoPanner){ var p = c.createStereoPanner(); p.pan.value = PAN[name] || 0; b.connect(p); ziel = p; }
+      ziel.connect(haupt); var s = c.createGain(); s.gain.value = NASS[name] || 0.4; ziel.connect(s); s.connect(h);
+    } else { b.connect(haupt); b.connect(h); }
+    return (busse[name] = b);
+  }
+  return function(start, sek, e){
+    var f = (klang === "neu" && SC.InstrumenteNeu[e.instrument]) || SC.Instrumente[e.instrument];
+    if(f) f(c, bus(e.instrument), start + e.t * sek, e.midi, e.dauer * sek, e.vel);
+  };
+}
+
+function komponiere(i, version){
+  var k = KONZEPTE[i], seed = (+$("thema").value || 0) * 1000 + (+$("stueck").value || 1);
+  if(version === "alt"){ var s = SC.Musik.komponiere(seed, k.id); s.form = []; return s; }
+  return SC.MusikNeu.komponiere(seed, k.id, Object.assign({ thema: +$("thema").value || 0 }, k.opt || {}));
+}
+
+function stoppen(){
+  if(timer) clearInterval(timer); timer = null; cancelAnimationFrame(raf);
+  if(laufend){ try{ laufend.haupt.disconnect(); }catch(e){} laufend = null; }
+  if(ctx){ try{ ctx.close(); }catch(e){} ctx = null; }
+  Array.prototype.forEach.call(document.querySelectorAll(".karte"), function(d){ d.classList.remove("an"); });
+}
+$("stopp").onclick = stoppen;
+
+function spiele(i, version){
+  stoppen(); $("fehler").textContent = "";
+  try{
+    var A = window.AudioContext || window.webkitAudioContext; ctx = new A();
+    var klang = version === "alt" ? "alt" : $("klang").value, st = komponiere(i, version);
+    var plan = baue(ctx, klang, +$("laut").value);
+    var sek = 60 / st.tempo, start = ctx.currentTime + 0.3, idx = 0, ev = st.events.slice().sort(function(a, b){ return a.t - b.t; });
+    laufend = { haupt: ctx.destination, st: st, start: start, sek: sek };
+    function planen(){
+      var bis = ctx.currentTime + 1.5;
+      while(idx < ev.length && start + ev[idx].t * sek < bis) plan(start, sek, ev[idx++]);
+      if(idx >= ev.length && ctx.currentTime > start + (st.schlaege + 4) * sek){ stoppen(); $("info").textContent += "\n— Ende —"; }
+    }
+    if(ctx.resume) ctx.resume();
+    planen(); timer = setInterval(planen, 200);
+    $("k" + i).classList.add("an");
+    info(i, version, klang, st); zeichne(st); anim();
+  }catch(e){ $("fehler").textContent = "Fehler: " + (e && e.message || e); stoppen(); }
+}
+
+function info(i, version, klang, st){
+  var k = KONZEPTE[i];
+  $("info").textContent = k.titel + " (" + (version === "alt" ? "ALT – wie im Spiel" : "NEU, Klang " + klang) + ")\n" +
+    "Tempo " + st.tempo + " · Grundton MIDI " + st.grundton + " · " + (st.modus || (st.moll ? "Moll" : "Dur")) + " · " + (st.schlaege / 4) + " Takte (" + Math.round(st.schlaege * 60 / st.tempo) + " s)\n" +
+    (st.form && st.form.length ? "Form: " + st.form.map(function(f){ return NAMEN[f.name] + " (" + f.takte + " Takte)"; }).join(" – ") + "\n" : "Form: keine (Zufallsmelodie)\n") +
+    (st.motiv ? "Thema: " + st.motiv.map(function(m){ return m[0] + "/" + (Math.round(m[1] * 100) / 100); }).join("  ") + "   (Stufe/Länge in Schlägen)" : "");
+}
+
+var FARBE = { streicher: "#4a6cd6", harfe: "#5aa0e0", pauke: "#6a5acd", trommel: "#667", blech: "#7a7ad8", celesta: "#8ad0e8", horn: "#5a7ac0", floete: "#6ab0d0" };
+function zeichne(st){
+  var cv = $("bild"), g = cv.getContext("2d"), W = cv.width, H = cv.height, top = 22;
+  g.clearRect(0, 0, W, H); g.fillStyle = "#0b0e15"; g.fillRect(0, 0, W, H);
+  var lo = 1e9, hi = -1e9; st.events.forEach(function(e){ if(e.instrument === "trommel") return; lo = Math.min(lo, e.midi); hi = Math.max(hi, e.midi); });
+  var px = function(t){ return t / st.schlaege * W; }, py = function(m){ return H - 6 - (m - lo) / Math.max(1, hi - lo) * (H - top - 14); };
+  if(st.form) st.form.forEach(function(f, n){
+    g.fillStyle = n % 2 ? "#141a2a" : "#101626"; g.fillRect(px(f.takt * 4), top, px(f.takte * 4), H - top);
+    g.fillStyle = "#9fb3ff"; g.font = "bold 14px system-ui"; g.fillText(NAMEN[f.name], px(f.takt * 4) + 6, 16);
+  });
+  st.events.forEach(function(e){
+    if(e.instrument === "trommel") return;
+    var mel = e.stimme === "melodie"; g.fillStyle = mel ? "#ffd25e" : FARBE[e.instrument] || "#4a6cd6"; g.globalAlpha = mel ? 1 : 0.5;
+    g.fillRect(px(e.t), py(e.midi) - 2, Math.max(2, px(e.dauer) - 1), mel ? 4 : 3);
+  });
+  g.globalAlpha = 1; cv._basis = g.getImageData(0, 0, W, H);
+}
+function anim(){
+  var cv = $("bild"), g = cv.getContext("2d");
+  if(!laufend || !ctx) return;
+  var t = (ctx.currentTime - laufend.start) / laufend.sek;
+  if(cv._basis) g.putImageData(cv._basis, 0, 0);
+  g.fillStyle = "#fff"; g.fillRect(Math.max(0, t) / laufend.st.schlaege * cv.width, 0, 2, cv.height);
+  var pegel = 0, an = ctx._analyser;
+  if(an){ var d = new Uint8Array(an.fftSize); an.getByteTimeDomainData(d); for(var i = 0; i < d.length; i++) pegel = Math.max(pegel, Math.abs(d[i] - 128) / 128); }
+  $("status").textContent = "Audio: " + ctx.state + " · Zeit " + ctx.currentTime.toFixed(1) + " s · Pegel " + "█".repeat(Math.round(pegel * 40)) + " " + pegel.toFixed(2) + (ctx.state === "running" && pegel < 0.001 && t > 0.5 ? "   ← kein Signal: Browser-Tab oder Windows-Ausgabe stumm?" : "");
+  raf = requestAnimationFrame(anim);
+}
+$("testton").onclick = function(){
+  stoppen(); var A = window.AudioContext || window.webkitAudioContext; ctx = new A(); if(ctx.resume) ctx.resume();
+  var o = ctx.createOscillator(), g = ctx.createGain(); g.gain.value = 0.2 * (+$("laut").value || 0.5); o.connect(g); g.connect(ctx.destination); o.frequency.value = 440; o.start(); o.stop(ctx.currentTime + 1);
+  $("status").textContent = "Testton 440 Hz für 1 s (Zustand: " + ctx.state + ") – hörst du den, ist die Seite ok und das Problem liegt an der Musik.";
+};
+
+// Selbsttest ohne Ton: rendert jede Stimmung kurz offline, meldet Fehler und Stille (für scripts/tests.sh nutzbar)
+window.musikSelbsttest = function(){
+  var ergebnis = [], c0 = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  KONZEPTE.forEach(function(k, i){
+    ["neu", "alt"].forEach(function(v){
+      if(v === "alt" && (!AB[k.id] || k.nurNeu)) return;
+      try{
+        var st = komponiere(i, v), oc = new c0(2, 44100 * 3, 44100), plan = baue(oc, v === "alt" ? "alt" : "neu", 0.7), sek = 60 / st.tempo;
+        st.events.forEach(function(e){ if(e.t * sek < 2.5) plan(0.05, sek, e); });
+        ergebnis.push(oc.startRendering().then(function(buf){ var d = buf.getChannelData(0), m = 0; for(var n = 0; n < d.length; n++) m = Math.max(m, Math.abs(d[n])); return k.titel + " " + v + ": " + (m > 0.001 && isFinite(m) ? "ok" : "STILL") + " (Spitze " + m.toFixed(3) + ")"; }));
+      }catch(e){ ergebnis.push(Promise.resolve(k.titel + " " + v + ": FEHLER " + (e && e.message))); }
+    });
+  });
+  return Promise.all(ergebnis);
+};
+</script>
+</body>
+</html>

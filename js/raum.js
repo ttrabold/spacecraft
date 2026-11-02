@@ -687,7 +687,7 @@ SC.RAUM_FZ_NAH = 96;
 
   SC.Raum.fahrzeugListe = function(welt){
     var l = [];
-    welt.fahrzeuge.forEach(function(f){ l.push({ id: f.id, art: f.art, pos: f.pos.map(r2), blick: r2(f.blick), geschw: f.geschw.map(r2), tempo: r2(f.tempo), panzerung: Math.round(f.panzerung), sitze: f.sitze.slice(), weg: !!f.weg, frei: !f.fundort }); });
+    welt.fahrzeuge.forEach(function(f){ l.push({ id: f.id, art: f.art, pos: f.pos.map(r2), blick: r2(f.blick), geschw: f.geschw.map(r2), tempo: r2(f.tempo), panzerung: Math.round(f.panzerung), sitze: f.sitze.slice(), weg: !!f.weg, frei: !f.fundort, bau: f.bau || undefined }); });
     return l;
   };
   // Im Umkreis von pos; Fahrzeuge, in denen der Empfänger id sitzt, immer (z. B. nach einem Eintritt weit vom Landepunkt)
@@ -757,8 +757,9 @@ SC.RAUM_FZ_NAH = 96;
     (liste || []).forEach(function(e){
       da[e.id] = true;
       var f = welt.fahrzeuge.get(e.id);
-      var neu = !f || f.art !== e.art;
+      var neu = !f || f.art !== e.art, bau = e.bau ? SC.Fahrzeug.gueltigeBau(e.bau) : null;
       if(neu) f = SC.Fahrzeug.neu(welt, e.art, e.pos, e.blick, { id: e.id });
+      if(bau) f.bau = bau; else delete f.bau;
       var selbst = e.sitze[0] === ichId && f.sitze[0] === ichId;
       f.panzerung = e.panzerung; f.weg = !!e.weg; f.fundort = e.frei ? null : e.id; f.sitze = e.sitze.slice();
       if(selbst) return;

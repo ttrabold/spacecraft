@@ -8,13 +8,13 @@ SC.RenderFahrzeuge = function(szene, planet){
   var RF = SC.RenderFahrzeuge.prototype;
   RF._modell = function(f){
     var g = new THREE.Group(), teile = [], box = this.box;
-    SC.FAHRZEUGE[f.art].modell.forEach(function(t){
+    SC.Fahrzeug.def(f).modell.forEach(function(t){
       var m = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: t.farbe }));
       m.scale.set(t.w, t.h, t.d); m.position.set(t.x, t.y, t.z); g.add(m);
       teile.push({ mesh: m, farbe: new THREE.Color(t.farbe), leuchtet: !!t.leuchtet });
     });
     this.gruppe.add(g);
-    return { g: g, teile: teile, art: f.art, licht: -1 };
+    return { g: g, teile: teile, art: f.art, bauKey: JSON.stringify(f.bau || null), licht: -1 };
   };
   // reichweite: nur Fahrzeuge so weit (waagerecht, Ring) werden dargestellt; weiter entfernte geben ihr Modell frei wie entfernte Chunks
   RF.bild = function(welt, spielerPos, licht, reichweite){
@@ -22,7 +22,7 @@ SC.RenderFahrzeuge = function(szene, planet){
     welt.fahrzeuge.forEach(function(f, id){
       if(reichweite && Math.hypot(SC.mod(f.pos[0] - spielerPos[0] + P / 2, P) - P / 2, SC.mod(f.pos[2] - spielerPos[2] + P / 2, P) - P / 2) > reichweite) return;
       var o = r.objekte.get(id);
-      if(o && o.art !== f.art){ r._weg(o); o = null; }
+      if(o && (o.art !== f.art || o.bauKey !== JSON.stringify(f.bau || null))){ r._weg(o); o = null; }   // andere Art oder neuer Lack/Bauplan: Modell neu bauen
       if(!o){ o = r._modell(f); r.objekte.set(id, o); }
       gesehen[id] = true;
       o.g.visible = !f.weg;

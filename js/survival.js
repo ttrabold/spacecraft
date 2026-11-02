@@ -256,13 +256,13 @@
     if(ui.controllerHilfe){
       var vorn = ein && (ein.controllerVorn ? ein.controllerVorn() : ein.gamepadAktiv), imF = this._imFahrzeug();
       ui.controllerHilfe(vorn ? SC.controllerHilfe({ all: !!this.all && !this.all.zuschauer, zuschauerImAll: !!(this.all && this.all.zuschauer), survival: survival, waffe: !!waffe, schwert: !!(wdef && wdef.typ === "schwert"), fahrzeugNah: !!fzNah && !imF,
-        fahrzeug: imF && !this.all ? { fahrer: imF.sitz === 0, geschuetz: !!SC.FAHRZEUGE[imF.f.art].geschuetz } : null }) : null);
+        fahrzeug: imF && !this.all ? { fahrer: imF.sitz === 0, geschuetz: !!SC.Fahrzeug.def(imF.f).geschuetz } : null }) : null);
     }
     // Fahrer eines bewaffneten Fahrzeugs im Survival: Zielkreis, rot mit Gegner darunter
     var imFz = this._imFahrzeug(), kreuz = null;
-    if(survival && imFz && imFz.sitz === 0 && SC.FAHRZEUGE[imFz.f.art].geschuetz){ var bz = this._bordZiel(imFz.f); kreuz = bz && bz.gegner ? "fahrzeug-ziel" : "fahrzeug"; }
+    if(survival && imFz && imFz.sitz === 0 && SC.Fahrzeug.def(imFz.f).geschuetz){ var bz = this._bordZiel(imFz.f); kreuz = bz && bz.gegner ? "fahrzeug-ziel" : "fahrzeug"; }
     ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen, leiste: survival ? k.rucksack.plaetze.slice(0, 9) : null, all: !!this.all, fadenkreuz: kreuz });
-    var fz = imFz && { panzerung: imFz.f.panzerung, max: SC.FAHRZEUGE[imFz.f.art].panzerung, name: SC.FAHRZEUGE[imFz.f.art].name, label: SC.FAHRZEUGE[imFz.f.art].unzerstoerbar ? SC.T.allSchild : SC.T.fahrzeugPanzerung };
+    var fz = imFz && { panzerung: imFz.f.panzerung, max: SC.Fahrzeug.def(imFz.f).panzerung, name: SC.Fahrzeug.def(imFz.f).name, label: SC.Fahrzeug.def(imFz.f).unzerstoerbar ? SC.T.allSchild : SC.T.fahrzeugPanzerung };
     ui.kampfHud(survival ? k : null, [], fz);
   };
 

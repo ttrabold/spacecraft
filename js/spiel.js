@@ -526,7 +526,7 @@ SC.Spiel.startpunkt = function(planet){
       if(n.modus && n.modus !== this._raumModus && this.spieler){ this._raumModus = n.modus; this.modus(n.modus); } // Modus legt der Gastgeber fest
     } else if(n.t === "spieler") rueck(this, "spieler", gast.spieler);
     else if(n.t === "verpufft" && n.pos && this.render && this.render.wesen){ this.render.wesen.funken([n.pos[0], n.pos[1] + 1, n.pos[2]], "#ffd95c", 30, this.spieler.pos); this.audio.spiele("zerfall");
-      var war = this._fzWar; if(war && war.f.id === n.id) this.ui.hinweis(SC.T.fahrzeugVerpufft.replace("{name}", SC.FAHRZEUGE[war.f.art].name), 4000); } // absetzen übernimmt _gastFahrzeuge
+      var war = this._fzWar; if(war && war.f.id === n.id) this.ui.hinweis(SC.T.fahrzeugVerpufft.replace("{name}", SC.Fahrzeug.def(war.f).name), 4000); } // absetzen übernimmt _gastFahrzeuge
   };
   // Gast, Survival: abgelehnter Block-Wunsch zurück in den Rucksack; passt ein gesetzter Block nicht mehr hinein, fliegt er als Kugel heraus
   SC.Spiel.prototype._blockZurueck = function(id, wunsch){

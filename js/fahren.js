@@ -32,7 +32,7 @@
     sp._ansichtVorher = sp.ansicht; sp.ansicht = "aussen"; sp.blick[0] = f.blick; sp.geschw = [0, 0, 0];
     this._fahrzeugFolgen(SC.Fahrzeug.sitzVon(this.welt, this._fzId()), true);
     this.audio.spiele("einsteigen");
-    this.ui.hinweis(this._tasten((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.FAHRZEUGE[f.art].name)), 3000);
+    this.ui.hinweis(this._tasten((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.Fahrzeug.def(f).name)), 3000);
   };
   S.aussteigen = function(){
     var sp = this.spieler, im = this._imFahrzeug();
@@ -56,7 +56,7 @@
   };
   S._platzGewechselt = function(f, sitz){
     this._fahrzeugFolgen({ f: f, sitz: sitz }, true);
-    this.ui.hinweis(this._tasten((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.FAHRZEUGE[f.art].name)), 2500);
+    this.ui.hinweis(this._tasten((sitz === 0 ? SC.T.fahrzeugFahrer : SC.T.fahrzeugMitfahrer).replace("{name}", SC.Fahrzeug.def(f).name)), 2500);
   };
   // Spieler steht wieder (pos: Aussteigeposition)
   S._ausgestiegen = function(pos){
@@ -79,7 +79,7 @@
   // Pro Bild, solange man sitzt (statt der Spielerphysik). Der Fahrer steuert; mit offenem Menü rollt das Fahrzeug aus.
   S._fahren = function(e, dt, offen){
     var im = this._imFahrzeug(); if(!im) return;
-    var f = im.f, d = SC.FAHRZEUGE[f.art];
+    var f = im.f, d = SC.Fahrzeug.def(f);
     if(im.sitz === 0) SC.Fahrzeug.schritt(this.welt, f, offen ? {} : { vor: e.vor, zurueck: e.zurueck, links: e.links, rechts: e.rechts, hoch: e.springen, runter: e.sinken }, dt);
     if(im.sitz === 0 && f.art === "raumschiff" && f.pos[1] >= SC.ALL_GRENZE && this._grenzeErreicht){ this._grenzeErreicht(f); if(this.all) return; }
     this._fahrzeugFolgen(im, false);
@@ -164,7 +164,7 @@
   // Verpufft: Funken wie bei Gegnern, Hinweis; wer drin saß (r.sitze), steht neben dem Fahrzeug
   S._fahrzeugVerpufft = function(f, r){
     var sitz = r.sitze ? r.sitze.indexOf(this._fzId()) : -1;
-    var sp = this.spieler, name = SC.FAHRZEUGE[f.art].name;
+    var sp = this.spieler, name = SC.Fahrzeug.def(f).name;
     if(this.render && this.render.wesen) this.render.wesen.funken([f.pos[0], f.pos[1] + 1, f.pos[2]], "#ffd95c", 30, sp.pos);
     this.audio.spiele("zerfall");
     if(sitz >= 0){ this._ausgestiegen(SC.Fahrzeug.aussteigePos(this.welt, f, sitz)); this.ui.hinweis((f.fundort ? SC.T.fahrzeugVerpufftFundort : SC.T.fahrzeugVerpufft).replace("{name}", name), 4000); }
@@ -173,7 +173,7 @@
   // Der Strahl beginnt auf Höhe des Rohrs, damit nichts zwischen Kamera und Fahrzeug als Ziel zählt.
   var BORD_REICHWEITE = 60;
   S._bordZiel = function(f){
-    var g = SC.FAHRZEUGE[f.art].geschuetz; if(!g) return null;
+    var g = SC.Fahrzeug.def(f).geschuetz; if(!g) return null;
     var w = this.welt, P = w.planet.groesse, k = this.spieler.kamera(), d = k.richtung, rohr = SC.Fahrzeug.dreh(f, g.rohr, P);
     var rk = [SC.mod(rohr[0] - k.pos[0] + P / 2, P) - P / 2, rohr[1] - k.pos[1], SC.mod(rohr[2] - k.pos[2] + P / 2, P) - P / 2];
     var t0 = Math.max(0, rk[0] * d[0] + rk[1] * d[1] + rk[2] * d[2]), st = [k.pos[0] + d[0] * t0, k.pos[1] + d[1] * t0, k.pos[2] + d[2] * t0];
@@ -192,7 +192,7 @@
   };
   // Bordgeschütz des Fahrers (Angriffstaste), mit Abklingzeit; t in ms
   S._bordschuss = function(f, t){
-    var g = SC.FAHRZEUGE[f.art].geschuetz;
+    var g = SC.Fahrzeug.def(f).geschuetz;
     if(!g || t < (this._bordBereit || 0)) return false;
     this._bordBereit = t + g.abklingen * 1000;
     // vom Rohr auf den Punkt unter dem Fadenkreuz
@@ -220,7 +220,7 @@
   // Hinweis, sobald man neben einem Fahrzeug steht; liefert, ob der Benutzen-Knopf sichtbar sein soll
   S._fahrzeugNah = function(){
     var sp = this.spieler, im = this._imFahrzeug(), f = im ? null : SC.Fahrzeug.naechstes(this.welt, sp.pos);
-    if(f && f !== this._fzHinweis && sp.modus !== "zuschauer") this.ui.hinweis(this._tasten(SC.T.fahrzeugEinsteigen.replace("{name}", SC.FAHRZEUGE[f.art].name)), 2500);
+    if(f && f !== this._fzHinweis && sp.modus !== "zuschauer") this.ui.hinweis(this._tasten(SC.T.fahrzeugEinsteigen.replace("{name}", SC.Fahrzeug.def(f).name)), 2500);
     this._fzHinweis = f;
     return !!(im || (f && sp.modus !== "zuschauer"));
   };

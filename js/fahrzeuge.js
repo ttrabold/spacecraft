@@ -6,6 +6,7 @@ SC.FAHRZEUGE = {
   // Offener Landgleiter: schnell, schwebt über Boden und Wasser, kein Geschütz
   gleiter: {
     tempo: 13, beschl: 18, lenk: 2.2, breite: 2.4, hoehe: 1.4, panzerung: 120, geschuetz: null, schwebt: 0.6, stufe: 1,
+    lack: [0, 1], bauRohr: [0, 0.75, -1.9],   // Lackteile im Modell; Rohr für ein selbst gebautes Geschütz (Stufe 6b)
     sitze: [[-0.45, 0.35, -0.2], [0.45, 0.35, -0.2], [-0.45, 0.35, 0.75], [0.45, 0.35, 0.75]],
     modell: [
       { w: 2.0, h: 0.45, d: 3.4, x: 0, y: 0.3, z: 0.1, farbe: "#d9c7a0" },          // Rumpf
@@ -24,7 +25,7 @@ SC.FAHRZEUGE = {
   },
   // Schwerer Geländewagen mit großen Rädern und Geschützturm
   buggy: {
-    tempo: 8.5, beschl: 10, lenk: 1.8, breite: 2.6, hoehe: 2.0, panzerung: 250, stufe: 1,
+    tempo: 8.5, beschl: 10, lenk: 1.8, breite: 2.6, hoehe: 2.0, panzerung: 250, stufe: 1, lack: [0, 1],
     geschuetz: { schaden: 18, tempo: 40, abklingen: 0.35, farbe: "#ff5a3c", rohr: [0, 2.1, -1.4] },
     sitze: [[-0.5, 0.75, -0.35], [0.5, 0.75, -0.35], [-0.5, 0.75, 0.65], [0.5, 0.75, 0.65]],
     modell: [
@@ -71,7 +72,7 @@ SC.FAHRZEUGE = {
   },
   // Kleiner Gleitjäger mit Cockpit und Flügeln, fliegt wie eine Drohne
   flieger: {
-    tempo: 11, beschl: 14, lenk: 2.0, breite: 2.6, hoehe: 1.6, panzerung: 160, fliegt: true, maxHoehe: 118, steigen: 6, sinken: 4,
+    tempo: 11, beschl: 14, lenk: 2.0, breite: 2.6, hoehe: 1.6, panzerung: 160, fliegt: true, maxHoehe: 118, steigen: 6, sinken: 4, lack: [0, 1, 3],
     geschuetz: { schaden: 14, tempo: 45, abklingen: 0.25, farbe: "#5ad1ff", rohr: [0, 0.9, -2.3] },
     sitze: [[-0.3, 0.55, -0.6], [0.3, 0.55, -0.6], [-0.3, 0.55, 0.3], [0.3, 0.55, 0.3]],
     modell: [
@@ -96,17 +97,55 @@ SC.FAHRZEUGE = {
 };
 (function(){ for(var a in SC.FAHRZEUGE){ SC.FAHRZEUGE[a].art = a; SC.FAHRZEUGE[a].name = SC.T.fahrzeuge[a]; } })();
 
+// Lackfarben für selbst gebaute Fahrzeuge (Stufe 6b), ohne Kosten
+SC.BAU_FARBEN = ["#d9c7a0", "#e0533a", "#ff9a3c", "#ffe14a", "#6fd13a", "#3fa0ff", "#7a4fc0", "#ff6fd8", "#f4f4ff", "#9aa0a8", "#2b2b2e", "#3fe0c8"];
+
 SC.Fahrzeug = { SCHWERKRAFT: 32 };
 (function(){
   var F = SC.Fahrzeug;
+  // Bauplan { motor 0–4, panzerung 0–4, waffe null | { stufe 0–4, kristall }, farbe } prüfen → bereinigter Bauplan oder null (z. B. für Nachrichten von Gästen)
+  F.gueltigeBau = function(b){
+    if(!b || typeof b !== "object") return null;
+    function stufe(s){ return typeof s === "number" && Math.floor(s) === s && s >= 0 && s <= 4; }
+    if(!stufe(b.motor) || !stufe(b.panzerung) || SC.BAU_FARBEN.indexOf(b.farbe) < 0) return null;
+    var w = null;
+    if(b.waffe){ if(!stufe(b.waffe.stufe) || !SC.CRAFTING_KRISTALLE[b.waffe.kristall]) return null; w = { stufe: b.waffe.stufe, kristall: b.waffe.kristall }; }
+    return { motor: b.motor, panzerung: b.panzerung, waffe: w, farbe: b.farbe };
+  };
+  // Werte und Modell einer Fahrzeugart nach Bauplan: Motor ×(1 + 0,12·Stufe), Panzerung ×(1 + 0,4·Stufe), Geschützschaden ×(1 + 0,25·Stufe); Stufe 0 = wie gefunden.
+  // Die Vorlage bleibt unverändert; übrige Werte kommen über die Prototypkette.
+  F.bauDef = function(art, bau){
+    var b = SC.FAHRZEUGE[art], d = Object.create(b);
+    d.tempo = b.tempo * (1 + 0.12 * bau.motor); d.beschl = b.beschl * (1 + 0.1 * bau.motor); d.panzerung = b.panzerung * (1 + 0.4 * bau.panzerung);
+    var modell = b.modell.map(function(t){ return t; });
+    (b.lack || []).forEach(function(i){ modell[i] = Object.assign({}, b.modell[i], { farbe: bau.farbe }); });
+    if(bau.waffe){
+      var g0 = b.geschuetz || { schaden: 12, tempo: 40, abklingen: 0.35, rohr: b.bauRohr }, farbe = SC.CRAFTING_KRISTALLE[bau.waffe.kristall].farbe;
+      d.geschuetz = { schaden: g0.schaden * (1 + 0.25 * bau.waffe.stufe), tempo: g0.tempo, abklingen: g0.abklingen, farbe: farbe, rohr: g0.rohr.slice() };
+      if(!b.geschuetz && b.bauRohr){
+        modell.push({ w: 0.12, h: 0.12, d: 0.9, x: b.bauRohr[0], y: b.bauRohr[1], z: b.bauRohr[2] + 0.45, farbe: "#3a3f4a" });
+        modell.push({ w: 0.16, h: 0.16, d: 0.05, x: b.bauRohr[0], y: b.bauRohr[1], z: b.bauRohr[2] - 0.02, farbe: farbe, leuchtet: true });
+      }
+    } else d.geschuetz = null;
+    d.modell = modell;
+    return d;
+  };
+  // Die Werte dieses Fahrzeugs (mit Bauplan angepasst, sonst die Vorlage); das Ergebnis wird am Fahrzeug zwischengespeichert
+  F.def = function(f){
+    if(!f.bau) return SC.FAHRZEUGE[f.art];
+    var k = f.art + JSON.stringify(f.bau);
+    if(f._defKey !== k){ f._defKey = k; f._def = F.bauDef(f.art, f.bau); }
+    return f._def;
+  };
   // Laub hält Fahrzeuge nicht auf (sonst hinge man im Wald ständig fest); es bleibt dabei stehen
   var DURCH = {}; DURCH[SC.B.BLAETTER] = true; F.DURCH = DURCH;
 
-  // o: { id, fundort, heim } – ohne id ein frei hingestelltes Fahrzeug
+  // o: { id, fundort, heim, bau } – ohne id ein frei hingestelltes Fahrzeug; bau = Bauplan eines selbst gebauten Fahrzeugs (Stufe 6b)
   F.neu = function(welt, art, pos, blick, o){
     o = o || {}; var d = SC.FAHRZEUGE[art];
     var f = { id: o.id || "frei-" + Math.random().toString(36).slice(2, 10), art: art, pos: pos.slice(), blick: blick || 0, geschw: [0, 0, 0], tempo: 0,
       panzerung: d.panzerung, fundort: o.fundort || null, heim: o.heim ? o.heim.slice() : null, sitze: [null, null, null, null], weg: false, wiederBei: null, aufBoden: false };
+    var bau = o.bau ? F.gueltigeBau(o.bau) : null; if(bau){ f.bau = bau; f.panzerung = F.def(f).panzerung; }
     welt.fahrzeuge.set(f.id, f);
     return f;
   };
@@ -133,7 +172,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   F.schritt = function(welt, f, e, dt){
     if(f.weg) return;
     if(dt > 0.05){ var n = Math.ceil(dt / 0.05); for(var i = 0; i < n; i++) F.schritt(welt, f, e, dt / n); return; }
-    var d = SC.FAHRZEUGE[f.art], P = welt.planet.groesse;
+    var d = SC.Fahrzeug.def(f), P = welt.planet.groesse;
     var gas = e ? (e.vor ? 1 : 0) - (e.zurueck ? 1 : 0) : 0, lenk = e ? (e.links ? 1 : 0) - (e.rechts ? 1 : 0) : 0;
     if(gas) f.tempo = Math.max(-d.tempo * 0.4, Math.min(d.tempo, f.tempo + gas * d.beschl * dt));
     else { f.tempo *= Math.max(0, 1 - 2.5 * dt); if(Math.abs(f.tempo) < 0.2) f.tempo = 0; }
@@ -180,10 +219,10 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     return [SC.mod(f.pos[0] + o[0] * c + o[2] * s, P), f.pos[1] + o[1], SC.mod(f.pos[2] - o[0] * s + o[2] * c, P)];
   }
   F.dreh = dreh;
-  F.sitzPos = function(f, sitz, P){ return dreh(f, SC.FAHRZEUGE[f.art].sitze[sitz], P); };
+  F.sitzPos = function(f, sitz, P){ return dreh(f, SC.Fahrzeug.def(f).sitze[sitz], P); };
   // Waagerechter Abstand (Ring) von pos zur Grundfläche, dazu der senkrechte Abstand zum Fahrzeugkörper
   function abstand(welt, f, pos){
-    var P = welt.planet.groesse, d = SC.FAHRZEUGE[f.art], hb = d.breite / 2;
+    var P = welt.planet.groesse, d = SC.Fahrzeug.def(f), hb = d.breite / 2;
     var dx = Math.max(0, Math.abs(SC.mod(pos[0] - f.pos[0] + P / 2, P) - P / 2) - hb), dz = Math.max(0, Math.abs(SC.mod(pos[2] - f.pos[2] + P / 2, P) - P / 2) - hb);
     var dy = pos[1] < f.pos[1] - SC.PHYSIK.hoehe ? f.pos[1] - SC.PHYSIK.hoehe - pos[1] : pos[1] > f.pos[1] + d.hoehe ? pos[1] - f.pos[1] - d.hoehe : 0;
     return { waagerecht: Math.hypot(dx, dz), senkrecht: dy };
@@ -205,7 +244,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   // Freier Platz zum Aussteigen: neben dem Sitz, dann im Umkreis bis 3 Blöcke um das Fahrzeug (je auf Fahrzeug- und eine Blockhöhe darüber),
   // sonst obenauf (notfalls höher)
   F.aussteigePos = function(welt, f, sitz){
-    var d = SC.FAHRZEUGE[f.art], P = welt.planet.groesse, o = d.sitze[sitz] || d.sitze[0], hb = d.breite / 2, kand = [];
+    var d = SC.Fahrzeug.def(f), P = welt.planet.groesse, o = d.sitze[sitz] || d.sitze[0], hb = d.breite / 2, kand = [];
     kand.push([(o[0] < 0 ? -1 : 1) * (hb + 0.45), 0, o[2]], [(o[0] < 0 ? 1 : -1) * (hb + 0.45), 0, o[2]]);
     for(var r = hb + 0.45; r <= hb + 3; r += 0.75) for(var k = 0; k < 16; k++){ var a = k / 16 * Math.PI * 2; kand.push([Math.sin(a) * r, 0, Math.cos(a) * r]); }
     for(var i = 0; i < kand.length; i++) for(var h = 0; h <= 1; h++){
@@ -270,7 +309,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   F.wiederkehr = function(welt, spielzeit){
     welt.fahrzeuge.forEach(function(f){
       if(!f.weg || f.wiederBei === null || spielzeit < f.wiederBei || !f.heim) return;
-      f.pos = f.heim.slice(); f.blick = 0; f.geschw = [0, 0, 0]; f.tempo = 0; f.panzerung = SC.FAHRZEUGE[f.art].panzerung;
+      f.pos = f.heim.slice(); f.blick = 0; f.geschw = [0, 0, 0]; f.tempo = 0; f.panzerung = SC.Fahrzeug.def(f).panzerung;
       f.weg = false; f.wiederBei = null; f.sitze = [null, null, null, null];
     });
   };
@@ -282,7 +321,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     var P = welt.planet.groesse, b = [a[0] + r[0] * reichweite, a[1] + r[1] * reichweite, a[2] + r[2] * reichweite], best = null;
     welt.fahrzeuge.forEach(function(f){
       if(f.weg) return;
-      var d = SC.FAHRZEUGE[f.art], p = [a[0] + SC.mod(f.pos[0] - a[0] + P / 2, P) - P / 2, f.pos[1], a[2] + SC.mod(f.pos[2] - a[2] + P / 2, P) - P / 2], t = SC.Wesen.strecke(a, b, p, d.breite, d.hoehe);
+      var d = SC.Fahrzeug.def(f), p = [a[0] + SC.mod(f.pos[0] - a[0] + P / 2, P) - P / 2, f.pos[1], a[2] + SC.mod(f.pos[2] - a[2] + P / 2, P) - P / 2], t = SC.Wesen.strecke(a, b, p, d.breite, d.hoehe);
       if(t >= 0 && (!best || t < best.t)) best = { f: f, t: t * reichweite };
     });
     return best;
@@ -296,14 +335,14 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     var r = { verpufft: false, ausgestiegen: [] };
     if(f.weg || !(menge > 0)) return r;
     f.panzerung = Math.max(0, f.panzerung - menge); f.zuletztGetroffen = spielzeit;
-    if(f.panzerung > 0 || SC.FAHRZEUGE[f.art].unzerstoerbar) return r; // das Raumschiff verpufft nie
+    if(f.panzerung > 0 || SC.Fahrzeug.def(f).unzerstoerbar) return r; // das Raumschiff verpufft nie
     r.verpufft = true; r.sitze = f.sitze.slice(); r.ausgestiegen = f.sitze.filter(function(id){ return id !== null; });
     f.sitze = [null, null, null, null]; f.tempo = 0; f.geschw = [0, 0, 0];
     if(f.fundort){ f.weg = true; f.wiederBei = spielzeit + F.WIEDERKEHR; } else welt.fahrzeuge.delete(f.id);
     return r;
   };
   F.erholung = function(f, dt, spielzeit){
-    var max = SC.FAHRZEUGE[f.art].panzerung;
+    var max = SC.Fahrzeug.def(f).panzerung;
     if(f.weg || f.panzerung >= max || spielzeit - (f.zuletztGetroffen === undefined ? -Infinity : f.zuletztGetroffen) < F.ERHOLUNG_NACH) return;
     f.panzerung = Math.min(max, f.panzerung + F.ERHOLUNG * dt);
   };
@@ -312,7 +351,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   F.rammen = function(welt, f, zeit){
     var v = Math.abs(f.tempo), aus = [];
     if(f.weg || v < 4) return aus;
-    var d = SC.FAHRZEUGE[f.art], P = welt.planet.groesse, m = f._gerammt || (f._gerammt = {}), rx = -Math.sin(f.blick) * Math.sign(f.tempo), rz = -Math.cos(f.blick) * Math.sign(f.tempo);
+    var d = SC.Fahrzeug.def(f), P = welt.planet.groesse, m = f._gerammt || (f._gerammt = {}), rx = -Math.sin(f.blick) * Math.sign(f.tempo), rz = -Math.cos(f.blick) * Math.sign(f.tempo);
     welt.wesen.forEach(function(g){
       if(g.art !== "gegner" || aus.some(function(a){ return a.boss; })) return;
       var gr = d.breite / 2 + (g.breite || 0.8) / 2 + 0.3;
@@ -330,13 +369,13 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   // --- Speichern: je Planet { id: {art, pos, blick, panzerung, fundort, heim, weg, wiederBei} }, ohne Sitze und Tempo ---
   F.inDaten = function(welt){
     var o = {};
-    welt.fahrzeuge.forEach(function(f, id){ o[id] = { art: f.art, pos: f.pos.slice(), blick: f.blick, panzerung: f.panzerung, fundort: f.fundort, heim: f.heim ? f.heim.slice() : null, weg: !!f.weg, wiederBei: f.wiederBei }; });
+    welt.fahrzeuge.forEach(function(f, id){ o[id] = { art: f.art, pos: f.pos.slice(), blick: f.blick, panzerung: f.panzerung, fundort: f.fundort, heim: f.heim ? f.heim.slice() : null, weg: !!f.weg, wiederBei: f.wiederBei, bau: f.bau || undefined }; });
     return o;
   };
   F.ausDaten = function(welt, o){
     for(var id in o || {}){
       var e = o[id]; if(!e || !SC.FAHRZEUGE[e.art] || !Array.isArray(e.pos)) continue;
-      var f = F.neu(welt, e.art, e.pos, +e.blick || 0, { id: id, fundort: e.fundort, heim: e.heim });
+      var f = F.neu(welt, e.art, e.pos, +e.blick || 0, { id: id, fundort: e.fundort, heim: e.heim, bau: e.bau });
       if(typeof e.panzerung === "number") f.panzerung = e.panzerung;
       f.weg = !!e.weg; f.wiederBei = typeof e.wiederBei === "number" ? e.wiederBei : null;
     }

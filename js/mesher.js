@@ -39,10 +39,56 @@ SC.Mesher = {};
     function ri(x, y, z){ return (y * R + z) * R + x; }
     function blockAn(x, y, z){ return y < 0 ? SC.B.GRUNDGESTEIN : y >= H ? SC.B.LUFT : bl[ri(x, y, z)]; }
 
+    // Sonderformen (def.form): Fackel/Kreuz, Zaun/Pfosten, Platten für Türen und Leitern. Licht aus der eigenen Zelle, alles im durchsichtigen Teil
+    // (doppelseitig gezeichnet, deshalb genügt eine Fläche je Ebene).
+    function viereck(puf, x, y, z, ecken, uv, L, fak, glueht){
+      var basis = puf.n;
+      for(var e = 0; e < 4; e++){
+        var c = ecken[e];
+        puf.p.push(x + c[0], y + c[1], z + c[2]);
+        puf.uv.push(e === 0 || e === 3 ? uv[0] : uv[2], e < 2 ? uv[1] : uv[3]);
+        puf.l.push(L.h * fak, L.b * (glueht ? 1 : fak));
+        puf.f.push(L.f[0], L.f[1], L.f[2]);
+      }
+      puf.i.push(basis, basis + 1, basis + 2, basis, basis + 2, basis + 3);
+      puf.n += 4;
+    }
+    function kasten(puf, x, y, z, a, b, uv, L, glueht, ohneUnten){
+      for(var f = 0; f < 6; f++){
+        if(ohneUnten && f === 3) continue;
+        var F = FL[f];
+        viereck(puf, x, y, z, F.e.map(function(c){ return [c[0] ? b[0] : a[0], c[1] ? b[1] : a[1], c[2] ? b[2] : a[2]]; }), uv, L, F.h, glueht);
+      }
+    }
+    function verbunden(id){ var d = SC.BLOECKE[id]; return d.form === "pfosten" || (d.fest && !d.durchsichtig); }
+    function formBlock(puf, x, y, z, rx, rz, id, def){
+      var zi = ri(rx, y, rz), lb = bk[zi] / 15, q = lb ? qu[zi] : 0;
+      if(def.leuchten){ lb = Math.max(lb, def.leuchten / 15); q = id; }
+      var L = { h: hi[zi] / 15, b: lb, f: q && SC.BLOECKE[q].lichtFarbe || [1, 0.9, 0.75] }, uv = SC.Mesher.uvFuer(def.seiten.seite), fm = def.form, gl = !!def.leuchten;
+      if(fm === "kreuz"){
+        viereck(puf, x, y, z, [[0.15, 0, 0.15], [0.85, 0, 0.85], [0.85, 1, 0.85], [0.15, 1, 0.15]], uv, L, 0.95, gl);
+        viereck(puf, x, y, z, [[0.85, 0, 0.15], [0.15, 0, 0.85], [0.15, 1, 0.85], [0.85, 1, 0.15]], uv, L, 0.95, gl);
+      } else if(fm === "pfosten"){
+        kasten(puf, x, y, z, [0.375, 0, 0.375], [0.625, 1, 0.625], uv, L, gl, true);
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(n){
+          if(!verbunden(blockAn(rx + n[0], y, rz + n[1]))) return;
+          [[0.3, 0.42], [0.65, 0.77]].forEach(function(h){
+            var a = n[0] > 0 ? [0.625, h[0], 0.4375] : n[0] < 0 ? [0, h[0], 0.4375] : [0.4375, h[0], n[1] > 0 ? 0.625 : 0];
+            var b = n[0] > 0 ? [1, h[1], 0.5625] : n[0] < 0 ? [0.375, h[1], 0.5625] : [0.5625, h[1], n[1] > 0 ? 1 : 0.375];
+            kasten(puf, x, y, z, a, b, uv, L, gl, true);
+          });
+        });
+      } else if(fm.typ === "platte"){
+        var t = 0.08, c = Math.max(t / 2, Math.min(1 - t / 2, fm.versatz));
+        kasten(puf, x, y, z, fm.achse === "x" ? [c - t / 2, 0, 0] : [0, 0, c - t / 2], fm.achse === "x" ? [c + t / 2, 1, 1] : [1, 1, c + t / 2], uv, L, gl, false);
+      }
+    }
+
     for(var y = 0; y < H; y++) for(var z = 0; z < 16; z++) for(var x = 0; x < 16; x++){
       var rx = x + M, rz = z + M, id = bl[ri(rx, y, rz)];
       if(id === SC.B.LUFT) continue;
       var def = SC.BLOECKE[id], dt = durch[id], puf = dt ? aus.durchsichtig : aus.fest;
+      if(def.form !== "wuerfel"){ formBlock(aus.durchsichtig, x, y, z, rx, rz, id, def); continue; }
       for(var f = 0; f < 6; f++){
         var F = FL[f], nx = rx + F.n[0], ny = y + F.n[1], nz = rz + F.n[2];
         if(ny < 0) continue;

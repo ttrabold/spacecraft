@@ -91,11 +91,13 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
   };
 
   // Kann an (x,y,z) ein Block gesetzt werden?
-  SC.kannSetzen = function(welt, spieler, x, y, z){
+  // id (optional): dünne, nicht feste Bauteile (Leiter, Fackel) dürfen sich mit dem Spieler überlappen
+  SC.kannSetzen = function(welt, spieler, x, y, z, id){
     if(spieler.modus === "zuschauer") return false;
     if(y < 1 || y >= SC.CHUNK.H) return false;
     var vorhanden = welt.holeBlock(x, y, z);
     if(vorhanden !== SC.B.LUFT && vorhanden !== SC.B.WASSER) return false;
+    if(id !== undefined && !SC.BLOECKE[id].fest) return true;
     var P = welt.planet.groesse, p = spieler.pos;
     // Abstand auf dem Ring, damit es auch am Rand stimmt
     var dx = SC.mod(x + 0.5 - p[0] + P / 2, P) - P / 2, dz = SC.mod(z + 0.5 - p[2] + P / 2, P) - P / 2;

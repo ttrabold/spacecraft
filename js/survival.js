@@ -26,10 +26,13 @@
     return isFinite(d) ? Math.min(1, this._abbau.t / d) : 0;
   };
 
-  S.setzeAusRucksack = function(x, y, z){
+  // ziel (optional): getroffener Block mit Normale; Bauteile wie Leiter und Tür wählen daraus ihre Richtung
+  S.setzeAusRucksack = function(x, y, z, ziel){
     var sp = this.spieler, rs = this.kampf.rucksack, s = rs.plaetze[sp.auswahl];
-    if(!s || s.block === undefined || !SC.kannSetzen(this.welt, sp, x, y, z)) return false;
-    if(!this.welt.setzeBlock(x, y, z, s.block, "spieler")) return false;
+    if(!s || s.block === undefined) return false;
+    var id = ziel ? SC.Bauteile.aufstellId(this.welt, s.block, ziel, sp.richtung()) : s.block;
+    if(!id || !SC.kannSetzen(this.welt, sp, x, y, z, id)) return false;
+    if(!this.welt.setzeBlock(x, y, z, id, "spieler")) return false;
     rs.verbrauche(sp.auswahl);
     return true;
   };
@@ -127,14 +130,14 @@
         else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE){
           var bw2 = SC.Kampf.bauwerkZuKiste(w, ziel.x, ziel.y, ziel.z), beute = SC.Kampf.oeffneKiste(w, k, ziel.x, ziel.y, ziel.z, bw2, SC.zufall((Math.random() * 4294967296) >>> 0));
           if(beute.length){ a.spiele("kiste"); this.beuteAuswerfen([ziel.x + 0.5, ziel.y + 0.5, ziel.z + 0.5], beute.map(SC.Beute.alsSache)); }
-        } else if(!(wdef && wdef.typ === "schwert")) this.setzeAusRucksack(ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz);
+        } else if(!(wdef && wdef.typ === "schwert")) this.setzeAusRucksack(ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, ziel);
       }
     } else if(!survival && !offen && !imFz && e.abbauen && this._fahrzeugAbbauen(ziel)){
       // Kreativ: frei hingestelltes Fahrzeug entfernt
     } else if(!survival && ziel && !offen){
       // Kreativ: sofort abbauen, Blöcke aus der Leiste setzen
       if(e.abbauen && SC.BLOECKE[w.holeBlock(ziel.x, ziel.y, ziel.z)].zerstoerbar) w.setzeBlock(ziel.x, ziel.y, ziel.z, SC.B.LUFT, "spieler");
-      else if(e.setzen){ var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz; if(SC.kannSetzen(w, sp, x, y, z)) w.setzeBlock(x, y, z, sp.schnellleiste[sp.auswahl], "spieler"); }
+      else if(e.setzen){ var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz; var bid = SC.Bauteile.aufstellId(w, sp.schnellleiste[sp.auswahl], ziel, sp.richtung()); if(bid && SC.kannSetzen(w, sp, x, y, z, bid)) w.setzeBlock(x, y, z, bid, "spieler"); }
     }
     if(!(survival && !offen && lebt)){ k.blocken(false); this.render.blocke(false); } // Blockhaltung löst sich bei Menü oder Niederlage
     this.render.wesen.risse(survival ? ziel : null, survival ? this.abbauAnteil(ziel) : 0, sp.pos);

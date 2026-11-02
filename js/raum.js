@@ -675,7 +675,7 @@ SC.RAUM_ABPRALL_MERKEN = 32; // Gastgeber: so viele an Gäste gemeldete Geschoss
 
 // --- Fahrzeuge im Raum (Stufe 4) ---
 // Der Gastgeber hält Sitze und Panzerung; der Fahrer rechnet sein Fahrzeug selbst und schickt die Lage mit seinem zustand (fz).
-// Nachrichten: einsteigen G→H {id}, aussteigen G→H, platz G→H, fzHinstellen G→H {art, pos, blick}, fzEntfernen G→H {id},
+// Nachrichten: einsteigen G→H {id}, aussteigen G→H, platz G→H, fzHinstellen G→H {art, pos, blick, bau?}, fzEntfernen G→H {id},
 // fahrzeuge H→G (15 Hz, Umkreis SC.RAUM_FZ_NAH) {liste: [{id, art, pos, blick, geschw, tempo, panzerung, sitze, weg, frei}]}, verpufft H→G {id, pos}.
 SC.RAUM_FZ_NAH = 96;
 (function(){
@@ -721,7 +721,15 @@ SC.RAUM_FZ_NAH = 96;
   HN.eintritt = function(c, n){ var f = schiffVon(this, c.id), o = Array.isArray(n.ort) && n.ort.length === 2 ? n.ort : null; if(!f || !SC.PLANETEN[n.id] || !o) return; this.gastAll = null; ruf(this.o.beiEintritt, f, n.id, o, n.schild); };
   HN.notsprung = function(c, n){ var f = schiffVon(this, c.id); if(!f) return; this.gastAll = null; ruf(this.o.beiNotsprung, f, n.schild); };
   HN.ping = function(c, n){ c.verb.sende({ t: "pong", z: n.z }); };
-  HN.fzHinstellen = function(c, n){ var p = vek(n.pos); if(this.welt && SC.FAHRZEUGE[n.art] && p) SC.Fahrzeug.neu(this.welt, n.art, p, zahl(n.blick) ? n.blick : 0); };
+  // Mit Bauplan (Fahrzeugbau, Stufe 6b): geprüft, mit eigener ID und „zuhause“ am Bauplatz; ohne Bauplan ein freies Fahrzeug (Kreativ)
+  HN.fzHinstellen = function(c, n){
+    var p = vek(n.pos); if(!this.welt || !SC.FAHRZEUGE[n.art] || !p) return;
+    var blick = zahl(n.blick) ? n.blick : 0;
+    if(n.bau === undefined || n.bau === null){ SC.Fahrzeug.neu(this.welt, n.art, p, blick); return; }
+    var bau = SC.Fahrzeug.gueltigeBau(n.bau); if(!bau) return;
+    var id = "bau-" + Math.random().toString(36).slice(2, 10);
+    SC.Fahrzeug.neu(this.welt, n.art, p, blick, { id: id, fundort: id, heim: p.slice(), bau: bau });
+  };
   HN.fzEntfernen = function(c, n){ var f = this.welt && this.welt.fahrzeuge.get(n.id); if(f && !f.fundort && f.sitze.every(function(x){ return x === null; })) this.welt.fahrzeuge.delete(f.id); };
 
   // --- Gast ---
@@ -729,7 +737,7 @@ SC.RAUM_FZ_NAH = 96;
   // Selbst ausgestiegen: bis die Liste des Gastgebers das zeigt, den eigenen Sitz darin nicht mehr beachten
   G.aussteigen = function(id){ this._fzRaus = id || true; this.sende({ t: "aussteigen" }); };
   G.platzWechseln = function(){ this.sende({ t: "platz" }); };
-  G.fzHinstellen = function(art, pos, blick){ this.sende({ t: "fzHinstellen", art: art, pos: pos.slice(), blick: blick }); };
+  G.fzHinstellen = function(art, pos, blick, bau){ this.sende({ t: "fzHinstellen", art: art, pos: pos.slice(), blick: blick, bau: bau }); };
   G.fzEntfernen = function(id){ this.sende({ t: "fzEntfernen", id: id }); };
   GN.fahrzeuge = function(n){
     var ich = this.figur.figurId, raus = this._fzRaus, noch = false, l = (n.liste || []).filter(function(e){ return e && SC.FAHRZEUGE[e.art] && vek(e.pos) && Array.isArray(e.sitze); });

@@ -141,7 +141,7 @@ test("Rucksack hat einen Handwerk-Knopf, der die Hand-Rezepte öffnet (#99)", fu
 });
 test("Werkbank-Block antippen öffnet das Menü (#99)", function(){
   var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), geoeffnet = null, frei = false; w.setzeBlock(3, 60, 3, SC.B.WERKBANK, "system");
-  var fake = { welt: w, kampf: {}, eingabe: { gebeMausFrei: function(){ frei = true; } }, ui: { zeigeWerkbank: function(k, o){ geoeffnet = o; } }, _weiter: function(){} };
+  var fake = { welt: w, kampf: {}, _fahrzeugBauer: SC.Spiel.prototype._fahrzeugBauer, eingabe: { gebeMausFrei: function(){ frei = true; } }, ui: { zeigeWerkbank: function(k, o){ geoeffnet = o; } }, _weiter: function(){} };
   gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 60, z: 3 }), true); wahr(geoeffnet && geoeffnet.station === "werkbank" && frei);
   geoeffnet = null; gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 59, z: 3 }), false); gleich(geoeffnet, null);
 });
@@ -196,7 +196,7 @@ test("Kreativ: Reiter Materialien legt Rohstoffe in den Rucksack (#99)", functio
 test("Kreativ: Werkbank und Truhe lassen sich antippen (#99)", function(){
   var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), offen = [];
   w.setzeBlock(3, 60, 3, SC.B.WERKBANK, "system"); w.setzeBlock(4, 60, 3, SC.B.TRUHE, "system");
-  var fake = { welt: w, daten: SC.Spielstand.neu({ name: "K", seedText: "k", modus: "kreativ" }), spieler: new SC.Spieler({ id: "a", pos: [3.5, 61, 6.5], modus: "kreativ" }), kampf: k2(), eingabe: { gebeMausFrei: function(){} }, _weiter: function(){},
+  var fake = { welt: w, _fahrzeugBauer: SC.Spiel.prototype._fahrzeugBauer, daten: SC.Spielstand.neu({ name: "K", seedText: "k", modus: "kreativ" }), spieler: new SC.Spieler({ id: "a", pos: [3.5, 61, 6.5], modus: "kreativ" }), kampf: k2(), eingabe: { gebeMausFrei: function(){} }, _weiter: function(){},
     ui: { zeigeWerkbank: function(){ offen.push("werkbank"); }, zeigeTruhe: function(){ offen.push("truhe"); } }, truheOeffnen: SC.Spiel.prototype.truheOeffnen };
   gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 60, z: 3 }), true); gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 4, y: 60, z: 3 }), true); gleich(offen.join(), "werkbank,truhe");
 });

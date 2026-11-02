@@ -93,3 +93,36 @@ test("Fahrzeug-Menü: zu wenig Rohstoffe und kein Platz sperren (#115)", functio
   var b = fzMenue([[SC.B.BRETTER, 20], [SC.B.SCHALTKREIS, 5], [SC.B.STEIN, 20]], false); b.w.querySelector('[data-aktion="rezept"][data-id="fz-gleiter"]').click(); b.w.querySelector('[data-aktion="herstellen"]').click();
   gleich(b.ort.gesetzt.length, 0, "ohne Platz nichts aufgestellt"); gleich(b.k.rucksack.hat(SC.B.BRETTER), 20, "nichts bezahlt");
 });
+// --- Aufstellen, Heimkehr, Mehrspieler (#116) ---
+function fzSpiel(extra){
+  var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })); for(var x = 0; x < 48; x++) for(var z = 0; z < 48; z++) for(var y = 1; y < 128; y++) w.setzeBlock(x, y, z, y <= 60 ? SC.B.STEIN : SC.B.LUFT, "system");
+  var sp = new SC.Spieler({ id: "a", pos: [24.5, 61, 24.5], modus: "survival" }), hinweise = []; sp.blick = [0, 0];
+  return Object.assign({ welt: w, spieler: sp, raum: null, ui: { hinweis: function(t){ hinweise.push(t); } }, hinweise: hinweise, _fahrzeugBauer: SC.Spiel.prototype._fahrzeugBauer }, extra || {});
+}
+test("Fahrzeug aufstellen: fünf Blöcke vor dem Spieler, zuhause am Bauplatz, mit Bauplan (#116)", function(){
+  var s = fzSpiel(), b = s._fahrzeugBauer(), pos = b.platz("buggy"); wahr(pos, "Platz gefunden"); wahr(Math.abs(pos[2] - (24.5 - 5)) < 2.5 && Math.abs(pos[0] - 24.5) < 2.5, "vor dem Spieler: " + pos);
+  var bau = { motor: 3, panzerung: 1, waffe: { stufe: 2, kristall: "gelb" }, farbe: SC.BAU_FARBEN[4] }, f = b.setze("buggy", bau, pos);
+  wahr(f && s.welt.fahrzeuge.get(f.id) === f, "steht in der Welt"); gleich(f.art, "buggy"); gleich(JSON.stringify(f.bau), JSON.stringify(bau)); gleich(f.fundort, f.id, "zuhause: bleibt erhalten"); gleich(JSON.stringify(f.heim), JSON.stringify(pos)); gleich(f.panzerung, SC.Fahrzeug.def(f).panzerung, "volle Panzerung");
+  wahr(f.id.indexOf("bau-") === 0, "eigene ID"); wahr(b.setze("gleiter", bau, b.platz("gleiter")).id !== f.id, "jedes Fahrzeug eine eigene ID");
+  var eng = fzSpiel(); for(var x = 10; x <= 40; x++) for(var z = 10; z <= 40; z++) for(var y = 61; y <= 126; y++) eng.welt.setzeBlock(x, y, z, SC.B.STEIN, "system"); eng.welt.setzeBlock(24, 61, 24, SC.B.LUFT, "system"); gleich(eng._fahrzeugBauer().platz("buggy"), null, "eingemauert: kein Platz");
+});
+test("Gebautes Fahrzeug verpufft nie wirklich: kehrt mit vollem Panzer und gleichem Bauplan zurück (#116)", function(){
+  var s = fzSpiel(), f = s._fahrzeugBauer().setze("gleiter", { motor: 4, panzerung: 4, waffe: null, farbe: SC.BAU_FARBEN[2] }, [30.5, 61.6, 30.5]), voll = f.panzerung;
+  var r = SC.Fahrzeug.schaden(s.welt, f, voll + 50, 100); gleich(r.verpufft, true); gleich(f.weg, true, "weg, aber nicht gelöscht"); wahr(s.welt.fahrzeuge.has(f.id), "bleibt in der Welt"); gleich(f.wiederBei, 100 + SC.Fahrzeug.WIEDERKEHR);
+  f.pos = [1, 1, 1]; SC.Fahrzeug.wiederkehr(s.welt, 100 + SC.Fahrzeug.WIEDERKEHR + 1); gleich(f.weg, false); gleich(JSON.stringify(f.pos), JSON.stringify([30.5, 61.6, 30.5])); gleich(f.panzerung, voll); gleich(f.bau.motor, 4);
+});
+test("Fahrzeugbau als Gast: Wunsch geht mit Bauplan an den Gastgeber, der prüft ihn (#116)", function(){
+  var u, a, bau = { motor: 2, panzerung: 3, waffe: { stufe: 0, kristall: "violett" }, farbe: SC.BAU_FARBEN[6] };
+  return mspRaum(1).then(function(x){ u = x; a = u.gs[0]; var w = u.welt; for(var xx = 0; xx < 16; xx++) for(var zz = 0; zz < 16; zz++) w.setzeBlock(xx, 61, zz, SC.B.STEIN, "system");
+    var sp = new SC.Spieler({ id: "g", pos: [8.5, 62, 8.5], modus: "survival" }), s = fzSpiel({ spieler: sp, raum: a.g, welt: a.welt });
+    var ergebnis = s._fahrzeugBauer().setze("gleiter", bau, [8.5, 62.6, 4.5]); gleich(ergebnis.art, "gleiter", "Gast bekommt eine Bestätigung"); return raumLauf(u.netz);
+  }).then(function(){
+    var f = null; u.welt.fahrzeuge.forEach(function(x){ if(x.bau) f = x; }); wahr(f, "beim Gastgeber aufgestellt"); gleich(JSON.stringify(f.bau), JSON.stringify(bau)); gleich(f.fundort, f.id, "zuhause"); wahr(f.panzerung > 0);
+    a.g.fzHinstellen("gleiter", [10.5, 62.6, 4.5], 0, { motor: 9, panzerung: 0, waffe: null, farbe: "#000000" }); return raumLauf(u.netz);
+  }).then(function(){ var n = 0; u.welt.fahrzeuge.forEach(function(x){ if(x.bau) n++; }); gleich(n, 1, "ungültiger Bauplan abgelehnt"); a.g.fzHinstellen("gleiter", [12.5, 62.6, 4.5], 0); return raumLauf(u.netz);
+  }).then(function(){ var frei = 0; u.welt.fahrzeuge.forEach(function(x){ if(!x.bau && !x.fundort) frei++; }); gleich(frei, 1, "ohne Bauplan weiterhin ein freies Fahrzeug (Kreativ)"); });
+});
+test("Werkbank übergibt den Fahrzeugbauer ans Menü (#116)", function(){
+  var s = fzSpiel(), geoeffnet = null; s.kampf = {}; s.eingabe = { gebeMausFrei: function(){} }; s._weiter = function(){}; s.ui.zeigeWerkbank = function(k, o){ geoeffnet = o; }; s.welt.setzeBlock(3, 61, 3, SC.B.WERKBANK, "system");
+  gleich(SC.Spiel.prototype.benutzeBlock.call(s, { x: 3, y: 61, z: 3 }), true); wahr(geoeffnet && typeof geoeffnet.fahrzeug.platz === "function" && typeof geoeffnet.fahrzeug.setze === "function", "o.fahrzeug da");
+});

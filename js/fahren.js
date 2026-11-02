@@ -124,6 +124,21 @@
     if(this.raum instanceof SC.Gast){ this.raum.fzHinstellen(art, p, g); return null; }
     return SC.Fahrzeug.neu(this.welt, art, p, g);
   };
+  // Fahrzeugbau an der Werkbank (Stufe 6b): platz(art) sucht eine freie Stelle 5 Blöcke vor dem Spieler, setze(art, bau, pos) stellt das Fahrzeug dort hin.
+  // Gebaute Fahrzeuge sind „zuhause“ am Bauplatz (fundort/heim): Sie verpuffen nicht endgültig, sondern kehren nach einer Weile mit voller Panzerung zurück.
+  // Ein Gast schickt den Wunsch samt Bauplan an den Gastgeber, der ihn prüft und das Fahrzeug aufstellt.
+  S._fahrzeugBauer = function(){
+    var s = this;
+    return {
+      platz: function(art){ var sp = s.spieler, g = sp.blick[0]; return SC.Fahrzeug.freieStelle(s.welt, sp.pos[0] - Math.sin(g) * 5, sp.pos[2] - Math.cos(g) * 5, art, 0, 6); },
+      setze: function(art, bau, pos){
+        var g = s.spieler.blick[0];
+        if(s.raum instanceof SC.Gast){ s.raum.fzHinstellen(art, pos, g, bau); return { art: art, bau: bau, pos: pos }; }
+        var id = "bau-" + Math.random().toString(36).slice(2, 10);
+        return SC.Fahrzeug.neu(s.welt, art, pos, g, { id: id, fundort: id, heim: pos, bau: bau });
+      }
+    };
+  };
   // Freie Fahrzeuge im Umkreis 64 entfernen (wer drin sitzt, steigt aus), unbesetzte Fundort-Fahrzeuge heimschicken
   S.fahrzeugeWeg = function(){
     var s = this, w = this.welt, sp = this.spieler, im = this._imFahrzeug();

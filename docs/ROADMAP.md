@@ -35,6 +35,8 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Aktueller Stand
 
+- 2026-11-02: Version 0.13.0 live (Test und `main`, 497 Tests grün). Behoben: #38 (Beutekugeln verdrängen die älteste), #39 teilweise (Ritter nach Hieb verwundbar; Rest in „Später“), #40 (Blocken bremst), #57 (Survival-Knopf im Entwicklerpanel), #58 (Leben/Schild am Namensschild der Mitspieler), #93 (Rucksack scrollt nicht seitwärts), #94 (mehr Nachtgegner: 5/10/14, Gesamtgrenze 20; Werte nach Feedback anpassen). Meilenstein Stufe 2 geschlossen. Tests unter WSL: `bash scripts/tests-wsl.sh`.
+- 2026-11-02: Musik: Design-Entwurf `superpowers/specs/2026-11-02-musik-design.md`, Hörprobe `tests/musik.html` mit neuem Komponisten (`js/musik-neu.js`) und neuen Klängen (`js/klang-neu.js`), noch nicht im Spiel. Wartet auf Hörurteil des Nutzers.
 - 2026-11-02: Gerätetest 0.12.0 erfolgreich, Stufe 5 abgeschlossen.
 - 2026-10-29: Version 0.12.0 live (Test und `main`, 492 Tests grün): Mit Controller verschwinden die Touch-Knöpfe bis zur nächsten Berührung (sie blieben vorher trotz Controller sichtbar); stattdessen Controller-Hilfe am rechten Rand mit farbigen Xbox-Tasten, Symbol und Text, je nach Lage (zu Fuß, Fahrzeug, All). Damit Stufe 5 (0.8.0 bis 0.12.0) komplett live, Issues #84–#92 erledigt.
 - 2026-10-29: Version 0.11.0 (490 Tests grün): Fahrzeugsicht – Verfolgerkamera im Fahrzeug höher/weiter hinten, Ich-Ansicht ohne Handwaffe, Bordgeschütz trifft den Punkt unter dem Fadenkreuz, eigener Zielkreis (rot mit Gegner). Im All schalten T/🎯/LB durch alle Planeten, Tipp auf die Sternenkarte wählt den nächstgelegenen. Mit verbundenem Controller nennen Hinweise und Cockpit die Xbox-Tasten, Touch-Knöpfe zeigen Ⓐ/Ⓑ/RT/LB … statt Symbolen.
@@ -61,6 +63,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Nächster Schritt
 
+- **Musik:** `tests/musik.html` anhören (Alt gegen Neu), Rückmeldung einholen; danach Plan schreiben und in drei Schritten ins Spiel bringen (Komponist, Klang, Orte). Offene Fragen im Spec.
 - **Gerätetest 0.12.0 (erledigt, erfolgreich):** ganzer Flug allein und gemeinsam, Tablet mit 🎯/⚡, auf iPhone/iPad Ton (auch mit Stummschalter) und Schnellleiste Platz 3–9, Platzwechsel, Spielanleitung; im All Sternenkarte, Marker, Lenken mit Maus/Wischen. Danach live, Stufe 5 abschließen. Nächste Ideen: Raumstationen (#69), Crafting (#15).
 - Danach: Feedback der Kinder zu Fahrzeugen (Werte in js/fahrzeuge.js: Tempo, Panzerung, Geschütz).
 - Offen, aber nicht in Stufe 4: #57 (Survival im Entwicklerpanel), #58 (Lebensanzeige für Mitspieler), #59 (Restpunkte Stufe 3).

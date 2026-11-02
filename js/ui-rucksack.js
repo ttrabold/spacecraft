@@ -100,7 +100,7 @@
         '<div class="rs-werte">' + esc(SC.T.stufe) + " " + w.stufe + " · " + esc(SC.T.werteName.lp) + " " + w.lpMax + " · " + esc(SC.T.werteName.schutz) + " " + w.schutz + (w.schildMax ? " · " + esc(SC.T.werteName.schild) + " " + w.schildMax : "") + "</div>" +
         '<div class="rs-detail">' + detail() + "</div></div>" +
         '<div class="rs-raster">' + rs.plaetze.map(platzHtml).join("") + "</div></div>" +
-        '<div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+        '<div class="reihe"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
         aktionen);
     }
     var aktionen = {
@@ -130,6 +130,7 @@
         rs.tausche(gewaehlt.i, ziel); gewaehlt = null; o.beiAenderung && o.beiAenderung(); zeichne();
       },
       wegwerfen: function(){ var s = rs.nimm(gewaehlt.i); gewaehlt = null; o.beiWegwerfen && o.beiWegwerfen(s); o.beiAenderung && o.beiAenderung(); zeichne(); },
+      handwerk: function(){ ui.zeigeWerkbank(kampf, { station: "hand", beiAenderung: o.beiAenderung, beiFertig: function(){ ui.zeigeRucksack(kampf, o); } }); },
       fertig: function(){ ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); }
     };
     zeichne();

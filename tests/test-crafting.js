@@ -109,3 +109,39 @@ test("Beute.baue: gleiches Format wie erzeuge, Seltenheit exakt (#98)", function
   ["id", "art", "stufe", "seltenheit", "werte", "sonder", "name"].forEach(function(k){ wahr(k in g, k); }); wahr(g.sonder, "legendär hat einen Sondereffekt");
   gleich(SC.Beute.baue(SC.zufall(9), { art: "helm", seltenheit: 0 }).stufe, 1);
 });
+function wb(o){ var w = document.createElement("div"), ui = ui2(w), k = k2(); return { w: w, ui: ui, k: k, o: Object.assign({ station: "werkbank", beiAenderung: function(){ wb.aend = (wb.aend || 0) + 1; } }, o || {}) }; }
+test("Werkbank-Menü: eine Karte je Rezept, Handwerk nur die Hand-Rezepte (#99)", function(){
+  var a = wb(); a.ui.zeigeWerkbank(a.k, a.o); gleich(a.w.querySelectorAll('[data-aktion="rezept"]').length, SC.REZEPTE.length);
+  var h = wb({ station: "hand" }); h.ui.zeigeWerkbank(h.k, h.o); gleich(h.w.querySelectorAll('[data-aktion="rezept"]').length, SC.REZEPTE.filter(function(r){ return r.station === "hand"; }).length);
+});
+test("Werkbank-Menü: Herstellen nur mit Rohstoffen, Ergebnis im Rucksack (#99)", function(){
+  var a = wb(); a.ui.zeigeWerkbank(a.k, a.o); a.w.querySelector('[data-aktion="rezept"][data-id="zaun"]').click();
+  var knopf = a.w.querySelector('[data-aktion="herstellen"]'); wahr(knopf && knopf.disabled, "ohne Bretter gesperrt");
+  a.k.rucksack.lege({ block: SC.B.BRETTER, anzahl: 6 }); a.ui.zeigeWerkbank(a.k, a.o); a.w.querySelector('[data-aktion="rezept"][data-id="zaun"]').click();
+  knopf = a.w.querySelector('[data-aktion="herstellen"]'); wahr(!knopf.disabled, "mit Brettern frei"); wb.aend = 0; knopf.click();
+  gleich(a.k.rucksack.hat(SC.B.ZAUN), 4); gleich(a.k.rucksack.hat(SC.B.BRETTER), 3); gleich(wb.aend, 1, "beiAenderung gerufen");
+});
+test("Werkbank-Menü: Waffe mit Metall und Kristall wählen (#99)", function(){
+  var a = wb(); a.k.rucksack.lege({ block: SC.B.TITAN, anzahl: 6 }); a.k.rucksack.lege({ block: SC.B.KRISTALL_ROT, anzahl: 2 });
+  a.ui.zeigeWerkbank(a.k, a.o); a.w.querySelector('[data-aktion="rezept"][data-id="laserschwert"]').click();
+  gleich(a.w.querySelectorAll('[data-aktion="metall"]').length, 6); gleich(a.w.querySelectorAll('[data-aktion="kristall"]').length, 6);
+  wahr(a.w.querySelector('[data-aktion="herstellen"]').disabled, "ohne Wahl gesperrt");
+  a.w.querySelector('[data-aktion="metall"][data-id="2:' + SC.B.TITAN + '"]').click(); a.w.querySelector('[data-aktion="kristall"][data-id="rot"]').click();
+  var knopf = a.w.querySelector('[data-aktion="herstellen"]'); wahr(!knopf.disabled); knopf.click();
+  var g = null; a.k.rucksack.plaetze.forEach(function(s){ if(s && s.gegenstand) g = s.gegenstand; }); wahr(g, "Schwert im Rucksack"); gleich(g.klinge, "#ff4a4a"); gleich(g.seltenheit, 2);
+});
+test("Werkbank-Menü: voller Rucksack meldet Hinweis, nichts verbraucht (#99)", function(){
+  var a = wb(); a.k.rucksack.lege({ block: SC.B.BRETTER, anzahl: 5 }); for(var i = 0; i < 35; i++) a.k.rucksack.lege({ gegenstand: { id: "x" + i } });
+  a.ui.zeigeWerkbank(a.k, a.o); a.w.querySelector('[data-aktion="rezept"][data-id="zaun"]').click(); a.w.querySelector('[data-aktion="herstellen"]').click();
+  gleich(a.k.rucksack.hat(SC.B.BRETTER), 5); gleich(a.k.rucksack.hat(SC.B.ZAUN), 0);
+});
+test("Rucksack hat einen Handwerk-Knopf, der die Hand-Rezepte öffnet (#99)", function(){
+  var a = wb(); a.ui.zeigeRucksack(a.k, {}); var kn = a.w.querySelector('[data-aktion="handwerk"]'); wahr(kn, "Knopf"); kn.click();
+  gleich(a.w.querySelectorAll('[data-aktion="rezept"]').length, 2); a.w.querySelector('[data-aktion="fertig"]').click(); wahr(a.w.querySelector(".rs-raster"), "zurück im Rucksack");
+});
+test("Werkbank-Block antippen öffnet das Menü (#99)", function(){
+  var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), geoeffnet = null, frei = false; w.setzeBlock(3, 60, 3, SC.B.WERKBANK, "system");
+  var fake = { welt: w, kampf: {}, eingabe: { gebeMausFrei: function(){ frei = true; } }, ui: { zeigeWerkbank: function(k, o){ geoeffnet = o; } }, _weiter: function(){} };
+  gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 60, z: 3 }), true); wahr(geoeffnet && geoeffnet.station === "werkbank" && frei);
+  geoeffnet = null; gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 59, z: 3 }), false); gleich(geoeffnet, null);
+});

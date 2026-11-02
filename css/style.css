@@ -167,3 +167,13 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
 .ch-taste.a{background:#2f8f3a;border-color:#6fd18a}.ch-taste.b{background:#b8323a;border-color:#ff7a80}.ch-taste.x{background:#2a5fbf;border-color:#7fb0ff}.ch-taste.y{background:#b89a1c;border-color:#ffe07a;color:#1b1b1b}
 .ch-taste.kreuz{border-radius:3px;font-size:10px}
 .ch-symbol{width:20px;text-align:center}
+
+/* Werkbank (Stufe 6a) */
+.wb{display:flex;flex-wrap:wrap;gap:14px}
+.wb-liste{flex:1 1 220px;min-width:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;align-content:start}
+.wb-detail{flex:2 1 280px;min-width:0;font-size:14px}.wb-detail h3{margin:0 0 6px}
+.wb-rezept{flex-direction:column;min-height:72px;padding:4px;font-size:11px}.wb-rezept.an{outline:3px solid #ffd95c}
+.wb-rezept img,.wb-opt img,.wb-kosten img{width:24px;height:24px;image-rendering:pixelated;vertical-align:middle}
+.wb-wahl{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:6px 0}
+.wb-opt{flex-direction:column;min-height:0;padding:3px 5px;font-size:10px;border:3px solid #3a3a5a}.wb-opt.an{outline:3px solid #ffd95c}
+.wb-kostenzeile{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.wb-kosten.fehlt{color:#ff7f7f}

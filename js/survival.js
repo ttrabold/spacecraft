@@ -43,6 +43,14 @@
     });
   };
 
+  // Antippen eines benutzbaren Blocks (Werkbank): öffnet das Menü. → true, wenn der Block benutzt wurde (dann nichts setzen)
+  S.benutzeBlock = function(ziel){
+    if(this.welt.holeBlock(ziel.x, ziel.y, ziel.z) !== SC.B.WERKBANK) return false;
+    var s = this; this.eingabe.gebeMausFrei();
+    this.ui.zeigeWerkbank(this.kampf, { station: "werkbank", beiFertig: function(){ s._weiter(); } });
+    return true;
+  };
+
   // Im Raum als Gastgeber würfelt und verteilt SC.Gastgeber#besiege (eigener Anteil über den Rückruf beiBeute)
   S.besiege = function(g){
     var k = this.kampf, gg = this.raum instanceof SC.Gastgeber ? this.raum : null, r = gg ? gg.besiege(g) : k.besiegtGegner(g), def = SC.GEGNER[g.gegnerArt] || {};
@@ -113,7 +121,8 @@
       else this._abbau = null;
       // Setzen, Kiste öffnen
       if(e.setzen && ziel){
-        if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gast) gast.kiste(ziel.x, ziel.y, ziel.z);
+        if(this.benutzeBlock(ziel)){ /* Werkbank geöffnet */ }
+        else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gast) gast.kiste(ziel.x, ziel.y, ziel.z);
         else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gastgeber){ if(gastgeber.oeffneKiste(ziel.x, ziel.y, ziel.z).length) a.spiele("kiste"); }
         else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE){
           var bw2 = SC.Kampf.bauwerkZuKiste(w, ziel.x, ziel.y, ziel.z), beute = SC.Kampf.oeffneKiste(w, k, ziel.x, ziel.y, ziel.z, bw2, SC.zufall((Math.random() * 4294967296) >>> 0));

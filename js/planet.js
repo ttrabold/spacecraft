@@ -25,7 +25,7 @@ SC.PALETTEN = {};
       schaltkreis: ["#2f8a5a", "#1f5c3c", "#ffd24a"], chitin: ["#8a6a3a", "#5c4423", "#c9a468"],
       werkbank_oben: ["#b88a52", "#6b4a2b", "#d9d9d9"], werkbank_seite: ["#946c3c", "#5c3f20", "#b9c2cc"],
       fackel: ["#8a5a2b", "#ff8a1a", "#ffe27a"], zaun: ["#a87a44", "#6b4a2b", "#c9a060"], leiter: ["#a07a4c", "#6b4a2b", "#b88f5d"],
-      tuer: ["#a87a44", "#5c3f20", "#ffd95c"], truhe_oben: ["#9a6a35", "#5a3a1b", "#c9a060"], truhe_seite: ["#9a6a35", "#5a3a1b", "#c9a060"]
+      tuer: ["#a87a44", "#5c3f20", "#ffd95c"], tuer_oben: ["#a87a44", "#5c3f20", "#9fd6f5"], truhe_oben: ["#9a6a35", "#5a3a1b", "#c9a060"], truhe_seite: ["#9a6a35", "#5a3a1b", "#c9a060"]
     },
     himmel: { tag: ["#7ec8ff", "#cfeaff"], daemmerung: ["#3b3a7a", "#ffb37a"], nacht: ["#070b24", "#1b2a55"] },
     sonne: "#fff6b0", mond: "#e6ecff", monde: 1

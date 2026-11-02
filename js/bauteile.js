@@ -40,17 +40,42 @@ SC.Bauteile = {};
     }
   };
 
-  var TUER = {}; TUER[B.TUER_X] = B.TUER_X_OFFEN; TUER[B.TUER_X_OFFEN] = B.TUER_X; TUER[B.TUER_Z] = B.TUER_Z_OFFEN; TUER[B.TUER_Z_OFFEN] = B.TUER_Z;
+  // Türen sind zwei Blöcke hoch: unten TUER_*, oben TUER_*_OBEN (eigene IDs, damit man darunter hindurchgehen und Abbauen/Speichern/Mehrspieler unverändert bleiben).
+  // Alte Einzeltüren ohne Oberteil funktionieren weiter.
+  var TUER = {}, OBEN = {}, UNTEN = {};   // TUER: Gegenstück offen/zu; OBEN: unten → oben; UNTEN: oben → unten
+  [[B.TUER_X, B.TUER_X_OFFEN, B.TUER_X_OBEN, B.TUER_X_OFFEN_OBEN], [B.TUER_Z, B.TUER_Z_OFFEN, B.TUER_Z_OBEN, B.TUER_Z_OFFEN_OBEN]].forEach(function(t){
+    TUER[t[0]] = t[1]; TUER[t[1]] = t[0]; TUER[t[2]] = t[3]; TUER[t[3]] = t[2];
+    OBEN[t[0]] = t[2]; OBEN[t[1]] = t[3]; UNTEN[t[2]] = t[0]; UNTEN[t[3]] = t[1];
+  });
   SC.Bauteile.istTuer = function(id){ return TUER[id] !== undefined; };
-  // Tür auf/zu. spieler: Liste von Figuren mit pos; beim Schließen darf niemand in der Tür stehen. → true, wenn sich etwas geändert hat.
-  // Der Wechsel läuft über setzeBlock("spieler"), damit Mehrspieler ihn wie jede Blockänderung überträgt.
+  SC.Bauteile.istTuerOben = function(id){ return UNTEN[id] !== undefined; };
+  // Das Gegenstück einer Türhälfte: Block-Zelle { y, id } über oder unter (y), wenn dort die passende Hälfte steht, sonst null
+  SC.Bauteile.tuerPartner = function(welt, x, y, z){
+    var id = welt.holeBlock(x, y, z);
+    if(OBEN[id] !== undefined){ var o = welt.holeBlock(x, y + 1, z); return UNTEN[o] !== undefined ? { y: y + 1, id: o } : null; }
+    if(UNTEN[id] !== undefined){ var u = welt.holeBlock(x, y - 1, z); return OBEN[u] !== undefined ? { y: y - 1, id: u } : null; }
+    return null;
+  };
+  // Block setzen; Türen belegen zwei Blöcke und brauchen beide Zellen frei (und keinen Spieler darin). → true, wenn gesetzt
+  SC.Bauteile.setze = function(welt, spieler, x, y, z, id){
+    var oben = OBEN[id];
+    if(!SC.kannSetzen(welt, spieler, x, y, z, id)) return false;
+    if(oben !== undefined && !SC.kannSetzen(welt, spieler, x, y + 1, z, oben)) return false;
+    if(!welt.setzeBlock(x, y, z, id, "spieler")) return false;
+    if(oben !== undefined) welt.setzeBlock(x, y + 1, z, oben, "spieler");
+    return true;
+  };
+  // Tür auf/zu, von beiden Hälften aus. spieler: Liste von Figuren mit pos; beim Schließen darf niemand in einer der beiden Zellen stehen.
+  // → true, wenn sich etwas geändert hat. Der Wechsel läuft über setzeBlock("spieler"), damit Mehrspieler ihn wie jede Blockänderung überträgt.
   SC.Bauteile.tuerUmschalten = function(welt, x, y, z, spieler){
-    var id = welt.holeBlock(x, y, z), neu = TUER[id]; if(neu === undefined) return false;
-    var schliesst = neu === B.TUER_X || neu === B.TUER_Z, P = welt.planet.groesse;
+    var id = welt.holeBlock(x, y, z); if(TUER[id] === undefined) return false;
+    var teil = SC.Bauteile.tuerPartner(welt, x, y, z), zellen = [{ y: y, id: id }]; if(teil) zellen.push(teil);
+    var schliesst = TUER[id] === B.TUER_X || TUER[id] === B.TUER_Z || TUER[id] === B.TUER_X_OBEN || TUER[id] === B.TUER_Z_OBEN, P = welt.planet.groesse;
     if(schliesst && (spieler || []).some(function(s){
       var dx = SC.mod(x + 0.5 - s.pos[0] + P / 2, P) - P / 2, dz = SC.mod(z + 0.5 - s.pos[2] + P / 2, P) - P / 2;
-      return Math.abs(dx) < 0.5 + SC.PHYSIK.breite / 2 && Math.abs(dz) < 0.5 + SC.PHYSIK.breite / 2 && y < s.pos[1] + SC.PHYSIK.hoehe && y + 1 > s.pos[1];
+      return Math.abs(dx) < 0.5 + SC.PHYSIK.breite / 2 && Math.abs(dz) < 0.5 + SC.PHYSIK.breite / 2 && zellen.some(function(c){ return c.y < s.pos[1] + SC.PHYSIK.hoehe && c.y + 1 > s.pos[1]; });
     })) return false;
-    return welt.setzeBlock(x, y, z, neu, "spieler");
+    var geaendert = false; zellen.forEach(function(c){ if(welt.setzeBlock(x, c.y, z, TUER[c.id], "spieler")) geaendert = true; });
+    return geaendert;
   };
 })();

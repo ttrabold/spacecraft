@@ -161,3 +161,38 @@ test("Hand im Survival zeigt den Block aus dem Rucksack, nicht aus der Kreativ-L
   sp.auswahl = 1; setze.call(fake); gleich(SC.Render.handId(sp), -1, "Waffe: kein Block in der Hand"); sp.auswahl = 2; setze.call(fake); gleich(SC.Render.handId(sp), -1, "leerer Platz");
   sp.modus = "kreativ"; sp.auswahl = 0; setze.call(fake); gleich(SC.Render.handId(sp), SC.B.GRAS, "Kreativ nutzt die Leiste"); sp.modus = "zuschauer"; gleich(SC.Render.handId(sp), -1);
 });
+function tuerWelt(){ var w = leereWelt(); for(var y = 64; y <= 66; y++) for(var z = 3; z <= 7; z++) if(z !== 5) w.setzeBlock(5, y, z, SC.B.STEIN, "system"); return w; }   // Wand in z-Richtung, Lücke bei z=5
+test("Tür ist zwei Blöcke hoch: Oberteile mit eigenen IDs (#106)", function(){
+  gleich(SC.B.TUER_X_OBEN, 58); gleich(SC.B.TUER_Z_OBEN, 59); gleich(SC.B.TUER_X_OFFEN_OBEN, 60); gleich(SC.B.TUER_Z_OFFEN_OBEN, 61);
+  [SC.B.TUER_X_OBEN, SC.B.TUER_Z_OBEN].forEach(function(id){ wahr(SC.BLOECKE[id].fest, "zu: fest"); }); [SC.B.TUER_X_OFFEN_OBEN, SC.B.TUER_Z_OFFEN_OBEN].forEach(function(id){ wahr(!SC.BLOECKE[id].fest, "offen: durchgängig"); });
+  [SC.B.TUER_X_OBEN, SC.B.TUER_Z_OBEN, SC.B.TUER_X_OFFEN_OBEN, SC.B.TUER_Z_OFFEN_OBEN].forEach(function(id){ gleich(SC.Abbau.ergibt(id), SC.B.TUER_X, "Abbau liefert die Tür"); wahr(SC.BLOECKE[id].name && SC.BLOECKE[id].zerstoerbar && !SC.BLOECKE[id].inAuswahl); gleich(SC.BLOECKE[id].form.typ, "platte"); wahr(SC.Mesher.atlasNamen.indexOf(SC.BLOECKE[id].seiten.seite) >= 0); });
+  gleich(SC.BLOECKE[SC.B.TUER_X_OBEN].form.achse, SC.BLOECKE[SC.B.TUER_X].form.achse, "Oberteil wie Unterteil ausgerichtet"); gleich(SC.BLOECKE[SC.B.TUER_Z_OFFEN_OBEN].form.versatz, SC.BLOECKE[SC.B.TUER_Z_OFFEN].form.versatz);
+});
+test("Tür aufstellen: zwei Blöcke, nur mit Platz darüber und ohne Spieler (#106)", function(){
+  var w = leereWelt(), sp = new SC.Spieler({ id: "a", pos: [2.5, 64, 2.5], modus: "survival" }), S = SC.Bauteile.setze;
+  gleich(S(w, sp, 5, 64, 5, SC.B.TUER_X), true); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X); gleich(w.holeBlock(5, 65, 5), SC.B.TUER_X_OBEN);
+  gleich(S(w, sp, 8, 64, 5, SC.B.TUER_Z), true); gleich(w.holeBlock(8, 65, 5), SC.B.TUER_Z_OBEN);
+  w.setzeBlock(10, 65, 5, SC.B.STEIN, "system"); gleich(S(w, sp, 10, 64, 5, SC.B.TUER_X), false, "Decke direkt darüber"); gleich(w.holeBlock(10, 64, 5), SC.B.LUFT, "nichts gesetzt");
+  sp.pos = [12.5, 65, 5.5]; gleich(S(w, sp, 12, 64, 5, SC.B.TUER_X), false, "Kopf des Spielers im oberen Block"); gleich(w.holeBlock(12, 64, 5), SC.B.LUFT);
+  gleich(S(w, sp, 14, 64, 5, SC.B.STEIN), true); gleich(w.holeBlock(14, 65, 5), SC.B.LUFT, "andere Blöcke bleiben einzeln");
+});
+test("Tür umschalten: beide Hälften, von oben oder unten, mit Spieler-Prüfung für beide Zellen (#106)", function(){
+  var w = leereWelt(), sp = new SC.Spieler({ id: "a", pos: [2.5, 64, 2.5], modus: "survival" }), U = SC.Bauteile.tuerUmschalten; SC.Bauteile.setze(w, sp, 5, 64, 5, SC.B.TUER_X);
+  gleich(U(w, 5, 65, 5, [sp]), true, "von oben antippen"); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X_OFFEN); gleich(w.holeBlock(5, 65, 5), SC.B.TUER_X_OFFEN_OBEN);
+  gleich(U(w, 5, 64, 5, [{ pos: [5.5, 65, 5.5] }]), false, "Spieler steht mit dem Kopf im oberen Block"); gleich(w.holeBlock(5, 65, 5), SC.B.TUER_X_OFFEN_OBEN);
+  gleich(U(w, 5, 64, 5, [sp]), true, "von unten schließen"); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X); gleich(w.holeBlock(5, 65, 5), SC.B.TUER_X_OBEN);
+  w.setzeBlock(8, 64, 5, SC.B.TUER_Z, "system"); gleich(U(w, 8, 64, 5, []), true, "alte Einzeltür ohne Oberteil geht weiter"); gleich(w.holeBlock(8, 64, 5), SC.B.TUER_Z_OFFEN);
+});
+test("Durch die offene Tür geht man hindurch, durch die geschlossene nicht (#106)", function(){
+  var w = tuerWelt(), sp = new SC.Spieler({ id: "a", pos: [2.5, 64, 2.5], modus: "survival" }); SC.Bauteile.setze(w, sp, 5, 64, 5, SC.B.TUER_X);
+  function lauf(){ var p = [3.6, 64, 5.5]; for(var i = 0; i < 12; i++) SC.bewegeKoerper(w, p, 0, 0.2, 0.6, 1.8); return p[0]; }
+  wahr(lauf() < 4.75, "zu: nur bis vor die Tür: " + lauf()); SC.Bauteile.tuerUmschalten(w, 5, 64, 5, [sp]); wahr(lauf() > 6, "offen: durch beide Blöcke hindurch: " + lauf());
+});
+test("Tür abgebaut: die andere Hälfte verschwindet mit (#106)", function(){
+  var w = leereWelt(), sp = new SC.Spieler({ id: "a", pos: [2.5, 64, 2.5], modus: "survival" }); SC.Bauteile.setze(w, sp, 5, 64, 5, SC.B.TUER_X); SC.Bauteile.setze(w, sp, 8, 64, 5, SC.B.TUER_Z);
+  var fake = { welt: w }; w.ereignisse.an("block", function(b){ SC.Spiel.prototype._tuerWeg.call(fake, b); });
+  w.setzeBlock(5, 64, 5, SC.B.LUFT, "spieler"); gleich(w.holeBlock(5, 65, 5), SC.B.LUFT, "unten abgebaut, oben weg");
+  w.setzeBlock(8, 65, 5, SC.B.LUFT, "spieler"); gleich(w.holeBlock(8, 64, 5), SC.B.LUFT, "oben abgebaut, unten weg");
+  w.setzeBlock(5, 64, 5, SC.B.TUER_X, "system"); w.setzeBlock(5, 65, 5, SC.B.STEIN, "system"); w.setzeBlock(5, 64, 5, SC.B.LUFT, "spieler"); gleich(w.holeBlock(5, 65, 5), SC.B.STEIN, "nur Türteile werden mitgenommen");
+  w.setzeBlock(5, 64, 5, SC.B.TUER_X, "system"); w.setzeBlock(5, 65, 5, SC.B.TUER_X_OFFEN_OBEN, "system"); w.setzeBlock(5, 64, 5, SC.B.TUER_X_OFFEN, "spieler"); gleich(w.holeBlock(5, 65, 5), SC.B.TUER_X_OFFEN_OBEN, "Auf- und Zuschalten lässt beide stehen");
+});

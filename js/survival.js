@@ -31,8 +31,7 @@
     var sp = this.spieler, rs = this.kampf.rucksack, s = rs.plaetze[sp.auswahl];
     if(!s || s.block === undefined) return false;
     var id = ziel ? SC.Bauteile.aufstellId(this.welt, s.block, ziel, sp.richtung()) : s.block;
-    if(!id || !SC.kannSetzen(this.welt, sp, x, y, z, id)) return false;
-    if(!this.welt.setzeBlock(x, y, z, id, "spieler")) return false;
+    if(!id || !SC.Bauteile.setze(this.welt, sp, x, y, z, id)) return false;
     rs.verbrauche(sp.auswahl);
     return true;
   };
@@ -74,6 +73,12 @@
     }
     this.eingabe.gebeMausFrei();
     this.ui.zeigeTruhe(this.kampf, anbieter, { beiFertig: function(){ s._weiter(); } });
+  };
+  // Eine Türhälfte wurde abgebaut: die andere verschwindet mit (ohne zweite Tür als Beute). Gilt für jede Quelle, auch Kreativ und Gäste.
+  S._tuerWeg = function(b){
+    var T = SC.Bauteile; if(!T.istTuer(b.alt) || T.istTuer(b.id)) return;
+    var py = T.istTuerOben(b.alt) ? b.y - 1 : b.y + 1, nb = this.welt.holeBlock(b.x, py, b.z);
+    if(T.istTuer(nb) && T.istTuerOben(nb) !== T.istTuerOben(b.alt)) this.welt.setzeBlock(b.x, py, b.z, SC.B.LUFT, b.quelle);
   };
   // Eine Truhe wurde abgebaut: ihr Inhalt fällt als Beute heraus (nur Einzelspieler und Gastgeber halten Inhalte)
   S._truheWeg = function(b){
@@ -166,7 +171,7 @@
       // Kreativ: sofort abbauen, Blöcke aus der Leiste setzen
       if(e.abbauen && SC.BLOECKE[w.holeBlock(ziel.x, ziel.y, ziel.z)].zerstoerbar) w.setzeBlock(ziel.x, ziel.y, ziel.z, SC.B.LUFT, "spieler");
       else if(e.setzen && this.benutzeBlock(ziel)){ /* Kreativ: Türen, Werkbank und Truhe benutzen */ }
-      else if(e.setzen){ var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz; var bid = SC.Bauteile.aufstellId(w, sp.schnellleiste[sp.auswahl], ziel, sp.richtung()); if(bid && SC.kannSetzen(w, sp, x, y, z, bid)) w.setzeBlock(x, y, z, bid, "spieler"); }
+      else if(e.setzen){ var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz; var bid = SC.Bauteile.aufstellId(w, sp.schnellleiste[sp.auswahl], ziel, sp.richtung()); if(bid) SC.Bauteile.setze(w, sp, x, y, z, bid); }
     }
     if(!(survival && !offen && lebt)){ k.blocken(false); this.render.blocke(false); } // Blockhaltung löst sich bei Menü oder Niederlage
     this.render.wesen.risse(survival ? ziel : null, survival ? this.abbauAnteil(ziel) : 0, sp.pos);

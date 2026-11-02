@@ -55,6 +55,7 @@ SC.Texturen = {};
         case "zaun": c = x % 3 === 0 ? d : zf() < 0.2 ? h : g; break;
         case "leiter": a = 0; if(x <= 2 || x >= 13 || y % 4 === 1){ c = x <= 2 || x >= 13 ? g : d; a = 255; } break;
         case "tuer": c = x < 2 || x > 13 || y < 2 || y > 13 ? d : (y === 7 || y === 8) ? d : g; if(x === 12 && (y === 7 || y === 8)) c = h; break;
+        case "tueroben": c = x < 2 || x > 13 || y < 2 || y > 13 ? d : (x >= 4 && x <= 11 && y >= 3 && y <= 9) ? h : g; break;
         case "basalt": r = zf(); c = r < 0.25 ? d : r < 0.33 ? h : g; if(x % 5 === 0 && y % 4 !== 0) c = d; break;
       }
       setze(x, y, c, a);

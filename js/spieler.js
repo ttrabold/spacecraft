@@ -43,6 +43,9 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
 
     var fb = SC.BLOECKE[welt.holeBlock(this.pos[0], this.pos[1] + 0.4, this.pos[2])];
     this.imWasser = !!fb && (fb.id === SC.B.WASSER || fb.id === SC.B.LAVA); this.imLava = !!fb && fb.id === SC.B.LAVA; // in Lava schwimmt man wie in Wasser
+    // Leiter: wer in einem Kletterblock steht (Füße oder Brust), hängt dort statt zu fallen
+    var kb1 = SC.BLOECKE[welt.holeBlock(this.pos[0], this.pos[1] + 0.4, this.pos[2])], kb2 = SC.BLOECKE[welt.holeBlock(this.pos[0], this.pos[1] + 1.2, this.pos[2])];
+    this.klettert = !this.fliegt && !!((kb1 && kb1.klettern) || (kb2 && kb2.klettern));
     // Untergrund: Eis rutscht, Schlamm bremst
     var unter = this.aufBoden && !this.fliegt ? welt.holeBlock(this.pos[0], this.pos[1] - 0.05, this.pos[2]) : SC.B.LUFT;
 
@@ -56,6 +59,7 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     if(unter === SC.B.SCHLAMM) tempo *= 0.6;
     tempo *= this.tempoFaktor || 1;
     if(this.blockt) tempo *= 0.5; // Blocken verlangsamt
+    if(this.klettert) tempo *= 0.5;
     if(unter === SC.B.EIS){ var k = Math.min(1, 3 * dt); this.geschw[0] += (vx * tempo - this.geschw[0]) * k; this.geschw[2] += (vz * tempo - this.geschw[2]) * k; }
     else { this.geschw[0] = vx * tempo; this.geschw[2] = vz * tempo; }
     // Ausweichen: kurzer Schub zusätzlich zur Laufrichtung
@@ -63,6 +67,8 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
 
     if(this.fliegt){
       this.geschw[1] = ((e.springen ? 1 : 0) - (e.sinken ? 1 : 0)) * F.fliegen * (this.flugFaktor || 1);
+    } else if(this.klettert){
+      this.geschw[1] = e.springen ? 4.5 : vor > 0 ? 3 : e.sinken || vor < 0 ? -3 : 0;   // vorwärts hoch, rückwärts/ducken runter, sonst hängen
     } else if(this.imWasser){
       this.geschw[1] -= 8 * dt;
       if(e.springen) this.geschw[1] = 3.5;

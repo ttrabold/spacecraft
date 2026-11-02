@@ -55,3 +55,25 @@ test("Setzen aus dem Rucksack: Leiter an die Wand, Tür nach Blick, Menge sinkt 
   sp.pos = [5.5, 64, 12.5]; sp.auswahl = 1; sp.blick = [-Math.PI / 2, 0];   // Blick entlang x
   gleich(setze.call(fake, 9, 64, 5, { x: 9, y: 63, z: 5, nx: 0, ny: 1, nz: 0 }), true); wahr([SC.B.TUER_X, SC.B.TUER_Z].indexOf(w.holeBlock(9, 64, 5)) >= 0, "Tür steht"); gleich(rs.hat(SC.B.TUER_X), 0);
 });
+test("Tür umschalten: auf, zu, nicht in den Spieler hinein (#104)", function(){
+  var w = leereWelt(), U = SC.Bauteile.tuerUmschalten; w.setzeBlock(5, 64, 5, SC.B.TUER_X, "system"); w.setzeBlock(8, 64, 5, SC.B.TUER_Z_OFFEN, "system");
+  var ereignisse = []; w.ereignisse.an("block", function(e){ ereignisse.push(e); });
+  gleich(U(w, 5, 64, 5, []), true); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X_OFFEN); gleich(U(w, 5, 64, 5, []), true); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X);
+  gleich(U(w, 8, 64, 5, []), true); gleich(w.holeBlock(8, 64, 5), SC.B.TUER_Z); gleich(ereignisse.length, 3, "jede Änderung ist ein Block-Ereignis"); gleich(ereignisse[0].quelle, "spieler");
+  w.setzeBlock(5, 64, 5, SC.B.TUER_X_OFFEN, "system"); gleich(U(w, 5, 64, 5, [{ pos: [5.5, 64, 5.5] }]), false, "zu, aber Spieler steht in der Tür"); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_X_OFFEN);
+  gleich(U(w, 5, 64, 5, [{ pos: [5.5, 64, 7.5] }]), true, "Spieler daneben"); gleich(U(w, 6, 64, 5, []), false, "keine Tür");
+});
+test("Tür antippen schaltet um, auch als Gast mit Verbindung (#104)", function(){
+  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.TUER_Z, "system"); var sp = new SC.Spieler({ id: "a", pos: [5.5, 64, 8.5], modus: "survival" });
+  var fake = { welt: w, spieler: sp, kampf: {}, eingabe: { gebeMausFrei: function(){} }, ui: {}, _blockErlaubt: function(){ return fake.ok; }, ok: true };
+  gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 5, y: 64, z: 5 }), true); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_Z_OFFEN);
+  fake.ok = false; gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 5, y: 64, z: 5 }), true, "behandelt, aber ohne Verbindung unverändert"); gleich(w.holeBlock(5, 64, 5), SC.B.TUER_Z_OFFEN);
+});
+test("Leiter: Spieler hängt, steigt mit Vorwärts und sinkt mit Rückwärts (#104)", function(){
+  var w = flacheWelt(); for(var y = 61; y <= 66; y++){ w.setzeBlock(4, y, 4, SC.B.LEITER_N, "system"); w.setzeBlock(4, y, 3, SC.B.STEIN, "system"); }   // Wand im Norden
+  var s = new SC.Spieler({ id: "a", pos: [4.5, 61, 4.5], blick: [0, 0], modus: "survival" }); s.schritt(w, ruhe, 1 / 60);
+  var hoch = Object.assign({}, ruhe, { vor: true }); for(var i = 0; i < 60; i++) s.schritt(w, hoch, 1 / 60); wahr(s.pos[1] > 62.5, "steigt: " + s.pos[1]); gleich(s.klettert, true);
+  var h = s.pos[1]; for(var j = 0; j < 60; j++) s.schritt(w, ruhe, 1 / 60); wahr(Math.abs(s.pos[1] - h) < 0.05, "hängt ohne Eingabe: " + (s.pos[1] - h));
+  for(var k = 0; k < 60; k++) s.schritt(w, Object.assign({}, ruhe, { zurueck: true }), 1 / 60); wahr(s.pos[1] < h - 1, "sinkt");
+  var f = new SC.Spieler({ id: "b", pos: [2.5, 66, 2.5], blick: [0, 0], modus: "survival" }); for(var m = 0; m < 30; m++) f.schritt(w, ruhe, 1 / 60); wahr(f.pos[1] < 65, "ohne Leiter fällt man");
+});

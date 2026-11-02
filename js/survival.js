@@ -48,7 +48,12 @@
 
   // Antippen eines benutzbaren Blocks (Werkbank): öffnet das Menü. → true, wenn der Block benutzt wurde (dann nichts setzen)
   S.benutzeBlock = function(ziel){
-    if(this.welt.holeBlock(ziel.x, ziel.y, ziel.z) !== SC.B.WERKBANK) return false;
+    var id = this.welt.holeBlock(ziel.x, ziel.y, ziel.z);
+    if(SC.Bauteile.istTuer(id)){
+      if(!this._blockErlaubt || this._blockErlaubt()) SC.Bauteile.tuerUmschalten(this.welt, ziel.x, ziel.y, ziel.z, [this.spieler]);
+      return true;
+    }
+    if(id !== SC.B.WERKBANK) return false;
     var s = this; this.eingabe.gebeMausFrei();
     this.ui.zeigeWerkbank(this.kampf, { station: "werkbank", beiFertig: function(){ s._weiter(); } });
     return true;

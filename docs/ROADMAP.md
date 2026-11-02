@@ -35,6 +35,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Aktueller Stand
 
+- 2026-11-02: Gerätetest 0.12.0 erfolgreich, Stufe 5 abgeschlossen.
 - 2026-10-29: Version 0.12.0 live (Test und `main`, 492 Tests grün): Mit Controller verschwinden die Touch-Knöpfe bis zur nächsten Berührung (sie blieben vorher trotz Controller sichtbar); stattdessen Controller-Hilfe am rechten Rand mit farbigen Xbox-Tasten, Symbol und Text, je nach Lage (zu Fuß, Fahrzeug, All). Damit Stufe 5 (0.8.0 bis 0.12.0) komplett live, Issues #84–#92 erledigt.
 - 2026-10-29: Version 0.11.0 (490 Tests grün): Fahrzeugsicht – Verfolgerkamera im Fahrzeug höher/weiter hinten, Ich-Ansicht ohne Handwaffe, Bordgeschütz trifft den Punkt unter dem Fadenkreuz, eigener Zielkreis (rot mit Gegner). Im All schalten T/🎯/LB durch alle Planeten, Tipp auf die Sternenkarte wählt den nächstgelegenen. Mit verbundenem Controller nennen Hinweise und Cockpit die Xbox-Tasten, Touch-Knöpfe zeigen Ⓐ/Ⓑ/RT/LB … statt Symbolen.
 - 2026-10-29: Version 0.10.2 (480 Tests grün): Laser im All ging beim zweiten Flug nicht (Abklingsperre aus dem vorigen Flug blieb stehen); Meldungen überlagerten auf Handy/Tablet die Knöpfe 🎯/⚡ – Ziel und „Erst ein Ziel wählen“ stehen nur noch im Cockpit (blinkt bei ⚡ ohne Ziel), Meldungen unter dem Cockpit, auf niedrigen Bildschirmen kompakter, Sternenkarte dort neben ☰.
@@ -60,7 +61,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Nächster Schritt
 
-- **Gerätetest 0.12.0 (live):** ganzer Flug allein und gemeinsam, Tablet mit 🎯/⚡, auf iPhone/iPad Ton (auch mit Stummschalter) und Schnellleiste Platz 3–9, Platzwechsel, Spielanleitung; im All Sternenkarte, Marker, Lenken mit Maus/Wischen. Danach live, Stufe 5 abschließen. Nächste Ideen: Raumstationen (#69), Crafting (#15).
+- **Gerätetest 0.12.0 (erledigt, erfolgreich):** ganzer Flug allein und gemeinsam, Tablet mit 🎯/⚡, auf iPhone/iPad Ton (auch mit Stummschalter) und Schnellleiste Platz 3–9, Platzwechsel, Spielanleitung; im All Sternenkarte, Marker, Lenken mit Maus/Wischen. Danach live, Stufe 5 abschließen. Nächste Ideen: Raumstationen (#69), Crafting (#15).
 - Danach: Feedback der Kinder zu Fahrzeugen (Werte in js/fahrzeuge.js: Tempo, Panzerung, Geschütz).
 - Offen, aber nicht in Stufe 4: #57 (Survival im Entwicklerpanel), #58 (Lebensanzeige für Mitspieler), #59 (Restpunkte Stufe 3).
 - Nächste Stufe: 5 (Raumschiffe, nahtloser Flug zu anderen Planeten).

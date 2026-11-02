@@ -73,7 +73,7 @@ SC.Entwickler = {};
       '<div class="ew-gruppe"><b>' + esc(T.survival) + "</b>" +
       '<div class="ew-reihe"><select id="ew-art">' + Object.keys(SC.GEGNER).map(function(a){ return '<option value="' + a + '">' + esc(T.gegner[a]) + "</option>"; }).join("") + '</select><input id="ew-gstufe" type="number" min="1" max="30" value="3"><button data-ew="gegner">' + esc(T.ewErscheinen) + '</button><button data-ew="gegner-weg">' + esc(T.ewGegnerWeg) + "</button></div>" +
       '<div class="ew-reihe"><select id="ew-gart">' + Object.keys(SC.GEGENSTAENDE).map(function(a){ return '<option value="' + a + '">' + esc(T.gegenstand[a][0]) + "</option>"; }).join("") + '</select><select id="ew-selt">' + [0, 1, 2, 3, 4].map(function(i){ return '<option value="' + i + '">' + esc(T.seltenheitName[i]) + "</option>"; }).join("") + '</select><button data-ew="gegenstand">' + esc(T.ewErzeugen) + "</button></div>" +
-      '<div class="ew-reihe"><input id="ew-sstufe" type="number" min="1" max="30" value="' + (s.kampf ? s.kampf.werte.stufe : 1) + '"><button data-ew="stufe">' + esc(T.ewStufeSetzen) + '</button><button data-ew="bauwerke">' + esc(T.ewBauwerkeReset) + "</button></div>" +
+      '<div class="ew-reihe"><input id="ew-sstufe" type="number" min="1" max="30" value="' + (s.kampf ? s.kampf.werte.stufe : 1) + '"><button data-ew="stufe">' + esc(T.ewStufeSetzen) + '</button><button data-ew="bauwerke">' + esc(T.ewBauwerkeReset) + '</button><button data-ew="rohstoffe">' + esc(T.ewRohstoffe) + "</button></div>" +
       '<label class="ew-zeile"><input type="checkbox" id="ew-unverwundbar"' + (s.kampf && s.kampf.unverwundbar ? " checked" : "") + "> " + esc(T.ewUnverwundbar) + "</label></div>" +
       // Planeten
       '<div class="ew-gruppe"><b>' + esc(T.ewPlanet) + '</b><div class="ew-reihe"><select id="ew-planet">' + SC.PLANET_REIHENFOLGE.map(function(id){ return '<option value="' + id + '"' + (s.welt && s.welt.planet.id === id ? " selected" : "") + ">" + esc(SC.PLANETEN[id].name) + "</option>"; }).join("") + '</select><button data-ew="planet"' + (s.rolle === "gast" ? " disabled" : "") + ">" + esc(T.ewReisen) + "</button></div></div>" +
@@ -118,6 +118,10 @@ SC.Entwickler = {};
     if(a === "gegenstand" && s.kampf){
       var sel = +this.el.querySelector("#ew-selt").value, g = SC.Beute.erzeuge(SC.zufall((Math.random() * 4294967296) >>> 0), { stufe: s.kampf.werte.stufe, art: this.el.querySelector("#ew-gart").value, mindest: sel });
       g.seltenheit = sel; s.kampf.rucksack.lege({ gegenstand: g });
+    }
+    if(a === "rohstoffe" && s.kampf){   // Crafting testen: je 16 Erze, Kristalle und Teile, dazu Holz, Stein, Sand und Leuchtpilze
+      for(var rid = SC.B.EISENERZ; rid <= SC.B.CHITIN; rid++) s.kampf.rucksack.lege({ block: rid, anzahl: 16 });
+      [[SC.B.STAMM, 32], [SC.B.STEIN, 32], [SC.B.SAND, 16], [SC.B.LEUCHTPILZ, 8], [SC.B.BRETTER, 32]].forEach(function(p){ s.kampf.rucksack.lege({ block: p[0], anzahl: p[1] }); });
     }
     if(a === "stufe" && s.kampf){ s.kampf.werte.stufe = Math.max(1, Math.min(30, +this.el.querySelector("#ew-sstufe").value || 1)); s.kampf.werte.erfahrung = 0; s.kampf.ruestungAnwenden(); s.kampf.werte.lp = s.kampf.werte.lpMax; }
     if(a === "bauwerke" && s.daten.planeten){ var pl = s.daten.planeten[s.welt.planet.id]; pl.geraeumt = {}; if(s.auftauchen){ s.auftauchen.besiegt = {}; } }

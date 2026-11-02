@@ -141,7 +141,7 @@ SC.T = {
   ewBauwerk: { dungeon: "Dungeon", herrenhaus: "Herrenhaus", station: "Station", lager: "Lager" },
   ewFlug: "Fluggeschwindigkeit",
   ewGrenzen: "Chunk-Grenzen anzeigen",
-  ewErscheinen: "Erscheinen", ewGegnerWeg: "Alle Gegner weg", ewErzeugen: "In den Rucksack", ewStufeSetzen: "Stufe setzen", ewBauwerkeReset: "Bauwerke zurücksetzen", ewUnverwundbar: "Unverwundbar",
+  ewErscheinen: "Erscheinen", ewGegnerWeg: "Alle Gegner weg", ewErzeugen: "In den Rucksack", ewStufeSetzen: "Stufe setzen", ewBauwerkeReset: "Bauwerke zurücksetzen", ewRohstoffe: "Rohstoffe geben", ewUnverwundbar: "Unverwundbar",
   brauchtNeuereVersion: "Diese Welt braucht eine neuere Spielversion.",
   importKaputt: "Diese Datei ist keine Spacecraft-Welt oder sie ist beschädigt.",
   importZuNeu: "Diese Welt stammt aus einer neueren Spielversion. Bitte das Spiel aktualisieren.",
@@ -235,6 +235,16 @@ SC.T = {
         "Im Rucksack (E oder ▦) legst du Waffen und Rüstung an. Mit dem Schwert kannst du blocken.",
         "In Dungeons, Herrenhäusern, Stationen und Lagern warten Schatzkisten, stärkere Gegner und Bosse.",
         "Ausweichen (Q) hilft, wenn es eng wird."
+      ]],
+      ["Rohstoffe und Handwerk", [
+        "Erze und Kristalle liegen in Höhlen, in Bauwerken und auf fremden Planeten. Je tiefer und weiter weg, desto seltener.",
+        "Eisenerz findest du in Höhlen des Startplaneten, Titan tief unten, Glutstahl auf Glutfrost, Moorsilber auf Rankenmoor und Sternenmetall bei Bossen.",
+        "Besiegte Gegner lassen Teile fallen, zum Beispiel Schaltkreise und Chitinplatten.",
+        "Im Rucksack gibt es den Knopf Handwerk: Dort baust du aus Holz und Stein eine Werkbank.",
+        "Stell die Werkbank auf und tippe sie an. Dort baust du Fenster, Fackeln, Zäune, Leitern, Türen und Truhen.",
+        "Laserschwert, Blaster und Rüstung baust du aus Metall: Je seltener das Metall, desto stärker. Die Farbe von Klinge und Strahl bestimmt der Kristall (Blau, Grün, Rot, Gelb, Violett oder Weiß).",
+        "Gefundene Waffen und Rüstung sind seltener geworden, richtig gute lassen nur noch Bosse fallen.",
+        "Türen öffnest und schließt du durch Antippen. Auf Leitern kletterst du mit Vorwärts hoch und mit Rückwärts runter. In Truhen lagerst du Sachen, auch gemeinsam mit anderen."
       ]],
       ["Fahrzeuge", [
         "Den Schwebeflitzer findest du am Startpunkt. Kraterkäfer stehen bei Lagern, Kometenjäger bei Stationen, Schwebeflitzer auch bei Herrenhäusern.",

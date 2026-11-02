@@ -108,7 +108,7 @@
           a.spiele("schwert");
           s._hiebN = (s._hiebN || 0) + 1; s._hiebKombo = akt.faust ? 3 : akt.kombo; s.render.hieb(s._hiebKombo); // sichtbarer Schwung, im Raum als hieb {n, kombo} an die anderen
           // Funkenhieb: der dritte Hieb der Kombo schleudert eine Welle nach vorn
-          if(akt.funkenhieb){ var fr = sp.richtung(); s._spielerSchuss({ pos: sp.augen(), richtung: fr, tempo: 22, schaden: akt.schaden, team: "spieler", art: "laser", lebensdauer: 0.8, farbe: SC.RenderWesen.klingenFarbe(waffe.seltenheit) }); }
+          if(akt.funkenhieb){ var fr = sp.richtung(); s._spielerSchuss({ pos: sp.augen(), richtung: fr, tempo: 22, schaden: akt.schaden, team: "spieler", art: "laser", lebensdauer: 0.8, farbe: SC.Beute.klingenFarbe(waffe) }); }
           var pz = SC.Raum.pvpZiele(raum, raum && !gast ? s.raumIch(offen) : null); // Spaßkampf: Mitspieler im Bogen
           k.hiebZiele(akt, pz).forEach(function(g){ var d = ring(w, sp.pos, g.pos);
             if(g.art === "spieler"){ if(gast) gast.pvpAngriff(g.id, akt.schaden, [d[0], 0, d[2]]); else gastgeber.pvpTrifft(g.id, akt.schaden, [d[0], 0, d[2]], s.daten.spieler.figurId, null); a.spiele("treffer"); return; }

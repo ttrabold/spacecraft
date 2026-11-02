@@ -19,8 +19,8 @@ SC.Figur = {
     if(!waffe) return;
     var schwert = waffe.art === "laserschwert";
     w.klinge.visible = schwert; w.lauf.visible = !schwert;
-    if(schwert) w.klinge.material.color.set(SC.RenderWesen.klingenFarbe(waffe.seltenheit || 0));
-    else w.lauf.material.color.set(waffe.seltenheit ? SC.SELTENHEIT[waffe.seltenheit].farbe : "#2a2d36").multiplyScalar(waffe.seltenheit ? 0.6 : 1);
+    if(schwert) w.klinge.material.color.set(SC.Beute.klingenFarbe(waffe));
+    else w.lauf.material.color.set(waffe.klinge || (waffe.seltenheit ? SC.SELTENHEIT[waffe.seltenheit].farbe : "#2a2d36")).multiplyScalar(waffe.klinge || waffe.seltenheit ? 0.6 : 1);
   },
   // Blockfigur in Spielerfarbe mit Rüstungsteilen (unsichtbar bis ausgerüstet) und Waffe in der rechten Hand
   baue: function(farbe){

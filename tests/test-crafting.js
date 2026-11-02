@@ -145,3 +145,17 @@ test("Werkbank-Block antippen öffnet das Menü (#99)", function(){
   gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 60, z: 3 }), true); wahr(geoeffnet && geoeffnet.station === "werkbank" && frei);
   geoeffnet = null; gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 59, z: 3 }), false); gleich(geoeffnet, null);
 });
+test("Klingenfarbe: Kristall, sonst Seltenheit (#100)", function(){
+  gleich(SC.Beute.klingenFarbe({ klinge: "#ff4a4a", seltenheit: 2 }), "#ff4a4a"); gleich(SC.Beute.klingenFarbe({ seltenheit: 0 }), "#bfe8ff"); gleich(SC.Beute.klingenFarbe({ seltenheit: 3 }), SC.SELTENHEIT[3].farbe);
+  gleich(SC.RenderWesen.klingenFarbe(4), SC.SELTENHEIT[4].farbe, "alte Schreibweise bleibt");
+  gleich(SC.Beute.strahlFarbe({ klinge: "#3fe06a", seltenheit: 1 }), "#3fe06a"); gleich(SC.Beute.strahlFarbe({ seltenheit: 1 }), SC.SELTENHEIT[1].farbe);
+});
+test("Gebauter Blaster schießt in Kristallfarbe, Mitspieler sehen sie (#100)", function(){
+  var k = k2(), g = SC.Beute.baue(SC.zufall(4), { art: "blasterpistole", seltenheit: 1, klinge: "#ffe14a" }); k.ausruestung.waffe = g; k.rucksack.plaetze[0] = { gegenstand: g }; k.spieler.auswahl = 0; k.ruestungAnwenden();
+  var a = k.angriff(1000, [0, 0, -1]); wahr(a && a.art === "schuss", "Schuss"); gleich(a.farbe, "#ffe14a");
+  var sz = new THREE.Scene(), rm = new SC.RenderMitspieler(sz, { groesse: 2048 }); rm.aktualisiere([{ id: 1, name: "A", farbe: "#e0533a", pos: [10, 5, 10], blick: [0, 0], modus: "survival", ausr: { ruestung: null, waffe: g }, lebt: true }], [0, 0, 0], 0.1);
+  var lauf = rm.figuren.get(1).f.waffe.lauf.material.color; var hx = lauf.getHexString(); wahr(parseInt(hx.slice(0, 2), 16) > 150 && parseInt(hx.slice(2, 4), 16) > 120 && parseInt(hx.slice(4, 6), 16) < 100, "Lauf gelblich: " + hx);
+  var s = SC.Beute.baue(SC.zufall(4), { art: "laserschwert", seltenheit: 2, klinge: "#b46bff" }); rm.aktualisiere([{ id: 1, name: "A", farbe: "#e0533a", pos: [10, 5, 10], blick: [0, 0], modus: "survival", ausr: { ruestung: null, waffe: s }, lebt: true }], [0, 0, 0], 0.1);
+  gleich("#" + rm.figuren.get(1).f.waffe.klinge.material.color.getHexString(), "#b46bff");
+});
+test("Waffenbild nutzt die Klingenfarbe (#100)", function(){ var a = SC.UI.gegenstandBild({ art: "laserschwert", seltenheit: 2 }), b = SC.UI.gegenstandBild({ art: "laserschwert", seltenheit: 2, klinge: "#ff4a4a" }), c = SC.UI.gegenstandBild({ art: "laserschwert", seltenheit: 2, klinge: "#ff4a4a" }); wahr(a !== b, "andere Farbe, anderes Bild"); gleich(b, c, "gleiches Bild aus dem Cache"); });

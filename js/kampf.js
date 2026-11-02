@@ -65,7 +65,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
     this.hitze += def.hitze;
     if(this.hitze >= 1){ this.hitze = 1; this.ueberhitztBis = jetzt + 1500; }
     this.letzterAngriff = jetzt;
-    return { art: "schuss", pos: this.spieler.augen(), richtung: richtung, tempo: def.tempo, schaden: schaden, abprall: w.sonder === "abprall", farbe: SC.SELTENHEIT[w.seltenheit].farbe, reichweite: def.reichweite };
+    return { art: "schuss", pos: this.spieler.augen(), richtung: richtung, tempo: def.tempo, schaden: schaden, abprall: w.sonder === "abprall", farbe: SC.Beute.strahlFarbe(w), reichweite: def.reichweite };
   };
 
   K.blocken = function(an){ var w = this.waffe(); this.blockt = !!an && !!w && SC.GEGENSTAENDE[w.art].waffe.typ === "schwert"; };

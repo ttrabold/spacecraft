@@ -20,6 +20,9 @@ SC.CRAFTING_FUND = { gegenstandChance: 0.25, maxSeltenheit: 2 };
 
 SC.Beute = {};
 // Eine Beute-Position (Gegenstand oder Rohstoff {block, anzahl}) als Sache für eine Beutekugel
+// Farbe der Klinge (Laserschwert) bzw. des Strahls (Blaster): gebaute Waffen tragen die Farbe ihres Kristalls, sonst gilt die Seltenheit
+SC.Beute.klingenFarbe = function(g){ if(g && g.klinge) return g.klinge; var s = (g && g.seltenheit) || 0; return s === 0 ? "#bfe8ff" : SC.SELTENHEIT[s].farbe; };
+SC.Beute.strahlFarbe = function(g){ return g.klinge || SC.SELTENHEIT[g.seltenheit || 0].farbe; };
 SC.Beute.alsSache = function(b){ return b.block !== undefined ? { block: b.block, anzahl: b.anzahl } : { gegenstand: b }; };
 (function(){
   var ANTEILE = [0.55, 0.83, 0.95, 0.99, 1];

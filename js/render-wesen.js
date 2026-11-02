@@ -11,7 +11,7 @@ SC.RenderWesen = function(szene, planet){
 (function(){
   var RW = SC.RenderWesen;
   RW.nah = function(x, bezug, P){ return x + P * Math.round((bezug - x) / P); };
-  RW.klingenFarbe = function(s){ return s === 0 ? "#bfe8ff" : SC.SELTENHEIT[s].farbe; };
+  RW.klingenFarbe = function(s){ return SC.Beute.klingenFarbe({ seltenheit: s }); };
   RW.modellMasse = function(art){
     var lo = Infinity, hi = -Infinity, top = 0;
     SC.GEGNER[art].modell.forEach(function(t){ lo = Math.min(lo, t.x - t.w / 2); hi = Math.max(hi, t.x + t.w / 2); top = Math.max(top, t.y + t.h / 2); });

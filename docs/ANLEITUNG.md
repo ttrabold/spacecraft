@@ -98,6 +98,14 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 - Gefundene Waffen und Rüstung sind seltener geworden, richtig gute lassen nur noch Bosse fallen.
 - Türen öffnest und schließt du durch Antippen. Auf Leitern kletterst du mit Vorwärts hoch und mit Rückwärts runter. In Truhen lagerst du Sachen, auch gemeinsam mit anderen.
 
+## Betten
+
+- Ein Bett baust du an der Werkbank aus drei Wolle und drei Brettern. Wolle gibt es aus Blättern.
+- Stell das Bett hin und tippe es an: Das Bett wird dein Wiedereinstiegspunkt. Wirst du besiegt, geht es dort weiter. Fehlt das Bett, startest du am Startpunkt.
+- Nachts kannst du im Bett schlafen: Dann vergeht die Nacht. Das geht nicht, wenn Gegner in der Nähe sind.
+- Spielt ihr zusammen, wird es erst Morgen, wenn alle schlafen (Zuschauer zählen nicht).
+- Zum Aufwachen reicht eine Bewegung.
+
 ## Fahrzeuge
 
 - Den Schwebeflitzer findest du am Startpunkt. Kraterkäfer stehen bei Lagern, Kometenjäger bei Stationen, Schwebeflitzer auch bei Herrenhäusern.

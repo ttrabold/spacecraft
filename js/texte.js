@@ -101,9 +101,10 @@ SC.T = {
   rucksackTipp: "Tippe einen Gegenstand an, um ihn anzusehen, anzulegen oder in die Schnellleiste zu legen.",
   rucksackVoll: "Der Rucksack ist voll.",
   truheTitel: "Truhe", truheTipp: "Tippe einen Gegenstand an, um ihn zu verschieben.", truheVoll: "Die Truhe ist voll.", truheWeg: "Hier ist keine Truhe mehr.",
+  bettGesetzt: "Wiedereinstieg am Bett gesetzt.", nurNachts: "Du kannst nur nachts schlafen.", monsterNah: "Du kannst jetzt nicht schlafen, es sind Gegner in der Nähe!", schlafZzz: "Zzz …", schlafWarte: "Warte auf die anderen …", guterMorgen: "Guten Morgen!", bettFehlte: "Dein Bett fehlte, du startest am Startpunkt.", bettBlockiert: "Dein Bett ist blockiert, du startest am Startpunkt.",
   werkbankTitel: "Werkbank", handwerkTitel: "Handwerk", handwerk: "🛠 Handwerk", herstellen: "Herstellen", hergestellt: "Hergestellt",
   metallWahl: "Metall", kristallWahl: "Kristall", wahlTipp: "Wähle ein Rezept.", wahlMetallKristall: "Wähle Metall und Kristall.", fehltMaterial: "Dir fehlen noch Rohstoffe.",
-  rezeptName: { bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
+  rezeptName: { wolle: "Rote Wolle", bett: "Bett", bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
   kristallName: { blau: "Blau", gruen: "Grün", rot: "Rot", gelb: "Gelb", violett: "Violett", weiss: "Weiß" },
   ausruestungTitel: "Ausrüstung", materialienTitel: "Materialien",
   anlegen: "Anlegen", ablegen: "Ablegen", inSchnellleiste: "In die Schnellleiste", wegwerfen: "Wegwerfen",
@@ -158,7 +159,7 @@ SC.T = {
     lava: "Lava", eis: "Eis", schlamm: "Schlamm", basalt: "Basalt",
     eisenerz: "Eisenerz", titan: "Titan", glutstahl: "Glutstahl", moorsilber: "Moorsilber", sternenmetall: "Sternenmetall",
     kristallBlau: "Blauer Kristall", kristallGruen: "Grüner Kristall", kristallRot: "Roter Kristall", kristallGelb: "Gelber Kristall", kristallViolett: "Violetter Kristall", kristallWeiss: "Weißer Kristall",
-    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe"
+    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe", bett: "Bett"
   },
   // Spielanleitung (Menü und docs/ANLEITUNG.md): Abschnitte [Titel, Punkte]; „Taste – Bedeutung“ zeigt die Taste fett
   anleitung: {
@@ -251,6 +252,13 @@ SC.T = {
         "Laserschwert, Blaster und Rüstung baust du aus Metall: Je seltener das Metall, desto stärker. Die Farbe von Klinge und Strahl bestimmt der Kristall (Blau, Grün, Rot, Gelb, Violett oder Weiß).",
         "Gefundene Waffen und Rüstung sind seltener geworden, richtig gute lassen nur noch Bosse fallen.",
         "Türen öffnest und schließt du durch Antippen. Auf Leitern kletterst du mit Vorwärts hoch und mit Rückwärts runter. In Truhen lagerst du Sachen, auch gemeinsam mit anderen."
+      ]],
+      ["Betten", [
+        "Ein Bett baust du an der Werkbank aus drei Wolle und drei Brettern. Wolle gibt es aus Blättern.",
+        "Stell das Bett hin und tippe es an: Das Bett wird dein Wiedereinstiegspunkt. Wirst du besiegt, geht es dort weiter. Fehlt das Bett, startest du am Startpunkt.",
+        "Nachts kannst du im Bett schlafen: Dann vergeht die Nacht. Das geht nicht, wenn Gegner in der Nähe sind.",
+        "Spielt ihr zusammen, wird es erst Morgen, wenn alle schlafen (Zuschauer zählen nicht).",
+        "Zum Aufwachen reicht eine Bewegung."
       ]],
       ["Fahrzeuge", [
         "Den Schwebeflitzer findest du am Startpunkt. Kraterkäfer stehen bei Lagern, Kometenjäger bei Stationen, Schwebeflitzer auch bei Herrenhäusern.",

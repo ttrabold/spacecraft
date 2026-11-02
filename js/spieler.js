@@ -20,7 +20,7 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     var g = this.blick[0], n = this.blick[1];
     return [-Math.sin(g) * Math.cos(n), Math.sin(n), -Math.cos(g) * Math.cos(n)];
   };
-  SC.Spieler.prototype.augen = function(){ return [this.pos[0], this.pos[1] + F.augen, this.pos[2]]; };
+  SC.Spieler.prototype.augen = function(){ return [this.pos[0], this.pos[1] + (this.schlaeft ? 0.25 : F.augen), this.pos[2]]; };   // im Bett liegt die Kamera tief
   // Kamera: Ich-Ansicht an den Augen; Verfolgeransicht dahinter, im Fahrzeug höher und weiter hinten,
   // damit Fahrzeug und Fahrer im unteren Bilddrittel sitzen und die Bildmitte (Fadenkreuz) frei bleibt → { pos, richtung }
   SC.Spieler.prototype.kamera = function(){

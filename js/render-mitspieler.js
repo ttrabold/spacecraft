@@ -124,7 +124,7 @@ SC.RenderMitspieler = function(szene, planet){
       else { var tx = nah(e.pos[0], o.p[0], P), tz = nah(e.pos[2], o.p[2], P); if(Math.abs(tx - o.p[0]) + Math.abs(tz - o.p[2]) + Math.abs(e.pos[1] - o.p[1]) > 8) k = 1; o.p[0] += (tx - o.p[0]) * k; o.p[1] += (e.pos[1] - o.p[1]) * k; o.p[2] += (tz - o.p[2]) * k; o.p[0] = (o.p[0] % P + P) % P; o.p[2] = (o.p[2] % P + P) % P; }
       var x = nah(o.p[0], ichPos[0], P), z = nah(o.p[2], ichPos[2], P), g = o.f.gruppe, blick = e.blick || [0, 0];
       var sitzt = typeof e.sitzt === "number"; // im Fahrzeug: Blick in Fahrtrichtung, Beine angewinkelt
-      g.position.set(x, o.p[1], z); g.rotation.y = sitzt ? e.sitzt : blick[0]; o.f.kopf.rotation.x = blick[1];
+      g.rotation.order = "YXZ"; g.position.set(x, o.p[1], z); g.rotation.y = sitzt ? e.sitzt : blick[0]; g.rotation.x = e.schlaeft ? Math.PI / 2 : 0; o.f.kopf.rotation.x = e.schlaeft ? 0 : blick[1];   // schlafend: auf dem Rücken
       var tempo = alt && dt > 0 ? Math.hypot(nah(o.p[0], alt[0], P) - alt[0], nah(o.p[2], alt[2], P) - alt[2]) / dt : 0;
       if(tempo > 0.5) o.schlag += dt * 8.3; var sw = tempo > 0.5 ? Math.sin(o.schlag) * 0.6 : 0;
       if(sitzt) sw = 0;

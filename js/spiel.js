@@ -110,7 +110,7 @@ SC.Spiel.startpunkt = function(planet){
     var pd = daten.planeten[daten.aktuellerPlanet], planet = new SC.Planet(pd);
     this.welt = new SC.Welt(planet, chunks || SC.Spielstand.chunksLaden(pd));
     this.welt.ereignisse.an("block", function(b){
-      s._truheWeg(b); s._tuerWeg(b);
+      s._truheWeg(b); s._tuerWeg(b); s._bettWeg(b);
       if(b.quelle !== "spieler") return;
       if(b.id === SC.B.LUFT) s.audio.spiele("abbauen", { material: SC.Klang.material(b.alt) });
       else s.audio.spiele("setzen", { material: SC.Klang.material(b.id) });
@@ -162,7 +162,7 @@ SC.Spiel.startpunkt = function(planet){
     this._menueOffen = offen;
     this.eingabe.aktiv = !offen;
     if(this.eingabe.touch){ this.eingabe.touch.sichtbar(!offen && this.eingabe.touchSichtbar()); this.eingabe.touch.setzeGroesse(this.einstellungen.touchGroesse); }
-    var e = this.eingabe.zustand();
+    var e = this._schlafen(this.eingabe.zustand(), dt);   // im Bett sind Bewegung und Blick gesperrt
     // F3 öffnet und schließt die Entwicklerwerkzeuge (nur wenn in den Einstellungen eingeschaltet)
     if(e.entwickler && this.einstellungen.entwickler && !ui.offen()){
       if(ew.offen()){ ew.verberge(); this.beiEntwicklerZu(); } else this._entwicklerAuf();
@@ -193,7 +193,7 @@ SC.Spiel.startpunkt = function(planet){
       if((this._musikZeit = (this._musikZeit || 0) + dt) > 0.5){ this._musikZeit = 0; this.audio.musikTakt("all", true); }
     } else {
       if(this._imFahrzeug()) this._fahren(e, dt, offen);
-      else { sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
+      else if(!sp.schlaeft){ sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
       this._fahrzeugeBild(dt);
       this._survival(e, dt, offen, t);
       this._fahrzeugTakt(dt);
@@ -566,7 +566,7 @@ SC.Spiel.startpunkt = function(planet){
       for(var id in r.mitspieler){
         var m = r.mitspieler[id], e = null; if(id === mein || !m.pos) continue;
         r.spieler.forEach(function(x){ if(x.id === id) e = x; });
-        l.push({ id: id, name: e ? e.name : "", farbe: e ? e.farbe : SC.RAUM_FARBEN[0], pos: m.pos, blick: m.blick, modus: m.modus, ausr: m.ausr, lebt: m.lebt, menue: m.menue, hieb: m.hieb, blockt: m.blockt, lp: m.lp, lpMax: m.lpMax, schild: m.schild, schildMax: m.schildMax, sitzt: m.sitzt, verbunden: true });
+        l.push({ id: id, name: e ? e.name : "", farbe: e ? e.farbe : SC.RAUM_FARBEN[0], pos: m.pos, blick: m.blick, modus: m.modus, ausr: m.ausr, lebt: m.lebt, schlaeft: m.schlaeft, menue: m.menue, hieb: m.hieb, blockt: m.blockt, lp: m.lp, lpMax: m.lpMax, schild: m.schild, schildMax: m.schildMax, sitzt: m.sitzt, verbunden: true });
       }
     }
     // Wer im Fahrzeug sitzt, wird an seinem Sitz im hier gezeichneten Fahrzeug gezeigt (sonst hinkt die Figur dem Fahrzeug hinterher)

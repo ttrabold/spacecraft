@@ -10,7 +10,9 @@ SC.B = {
   KRISTALL_BLAU: 38, KRISTALL_GRUEN: 39, KRISTALL_ROT: 40, KRISTALL_GELB: 41, KRISTALL_VIOLETT: 42, KRISTALL_WEISS: 43,
   SCHALTKREIS: 44, CHITIN: 45, WERKBANK: 46, FACKEL: 47, ZAUN: 48,
   LEITER_N: 49, LEITER_S: 50, LEITER_O: 51, LEITER_W: 52, TUER_X: 53, TUER_Z: 54, TUER_X_OFFEN: 55, TUER_Z_OFFEN: 56, TRUHE: 57,
-  TUER_X_OBEN: 58, TUER_Z_OBEN: 59, TUER_X_OFFEN_OBEN: 60, TUER_Z_OFFEN_OBEN: 61   // obere Türhälften (die Tür ist zwei Blöcke hoch)
+  TUER_X_OBEN: 58, TUER_Z_OBEN: 59, TUER_X_OFFEN_OBEN: 60, TUER_Z_OFFEN_OBEN: 61,   // obere Türhälften (die Tür ist zwei Blöcke hoch)
+  // Betten: Fuß und Kopf je Richtung; N/S/O/W sagt, auf welcher Seite des Fußes der Kopf liegt (Norden = z−1)
+  BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
 // Muster je Textur (Farben kommen aus der Palette des Planeten)
@@ -26,12 +28,13 @@ SC.TEXTUREN = {
   eisenerz: "erz", titan: "erz", glutstahl: "erz", moorsilber: "erz", sternenmetall: "erz",
   kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
   schaltkreis: "schaltkreis", chitin: "chitin", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
-  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", truhe_oben: "kistedeckel", truhe_seite: "kiste"
+  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste"
 };
 
 SC.BLOECKE = {};
 (function(){
   function alle(t){ return { oben: t, seite: t, unten: t }; }
+  var BETT = { typ: "kasten", a: [0, 0, 0], b: [1, 0.56, 1] };
   // [id, Textname, Seiten, fest, durchsichtig, leuchten, Lichtfarbe, zerstörbar, in Auswahl]
   var D = [
     [SC.B.LUFT, "luft", null, false, true, 0, null, false, false],
@@ -96,6 +99,15 @@ SC.BLOECKE = {};
     [SC.B.TUER_Z_OBEN, "tuer", alle("tuer_oben"), true, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 0.5 } }],
     [SC.B.TUER_X_OFFEN_OBEN, "tuer", alle("tuer_oben"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 0 } }],
     [SC.B.TUER_Z_OFFEN_OBEN, "tuer", alle("tuer_oben"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 0 } }],
+    // Betten: flacher Kasten, begehbar; nur das Fußende Nord steht in der Kreativ-Auswahl
+    [SC.B.BETT_FUSS_N, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, true, { form: BETT }],
+    [SC.B.BETT_FUSS_S, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
+    [SC.B.BETT_FUSS_O, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
+    [SC.B.BETT_FUSS_W, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
+    [SC.B.BETT_KOPF_N, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
+    [SC.B.BETT_KOPF_S, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
+    [SC.B.BETT_KOPF_O, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
+    [SC.B.BETT_KOPF_W, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
     [SC.B.TRUHE, "truhe", { oben: "truhe_oben", seite: "truhe_seite", unten: "truhe_seite" }, true, false, 0, null, true, true]
   ];
   D.forEach(function(d){

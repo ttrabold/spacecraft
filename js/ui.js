@@ -44,6 +44,12 @@ SC.UI = function(wurzel, o){
     var a = el.getAttribute("data-aktion"), m = this._modal && this._modal.contains(el), f = m ? (this._modalAktionen || {})[a] : this._aktionen[a] || (this._hudAktionen || {})[a];
     return Promise.resolve(f ? f.call(this, el, el.getAttribute("data-id")) : null);
   };
+  // Schlafen: schwarzes Bild mit Text über allem; alpha 0 blendet es aus
+  SC.UI.prototype.schlafBild = function(alpha, text){
+    var el = this._schlaf;
+    if(!el){ if(alpha <= 0) return; el = this._schlaf = document.createElement("div"); el.className = "schlaf"; this.wurzel.appendChild(el); }
+    el.style.opacity = alpha; el.textContent = text || ""; el.hidden = alpha <= 0;
+  };
   SC.UI.prototype._zeige = function(html, aktionen){
     this.ebene.innerHTML = '<div class="fenster">' + html + "</div>"; this.ebene.hidden = false; this._aktionen = aktionen || {};
   };

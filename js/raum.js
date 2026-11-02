@@ -146,7 +146,7 @@ SC.Gastgeber = function(o){
     this.spieler.forEach(function(e){ if(e.verbunden && e.pos) l.push(zustand(e.id, e)); });
     return l;
   };
-  function zustand(id, q){ return { id: id, pos: q.pos, blick: q.blick, modus: q.modus, stufe: q.stufe, ausr: q.ausr, menue: !!q.menue, lebt: q.lebt !== false, hieb: q.hieb, blockt: !!q.blockt, lp: q.lp, lpMax: q.lpMax, schild: q.schild, schildMax: q.schildMax, sitzt: typeof q.sitzt === "number" ? q.sitzt : null }; }
+  function zustand(id, q){ return { id: id, pos: q.pos, blick: q.blick, modus: q.modus, stufe: q.stufe, ausr: q.ausr, menue: !!q.menue, lebt: q.lebt !== false, schlaeft: !!q.schlaeft, hieb: q.hieb, blockt: !!q.blockt, lp: q.lp, lpMax: q.lpMax, schild: q.schild, schildMax: q.schildMax, sitzt: typeof q.sitzt === "number" ? q.sitzt : null }; }
   // Pro Bild aufrufen. ich: {pos, blick, modus, stufe, ausr, menue, lebt, tageszeit?} des Gastgebers.
   // 15 Hz: jedem Gast den Zustand der anderen Spieler (ausr nur, wenn sie sich für diesen Empfänger geändert hat) und die Wesen-Liste;
   // 1 Hz: zeit {tageszeit (aus ich.tageszeit, sonst daten.tageszeit), modus, schwierigkeit}
@@ -215,7 +215,7 @@ SC.Gastgeber = function(o){
     // Position und Anzeige-Zustand des Gastes; Position wird pro Figur in der Welt des Gastgebers gemerkt
     zustand: function(c, n){
       var e = this._eintrag(c.id), m = this.daten.mitspieler[c.id];
-      if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt", "hieb", "blockt", "sitzt", "lp", "lpMax", "schild", "schildMax"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
+      if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt", "schlaeft", "hieb", "blockt", "sitzt", "lp", "lpMax", "schild", "schildMax"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
       // Fahrer: Lage seines Fahrzeugs übernehmen (nur vom Fahrer selbst)
       var fz = n.fz, f = fz && this.welt && this.welt.fahrzeuge.get(fz.id);
       if(f && f.sitze[0] === c.id){ if(fz.all) this.gastAll = { von: c.id, all: fz.all }; else if(this.gastAll && this.gastAll.von === c.id) this.gastAll = null; }
@@ -324,7 +324,7 @@ SC.Gast = function(o){
     if(s._takt < SC.RAUM_TAKT) return;
     s._takt -= SC.RAUM_TAKT; if(s._takt >= SC.RAUM_TAKT) s._takt = 0;
     if(!s.verb || !ich || s.status !== "verbunden") return;
-    var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false, hieb: ich.hieb, blockt: !!ich.blockt, lp: ich.lp, lpMax: ich.lpMax, schild: ich.schild, schildMax: ich.schildMax, sitzt: typeof ich.sitzt === "number" ? ich.sitzt : null },
+    var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false, schlaeft: !!ich.schlaeft, hieb: ich.hieb, blockt: !!ich.blockt, lp: ich.lp, lpMax: ich.lpMax, schild: ich.schild, schildMax: ich.schildMax, sitzt: typeof ich.sitzt === "number" ? ich.sitzt : null },
       j = JSON.stringify(ich.ausr === undefined ? null : ich.ausr);
     if(j !== s._ausr){ s._ausr = j; n.ausr = ich.ausr; }
     if(ich.fz){ n.fz = ich.fz; if(s.latenz !== null) n.latenz = s.latenz; } // als Fahrer: Lage des Fahrzeugs und Laufzeit

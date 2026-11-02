@@ -105,6 +105,8 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 - Nachts kannst du im Bett schlafen: Dann vergeht die Nacht. Das geht nicht, wenn Gegner in der Nähe sind.
 - Spielt ihr zusammen, wird es erst Morgen, wenn alle schlafen (Zuschauer zählen nicht).
 - Zum Aufwachen reicht eine Bewegung.
+- Die Zauberkugel ist ein Tisch mit einer Kristallkugel. Du baust sie an der Werkbank aus Brettern, Kristallen und Titan. Wer sie antippt, wird zu seinem Bett gebracht, auch von einem anderen Planeten aus.
+- Spielt ihr zusammen, holt der Gastgeber mit der Zauberkugel alle Mitspieler mit zu seinem Bett. Ein Gast fragt damit den Gastgeber, und der entscheidet, ob alle zurück zum Bett gehen.
 
 ## Fahrzeuge
 

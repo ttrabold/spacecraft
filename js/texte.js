@@ -104,6 +104,9 @@ SC.T = {
   bettGesetzt: "Wiedereinstieg am Bett gesetzt.", nurNachts: "Du kannst nur nachts schlafen.", monsterNah: "Du kannst jetzt nicht schlafen, es sind Gegner in der Nähe!", schlafZzz: "Zzz …", schlafWarte: "Warte auf die anderen …", guterMorgen: "Guten Morgen!", bettFehlte: "Dein Bett fehlte, du startest am Startpunkt.", bettBlockiert: "Dein Bett ist blockiert, du startest am Startpunkt.",
   fzMotor: "Motor", fzPanzerung: "Panzerung", fzWaffe: "Bordwaffe", fzKeine: "keine", fzFarbe: "Farbe", fzTempo: "Tempo", fzPanzerungWert: "Panzerung", fzSchaden: "Schaden", fzOhneWaffe: "ohne Bordwaffe",
   allSternenmetall: "Sternenmetall aus dem Asteroiden!",
+  zauberOhneBett: "Du hast noch kein Bett. Stell eins hin und tippe es an.", zauberAngekommen: "Die Zauberkugel hat dich zum Bett gebracht.", zauberWartet: "Der Gastgeber wird gefragt …",
+  zauberPause: "Bitte warte einen Moment, bevor du die Zauberkugel noch einmal benutzt.", zauberAbgelehnt: "Der Gastgeber möchte das gerade nicht.", zauberKeinBett: "Der Gastgeber hat noch kein Bett.",
+  zauberFrage: "{name} möchte mit der Zauberkugel alle zu deinem Bett zurückholen. Einverstanden?",
   werkbankTitel: "Werkbank", handwerkTitel: "Handwerk", handwerk: "🛠 Handwerk", herstellen: "Herstellen", hergestellt: "Hergestellt",
   metallWahl: "Metall", kristallWahl: "Kristall", wahlTipp: "Wähle ein Rezept.", wahlMetallKristall: "Wähle Metall und Kristall.", fehltMaterial: "Dir fehlen noch Rohstoffe.",
   rezeptName: { zauberkugel: "Zauberkugel", wolle: "Rote Wolle", bett: "Bett", bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
@@ -260,7 +263,9 @@ SC.T = {
         "Stell das Bett hin und tippe es an: Das Bett wird dein Wiedereinstiegspunkt. Wirst du besiegt, geht es dort weiter, auch wenn du auf einem anderen Planeten warst. Fehlt das Bett, startest du am Startpunkt.",
         "Nachts kannst du im Bett schlafen: Dann vergeht die Nacht. Das geht nicht, wenn Gegner in der Nähe sind.",
         "Spielt ihr zusammen, wird es erst Morgen, wenn alle schlafen (Zuschauer zählen nicht).",
-        "Zum Aufwachen reicht eine Bewegung."
+        "Zum Aufwachen reicht eine Bewegung.",
+        "Die Zauberkugel ist ein Tisch mit einer Kristallkugel. Du baust sie an der Werkbank aus Brettern, Kristallen und Titan. Wer sie antippt, wird zu seinem Bett gebracht, auch von einem anderen Planeten aus.",
+        "Spielt ihr zusammen, holt der Gastgeber mit der Zauberkugel alle Mitspieler mit zu seinem Bett. Ein Gast fragt damit den Gastgeber, und der entscheidet, ob alle zurück zum Bett gehen."
       ]],
       ["Fahrzeuge", [
         "Den Schwebeflitzer findest du am Startpunkt. Kraterkäfer stehen bei Lagern, Kometenjäger bei Stationen, Schwebeflitzer auch bei Herrenhäusern.",

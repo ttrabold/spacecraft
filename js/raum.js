@@ -110,8 +110,8 @@ SC.Gastgeber = function(o){
     c.verb.sende({ t: "bereit" });
   };
   // Gastgeber hat den Planeten gewechselt (vorher setzeWelt): alle Gäste bekommen „planet“ und die neue Welt, alle stehen am Landepunkt
-  G.planetWechsel = function(){
-    var s = this, d = s.daten, lp = SC.Planeten.landepunkt(d);
+  G.planetWechsel = function(ziel){   // ziel (optional): alle stehen dort statt am Landepunkt (Zauberkugel)
+    var s = this, d = s.daten, lp = ziel || SC.Planeten.landepunkt(d);
     if(s._zu) return;
     for(var id in s._verb){
       var c = s._verb[id], e = s._eintrag(id); if(!e) continue;
@@ -730,6 +730,20 @@ SC.RAUM_FZ_NAH = 96;
     var id = "bau-" + Math.random().toString(36).slice(2, 10);
     SC.Fahrzeug.neu(this.welt, n.art, p, blick, { id: id, fundort: id, heim: p.slice(), bau: bau });
   };
+  // Zauberkugel: Der Gast fragt (zauber), der Gastgeber antwortet über beiZauber(info, antwort(ja, grund)) mit zauberAntwort {ja, grund};
+  // je Gast nur eine offene Frage. Holt der Gastgeber alle zum Bett, bekommt jeder Gast teleport {pos}.
+  H.teleport = function(pos){
+    if(!Array.isArray(pos) || pos.length !== 3 || this._zu) return;
+    for(var id in this._verb) this._verb[id].verb.sende({ t: "teleport", pos: pos.slice() });
+  };
+  HN.zauber = function(c, n){
+    var s = this; if(c._zauberOffen){ c.verb.sende({ t: "zauberAntwort", ja: false, grund: "warte" }); return; }
+    c._zauberOffen = true;
+    ruf(s.o.beiZauber, { id: c.id, name: c.name }, function(ja, grund){ c._zauberOffen = false; if(!c.weg && !s._zu) c.verb.sende({ t: "zauberAntwort", ja: !!ja, grund: grund }); });
+  };
+  G.zauber = function(){ this.sende({ t: "zauber" }); };
+  GN.zauberAntwort = function(n){ ruf(this.o.beiZauberAntwort, { ja: !!n.ja, grund: typeof n.grund === "string" ? n.grund : undefined }); };
+  GN.teleport = function(n){ var p = vek(n.pos); if(p) ruf(this.o.beiTeleport, p); };
   HN.fzEntfernen = function(c, n){ var f = this.welt && this.welt.fahrzeuge.get(n.id); if(f && !f.fundort && f.sitze.every(function(x){ return x === null; })) this.welt.fahrzeuge.delete(f.id); };
 
   // --- Gast ---

@@ -175,8 +175,9 @@
   };
 
   // --- Beitrittsanfrage: Dialog über allem, mehrere nacheinander ---
-  SC.UI.prototype.zeigeAnfrage = function(name, antwort, id){
-    (this._anfragen = this._anfragen || []).push({ name: name, antwort: antwort, id: id });
+  // vorlage (optional): Text mit {name} statt „möchte mitspielen“, z. B. die Zauberkugel-Frage
+  SC.UI.prototype.zeigeAnfrage = function(name, antwort, id, vorlage){
+    (this._anfragen = this._anfragen || []).push({ name: name, antwort: antwort, id: id, vorlage: vorlage });
     if(this._anfragen.length === 1) this._naechsteAnfrage();
   };
   // Anfrage hat sich erledigt (Wartender ging, Raum zu): Dialog schließen bzw. die nächste zeigen
@@ -196,7 +197,7 @@
       return;
     }
     if(!this._modal){ this._modal = document.createElement("div"); this._modal.className = "ebene anfrage-ebene"; this.wurzel.insertBefore(this._modal, this.hinweisEl); }
-    this._modal.innerHTML = '<div class="fenster anfrage"><h2>' + esc(fuelle(SC.T.moechteMitspielen, { name: a.name })) + "</h2>" +
+    this._modal.innerHTML = '<div class="fenster anfrage"><h2>' + esc(fuelle(a.vorlage || SC.T.moechteMitspielen, { name: a.name })) + "</h2>" +
       '<div class="reihe"><button class="haupt" data-aktion="ja">' + esc(SC.T.ja) + '</button><button class="gefahr" data-aktion="nein">' + esc(SC.T.nein) + "</button></div></div>";
     this._modal.hidden = false;
     function antworte(ja){ var l = ui._anfragen, i = l.indexOf(a); if(i < 0) return; l.splice(i, 1); a.antwort(ja); ui._naechsteAnfrage(); }

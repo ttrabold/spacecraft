@@ -105,7 +105,7 @@ test("Schlafende Mitspieler liegen im Bild (#120)", function(){
   var m = _ms(); m.r.aktualisiere([_e(1, { schlaeft: true })], [0, 0, 0], 0.1); var g = m.r.figuren.get(1).f.gruppe; wahr(Math.abs(g.rotation.x - Math.PI / 2) < 0.01, "liegt auf dem Rücken: " + g.rotation.x);
   m.r.aktualisiere([_e(1, { schlaeft: false })], [0, 0, 0], 0.1); wahr(Math.abs(g.rotation.x) < 0.01, "steht wieder");
 });
-test("Netzprotokoll 6 wegen der Betten (#120)", function(){ gleich(SC.NETZ_PROTOKOLL, 6); });
+test("Netzprotokoll mindestens 6 wegen der Betten (#120)", function(){ wahr(SC.NETZ_PROTOKOLL >= 6); });
 // --- Wiedereinstieg von anderen Planeten (#123) ---
 function wiederSpiel(o){
   var s = schlafSpiel(), log = [];

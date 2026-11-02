@@ -233,7 +233,7 @@ SC.Spiel.startpunkt = function(planet){
         f.panzerung = schiff.panzerung; f.sitze = sitze;
         var im = SC.Fahrzeug.sitzVon(s.welt, s._fzId()); if(im){ s.spieler.ansicht = "aussen"; s._fahrzeugFolgen(im, true); }
       }
-      var r = s.raum; if(r instanceof SC.Gastgeber){ r.setzeWelt(s.welt); if(r._k) r._k.kampf = s.kampf; r.planetWechsel(); } // alle Gäste kommen mit
+      var r = s.raum; if(r instanceof SC.Gastgeber){ r.setzeWelt(s.welt); if(r._k) r._k.kampf = s.kampf; r.planetWechsel(o && o.bett ? s.spieler.pos.slice() : undefined); } // alle Gäste kommen mit (nach einem Wiedereinstieg am Bett oder mit der Zauberkugel dorthin)
       if(s.ui.ankunft) s.ui.ankunft(SC.PLANETEN[id].name);
       return s.speichere("planet");
     });
@@ -372,6 +372,7 @@ SC.Spiel.startpunkt = function(planet){
     this._anfragen = [];
     var gg = new SC.Gastgeber({ adapter: SC.Spiel.adapter(), daten: d, welt: this.welt, uhr: function(){ return s.kampf.uhr; },
       beiAnfrage: function(info, antwort){ s._anfrage(info, antwort); },
+      beiZauber: function(info, antwort){ s._zauberFrage(info, antwort); },
       beiAnfrageWeg: function(info){ s._anfrageWeg(info); },
       beiSpieler: function(l){ rueck(s, "spieler", l); s.speichere("mitspieler"); }, // Beitritt und Abgang: speichern (Position der Gastfigur)
       beiNachricht: function(){},
@@ -440,7 +441,9 @@ SC.Spiel.startpunkt = function(planet){
         beiChunk: function(k, u8){ chunks[k] = u8; },
         beiBereit: function(){ var c = chunks; chunks = {}; s._gastBereit(gast, c); },
         beiStatus: function(st, info){ s._gastStatus(gast, st, info || {}); },
-        beiBlockZurueck: function(x, y, z, id, wunsch){ if(s.raum === gast) s._blockZurueck(id, wunsch); },
+        beiTeleport: function(p){ s._teleportiert(p); },
+      beiZauberAntwort: function(n){ if(!n.ja) s.ui.hinweis(n.grund === "bett" ? SC.T.zauberKeinBett : n.grund === "warte" ? SC.T.zauberWartet : SC.T.zauberAbgelehnt, 3000); },
+      beiBlockZurueck: function(x, y, z, id, wunsch){ if(s.raum === gast) s._blockZurueck(id, wunsch); },
         beiNachricht: function(n){ s._gastNachricht(gast, n); },
         beiPvp: function(an){ rueck(s, "pvp", an); } });
       s._eigen = eigen; s.raum = gast; s.rolle = "gast";

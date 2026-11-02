@@ -122,7 +122,7 @@ SC.Klang = {};
   // Hall aus erzeugter Impulsantwort (Konzertsaal-Gefühl)
   function hall(ctx, sek){
     var n = Math.floor(ctx.sampleRate * sek), b = ctx.createBuffer(2, n, ctx.sampleRate), zf = SC.zufall(7);
-    for(var c = 0; c < 2; c++){ var d = b.getChannelData(c); for(var i = 0; i < n; i++) d[i] = (zf() * 2 - 1) * Math.pow(1 - i / n, 2.5); }
+    for(var c = 0; c < 2; c++){ var d = b.getChannelData(c), tp = 0; for(var i = 0; i < n; i++){ tp += ((zf() * 2 - 1) * Math.pow(1 - i / n, 2.2) - tp) * 0.45; d[i] = tp; } }   // leicht abgedunkelt
     var k = ctx.createConvolver(); k.buffer = b; return k;
   }
 
@@ -134,7 +134,7 @@ SC.Klang = {};
     if(!this.ctx){
       var c = this.ctx = new A(), komp = c.createDynamicsCompressor(); komp.connect(c.destination);
       this.musik = c.createGain(); this.sfx = c.createGain(); this.musik.connect(komp); this.sfx.connect(komp);
-      var h = hall(c, 2.6), hg = c.createGain(); hg.gain.value = 0.35; h.connect(hg); hg.connect(this.musik);
+      var h = hall(c, 3.4), hg = c.createGain(); hg.gain.value = 0.5; h.connect(hg); hg.connect(this.musik); this._hallEin = h;
       this.musikTrocken = c.createGain(); this.musikTrocken.connect(this.musik); this.musikTrocken.connect(h);
       this.lautstaerke(this.musikLaut, this.sfxLaut);
     }
@@ -191,21 +191,33 @@ SC.Klang = {};
     if(!this._stueck && kampfig && this._pauseBis > jetzt + 0.5) this._pauseBis = jetzt + 0.3;   // Kampf wartet nicht auf die Pause
     if(!this._stueck){
       if(jetzt < this._pauseBis) return;
-      var st = SC.Musik.komponiere(this._seed++, stimmung), bus = c.createGain(); bus.gain.value = 1; bus.connect(this.musikTrocken);
-      this._stueck = { stimmung: stimmung, daten: st, start: jetzt + 0.2, sek: 60 / st.tempo, i: 0, bus: bus };
+      var st = SC.MusikNeu.komponiere(this._seed++, stimmung, { thema: this.thema }), bus = c.createGain(); bus.gain.value = 1.6; bus.connect(this.musik);
+      this._stueck = { stimmung: stimmung, daten: st, start: jetzt + 0.2, sek: 60 / st.tempo, i: 0, bus: bus, inst: {}, sends: [] };
     }
     var s = this._stueck, bis = jetzt + 1.5, ev = s.daten.events;
     while(s.i < ev.length && s.start + ev[s.i].t * s.sek < bis){
-      var e = ev[s.i++], f = SC.Instrumente[e.instrument];
-      if(f && !s.blendetAus) f(c, s.bus, s.start + e.t * s.sek, e.midi, e.dauer * s.sek, e.vel);
+      var e = ev[s.i++], f = SC.InstrumenteNeu[e.instrument] || SC.Instrumente[e.instrument];
+      if(f && !s.blendetAus) f(c, this._instBus(s, e.instrument), s.start + e.t * s.sek, e.midi, e.dauer * s.sek, e.vel);
     }
     if(s.i >= ev.length && jetzt > s.start + s.daten.schlaege * s.sek + (kampfig ? -0.05 : 2)){
       this._stueck = null; this._pauseBis = kampfig ? jetzt : jetzt + 20 + Math.random() * 25;
     }
   };
+  // Eingang je Instrument im Stück: Stereo-Lage und Hallanteil (Pauke und Trommel fast trocken)
+  var PAN = { streicher: -0.35, blech: 0.35, horn: 0.2, floete: -0.15, celesta: 0.3, harfe: -0.5, pauke: 0, trommel: 0.1 };
+  var NASS = { streicher: 0.55, blech: 0.4, horn: 0.5, floete: 0.5, celesta: 0.6, harfe: 0.5, pauke: 0.15, trommel: 0.1 };
+  SC.Audio.prototype._instBus = function(s, name){
+    if(s.inst[name]) return s.inst[name];
+    var c = this.ctx, g = c.createGain(), ziel = g;
+    if(c.createStereoPanner){ var p = c.createStereoPanner(); p.pan.value = PAN[name] || 0; g.connect(p); ziel = p; }   // ältere Safari-Versionen: ohne Schwenk
+    ziel.connect(s.bus);
+    var sd = c.createGain(); sd.gain.value = NASS[name] || 0.4; ziel.connect(sd); sd.connect(this._hallEin); s.sends.push(sd);
+    return (s.inst[name] = g);
+  };
   SC.Audio.prototype._ausblenden = function(jetzt, dauer){
     var s = this._stueck; if(!s || s.blendetAus) return;
-    s.blendetAus = true; s.bus.gain.setValueAtTime(s.bus.gain.value, jetzt); s.bus.gain.linearRampToValueAtTime(0.0001, jetzt + (dauer || 2.5));
-    var a = this; setTimeout(function(){ s.bus.disconnect(); if(a._stueck === s) a._stueck = null; }, 3000);
+    s.blendetAus = true; var bis = jetzt + (dauer || 2.5);
+    [s.bus].concat(s.sends).forEach(function(g){ g.gain.setValueAtTime(g.gain.value, jetzt); g.gain.linearRampToValueAtTime(0.0001, bis); });
+    var a = this; setTimeout(function(){ s.bus.disconnect(); s.sends.forEach(function(g){ g.disconnect(); }); if(a._stueck === s) a._stueck = null; }, 3000);
   };
 })();

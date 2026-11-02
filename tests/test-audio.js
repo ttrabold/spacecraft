@@ -25,3 +25,27 @@ test("iOS: Ton als Wiedergabe anmelden, unterbrochenen Ton wieder starten", func
     a.ctx.state = "interrupted"; a.entsperren(); gleich(fortgesetzt, 2, "auch nach App-Wechsel");
   } finally { window.AudioContext = altA; if(altS) Object.defineProperty(navigator, "audioSession", altS); else delete navigator.audioSession; }
 });
+test("Stimmung kennt All und fremde Planeten (nur am Tag an der Oberfläche)", function(){ gleich(SC.Musik.stimmung({all:true,tageslicht:1}),"all"); gleich(SC.Musik.stimmung({tageslicht:1,planet:"glutfrost"}),"glutfrost"); gleich(SC.Musik.stimmung({tageslicht:1,planet:"rankenmoor"}),"rankenmoor"); gleich(SC.Musik.stimmung({tageslicht:0.3,planet:"glutfrost"}),"nacht"); gleich(SC.Musik.stimmung({tageslicht:1,planet:"glutfrost",unterTage:true}),"tief"); gleich(SC.Musik.stimmung({tageslicht:1,planet:"start"}),"tag"); gleich(SC.Musik.stimmung({tageslicht:1,planet:"glutfrost",kampf:true}),"kampf"); });
+test("Neuer Komponist: Form A–A′–B–A″, Thema kehrt wieder, im Rahmen", function(){
+  SC.MusikNeu.stimmungen.forEach(function(m){
+    var s=SC.MusikNeu.komponiere(5,m); wahr(s.events.length>100,m+": zu wenig Noten");
+    s.events.forEach(function(e){ wahr(e.midi>=24&&e.midi<=100&&e.t>=0&&e.t<s.schlaege&&e.dauer>0&&e.vel>0,m+": Ereignis außerhalb "+JSON.stringify(e)); wahr(SC.InstrumenteNeu[e.instrument]||SC.Instrumente[e.instrument],m+": Instrument "+e.instrument); });
+    gleich(s.form.reduce(function(a,f){ return a+f.takte; },0)*4,s.schlaege,m+": Form deckt das Stück");
+    gleich(JSON.stringify(SC.MusikNeu.komponiere(5,m)),JSON.stringify(s),m+": deterministisch");
+  });
+  var t=SC.MusikNeu.komponiere(5,"tag"); gleich(t.form.map(function(f){return f.name;}).join(),"A,A2,B,A3"); gleich(t.schlaege,128);
+  var mel=t.events.filter(function(e){return e.stimme==="melodie"&&e.instrument==="blech";}); wahr(mel.length>0);
+  var ende=t.events.filter(function(e){return e.stimme==="melodie"&&e.t>=t.schlaege-4;}); wahr(ende.length>0&&ende.every(function(e){return SC.mod(e.midi-t.grundton,12)===0||e.dauer>=4;}),"Ende auf dem Grundton");
+});
+test("Neuer Komponist: Thema hängt am Welt-Seed, nicht am Stück", function(){
+  var a=SC.MusikNeu.komponiere(1,"tag",{thema:9}), b=SC.MusikNeu.komponiere(2,"tag",{thema:9}), c=SC.MusikNeu.komponiere(1,"tag",{thema:10});
+  gleich(JSON.stringify(a.motiv),JSON.stringify(b.motiv),"gleiche Welt, gleiches Thema"); var anders=false; for(var t=11;t<40;t++) if(JSON.stringify(SC.MusikNeu.komponiere(1,"tag",{thema:t}).motiv)!==JSON.stringify(a.motiv)) anders=true; wahr(anders,"andere Welten haben anderes Thema");
+  wahr(JSON.stringify(a.events)!==JSON.stringify(b.events),"Stücke unterscheiden sich");
+});
+test("Neuer Komponist: Kampf in Schleife, lustige Variante tempoärmer", function(){ var k=SC.MusikNeu.komponiere(3,"kampf"), l=SC.MusikNeu.komponiere(3,"kampf",{kampfart:"lustig"}); gleich(k.schlaege,64); wahr(k.tempo>=120); wahr(l.tempo<=112); wahr(l.lustig); });
+test("Musikspieler spielt das neue Stück ohne Fehler", function(){
+  var a=new SC.Audio(); a.entsperren(); a.thema=42; if(!a.ctx) return;
+  Object.defineProperty(a.ctx,"state",{value:"running"});   // ohne Nutzeraktion bleibt der Kontext sonst „suspended“; Planen geht trotzdem
+  ["tag","kampf","all"].forEach(function(m){ a._stueck=null; a._pauseBis=0; a.musikTakt(m,true); wahr(a._stueck&&a._stueck.stimmung===m,m+": Stück läuft"); a.musikTakt(m,true); wahr(Object.keys(a._stueck.inst).length>0,m+": Instrumente angeschlossen"); });
+  a.musikTakt("nacht",true); wahr(a._stueck.blendetAus,"Wechsel blendet aus"); a.ctx.close();
+});

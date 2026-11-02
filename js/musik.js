@@ -8,7 +8,12 @@ SC.Musik = {};
   var DUR = [0, 2, 4, 5, 7, 9, 11], MOLL = [0, 2, 3, 5, 7, 8, 10];
   var CODE = { tag: 1, nacht: 2, tief: 3, kampf: 4, boss: 5 };
 
-  SC.Musik.stimmung = function(o){ return o.boss ? "boss" : o.kampf ? "kampf" : o.unterTage ? "tief" : o.tageslicht < 0.55 ? "nacht" : "tag"; };
+  // All und fremde Planeten (nur am Tag an der Oberfläche) haben eigene Stimmungen; sonst Kampf/Boss, unter Tage, Nacht, Tag
+  SC.Musik.stimmung = function(o){
+    if(o.all) return "all";
+    if(o.boss) return "boss"; if(o.kampf) return "kampf"; if(o.unterTage) return "tief"; if(o.tageslicht < 0.55) return "nacht";
+    return o.planet === "glutfrost" || o.planet === "rankenmoor" ? o.planet : "tag";
+  };
 
   // Alle Tonleitertöne im Bereich [von, bis]
   function leiter(grund, moll, von, bis){ var l = moll ? MOLL : DUR, a = []; for(var m = von; m <= bis; m++) if(l.indexOf(SC.mod(m - grund, 12)) >= 0) a.push(m); return a; }

@@ -35,6 +35,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Aktueller Stand
 
+- 2026-11-02: Version 0.14.0 (lokal, nicht gepusht; 502 Tests grün): neue Musik im Spiel – Komponist `js/musik-neu.js` (Motiv, Frage/Antwort, Form A–A′–B–A″, Dynamik, Welt-Thema aus dem Seed), Klänge `js/klang-neu.js` (Vibrato, Flöte, Celesta), Stereo und Hall je Instrument in `js/audio.js`, neue Stimmungen Glutfrost, Rankenmoor und All. Wartet auf Hörurteil des Nutzers; Feinschliff danach.
 - 2026-11-02: Version 0.13.0 live (Test und `main`, 497 Tests grün). Behoben: #38 (Beutekugeln verdrängen die älteste), #39 teilweise (Ritter nach Hieb verwundbar; Rest in „Später“), #40 (Blocken bremst), #57 (Survival-Knopf im Entwicklerpanel), #58 (Leben/Schild am Namensschild der Mitspieler), #93 (Rucksack scrollt nicht seitwärts), #94 (mehr Nachtgegner: 5/10/14, Gesamtgrenze 20; Werte nach Feedback anpassen). Meilenstein Stufe 2 geschlossen. Tests unter WSL: `bash scripts/tests-wsl.sh`.
 - 2026-11-02: Musik: Design-Entwurf `superpowers/specs/2026-11-02-musik-design.md`, Hörprobe `tests/musik.html` mit neuem Komponisten (`js/musik-neu.js`) und neuen Klängen (`js/klang-neu.js`), noch nicht im Spiel. Wartet auf Hörurteil des Nutzers.
 - 2026-11-02: Gerätetest 0.12.0 erfolgreich, Stufe 5 abgeschlossen.
@@ -63,7 +64,7 @@ Minecraft-artiges Browser-Spiel: Blöcke abbauen und bauen, Erkundung, Kampf, Sp
 
 ## Nächster Schritt
 
-- **Musik:** `tests/musik.html` anhören (Alt gegen Neu), Rückmeldung einholen; danach Plan schreiben und in drei Schritten ins Spiel bringen (Komponist, Klang, Orte). Offene Fragen im Spec.
+- **Musik:** im Spiel anhören (Test-Vorschau), Rückmeldung einholen, Feinschliff (Instrumente, Lautstärken, Motive). `tests/musik.html` vergleicht Alt und Neu.
 - **Gerätetest 0.12.0 (erledigt, erfolgreich):** ganzer Flug allein und gemeinsam, Tablet mit 🎯/⚡, auf iPhone/iPad Ton (auch mit Stummschalter) und Schnellleiste Platz 3–9, Platzwechsel, Spielanleitung; im All Sternenkarte, Marker, Lenken mit Maus/Wischen. Danach live, Stufe 5 abschließen. Nächste Ideen: Raumstationen (#69), Crafting (#15).
 - Danach: Feedback der Kinder zu Fahrzeugen (Werte in js/fahrzeuge.js: Tempo, Panzerung, Geschütz).
 - Offen, aber nicht in Stufe 4: #57 (Survival im Entwicklerpanel), #58 (Lebensanzeige für Mitspieler), #59 (Restpunkte Stufe 3).

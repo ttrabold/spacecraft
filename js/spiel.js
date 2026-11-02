@@ -106,7 +106,7 @@ SC.Spiel.startpunkt = function(planet){
   // Spielzustand ohne Darstellung: Welt, Spieler, Kampf, Gegner
   SC.Spiel.prototype._baue = function(daten, chunks){
     var s = this;
-    this.daten = daten;
+    this.daten = daten; this.audio.thema = SC.hashText(String(daten.seed || "")); // Hauptthema der Musik hängt an der Welt
     var pd = daten.planeten[daten.aktuellerPlanet], planet = new SC.Planet(pd);
     this.welt = new SC.Welt(planet, chunks || SC.Spielstand.chunksLaden(pd));
     this.welt.ereignisse.an("block", function(b){
@@ -188,7 +188,7 @@ SC.Spiel.startpunkt = function(planet){
     var vorBoden = sp.aufBoden, vy = sp.geschw[1];
     if(this.all){ // im All: kein Boden, keine Gegner des Planeten
       this._allBild(e, dt, offen); this._hudSurvival(sp.modus === "survival", null, null);
-      if((this._musikZeit = (this._musikZeit || 0) + dt) > 0.5){ this._musikZeit = 0; this.audio.musikTakt("nacht", true); }
+      if((this._musikZeit = (this._musikZeit || 0) + dt) > 0.5){ this._musikZeit = 0; this.audio.musikTakt("all", true); }
     } else {
       if(this._imFahrzeug()) this._fahren(e, dt, offen);
       else { sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
@@ -263,7 +263,7 @@ SC.Spiel.startpunkt = function(planet){
       var h = SC.himmelsFarben(SC.PALETTEN[w.planet.palette] || SC.PALETTEN.start, this.tageszeit);
       var unter = sp.pos[1] < w.generator.hoehe(sp.pos[0], sp.pos[2]) - 6;
       var mk = this.musikKampf || {};
-      a.musikTakt(SC.Musik.stimmung({ tageslicht: h.tageslicht, unterTage: unter, kampf: mk.kampf, boss: mk.boss }), true);
+      a.musikTakt(SC.Musik.stimmung({ tageslicht: h.tageslicht, unterTage: unter, kampf: mk.kampf, boss: mk.boss, planet: w.planet.id }), true);
     }
   };
 

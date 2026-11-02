@@ -1,6 +1,6 @@
 # Bessere Musik – Design
 
-Stand: Entwurf (2026-11-02), noch nicht mit dem Nutzer abgestimmt.
+Stand: Schritte 1–3 im Spiel seit 0.14.0 (2026-11-02), noch ohne Hörurteil des Nutzers. Entscheidungen bis dahin: Welt-Thema aus dem Welt-Seed, Kampf „treibend“ (die lustige Variante `kampfart: "lustig"` ist nur auf `tests/musik.html` hörbar). Der alte Komponist `SC.Musik.komponiere` bleibt für den Vergleich in der Hörprobe.
 
 ## Ausgangslage
 

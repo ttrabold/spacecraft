@@ -397,7 +397,7 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
     var l = [];
     welt.wesen.forEach(function(e){
       if(e.art === "gegner"){
-        var n = { id: e.id, art: "gegner", gegnerArt: e.gegnerArt, stufe: e.stufe, pos: r3(e.pos), blick: r2(e.blick || 0), lp: e.lp, lpMax: e.lpMax, boss: !!e.boss, bemerkt: !!e.bemerkt, blockt: !!e.blockt };
+        var n = { id: e.id, art: "gegner", gegnerArt: e.gegnerArt, stufe: e.stufe, pos: r3(e.pos), blick: r2(e.blick || 0), lp: e.lp, lpMax: e.lpMax, boss: !!e.boss, bemerkt: !!e.bemerkt, blockt: !!e.blockt, zuendet: !!e.zuendet };
         var g = e.getroffenBis && typeof uhr === "number" ? e.getroffenBis - uhr : 0;
         if(g > 0) n.getroffen = Math.round(g);
         if(e.farbe) n.farbe = e.farbe;
@@ -411,7 +411,7 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
     });
     return l;
   };
-  var FELDER = ["typ", "gegnerArt", "stufe", "lp", "lpMax", "boss", "bemerkt", "blockt", "farbe", "team", "schuetze"];
+  var FELDER = ["typ", "gegnerArt", "stufe", "lp", "lpMax", "boss", "bemerkt", "blockt", "zuendet", "farbe", "team", "schuetze"];
   // Gast, pro Bild: Gegner und Geschosse unter den IDs des Gastgebers setzen und aktualisieren, fehlende entfernen, eigene (≥ SC.RAUM_GAST_ID)
   // in Ruhe lassen. Felder werden nur bei einer neuen Liste übernommen; die Position läuft jedes Bild zum Ziel (Sprung bei > 8 Blöcken).
   // uhr (optional): Spieluhr des Gastes für getroffenBis.

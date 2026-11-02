@@ -63,7 +63,7 @@ SC.RenderWesen = function(szene, planet){
       o.g.position.set(x, e.pos[1], z);
       if(e.art === "gegner"){
         o.g.rotation.y = e.blick || 0;
-        var weiss = e.getroffenBis && uhr < e.getroffenBis, l = Math.max(0.35, licht);
+        var weiss = (e.getroffenBis && uhr < e.getroffenBis) || (e.zuendet && Math.floor(uhr / 120) % 2 === 0), l = Math.max(0.35, licht);
         o.teile.forEach(function(t){ if(weiss) t.mesh.material.color.setRGB(1, 1, 1); else if(t.leuchtet) t.mesh.material.color.copy(t.farbe); else t.mesh.material.color.copy(t.farbe).multiplyScalar(l); });
         // Laufbewegung der Beine
         var gehen = Math.hypot(e.geschw[0], e.geschw[2]) > 0.3, sw = gehen ? Math.sin(uhr / 110 + e.id) * 0.5 : 0;

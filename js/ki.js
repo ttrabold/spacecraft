@@ -20,16 +20,17 @@ SC.KI = {};
   function bodenNah(welt, x, y, z){ for(var i = 1; i <= 4; i++){ var b = SC.BLOECKE[welt.holeBlock(x, y - i, z)]; if(b && b.fest) return true; } return false; }
 
   function bewege(welt, g, vx, vz, dt){
-    g.geschw[1] -= SCHWERE * dt; if(g.geschw[1] < -40) g.geschw[1] = -40;
+    if(!g.fliegt){ g.geschw[1] -= SCHWERE * dt; if(g.geschw[1] < -40) g.geschw[1] = -40; }   // Flieger (def.fliegt) kennen keine Schwerkraft
     var vorher = [g.pos[0], g.pos[2]];
     // Keine Stürze über 3 Blöcke
     var nx = g.pos[0] + vx * dt * 3, nz = g.pos[2] + vz * dt * 3;
-    if(g.aufBoden && !bodenNah(welt, nx, g.pos[1] + 0.5, nz)){ vx = 0; vz = 0; }
+    if(!g.fliegt && g.aufBoden && !bodenNah(welt, nx, g.pos[1] + 0.5, nz)){ vx = 0; vz = 0; }
     var stoss = false;
     if(SC.bewegeKoerper(welt, g.pos, 0, vx * dt, g.breite, g.hoehe)) stoss = true;
     if(SC.bewegeKoerper(welt, g.pos, 2, vz * dt, g.breite, g.hoehe)) stoss = true;
     var dy = g.geschw[1] * dt, unten = SC.bewegeKoerper(welt, g.pos, 1, dy, g.breite, g.hoehe);
     if(unten){ g.aufBoden = dy < 0; g.geschw[1] = 0; } else g.aufBoden = false;
+    if(g.fliegt) g.aufBoden = false;
     if(stoss && g.aufBoden) g.geschw[1] = SPRUNG;        // über eine Stufe springen
     var P = welt.planet.groesse; g.pos[0] = SC.mod(g.pos[0], P); g.pos[2] = SC.mod(g.pos[2], P);
     // Feststecken erkennen
@@ -58,10 +59,11 @@ SC.KI = {};
 
   SC.KI.schritt = function(welt, g, ziel, dt, zf, schw){
     var def = SC.GEGNER[g.gegnerArt], akt = [];
-    if(!def){ g.entfernen = true; return akt; }
+    if(!def || g.entfernen){ g.entfernen = true; return akt; }
     var drin = SC.BLOECKE[welt.holeBlock(g.pos[0], g.pos[1] + 0.3, g.pos[2])];
     if(drin && drin.fest){ aufgeben(g); if(g.entfernen) return akt; }
-    g.cd = Math.max(0, (g.cd || 0) - dt); g.cd2 = Math.max(0, (g.cd2 || 0) - dt); g.cd3 = Math.max(0, (g.cd3 || 0) - dt); g.zeit = (g.zeit || 0) + dt;
+    g.cd = Math.max(0, (g.cd || 0) - dt); g.cd2 = Math.max(0, (g.cd2 || 0) - dt); g.cd3 = Math.max(0, (g.cd3 || 0) - dt); g.cdH = Math.max(0, (g.cdH || 0) - dt); g.zeit = (g.zeit || 0) + dt;
+    g.fliegt = !!def.fliegt;
     if(g.sturmBis > 0) g.sturmBis -= dt;
     var heim = ring(welt, g.pos, g.heim || g.pos), heimAbst = Math.hypot(heim[0], heim[2]);
     var d = ziel ? ring(welt, g.pos, ziel.pos) : null, abst = d ? Math.hypot(d[0], d[2]) : Infinity;
@@ -79,17 +81,32 @@ SC.KI = {};
       g.blick = Math.atan2(-d[0], -d[2]);
       if(!g.seiteZeit || g.zeit > g.seiteZeit){ g.seite = zf() < 0.5 ? -1 : 1; g.seiteZeit = g.zeit + 1.5 + zf() * 1.5; }
       var v = def.verhalten;
-      if(v === "fernkampf" || v === "ausweicher" || v === "spucker"){
+      if(v === "fernkampf" || v === "ausweicher" || v === "spucker" || v === "schweber"){
         var a = def.abstand, m = abst < a[0] ? -1 : abst > a[1] ? 1 : 0, s = v === "ausweicher" ? 0.7 : 0.5;
         vx = (r[0] * m + seit[0] * g.seite * s) * tempo; vz = (r[1] * m + seit[1] * g.seite * s) * tempo;
         if(v === "ausweicher" && g.aufBoden && zf() < 0.02) g.geschw[1] = SPRUNG;
+        // Schweber halten sich über dem Ziel
+        if(v === "schweber") g.geschw[1] = Math.max(-3, Math.min(3, (d[1] + (def.schwebehoehe || 3)) * 1.5));
         if(sieht && g.cd <= 0 && abst <= a[1] + 6){ akt.push(schuss(g, def, ziel, d, zf, schw)); g.cd = def.waffe.rate * (0.8 + zf() * 0.4); }
       } else if(v === "nahkampf"){
-        if(abst > def.hieb.reichweite * 0.8){ vx = r[0] * tempo; vz = r[1] * tempo; if(g.aufBoden && zf() < 0.03) g.geschw[1] = 6; }
+        // Ansturm (def.sturm): aus mittlerer Entfernung kurz mit dreifachem Tempo geradeaus
+        var rammt = def.sturm && g.sturmBis > 0;
+        if(def.sturm && !rammt && sieht && abst >= def.sturm.min && abst <= def.sturm.max && g.cd2 <= 0 && g.aufBoden){ g.sturmBis = def.sturm.dauer; g.sturmRichtung = r; g.cd2 = def.sturm.rate; rammt = true; }
+        if(rammt){ vx = g.sturmRichtung[0] * tempo * 3; vz = g.sturmRichtung[1] * tempo * 3; }
+        else if(abst > def.hieb.reichweite * 0.8){ vx = r[0] * tempo; vz = r[1] * tempo; if(g.aufBoden && zf() < 0.03) g.geschw[1] = 6; }
+        // Bodenstampfer (def.stampf) wie beim Koloss, nur kleiner
+        if(def.stampf && abst < def.stampf.radius && g.cd3 <= 0){ akt.push({ art: "stampf", radius: def.stampf.radius, schaden: def.schaden(g.stufe) }); g.cd3 = def.stampf.rate; }
         // Anspringen (Rankenschleicher): aus mittlerer Entfernung hoch und schnell auf das Ziel zu
         if(def.sprung && sieht && abst > 2.5 && abst <= def.sprung.reichweite && g.cd2 <= 0 && g.aufBoden){ g.geschw[1] = 10; g.sprungRichtung = r; g.sprungZeit = 0.5; g.cd2 = def.sprung.rate; }
         if(def.sprung && g.sprungZeit > 0){ g.sprungZeit -= dt; vx = g.sprungRichtung[0] * tempo * 2.5; vz = g.sprungRichtung[1] * tempo * 2.5; }
         if(abst <= def.hieb.reichweite && g.cd <= 0){ akt.push({ art: "hieb", reichweite: def.hieb.reichweite, schaden: def.schaden(g.stufe) }); g.cd = def.hieb.rate; }
+      } else if(v === "kamikaze"){
+        // Rennt los, bleibt in Zündreichweite stehen, nach der Zündschnur knallt es (Flächenschaden), dann ist er weg
+        if(g.zuendBis > 0){
+          g.zuendet = true; g.zuendBis -= dt;
+          if(g.zuendBis <= 0){ akt.push({ art: "stampf", radius: def.explosion.radius, schaden: def.schaden(g.stufe) }); g.entfernen = true; g.zuendet = false; }
+        } else if(abst <= def.zuend.reichweite) g.zuendBis = def.zuend.zeit;
+        else { vx = r[0] * tempo; vz = r[1] * tempo; if(g.aufBoden && zf() < 0.04) g.geschw[1] = 6; }
       } else if(v === "ritter"){
         g.blockt = g.cd < def.hieb.rate - 0.5;      // direkt nach seinem Hieb kurz verwundbar, sonst blockt er
         if(abst > 2){ vx = r[0] * tempo; vz = r[1] * tempo; }
@@ -112,6 +129,16 @@ SC.KI = {};
             g.cd3 = def.ruft.rate;
           }
         }
+      }
+      // Heiler (def.heilt): verletzte Gegner in der Nähe (keine Bosse, nicht sich selbst) bekommen einen Teil ihrer Höchst-LP zurück
+      if(def.heilt && g.cdH <= 0){
+        g.cdH = def.heilt.rate; var geheilt = false;
+        welt.wesen.forEach(function(e){
+          if(e === g || e.art !== "gegner" || e.boss || !(e.lpMax > 0) || e.lp >= e.lpMax || e.lp <= 0) return;
+          var q = ring(welt, g.pos, e.pos); if(Math.hypot(q[0], q[2]) > def.heilt.radius) return;
+          e.lp = Math.min(e.lpMax, e.lp + e.lpMax * def.heilt.anteil); geheilt = true;
+        });
+        if(geheilt) akt.push({ art: "heilung", radius: def.heilt.radius });
       }
     } else if(heimAbst > 2 && !g.bemerkt){
       var hh = richtungZu(heim); vx = hh[0] * tempo * 0.4; vz = hh[1] * tempo * 0.4;

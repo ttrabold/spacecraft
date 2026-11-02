@@ -4,7 +4,12 @@ SC.B = {
   STAMM: 9, BLAETTER: 10, KRISTALL: 11, LEUCHTPILZ: 12, BRETTER: 13, STEINZIEGEL: 14, GLAS: 15,
   WOLLE_ROT: 16, WOLLE_BLAU: 17, WOLLE_GELB: 18, WOLLE_WEISS: 19, METALL: 20, METALLGITTER: 21,
   TECHNIK: 22, LEUCHT_CYAN: 23, LEUCHT_PINK: 24, LEUCHT_GRUEN: 25, BETON: 26, KISTE: 27, KISTE_OFFEN: 28,
-  LAVA: 29, EIS: 30, SCHLAMM: 31, BASALT: 32                       // Stufe 5a: neue Planeten
+  LAVA: 29, EIS: 30, SCHLAMM: 31, BASALT: 32,                      // Stufe 5a: neue Planeten
+  // Stufe 6a (Crafting): Erze, Kristalle, Gegnerteile, Werkbank, Bauteile (Zustände wie offen/zu und Richtung stecken in eigenen IDs)
+  EISENERZ: 33, TITAN: 34, GLUTSTAHL: 35, MOORSILBER: 36, STERNENMETALL: 37,
+  KRISTALL_BLAU: 38, KRISTALL_GRUEN: 39, KRISTALL_ROT: 40, KRISTALL_GELB: 41, KRISTALL_VIOLETT: 42, KRISTALL_WEISS: 43,
+  SCHALTKREIS: 44, CHITIN: 45, WERKBANK: 46, FACKEL: 47, ZAUN: 48,
+  LEITER_N: 49, LEITER_S: 50, LEITER_O: 51, LEITER_W: 52, TUER_X: 53, TUER_Z: 54, TUER_X_OFFEN: 55, TUER_Z_OFFEN: 56, TRUHE: 57
 };
 
 // Muster je Textur (Farben kommen aus der Palette des Planeten)
@@ -16,7 +21,11 @@ SC.TEXTUREN = {
   wolle_gelb: "wolle", wolle_weiss: "wolle", metall: "platte", metallgitter: "gitter", technik: "technik",
   leucht_cyan: "leucht", leucht_pink: "leucht", leucht_gruen: "leucht", beton: "beton",
   kiste_oben: "kistedeckel", kiste_seite: "kiste", kiste_offen: "kisteoffen",
-  lava: "lava", eis: "eis", schlamm: "schlamm", basalt: "basalt"
+  lava: "lava", eis: "eis", schlamm: "schlamm", basalt: "basalt",
+  eisenerz: "erz", titan: "erz", glutstahl: "erz", moorsilber: "erz", sternenmetall: "erz",
+  kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
+  schaltkreis: "schaltkreis", chitin: "chitin", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
+  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", truhe_oben: "kistedeckel", truhe_seite: "kiste"
 };
 
 SC.BLOECKE = {};
@@ -56,9 +65,43 @@ SC.BLOECKE = {};
     [SC.B.LAVA, "lava", alle("lava"), false, true, 15, [1.0, 0.5, 0.15], false, true],
     [SC.B.EIS, "eis", alle("eis"), true, true, 0, null, true, true],
     [SC.B.SCHLAMM, "schlamm", alle("schlamm"), true, false, 0, null, true, true],
-    [SC.B.BASALT, "basalt", alle("basalt"), true, false, 0, null, true, true]
+    [SC.B.BASALT, "basalt", alle("basalt"), true, false, 0, null, true, true],
+    // Stufe 6a: [..., { form, klettern }] – form: "kreuz" | "pfosten" | { typ: "platte", achse, versatz } (Standard Würfel)
+    [SC.B.EISENERZ, "eisenerz", alle("eisenerz"), true, false, 0, null, true, true],
+    [SC.B.TITAN, "titan", alle("titan"), true, false, 0, null, true, true],
+    [SC.B.GLUTSTAHL, "glutstahl", alle("glutstahl"), true, false, 3, [1.0, 0.45, 0.15], true, true],
+    [SC.B.MOORSILBER, "moorsilber", alle("moorsilber"), true, false, 3, [0.5, 1.0, 0.75], true, true],
+    [SC.B.STERNENMETALL, "sternenmetall", alle("sternenmetall"), true, false, 5, [0.75, 0.55, 1.0], true, true],
+    [SC.B.KRISTALL_BLAU, "kristallBlau", alle("kristall_blau"), true, false, 10, [0.25, 0.63, 1.0], true, true],
+    [SC.B.KRISTALL_GRUEN, "kristallGruen", alle("kristall_gruen"), true, false, 10, [0.25, 0.88, 0.42], true, true],
+    [SC.B.KRISTALL_ROT, "kristallRot", alle("kristall_rot"), true, false, 10, [1.0, 0.29, 0.29], true, true],
+    [SC.B.KRISTALL_GELB, "kristallGelb", alle("kristall_gelb"), true, false, 10, [1.0, 0.88, 0.29], true, true],
+    [SC.B.KRISTALL_VIOLETT, "kristallViolett", alle("kristall_violett"), true, false, 10, [0.71, 0.42, 1.0], true, true],
+    [SC.B.KRISTALL_WEISS, "kristallWeiss", alle("kristall_weiss"), true, false, 12, [0.96, 0.96, 1.0], true, true],
+    [SC.B.SCHALTKREIS, "schaltkreis", alle("schaltkreis"), true, false, 0, null, true, true],
+    [SC.B.CHITIN, "chitin", alle("chitin"), true, false, 0, null, true, true],
+    [SC.B.WERKBANK, "werkbank", { oben: "werkbank_oben", seite: "werkbank_seite", unten: "werkbank_seite" }, true, false, 0, null, true, true],
+    [SC.B.FACKEL, "fackel", alle("fackel"), false, true, 14, [1.0, 0.7, 0.3], true, true, { form: "kreuz" }],
+    [SC.B.ZAUN, "zaun", alle("zaun"), true, true, 0, null, true, true, { form: "pfosten" }],
+    [SC.B.LEITER_N, "leiter", alle("leiter"), false, true, 0, null, true, true, { form: { typ: "platte", achse: "z", versatz: 0 }, klettern: true }],
+    [SC.B.LEITER_S, "leiter", alle("leiter"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 1 }, klettern: true }],
+    [SC.B.LEITER_O, "leiter", alle("leiter"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 1 }, klettern: true }],
+    [SC.B.LEITER_W, "leiter", alle("leiter"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 0 }, klettern: true }],
+    [SC.B.TUER_X, "tuer", alle("tuer"), true, true, 0, null, true, true, { form: { typ: "platte", achse: "x", versatz: 0.5 } }],
+    [SC.B.TUER_Z, "tuer", alle("tuer"), true, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 0.5 } }],
+    [SC.B.TUER_X_OFFEN, "tuer", alle("tuer"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 0 } }],
+    [SC.B.TUER_Z_OFFEN, "tuer", alle("tuer"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 0 } }],
+    [SC.B.TRUHE, "truhe", { oben: "truhe_oben", seite: "truhe_seite", unten: "truhe_seite" }, true, false, 0, null, true, true]
   ];
   D.forEach(function(d){
-    SC.BLOECKE[d[0]] = { id: d[0], name: SC.T.bloecke[d[1]], seiten: d[2], fest: d[3], durchsichtig: d[4], leuchten: d[5], lichtFarbe: d[6], zerstoerbar: d[7], inAuswahl: d[8] };
+    var b = SC.BLOECKE[d[0]] = { id: d[0], name: SC.T.bloecke[d[1]], seiten: d[2], fest: d[3], durchsichtig: d[4], leuchten: d[5], lichtFarbe: d[6], zerstoerbar: d[7], inAuswahl: d[8], form: "wuerfel", klettern: false };
+    if(d[9]) for(var k in d[9]) b[k] = d[9][k];
   });
 })();
+
+// Kristallfarben für Laserschwerter und Blaster (Stufe 6a): Schlüssel → Block und Farbe der Klinge/des Strahls
+SC.CRAFTING_KRISTALLE = {
+  blau: { block: SC.B.KRISTALL_BLAU, farbe: "#3fa0ff" }, gruen: { block: SC.B.KRISTALL_GRUEN, farbe: "#3fe06a" },
+  rot: { block: SC.B.KRISTALL_ROT, farbe: "#ff4a4a" }, gelb: { block: SC.B.KRISTALL_GELB, farbe: "#ffe14a" },
+  violett: { block: SC.B.KRISTALL_VIOLETT, farbe: "#b46bff" }, weiss: { block: SC.B.KRISTALL_WEISS, farbe: "#f4f4ff" }
+};

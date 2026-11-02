@@ -44,11 +44,17 @@ SC.Abbau = {};
   [B.STEIN, B.STEINZIEGEL, B.KRISTALL].forEach(function(id){ ZEIT[id] = 1.4; });
   [B.METALL, B.METALLGITTER, B.TECHNIK, B.BETON, B.LEUCHT_CYAN, B.LEUCHT_PINK, B.LEUCHT_GRUEN].forEach(function(id){ ZEIT[id] = 2; });
   ZEIT[B.GLAS] = 0.3;
+  // Stufe 6a: Erze nach Seltenheit, Kristalle, Teile, Werkbank und Bauteile
+  ZEIT[B.EISENERZ] = 1.6; ZEIT[B.TITAN] = 2.2; ZEIT[B.GLUTSTAHL] = 3; ZEIT[B.MOORSILBER] = 3; ZEIT[B.STERNENMETALL] = 4;
+  [B.KRISTALL_BLAU, B.KRISTALL_GRUEN, B.KRISTALL_ROT, B.KRISTALL_GELB, B.KRISTALL_VIOLETT, B.KRISTALL_WEISS].forEach(function(id){ ZEIT[id] = 1.4; });
+  [B.SCHALTKREIS, B.CHITIN].forEach(function(id){ ZEIT[id] = 1; });
+  [B.WERKBANK, B.FACKEL, B.ZAUN, B.LEITER_N, B.LEITER_S, B.LEITER_O, B.LEITER_W, B.TUER_X, B.TUER_Z, B.TUER_X_OFFEN, B.TUER_Z_OFFEN, B.TRUHE].forEach(function(id){ ZEIT[id] = 0.9; });
+  var GRUND = {}; GRUND[B.LEITER_S] = GRUND[B.LEITER_O] = GRUND[B.LEITER_W] = B.LEITER_N; GRUND[B.TUER_Z] = GRUND[B.TUER_X_OFFEN] = GRUND[B.TUER_Z_OFFEN] = B.TUER_X;
   SC.Abbau.zeit = function(id, waffenArt){
     var b = SC.BLOECKE[id];
     if(!b || !b.zerstoerbar) return Infinity;
     var t = ZEIT[id] !== undefined ? ZEIT[id] : 1;
     return waffenArt === "laserschwert" ? t / 2 : t;
   };
-  SC.Abbau.ergibt = function(id){ return id === B.GRAS ? B.ERDE : id === B.GLAS ? null : id; };
+  SC.Abbau.ergibt = function(id){ return id === B.GRAS ? B.ERDE : id === B.GLAS ? null : GRUND[id] || id; };
 })();

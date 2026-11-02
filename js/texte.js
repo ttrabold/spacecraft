@@ -147,7 +147,10 @@ SC.T = {
     wolleGelb: "Gelbe Wolle", wolleWeiss: "Weiße Wolle", metall: "Metallplatte", metallgitter: "Metallgitter",
     technik: "Technikblock", leuchtCyan: "Leuchtblock Cyan", leuchtPink: "Leuchtblock Pink", leuchtGruen: "Leuchtblock Grün",
     beton: "Bunkerbeton", kiste: "Schatzkiste", kisteOffen: "Offene Schatzkiste",
-    lava: "Lava", eis: "Eis", schlamm: "Schlamm", basalt: "Basalt"
+    lava: "Lava", eis: "Eis", schlamm: "Schlamm", basalt: "Basalt",
+    eisenerz: "Eisenerz", titan: "Titan", glutstahl: "Glutstahl", moorsilber: "Moorsilber", sternenmetall: "Sternenmetall",
+    kristallBlau: "Blauer Kristall", kristallGruen: "Grüner Kristall", kristallRot: "Roter Kristall", kristallGelb: "Gelber Kristall", kristallViolett: "Violetter Kristall", kristallWeiss: "Weißer Kristall",
+    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe"
   },
   // Spielanleitung (Menü und docs/ANLEITUNG.md): Abschnitte [Titel, Punkte]; „Taste – Bedeutung“ zeigt die Taste fett
   anleitung: {

@@ -36,7 +36,7 @@
 |---|---|
 | `js/bloecke.js` (ändern) | neue IDs 33–63, Tabelleneinträge, `form`/`klettern`-Felder |
 | `js/texturen.js`, `js/texte.js` (ändern) | Muster und Namen der neuen Blöcke und Menütexte |
-| `js/abbau.js` (ändern) | Abbauzeiten; `ergibt` bildet Varianten auf Grund-Blöcke ab |
+| `js/rucksack.js` (ändern) | Abbauzeiten; `ergibt` bildet Varianten auf Grund-Blöcke ab |
 | `js/generator.js`, `js/landschaft.js` (ändern) | Erze und Kristalle (nur Generator-Version ≥ 3) |
 | `js/crafting.js` (neu) | `SC.REZEPTE`, `SC.Crafting` (Logik, ohne UI) |
 | `js/gegenstaende.js` (ändern) | `SC.Beute.baue`, Deckel für Fund-Seltenheit, `klinge`-Feld |
@@ -52,7 +52,7 @@
 ### Task 1: Rohstoffe und Bauteile als Blöcke
 
 **Files:**
-- Modify: `js/bloecke.js`, `js/texturen.js`, `js/texte.js`, `js/abbau.js`, `js/ui.js` (Kreativ-Reiter nimmt `inAuswahl`-Blöcke automatisch)
+- Modify: `js/bloecke.js`, `js/texturen.js`, `js/texte.js`, `js/rucksack.js`, `js/ui.js` (Kreativ-Reiter nimmt `inAuswahl`-Blöcke automatisch)
 - Test: `tests/test-crafting.js` (neu, in `tests/index.html` eintragen)
 
 **Interfaces:**
@@ -169,7 +169,7 @@ Festgelegte Rezepte (Anzahl Ergebnis ← Kosten): Bretter 4 ← 1 Stamm (hand); 
 
 ### Task 9: Türen und Leitern
 
-**Files:** Modify `js/bauteile.js`, `js/survival.js` (Antippen einer Tür), `js/spieler.js` (Klettern), `js/abbau.js`; Test `tests/test-bauteile.js`.
+**Files:** Modify `js/bauteile.js`, `js/survival.js` (Antippen einer Tür), `js/spieler.js` (Klettern), `js/rucksack.js`; Test `tests/test-bauteile.js`.
 
 **Interfaces:**
 - Produces: `SC.Bauteile.tuerUmschalten(welt, x, y, z, ursprung) -> boolean` (tauscht `TUER_X`↔`TUER_X_OFFEN`, `TUER_Z`↔`TUER_Z_OFFEN` über `welt.setzeBlock(…, "spieler")`, damit Mehrspieler den Wechsel wie eine Blockänderung überträgt).

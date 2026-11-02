@@ -46,6 +46,15 @@ SC.Texturen = {};
         case "lava": var ad = Math.sin(x * 0.9 + y * 0.5) + Math.sin(y * 1.3 - x * 0.4); c = ad > 1.1 ? h : ad < -0.8 ? d : g; break;
         case "eis": c = (x + 2 * y) % 13 === 0 || (x === 11 && y > 3 && y < 9) ? h : zf() < 0.08 ? d : g; a = 215; break;
         case "schlamm": c = rausch(x, y, 0.4); if((x - 4) * (x - 4) + (y - 10) * (y - 10) < 3 || (x - 11) * (x - 11) + (y - 4) * (y - 4) < 2) c = h; break;
+        case "erz": r = zf(); c = r < 0.18 ? d : g; if((x * 3 + y * 5) % 9 === 0 || (x * 7 + y * 2) % 13 === 0) c = h; break;
+        case "schaltkreis": c = x % 4 === 0 || y % 5 === 0 ? d : g; if((x * y) % 7 === 0 && x % 4 !== 0) c = h; break;
+        case "chitin": c = y % 5 === 0 ? d : (x + y) % 6 === 0 ? h : zf() < 0.15 ? d : g; break;
+        case "werkbankoben": c = x === 0 || x === 15 || y === 0 || y === 15 ? d : y % 4 === 3 ? d : g; if(x >= 4 && x <= 11 && y >= 6 && y <= 9) c = h; break;
+        case "werkbankseite": c = y < 3 || x < 2 || x > 13 ? d : g; if(y >= 6 && y <= 9 && x % 4 === 1) c = h; break;
+        case "fackel": a = 0; if(x >= 7 && x <= 8 && y >= 6) { c = g; a = 255; } else if(x >= 6 && x <= 9 && y >= 1 && y <= 5){ c = (x === 7 || x === 8) && y >= 3 ? h : d; a = 255; } break;
+        case "zaun": c = x % 3 === 0 ? d : zf() < 0.2 ? h : g; break;
+        case "leiter": a = 0; if(x <= 2 || x >= 13 || y % 4 === 1){ c = x <= 2 || x >= 13 ? g : d; a = 255; } break;
+        case "tuer": c = x < 2 || x > 13 || y < 2 || y > 13 ? d : (y === 7 || y === 8) ? d : g; if(x === 12 && (y === 7 || y === 8)) c = h; break;
         case "basalt": r = zf(); c = r < 0.25 ? d : r < 0.33 ? h : g; if(x % 5 === 0 && y % 4 !== 0) c = d; break;
       }
       setze(x, y, c, a);

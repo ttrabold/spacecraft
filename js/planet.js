@@ -16,7 +16,16 @@ SC.PALETTEN = {};
       technik: ["#5a6470", "#454e58", "#33c4ff"], leucht_cyan: ["#5ff4ff", "#3ad0e8", "#e0fdff"], leucht_pink: ["#ff6fd8", "#e04cb8", "#ffe0f6"],
       leucht_gruen: ["#6bffb0", "#3fe08e", "#e0fff0"], beton: ["#9a9a96", "#85857f", "#adada8"],
       kiste_oben: ["#8a5a2b", "#c9a23a", "#ffd95c"], kiste_seite: ["#8a5a2b", "#c9a23a", "#ffd95c"], kiste_offen: ["#5a3a1b", "#c9a23a", "#2a1a0b"],
-      lava: ["#ff6a1a", "#c43a0a", "#ffd04a"], eis: ["#bfe6ff", "#94c9ee", "#ecf8ff"], schlamm: ["#5a4a32", "#433625", "#6e5c40"], basalt: ["#3a3638", "#28252a", "#4d484b"]
+      lava: ["#ff6a1a", "#c43a0a", "#ffd04a"], eis: ["#bfe6ff", "#94c9ee", "#ecf8ff"], schlamm: ["#5a4a32", "#433625", "#6e5c40"], basalt: ["#3a3638", "#28252a", "#4d484b"],
+      // Stufe 6a: [Grund, dunkel, hell]; bei Erzen ist „hell“ die Erzfarbe auf grauem Stein
+      eisenerz: ["#8c8f96", "#6f727a", "#d9946a"], titan: ["#8c8f96", "#6f727a", "#bfe3ff"], glutstahl: ["#6d6470", "#4a3f4c", "#ff5a2a"],
+      moorsilber: ["#6a7062", "#545a4e", "#7fffc0"], sternenmetall: ["#4a4560", "#332f46", "#d9a0ff"],
+      kristall_blau: ["#3fa0ff", "#1f6fd0", "#c8e4ff"], kristall_gruen: ["#3fe06a", "#1fb04a", "#c8ffd8"], kristall_rot: ["#ff4a4a", "#c22a2a", "#ffc8c8"],
+      kristall_gelb: ["#ffe14a", "#d0b21f", "#fff4b8"], kristall_violett: ["#b46bff", "#8a3fd0", "#e6ccff"], kristall_weiss: ["#f4f4ff", "#c8c8e0", "#ffffff"],
+      schaltkreis: ["#2f8a5a", "#1f5c3c", "#ffd24a"], chitin: ["#8a6a3a", "#5c4423", "#c9a468"],
+      werkbank_oben: ["#b88a52", "#6b4a2b", "#d9d9d9"], werkbank_seite: ["#946c3c", "#5c3f20", "#b9c2cc"],
+      fackel: ["#8a5a2b", "#ff8a1a", "#ffe27a"], zaun: ["#a87a44", "#6b4a2b", "#c9a060"], leiter: ["#a07a4c", "#6b4a2b", "#b88f5d"],
+      tuer: ["#a87a44", "#5c3f20", "#ffd95c"], truhe_oben: ["#9a6a35", "#5a3a1b", "#c9a060"], truhe_seite: ["#9a6a35", "#5a3a1b", "#c9a060"]
     },
     himmel: { tag: ["#7ec8ff", "#cfeaff"], daemmerung: ["#3b3a7a", "#ffb37a"], nacht: ["#070b24", "#1b2a55"] },
     sonne: "#fff6b0", mond: "#e6ecff", monde: 1

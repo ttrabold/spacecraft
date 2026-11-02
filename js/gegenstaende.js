@@ -15,7 +15,12 @@ SC.GEGENSTAENDE = {
   schildgenerator: { platz: "schild", haupt: { schild: 25 } }
 };
 
+// Crafting (Stufe 6a): gefundene Gegenstände sind seltener, damit sich Bauen lohnt. Bosse bleiben ausgenommen.
+SC.CRAFTING_FUND = { gegenstandChance: 0.25, maxSeltenheit: 2 };
+
 SC.Beute = {};
+// Eine Beute-Position (Gegenstand oder Rohstoff {block, anzahl}) als Sache für eine Beutekugel
+SC.Beute.alsSache = function(b){ return b.block !== undefined ? { block: b.block, anzahl: b.anzahl } : { gegenstand: b }; };
 (function(){
   var ANTEILE = [0.55, 0.83, 0.95, 0.99, 1];
   var ORT = {
@@ -56,6 +61,7 @@ SC.Beute = {};
   SC.Beute.erzeuge = function(zf, o){
     var art = o.art || waehleArt(zf, o.ort), def = SC.GEGENSTAENDE[art], stufe = Math.max(1, o.stufe || 1);
     var selt = SC.Beute.seltenheit(zf, { mindest: o.mindest, bonus: o.bonus });
+    if(!o.boss) selt = Math.min(selt, SC.CRAFTING_FUND.maxSeltenheit);
     var faktor = (1 + 0.15 * (stufe - 1)) * (1 + 0.18 * selt), werte = {};
     for(var k in def.haupt) werte[k] = Math.max(1, Math.round(def.haupt[k] * faktor));
     var anzahl = [0, 1, 1, 2, 3][selt], pool = ZUSATZ.slice();

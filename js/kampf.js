@@ -175,8 +175,15 @@ SC.Kampf = function(welt, spieler, daten, zf){
     var def = SC.GEGNER[g.gegnerArt] || {}, boss = !!(def.boss || g.boss);
     var xp = SC.Werte.erfahrungFuerGegner(g.stufe, boss);
     var beute = [], bonus = (SC.SCHWIERIGKEIT[daten.schwierigkeit] || {}).seltenheitBonus || 0;
-    if(zf() < ((def.beute && def.beute.chance) || 0.3)){
-      for(var i = 0; i < (boss ? 2 : 1); i++) beute.push(SC.Beute.erzeuge(zf, { stufe: g.stufe, ort: g.ort, mindest: boss ? 2 : 0, bonus: bonus }));
+    var chance = ((def.beute && def.beute.chance) || 0.3) * (boss ? 1 : SC.CRAFTING_FUND.gegenstandChance);   // Bosse lassen Ausrüstung wie bisher fallen
+    if(zf() < chance){
+      for(var i = 0; i < (boss ? 2 : 1); i++) beute.push(SC.Beute.erzeuge(zf, { stufe: g.stufe, ort: g.ort, mindest: boss ? 2 : 0, bonus: bonus, boss: boss }));
+    }
+    // Rohstoffe (Crafting): Teile der Art, bei Bossen Sternenmetall und manchmal ein Weißer Kristall
+    (def.teile || []).forEach(function(t){ if(zf() < t.chance) beute.push({ block: t.block, anzahl: t.menge[0] + Math.floor(zf() * (t.menge[1] - t.menge[0] + 1)) }); });
+    if(boss){
+      beute.push({ block: SC.B.STERNENMETALL, anzahl: 1 + Math.floor(zf() * 2) });
+      if(zf() < 0.25) beute.push({ block: SC.B.KRISTALL_WEISS, anzahl: 1 });
     }
     return { erfahrung: xp, beute: beute, boss: boss };
   };

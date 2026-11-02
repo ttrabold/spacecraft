@@ -5,7 +5,7 @@ SC.GEGNER = {
     verhalten: "fernkampf", lp: function(s){ return 30 + 12 * s; }, schaden: function(s){ return 3 + 1 * s; },
     tempo: 2.6, breite: 0.7, hoehe: 1.9, sicht: 24, abstand: [8, 14],
     waffe: { art: "laser", rate: 1.5, tempo: 30, streuung: 0.14, farbe: "#ff4f4f" },
-    beute: { chance: 0.35 }, orte: ["station"], laut: "droide",
+    beute: { chance: 0.35 }, teile: [{ block: SC.B.SCHALTKREIS, chance: 0.5, menge: [1, 2] }], orte: ["station"], laut: "droide",
     modell: [
       { teil: "kopf", w: 0.42, h: 0.38, d: 0.42, x: 0, y: 1.7, z: 0, farbe: "#e6e9ef" },
       { teil: "visier", w: 0.34, h: 0.08, d: 0.02, x: 0, y: 1.72, z: -0.22, farbe: "#ff7a3c", leuchtet: true },
@@ -21,7 +21,7 @@ SC.GEGNER = {
     verhalten: "ausweicher", lp: function(s){ return 24 + 10 * s; }, schaden: function(s){ return 2 + 0.8 * s; },
     tempo: 3.6, breite: 0.6, hoehe: 1.8, sicht: 22, abstand: [5, 10],
     waffe: { art: "laser", rate: 1.3, tempo: 28, streuung: 0.14, farbe: "#ffa64f" },
-    beute: { chance: 0.35 }, orte: ["lager"], laut: null,
+    beute: { chance: 0.35 }, teile: [{ block: SC.B.SCHALTKREIS, chance: 0.5, menge: [1, 2] }], orte: ["lager"], laut: null,
     modell: [
       { teil: "kopf", w: 0.42, h: 0.42, d: 0.42, x: 0, y: 1.58, z: 0, farbe: "#c99a72" },
       { teil: "tuch", w: 0.44, h: 0.14, d: 0.44, x: 0, y: 1.5, z: 0, farbe: "#c0392b" },
@@ -36,7 +36,7 @@ SC.GEGNER = {
   krabbler: {
     verhalten: "nahkampf", lp: function(s){ return 14 + 6 * s; }, schaden: function(s){ return 2 + 0.8 * s; },
     tempo: 4.2, breite: 0.9, hoehe: 0.7, sicht: 16, hieb: { reichweite: 1.5, rate: 0.9 },
-    beute: { chance: 0.2 }, orte: ["dungeon", "nacht"], laut: "krabbler",
+    beute: { chance: 0.2 }, teile: [{ block: SC.B.CHITIN, chance: 0.5, menge: [1, 2] }], orte: ["dungeon", "nacht"], laut: "krabbler",
     modell: [
       { teil: "rumpf", w: 0.8, h: 0.4, d: 0.9, x: 0, y: 0.4, z: 0, farbe: "#5a3a8a" },
       { teil: "kopf", w: 0.5, h: 0.32, d: 0.3, x: 0, y: 0.42, z: -0.55, farbe: "#7a52b0" },
@@ -49,7 +49,7 @@ SC.GEGNER = {
     verhalten: "spucker", lp: function(s){ return 20 + 8 * s; }, schaden: function(s){ return 3 + 1 * s; },
     tempo: 2.8, breite: 0.8, hoehe: 1.0, sicht: 20, abstand: [6, 12],
     waffe: { art: "spucke", rate: 1.8, tempo: 11, streuung: 0.05, farbe: "#7cff4f" },
-    beute: { chance: 0.3 }, orte: ["dungeon", "nacht", "kristallfeld"], laut: "spucker",
+    beute: { chance: 0.3 }, teile: [{ block: SC.B.CHITIN, chance: 0.5, menge: [1, 2] }], orte: ["dungeon", "nacht", "kristallfeld"], laut: "spucker",
     modell: [
       { teil: "rumpf", w: 0.6, h: 0.5, d: 1.0, x: 0, y: 0.45, z: 0.05, farbe: "#3f9a55" },
       { teil: "kopf", w: 0.46, h: 0.4, d: 0.46, x: 0, y: 0.75, z: -0.55, farbe: "#56b86a" },
@@ -96,7 +96,7 @@ SC.GEGNER = {
   lavagolem: {
     verhalten: "nahkampf", lp: function(s){ return 40 + 16 * s; }, schaden: function(s){ return 4 + 1.2 * s; },
     tempo: 1.8, breite: 1.4, hoehe: 2.0, sicht: 18, hieb: { reichweite: 2.0, rate: 1.4 },
-    beute: { chance: 0.35 }, orte: ["glutfrost"], laut: null,
+    beute: { chance: 0.35 }, teile: [{ block: SC.B.GLUTSTAHL, chance: 0.5, menge: [1, 2] }], orte: ["glutfrost"], laut: null,
     modell: [
       { teil: "rumpf", w: 1.0, h: 0.9, d: 0.7, x: 0, y: 1.2, z: 0, farbe: "#3a3034" },
       { teil: "glut", w: 0.6, h: 0.5, d: 0.05, x: 0, y: 1.25, z: -0.37, farbe: "#ff7a2a", leuchtet: true },
@@ -111,7 +111,7 @@ SC.GEGNER = {
   frostkrabbler: {
     verhalten: "nahkampf", lp: function(s){ return 12 + 5 * s; }, schaden: function(s){ return 2 + 0.7 * s; },
     tempo: 4.6, breite: 0.8, hoehe: 0.6, sicht: 16, hieb: { reichweite: 1.4, rate: 0.8 },
-    beute: { chance: 0.2 }, orte: ["glutfrost"], laut: "krabbler",
+    beute: { chance: 0.2 }, teile: [{ block: SC.B.CHITIN, chance: 0.5, menge: [1, 2] }], orte: ["glutfrost"], laut: "krabbler",
     modell: [
       { teil: "panzer", w: 0.8, h: 0.35, d: 0.9, x: 0, y: 0.35, z: 0, farbe: "#bfe6ff" },
       { teil: "kopf", w: 0.4, h: 0.25, d: 0.3, x: 0, y: 0.38, z: -0.55, farbe: "#94c9ee" },
@@ -125,7 +125,7 @@ SC.GEGNER = {
     verhalten: "koloss", boss: true, lp: function(s){ return 900 + 220 * s; }, schaden: function(s){ return 11 + 3 * s; },
     tempo: 2.0, breite: 2.8, hoehe: 3.0, sicht: 24, hieb: { reichweite: 2.8, rate: 1.6 }, stampf: { radius: 4.5, rate: 3.5 },
     waffe: { art: "glut", rate: 2.5, tempo: 12, streuung: 0.08, farbe: "#ff7a2a" },
-    beute: { chance: 1 }, orte: ["glutfrost"], laut: null,
+    beute: { chance: 1 }, teile: [{ block: SC.B.GLUTSTAHL, chance: 1, menge: [2, 3] }], orte: ["glutfrost"], laut: null,
     modell: [
       { teil: "rumpf", w: 2.0, h: 1.4, d: 1.3, x: 0, y: 1.8, z: 0, farbe: "#2e2629" },
       { teil: "glut", w: 1.2, h: 0.8, d: 0.05, x: 0, y: 1.9, z: -0.67, farbe: "#ff6a1a", leuchtet: true },
@@ -142,7 +142,7 @@ SC.GEGNER = {
   rankenschleicher: {
     verhalten: "nahkampf", lp: function(s){ return 22 + 8 * s; }, schaden: function(s){ return 3 + 1 * s; },
     tempo: 3.6, breite: 0.8, hoehe: 1.2, sicht: 14, hieb: { reichweite: 1.6, rate: 1.0 }, sprung: { reichweite: 6, rate: 4 },
-    beute: { chance: 0.3 }, orte: ["rankenmoor"], laut: "krabbler",
+    beute: { chance: 0.3 }, teile: [{ block: SC.B.CHITIN, chance: 0.5, menge: [1, 2] }], orte: ["rankenmoor"], laut: "krabbler",
     modell: [
       { teil: "rumpf", w: 0.6, h: 0.5, d: 1.0, x: 0, y: 0.6, z: 0, farbe: "#2f6a24" },
       { teil: "kopf", w: 0.45, h: 0.4, d: 0.45, x: 0, y: 0.85, z: -0.6, farbe: "#3f8a2e" },
@@ -156,7 +156,7 @@ SC.GEGNER = {
     verhalten: "spucker", lp: function(s){ return 22 + 8 * s; }, schaden: function(s){ return 3 + 1 * s; },
     tempo: 2.4, breite: 0.9, hoehe: 1.1, sicht: 20, abstand: [6, 12],
     waffe: { art: "spucke", rate: 1.8, tempo: 11, streuung: 0.05, farbe: "#a8ff3a" },
-    beute: { chance: 0.3 }, orte: ["rankenmoor"], laut: "spucker",
+    beute: { chance: 0.3 }, teile: [{ block: SC.B.MOORSILBER, chance: 0.5, menge: [1, 2] }], orte: ["rankenmoor"], laut: "spucker",
     modell: [
       { teil: "koerper", w: 0.9, h: 0.8, d: 0.9, x: 0, y: 0.5, z: 0, farbe: "#4e6a3a" },
       { teil: "maul", w: 0.4, h: 0.12, d: 0.02, x: 0, y: 0.6, z: -0.46, farbe: "#a8ff3a", leuchtet: true },
@@ -170,7 +170,7 @@ SC.GEGNER = {
     verhalten: "koloss", boss: true, lp: function(s){ return 950 + 230 * s; }, schaden: function(s){ return 10 + 3 * s; },
     tempo: 2.0, breite: 2.8, hoehe: 2.8, sicht: 22, hieb: { reichweite: 2.8, rate: 1.6 }, stampf: { radius: 4.5, rate: 4 },
     ruft: { art: "rankenschleicher", rate: 12, max: 3 },
-    beute: { chance: 1 }, orte: ["rankenmoor"], laut: null,
+    beute: { chance: 1 }, teile: [{ block: SC.B.MOORSILBER, chance: 1, menge: [2, 3] }], orte: ["rankenmoor"], laut: null,
     modell: [
       { teil: "rumpf", w: 2.1, h: 1.5, d: 1.4, x: 0, y: 1.6, z: 0, farbe: "#3a4e2a" },
       { teil: "moos", w: 2.2, h: 0.35, d: 1.5, x: 0, y: 2.45, z: 0, farbe: "#55aa38" },

@@ -189,7 +189,7 @@ test("Mehrspieler: beuteFuer würfelt wie besiegtGegner", function(){
   var w = new SC.Welt(new SC.Planet({ id: "start", seed: 1234 })), d = SC.Spielstand.neu({ name: "K", seedText: "k", modus: "survival" });
   var g = { gegnerArt: "schattenritter", stufe: 4, ort: "dungeon", boss: true };
   var a = mspKampf(w, d, 42).besiegtGegner(g), b = SC.Kampf.beuteFuer(g, d, SC.zufall(42));
-  gleich(JSON.stringify(b.beute), JSON.stringify(a.beute)); gleich(b.erfahrung, a.erfahrung); wahr(b.beute.length === 2, "Boss: zwei Teile"); gleich(b.boss, true);
+  gleich(JSON.stringify(b.beute), JSON.stringify(a.beute)); gleich(b.erfahrung, a.erfahrung); wahr(b.beute.filter(function(x){ return x.block === undefined; }).length === 2, "Boss: zwei Gegenstände"); gleich(b.boss, true);
   var k = mspKampf(w, d, 1), xp0 = k.werte.erfahrung; gleich(k.gibErfahrung(5), 0); gleich(k.werte.erfahrung, xp0 + 5);
 });
 
@@ -244,7 +244,7 @@ test("Mehrspieler: Besiegt: alle in 40 Blöcken bekommen gleiche Beute und volle
   }).then(function(){
     g = mspBoss(u.welt, [1, 70, 2]); var xpA = a.k.werte.erfahrung, xpH = u.hk.werte.erfahrung;
     var r = u.h.besiege(g); a.xp0 = xpA; u.xp0 = xpH; u.r = r;
-    gleich(u.welt.wesen.has(g.id), false, "Gegner weg"); wahr(r.beute.length === 2); gleich(r.nah, true);
+    gleich(u.welt.wesen.has(g.id), false, "Gegner weg"); wahr(r.beute.filter(function(x){ return x.block === undefined; }).length === 2); gleich(r.nah, true);
     return raumLauf(u.netz);
   }).then(function(){
     var r = u.r; gleich(u.hBeute.length, 1); gleich(JSON.stringify(u.hBeute[0].beute), JSON.stringify(r.beute)); gleich(u.hk.werte.erfahrung > u.xp0 || r.aufstiege > 0, true, "Gastgeber bekommt Erfahrung");

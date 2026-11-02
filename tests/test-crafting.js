@@ -42,3 +42,27 @@ test("Erze: Glutfrost und Rankenmoor haben eigene Metalle und Kristalle (#96)", 
   var m = zaehleErze(new SC.Planet({ id: "rankenmoor", seed: 9, palette: "rankenmoor", generatorVersion: 3 }), 8);
   wahr(m.z[SC.B.MOORSILBER] > 0 && m.z[SC.B.KRISTALL_VIOLETT] > 0, "Rankenmoor: Moorsilber und violetter Kristall"); wahr(!m.z[SC.B.GLUTSTAHL] && !m.z[SC.B.KRISTALL_ROT], "Rankenmoor ohne Glut-Funde");
 });
+function wuerfleBeute(art, n, boss){
+  var zf = SC.zufall(77), gegenstaende = 0, teile = {}, selt = [0,0,0,0,0], alle = 0;
+  for(var i = 0; i < n; i++){
+    var r = SC.Kampf.beuteFuer({ gegnerArt: art, stufe: 3, ort: boss ? "dungeon" : "station", boss: !!boss }, {}, zf);
+    r.beute.forEach(function(b){ if(b.block !== undefined){ teile[b.block] = (teile[b.block] || 0) + b.anzahl; wahr(b.anzahl >= 1, "Anzahl"); } else { gegenstaende++; selt[b.seltenheit]++; } });
+    if(r.beute.some(function(b){ return b.block === undefined; })) alle++;
+  }
+  return { gegenstaende: gegenstaende, anteil: alle / n, teile: teile, selt: selt };
+}
+test("Gegner lassen Rohstoffe fallen, Gegenstände seltener (#97)", function(){
+  var r = wuerfleBeute("patrouillendroide", 3000);
+  wahr(Math.abs(r.anteil - 0.35 * SC.CRAFTING_FUND.gegenstandChance) < 0.03, "Gegenstands-Anteil " + r.anteil); wahr(r.teile[SC.B.SCHALTKREIS] > 0, "Schaltkreise");
+  var k = wuerfleBeute("krabbler", 1000); wahr(k.teile[SC.B.CHITIN] > 0, "Chitin vom Krabbler"); wahr(!k.teile[SC.B.SCHALTKREIS]);
+  wahr(wuerfleBeute("lavagolem", 1000).teile[SC.B.GLUTSTAHL] > 0, "Glutstahl vom Lavagolem"); wahr(wuerfleBeute("sumpfspucker", 1000).teile[SC.B.MOORSILBER] > 0, "Moorsilber vom Sumpfspucker");
+});
+test("Bosse lassen Sternenmetall und manchmal Weißen Kristall fallen (#97)", function(){
+  var r = wuerfleBeute("schattenritter", 400, true); wahr(r.teile[SC.B.STERNENMETALL] >= 400, "Sternenmetall jedes Mal"); wahr(r.teile[SC.B.KRISTALL_WEISS] > 40 && r.teile[SC.B.KRISTALL_WEISS] < 160, "Weiß ~25 %: " + r.teile[SC.B.KRISTALL_WEISS]);
+  wahr(r.selt[3] + r.selt[4] > 0, "Bosse dürfen episch und legendär fallen lassen");
+});
+test("Gefundene Gegenstände sind ohne Boss höchstens selten (#97)", function(){
+  var zf = SC.zufall(5), max = 0, bossMax = 0;
+  for(var i = 0; i < 2000; i++){ max = Math.max(max, SC.Beute.erzeuge(zf, { stufe: 5, ort: "herrenhaus", bonus: 1 }).seltenheit); bossMax = Math.max(bossMax, SC.Beute.erzeuge(zf, { stufe: 5, boss: true, mindest: 2, bonus: 1 }).seltenheit); }
+  wahr(max <= SC.CRAFTING_FUND.maxSeltenheit, "ohne Boss: " + max); gleich(bossMax, 4, "mit Boss bis legendär");
+});

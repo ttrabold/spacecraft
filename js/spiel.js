@@ -379,7 +379,7 @@ SC.Spiel.startpunkt = function(planet){
       beiPilotWeg: function(f){ if(f && s.all && s.all.zuschauer){ s._allMitfahren(null); s._schiffAbsetzen(f); } } });
     gg.bindeKampf(this.kampf, {
       ich: function(){ return s.raumIch(s._menueOffen); },
-      beiBeute: function(pos, l){ s.beuteAuswerfen(pos, l.map(function(b){ return { gegenstand: b }; })); },
+      beiBeute: function(pos, l){ s.beuteAuswerfen(pos, l.map(SC.Beute.alsSache)); },
       besiege: function(g){ s.besiege(g); },
       beiGetroffen: function(g, r){ s._zahl(g, r.schaden); s.audio.spiele("treffer"); },
       beiPvpGetroffen: function(){ s.audio.spiele("getroffen"); },
@@ -485,7 +485,7 @@ SC.Spiel.startpunkt = function(planet){
     gast.bindeWelt(this.welt);
     this._raumModus = d.modus; this._ausrSpeicher = JSON.stringify(this.kampf.ausruestung);
     gast.bindeKampf(this.kampf, {
-      beiBeute: function(pos, l){ s.beuteAuswerfen(pos, l.map(function(b){ return { gegenstand: b }; })); },
+      beiBeute: function(pos, l){ s.beuteAuswerfen(pos, l.map(SC.Beute.alsSache)); },
       beiTreffer: function(r){ s.audio.spiele(r.abgeprallt ? "abprall" : r.schaden > 0 ? "getroffen" : "blocken"); },
       beiBesiegt: function(n, auf){
         if(n.kiste) s.audio.spiele("kiste");

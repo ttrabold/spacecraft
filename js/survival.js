@@ -50,7 +50,7 @@
     if(this.auftauchen) this.auftauchen.gegnerBesiegt(g, this.daten.spielzeit || 0);
     if(this.render){ this.render.wesen.funken(g.pos, def.boss ? "#ffad47" : "#ffd95c", def.boss ? 60 : 24, this.spieler.pos); if(!gg || r.nah) this.render.wesen.zahl([g.pos[0], g.pos[1] + g.hoehe + 0.6, g.pos[2]], "+" + r.erfahrung + " EP", "#ffd95c", this.spieler.pos); }
     this.audio.spiele("zerfall");
-    if(!gg) this.beuteAuswerfen(g.pos, r.beute.map(function(b){ return { gegenstand: b }; }));
+    if(!gg) this.beuteAuswerfen(g.pos, r.beute.map(SC.Beute.alsSache));
     if(r.aufstiege){ this.audio.spiele("aufstieg"); this.ui.hinweis(SC.T.stufeAuf + " " + SC.T.stufe + " " + k.werte.stufe, 3000); }
     return r;
   };
@@ -117,7 +117,7 @@
         else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gastgeber){ if(gastgeber.oeffneKiste(ziel.x, ziel.y, ziel.z).length) a.spiele("kiste"); }
         else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE){
           var bw2 = SC.Kampf.bauwerkZuKiste(w, ziel.x, ziel.y, ziel.z), beute = SC.Kampf.oeffneKiste(w, k, ziel.x, ziel.y, ziel.z, bw2, SC.zufall((Math.random() * 4294967296) >>> 0));
-          if(beute.length){ a.spiele("kiste"); this.beuteAuswerfen([ziel.x + 0.5, ziel.y + 0.5, ziel.z + 0.5], beute.map(function(b){ return { gegenstand: b }; })); }
+          if(beute.length){ a.spiele("kiste"); this.beuteAuswerfen([ziel.x + 0.5, ziel.y + 0.5, ziel.z + 0.5], beute.map(SC.Beute.alsSache)); }
         } else if(!(wdef && wdef.typ === "schwert")) this.setzeAusRucksack(ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz);
       }
     } else if(!survival && !offen && !imFz && e.abbauen && this._fahrzeugAbbauen(ziel)){

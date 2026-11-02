@@ -153,3 +153,11 @@ test("Block in der Hand: Fackel, Zaun, Leiter und Tür haben eigene Formen (#102
   leiter.computeBoundingBox(); var d = leiter.boundingBox.max.z - leiter.boundingBox.min.z; wahr(d < 0.06, "Leiter ist dünn: " + d);
   var uvF = SC.Mesher.uvFuer(SC.BLOECKE[SC.B.FACKEL].seiten.seite), u = fackel.attributes.uv; for(var i = 0; i < u.count; i++) wahr(u.getX(i) >= uvF[0] - 1e-6 && u.getX(i) <= uvF[2] + 1e-6, "UV liegt in der Fackelkachel");
 });
+test("Hand im Survival zeigt den Block aus dem Rucksack, nicht aus der Kreativ-Leiste (#102)", function(){
+  var sp = new SC.Spieler({ id: "a", pos: [1, 70, 1], modus: "survival", schnellleiste: [SC.B.GRAS, SC.B.ERDE, SC.B.STEIN, 1, 1, 1, 1, 1, 1] }), rs = new SC.Rucksack();
+  rs.plaetze[0] = { block: SC.B.FACKEL, anzahl: 3 }; rs.plaetze[1] = { gegenstand: { id: "w", art: "laserschwert" } };
+  var fake = { spieler: sp, kampf: { rucksack: rs } }, setze = SC.Spiel.prototype._handSetzen;
+  sp.auswahl = 0; setze.call(fake); gleich(SC.Render.handId(sp), SC.B.FACKEL, "Fackel aus dem Rucksack");
+  sp.auswahl = 1; setze.call(fake); gleich(SC.Render.handId(sp), -1, "Waffe: kein Block in der Hand"); sp.auswahl = 2; setze.call(fake); gleich(SC.Render.handId(sp), -1, "leerer Platz");
+  sp.modus = "kreativ"; sp.auswahl = 0; setze.call(fake); gleich(SC.Render.handId(sp), SC.B.GRAS, "Kreativ nutzt die Leiste"); sp.modus = "zuschauer"; gleich(SC.Render.handId(sp), -1);
+});

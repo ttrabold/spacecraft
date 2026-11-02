@@ -233,8 +233,15 @@
   };
 
   // Ausrüstung an der Figur, HUD, Touch-Beschriftung
+  // Survival: In der Hand liegt der Block des gewählten Rucksack-Platzes (nicht die Kreativ-Leiste); Waffen und leere Plätze zeigen keinen Block
+  S._handSetzen = function(){
+    var sp = this.spieler;
+    if(sp.modus !== "survival"){ sp.handBlock = undefined; return; }
+    var s = this.kampf.rucksack.plaetze[sp.auswahl]; sp.handBlock = s && s.block !== undefined ? s.block : -1;
+  };
   S._hudSurvival = function(survival, waffe, wdef){
     var sp = this.spieler, k = this.kampf, ein = this.eingabe;
+    this._handSetzen();
     var aKey = JSON.stringify([k.ausruestung, waffe && waffe.id]);
     if(aKey !== this._ausrKey){ this._ausrKey = aKey; this.render.ausruestung(survival ? k.ausruestung : null, waffe); }
     var fzNah = this._fahrzeugNah();

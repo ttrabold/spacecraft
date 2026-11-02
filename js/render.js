@@ -184,6 +184,11 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
     return g;
   };
+  // Welcher Block steckt in der Hand? Im Survival der Platz aus dem Rucksack (handBlock, -1 = keiner), sonst die Leiste
+  SC.Render.handId = function(spieler){
+    if(spieler.modus === "zuschauer") return -1;
+    return spieler.handBlock !== undefined ? spieler.handBlock : spieler.schnellleiste[spieler.auswahl];
+  };
   SC.Render.prototype._handBlock = function(id){
     if(id === this._handId) return;
     this._handId = id;
@@ -294,7 +299,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var schw = SC.Figur.laufSchwung(spieler, performance.now());
     this.armL.rotation.x = schw; this.beinL.rotation.x = sitzt ? SC.Figur.SITZEN : -schw; this.beinR.rotation.x = sitzt ? SC.Figur.SITZEN : schw;
     this._schwungBild(dt, -schw);
-    this._handBlock(spieler.modus === "zuschauer" ? -1 : spieler.schnellleiste[spieler.auswahl]);
+    this._handBlock(SC.Render.handId(spieler));
     this.hand.visible = this.hand.visible && !aussen && spieler.modus !== "zuschauer" && !this._mitWaffe && !sitzt; // im Fahrzeug freie Sicht
     this.handWaffe.visible = !!this._mitWaffe && !aussen && spieler.modus !== "zuschauer" && !sitzt;
     this.grenzen.visible = this.chunkGrenzen;

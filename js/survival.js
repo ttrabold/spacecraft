@@ -53,6 +53,7 @@
       return true;
     }
     if(id === SC.B.TRUHE){ this.truheOeffnen(ziel); return true; }
+    if(SC.Bauteile.istBett(id)){ this.bettBenutzen(ziel); return true; }
     if(id !== SC.B.WERKBANK) return false;
     var s = this; this.eingabe.gebeMausFrei();
     this.ui.zeigeWerkbank(this.kampf, { station: "werkbank", beiFertig: function(){ s._weiter(); } });

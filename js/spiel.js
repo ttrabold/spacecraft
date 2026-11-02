@@ -162,7 +162,7 @@ SC.Spiel.startpunkt = function(planet){
     this._menueOffen = offen;
     this.eingabe.aktiv = !offen;
     if(this.eingabe.touch){ this.eingabe.touch.sichtbar(!offen && this.eingabe.touchSichtbar()); this.eingabe.touch.setzeGroesse(this.einstellungen.touchGroesse); }
-    var e = this.eingabe.zustand();
+    var e = this._schlafen(this.eingabe.zustand(), dt);   // im Bett sind Bewegung und Blick gesperrt
     // F3 öffnet und schließt die Entwicklerwerkzeuge (nur wenn in den Einstellungen eingeschaltet)
     if(e.entwickler && this.einstellungen.entwickler && !ui.offen()){
       if(ew.offen()){ ew.verberge(); this.beiEntwicklerZu(); } else this._entwicklerAuf();
@@ -193,7 +193,7 @@ SC.Spiel.startpunkt = function(planet){
       if((this._musikZeit = (this._musikZeit || 0) + dt) > 0.5){ this._musikZeit = 0; this.audio.musikTakt("all", true); }
     } else {
       if(this._imFahrzeug()) this._fahren(e, dt, offen);
-      else { sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
+      else if(!sp.schlaeft){ sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
       this._fahrzeugeBild(dt);
       this._survival(e, dt, offen, t);
       this._fahrzeugTakt(dt);

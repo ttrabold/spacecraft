@@ -99,9 +99,10 @@ test("Asteroid kostet Schild, prallt ab", function(){
 test("Piraten greifen an, Bordlaser besiegt sie, Beute im Rucksack", function(){
   var u = alSpiel(), s = u.s; alAustritt(u); s.all.tempo = 0; s._allAsteroiden = [];
   s._piratenRufen(); wahr(s._allPiraten.length >= 2 && s._allPiraten.length <= 3, "Gruppe"); s._allPiraten = s._allPiraten.slice(0, 1); s._allPiraten[0].pos = alVor(s, 60); s._allPiraten[0].halt = true;
-  var vorher = s.kampf.rucksack.plaetze.filter(function(p){ return p && p.gegenstand; }).length;
+  // Beute liegt im Rucksack oder ist (eindeutig besser) gleich angelegt
+  var zahl = function(){ var a = s.kampf.ausruestung; return s.kampf.rucksack.plaetze.filter(function(p){ return p && p.gegenstand; }).length + Object.keys(a).filter(function(k){ return a[k]; }).length; }, vorher = zahl();
   for(var i = 0; i < 80 && s._allPiraten.length; i++) s._allBild(alE({ abbauen: true, abbauenGehalten: true }), 0.05, false);
-  gleich(s._allPiraten.length, 0, "besiegt"); wahr(s.kampf.rucksack.plaetze.filter(function(p){ return p && p.gegenstand; }).length > vorher, "Beute im Rucksack");
+  gleich(s._allPiraten.length, 0, "besiegt"); wahr(zahl() > vorher, "Beute im Rucksack oder angelegt");
 });
 test("Notsprung statt Verpuffen", function(){
   var u = alSpiel(), s = u.s, lp = s.landepunkt(), ruck = JSON.stringify(s.kampf.rucksack.alsDaten()); alAustritt(u); s.all.tempo = 100; u.f.panzerung = 10; s._allAsteroiden = [{ pos: alVor(s, 12), r: 10 }];

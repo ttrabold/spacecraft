@@ -570,7 +570,7 @@ git add js/ui.js js/spiel.js tests/test-ui.js && git commit -m "Gamepad-Werte in
 **Interfaces:**
 - Produziert: Panels melden ihre Handler: `ui._beiFokus(el)` (Detail zeigen) und `ui._kurzaktion(el)` (Aktion ohne Knopf, Y).
 - `SC.UI.prototype._fokusMerkmal()` → `{ aktion, i }` des fokussierten Fensterelements; `SC.UI.prototype._holeFokus(merk)` fokussiert das gleiche Element nach einem Neuladen.
-- Zonen-Marker im Rucksack: `data-zone="ausruestung"`, `"detail"`, `"raster"`, `"unten"`; in der Werkbank `data-zone="liste"`, `"detail"`, `"unten"`.
+- Zonen-Marker im Rucksack: `data-zone="ausruestung"`, `"detail"`, `"raster"`, `"aktionen"`; in der Werkbank `data-zone="liste"`, `"detail"`, `"aktionen"` (die Namen stehen seit Task 4 in den Vorlagen – die untere Reihe heißt `aktionen`, nicht `unten`; die Truhe hat `raster`, `rucksack`, `aktionen`).
 
 - [ ] **Step 1: Tests schreiben (failend)**
 
@@ -636,7 +636,7 @@ SC.UI.prototype._holeFokus = function(m){
 In `_zeige` (Task 3): vor `innerHTML` das Merkmal merken, nach dem Setzen `_holeFokus(merk)` – aber nur, wenn kein `opt.startZone` verlangt ist (beim Öffnen gewinnt die Startzone).
 
 `js/ui-rucksack.js` in `zeigeRucksack`:
-- Container mit Zonen: `'<div class="rs-ausruestung" data-zone="ausruestung">'`, `'<div class="rs-detail" data-zone="detail">'`, `'<div class="rs-raster" data-zone="raster">'`, untere Reihe `'<div class="reihe" data-zone="unten">'`.
+- Container mit Zonen: `'<div class="rs-ausruestung" data-zone="ausruestung">'`, `'<div class="rs-detail" data-zone="detail">'`, `'<div class="rs-raster" data-zone="raster">'`, untere Reihe `<div class="reihe" data-zone="aktionen">`.
 - Fokus-Handler registrieren:
 ```js
 ui._beiFokus = function(el){
@@ -656,7 +656,7 @@ ui._kurzaktion = function(el){
 (`zeichne`-Aufrufe rufen `ui._holeFokus(merk)`, damit der Cursor nicht springt.)
 - `zeigeRucksack(kampf, o)` wird mit `ui._zeige(html, aktionen, { seite: true, startZone: "raster" })` aufgerufen.
 
-`js/ui-werkbank.js`: `data-zone="liste"` auf `.wb-liste`, `data-zone="detail"` auf das Detail, `data-zone="unten"` auf die Reihe mit `fertig`; `ui._beiFokus` setzt das fokussierte Rezept als `gewaehlt`; `ui._kurzaktion` ruft `aktionen.herstellen.call(ui)`, wenn das Rezept herstellbar ist.
+`js/ui-werkbank.js`: `data-zone="liste"` auf `.wb-liste`, `data-zone="detail"` auf das Detail, `data-zone="aktionen"` auf die Reihe mit `fertig`; `ui._beiFokus` setzt das fokussierte Rezept als `gewaehlt`; `ui._kurzaktion` ruft `aktionen.herstellen.call(ui)`, wenn das Rezept herstellbar ist.
 
 - [ ] **Step 3: Grüne Testseite**
 

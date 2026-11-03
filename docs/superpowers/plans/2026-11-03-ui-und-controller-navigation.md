@@ -406,7 +406,7 @@ SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.inn
 ```
 `zurueck()`: erst die Startzone (`_startZone`) – wenn die Zone des Fokus eine andere ist, dorthin zurück; sonst der vorhandene Knopf (`weiter`, `fertig`, `zurueck`, `data-ew="zu"`).
 `_zeige` fokussiert beim Öffnen die Startzone: nach dem `innerHTML`, `if(this._startZone){ var z = this.ebene.querySelector('[data-zone="' + this._startZone + '"]'); if(z) this.beiFokus(this._fokusListe(z)[0]); }`.
-`css/style.css`: Zonen als Panels mit Abstand (12 px) für `.rs-ausruestung`, `.rs-detail`, `.rs-raster`, `.wb-liste`, `.wb-detail`, `.reihe`; die `data-zone`-Marker stehen in den HTML-Vorlagen von `js/ui-rucksack.js` und `js/ui-werkbank.js` (nicht in CSS); `.rs-platz:focus-visible` bleibt der gelbe Cursor (2 px, Abstand 3 px).
+`css/style.css`: Zonen als Panels mit Abstand (12 px) für `.rs-ausruestung`, `.rs-detail`, `.rs-raster`, `.wb-liste`, `.wb-detail`, `.reihe`; die `data-zone`-Marker stehen in den HTML-Vorlagen von `js/ui-rucksack.js` und `js/ui-werkbank.js` (nicht in CSS); der gelbe Cursor (2 px, Abstand 3 px) steht auf `:focus` (Task 1), nicht auf `:focus-visible`. Die Zonennamen müssen zu den `startZone`-Werten aus Task 3 passen: Rucksack `ausruestung`, `detail`, `raster`, `aktionen`; Werkbank `liste`, `detail`, `aktionen`; Truhe `raster` (Truhenfelder), `rucksack` (Rucksackfelder), `aktionen` – das erste `.rs-raster` der Truhe behält den Namen `raster`. Die Beitrittsanfrage über einer laufenden Welt bekommt keine Unscharfe: der `@supports`-Selektor wird auf `.ebene .fenster:not(.seite):not(.anfrage)` gesetzt.
 
 - [ ] **Step 3: Grüne Testseite**
 

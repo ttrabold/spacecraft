@@ -57,7 +57,8 @@ SC.BLOECKE = {};
     [SC.B.STAMM, "stamm", { oben: "stamm_oben", seite: "stamm_seite", unten: "stamm_oben" }, true, false, 0, null, true, true],
     [SC.B.BLAETTER, "blaetter", alle("blaetter"), true, true, 0, null, true, true],
     [SC.B.KRISTALL, "kristall", alle("kristall"), true, false, 12, [1.0, 0.45, 0.85], true, true],
-    [SC.B.LEUCHTPILZ, "leuchtpilz", alle("leuchtpilz"), true, true, 10, [0.4, 0.95, 1.0], true, true, { form: "pflanze" }],
+    // Pflanze: gekreuzte Flächen, durchgehbar wie in Minecraft (Issue #17)
+    [SC.B.LEUCHTPILZ, "leuchtpilz", alle("leuchtpilz"), false, true, 10, [0.4, 0.95, 1.0], true, true, { form: "pflanze" }],
     [SC.B.BRETTER, "bretter", alle("bretter"), true, false, 0, null, true, true],
     [SC.B.STEINZIEGEL, "steinziegel", alle("steinziegel"), true, false, 0, null, true, true],
     [SC.B.GLAS, "glas", alle("glas"), true, true, 0, null, true, true],

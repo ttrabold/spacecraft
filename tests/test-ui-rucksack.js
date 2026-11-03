@@ -133,3 +133,24 @@ test("Neuladen bei offenem Menü schließt es, Cursor bleibt", function(){ rsAuf
   ui.zeigeRucksack(k,{}); rsPlatz(w,12).click(); var f=rsPlatz(w,13); f.focus(); ui.kurzaktion();
   wahr(!w.querySelector(".rs-menue"),"Menü zu"); wahr(document.activeElement.classList.contains("rs-platz"),"Cursor auf einem Platz");
 }); });
+test("Verschieben: auf leeren Platz, auf belegten tauschen, Abbruch", function(){ rsAuf(function(w,ui,k){
+  var pl=k.rucksack.plaetze; pl[20]={block:SC.B.STEIN,anzahl:2}; pl[2]=null; pl[5]={block:SC.B.SAND,anzahl:4};
+  ui.zeigeRucksack(k,{});
+  rsPlatz(w,20).click(); w.querySelector('.rs-menue [data-aktion="verschieben"]').click();
+  wahr(rsPlatz(w,20).classList.contains("verschiebt"),"Quelle markiert"); wahr(w.querySelector(".rs-info").textContent.indexOf(SC.T.wohin)>=0,"Hinweis Wohin");
+  wahr(!w.querySelector(".rs-menue"),"Menü zu");
+  rsPlatz(w,2).click(); gleich(pl[2].block,SC.B.STEIN,"auf leeren Platz"); gleich(pl[20],null); wahr(!w.querySelector(".verschiebt"),"Markierung weg");
+  rsPlatz(w,2).click(); w.querySelector('.rs-menue [data-aktion="verschieben"]').click(); rsPlatz(w,5).click();
+  gleich(pl[5].block,SC.B.STEIN,"getauscht"); gleich(pl[2].block,SC.B.SAND,"getauscht zurück");
+  rsPlatz(w,5).click(); w.querySelector('.rs-menue [data-aktion="verschieben"]').click(); ui.menueAktion("zurueck");
+  wahr(!w.querySelector(".verschiebt"),"B bricht ab"); gleich(pl[5].block,SC.B.STEIN,"nichts getauscht nach B"); wahr(!ui.ebene.hidden,"Rucksack offen");
+  rsPlatz(w,5).click(); w.querySelector('.rs-menue [data-aktion="verschieben"]').click(); w.querySelector('.rs-aplatz[data-platz="helm"]').click();
+  wahr(!w.querySelector(".verschiebt"),"Ausrüstungsplatz bricht ab"); gleich(pl[5].block,SC.B.STEIN,"nichts getauscht nach Ausrüstungsplatz");
+  rsPlatz(w,5).click(); w.querySelector('.rs-menue [data-aktion="verschieben"]').click(); rsPlatz(w,5).click();
+  wahr(!w.querySelector(".verschiebt"),"Quelle bricht ab"); gleich(pl[5].block,SC.B.STEIN,"nichts getauscht nach Quelle"); wahr(!w.querySelector(".rs-menue"),"kein Menü nach Abbruch");
+}); });
+test("Verschieben: der Hinweis bleibt, wenn der Controller den Cursor bewegt", function(){ rsAuf(function(w,ui,k){
+  k.rucksack.plaetze[20]={block:SC.B.STEIN,anzahl:2}; ui.zeigeRucksack(k,{});
+  rsPlatz(w,20).click(); w.querySelector('.rs-menue [data-aktion="verschieben"]').click();
+  var p=rsPlatz(w,21); p.focus(); ui.beiFokus(p); wahr(w.querySelector(".rs-info").textContent.indexOf(SC.T.wohin)>=0);
+}); });

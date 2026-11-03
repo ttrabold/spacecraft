@@ -116,7 +116,7 @@ button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-off
 .rs-ausruestung[data-zone],.rs-raster[data-zone],.raster[data-zone],.wb-liste[data-zone],.wb-detail[data-zone],.reihe[data-zone]{background:#151236;border:1px solid #3a3a5a;border-radius:10px;padding:12px;box-sizing:border-box}
 .rs-raster{flex:2 1 320px;min-width:0;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
 .rs-platz{position:relative;min-height:0;aspect-ratio:1;padding:2px;justify-content:center}
-.rs-platz.leiste{background:#2b2766}
+.rs-platz.leiste{background:#2b2766}.rs-platz.verschiebt{border-style:dashed;border-color:#3ef0ff;opacity:.75}
 .besiegt{text-align:center}.besiegt h1{color:#ffd95c;font-size:44px;margin:4px 0 10px}
 .reiter{margin:0 0 10px}
 

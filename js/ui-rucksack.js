@@ -70,7 +70,7 @@
   // Rucksack: ein Cursor (der Fokus) und ein Aktionsmenü direkt am Gegenstand. menue = { i } (Rucksackplatz) oder { platz } (angelegte Rüstung) oder null;
   // der Waffenplatz der Ausrüstung steht für das Schnellleistenfeld der gehaltenen Waffe. Spec: docs/superpowers/specs/2026-11-03-inventar-aktionsmenue-design.md
   SC.UI.prototype.zeigeRucksack = function(kampf, o){
-    var ui = this, rs = kampf.rucksack, a = kampf.ausruestung, menue = null, cursor = null;
+    var ui = this, rs = kampf.rucksack, a = kampf.ausruestung, menue = null, cursor = null, verschieben = null;   // verschieben: Quellplatz, solange ein Ziel gesucht wird
     o = o || {};
     function ziel(el){
       var i = el.getAttribute("data-i"), p = el.getAttribute("data-platz");
@@ -104,7 +104,7 @@
       var inhalt = "", stil = "";
       if(s && s.gegenstand){ inhalt = '<img src="' + SC.UI.gegenstandBild(s.gegenstand) + '" alt="">'; stil = ' style="border-color:' + SC.SELTENHEIT[s.gegenstand.seltenheit || 0].farbe + '"'; }
       else if(s){ inhalt = '<img src="' + SC.UI.blockBild(s.block) + '" alt=""><b class="anzahl">' + s.anzahl + "</b>"; }
-      var h = '<button class="rs-platz' + (i < 9 ? " leiste" : "") + '" data-aktion="platz" data-i="' + i + '"' + stil + ">" + inhalt + "</button>";
+      var h = '<button class="rs-platz' + (i < 9 ? " leiste" : "") + (verschieben === i ? " verschiebt" : "") + '" data-aktion="platz" data-i="' + i + '"' + stil + ">" + inhalt + "</button>";
       // Das Menü steht als eigene Zeile direkt unter der Reihe des Platzes
       if(menue && !menue.platz && i === Math.floor(menue.i / 9) * 9 + 8) h += menueHtml(menue);
       return h;
@@ -132,7 +132,7 @@
       // Offenes Menü: Cursor auf die erste Aktion; sonst zurück auf den Platz, an dem man war
       var f = menue ? ui.ebene.querySelector(".rs-menue button") : cursor && ui.ebene.querySelector(cursor.platz ? '.rs-aplatz[data-platz="' + cursor.platz + '"]' : '.rs-platz[data-i="' + cursor.i + '"]');
       if(f) f.focus();
-      var info = ui.ebene.querySelector(".rs-info"); if(info) info.textContent = infoText(menue ? null : document.activeElement);
+      var info = ui.ebene.querySelector(".rs-info"); if(info) info.textContent = verschieben !== null ? SC.T.wohin : infoText(menue ? null : document.activeElement);
     }
     function fertigMit(){ menue = null; o.beiAenderung && o.beiAenderung(); zeichne(); }
     // Tipp, Klick oder A auf einen Platz: Cursor dorthin; gleicher Platz bei offenem Menü = erste Aktion; belegt = Menü; leer = Menü zu
@@ -140,6 +140,12 @@
       el.focus();
       var m = ziel(el), stelle = el.getAttribute("data-platz") ? { platz: el.getAttribute("data-platz") } : { i: +el.getAttribute("data-i") };
       cursor = stelle;
+      // Beim Verschieben: ein anderer Rucksackplatz ist das Ziel (leer: dorthin, belegt: tauschen); Quelle oder Ausrüstung brechen ab
+      if(verschieben !== null){
+        var von = verschieben; verschieben = null;
+        if(stelle.i !== undefined && stelle.i !== von){ rs.tausche(von, stelle.i); o.beiAenderung && o.beiAenderung(); }
+        menue = null; zeichne(); return;
+      }
       if(menue && gleicheStelle(menue, m)){ var erste = ui.ebene.querySelector(".rs-menue button"); if(erste) erste.click(); return; }
       menue = sacheVon(m) ? m : null; zeichne();
     }
@@ -161,16 +167,17 @@
         rs.tausche(menue.i, ziel); fertigMit();
       },
       wegwerfen: function(){ var s = rs.nimm(menue.i); o.beiWegwerfen && o.beiWegwerfen(s); fertigMit(); },
+      verschieben: function(){ verschieben = menue.i; cursor = { i: menue.i }; menue = null; zeichne(); },
       abbrechen: function(){ menue = null; zeichne(); },
       handwerk: function(){ ui.zeigeWerkbank(kampf, { station: "hand", beiAenderung: o.beiAenderung, beiFertig: function(){ ui.zeigeRucksack(kampf, o); } }); },
       fertig: function(){ ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); }
     };
     // Controller: der Fokus zieht die Info-Zeile nach; Y legt sofort an bzw. legt in die Schnellleiste (ohne Menü); B schließt zuerst das Menü
-    ui._beiFokus = function(el){ var info = ui.ebene.querySelector(".rs-info"); if(info && !(el.closest && el.closest(".rs-menue"))) info.textContent = infoText(el); };
+    ui._beiFokus = function(el){ var info = ui.ebene.querySelector(".rs-info"); if(info && verschieben === null && !(el.closest && el.closest(".rs-menue"))) info.textContent = infoText(el); };
     ui._kurzaktion = function(el){
       var i = el.getAttribute("data-i"); if(i === null) return;
       var s = rs.plaetze[+i]; if(!s) return;
-      cursor = { i: +i };
+      cursor = { i: +i }; verschieben = null;
       if(s.gegenstand){
         // Waffen werden nicht angelegt: dieselbe Regel wie im Menü, die Ausrüstung hat keinen Waffenplatz
         if(SC.GEGENSTAENDE[s.gegenstand.art].platz === "waffe") return;
@@ -178,7 +185,7 @@
       }
       if(+i >= 9){ menue = { i: +i }; aktionen.leiste.call(ui); }
     };
-    ui._beiZurueck = function(){ if(!menue) return false; menue = null; zeichne(); return true; };
+    ui._beiZurueck = function(){ if(!menue && verschieben === null) return false; menue = null; verschieben = null; zeichne(); return true; };
     zeichne();
   };
 })();

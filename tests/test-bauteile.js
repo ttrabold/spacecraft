@@ -4,21 +4,21 @@ function bwMesh(w){ return SC.Mesher.chunk(w, 0, 0, SC.Licht.chunk(w, 0, 0)); }
 function bwBereich(g, achse){ var lo = 1e9, hi = -1e9; for(var i = achse; i < g.positionen.length; i += 3){ lo = Math.min(lo, g.positionen[i]); hi = Math.max(hi, g.positionen[i]); } return [lo, hi]; }
 test("Fackel: zwei Kreuzflächen, leuchtet, lässt Licht durch (#102)", function(){
   var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.FACKEL, "system"); var m = bwMesh(w);
-  gleich(bwFlaechen(m.durchsichtig), 2); gleich(bwFlaechen(m.fest), 256, "nur der Boden im festen Teil");
+  gleich(bwFlaechen(m.form), 2); gleich(bwFlaechen(m.fest), 256, "nur der Boden im festen Teil");
   var l = SC.Licht.chunk(w, 0, 0); wahr(l.block[SC.idx(5, 64, 5)] >= 13, "Fackel leuchtet: " + l.block[SC.idx(5, 64, 5)]); gleich(l.himmel[SC.idx(5, 60, 5)], 15, "Himmelslicht geht durch");
   [SC.B.FACKEL, SC.B.ZAUN, SC.B.TUER_X, SC.B.LEITER_N, SC.B.TRUHE === 0 ? 0 : SC.B.FACKEL].forEach(function(id){ gleich(SC.Licht.opak[id], 0, "nicht deckend: " + SC.BLOECKE[id].name); });
 });
 test("Zaun: schmaler Pfosten, verbindet sich mit Nachbarzäunen (#102)", function(){
-  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.ZAUN, "system"); var g = bwMesh(w).durchsichtig; gleich(bwFlaechen(g), 5, "Pfosten: 4 Seiten und oben");
+  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.ZAUN, "system"); var g = bwMesh(w).form; gleich(bwFlaechen(g), 5, "Pfosten: 4 Seiten und oben");
   var bx = bwBereich(g, 0); wahr(bx[1] - bx[0] < 0.3, "schmal: " + (bx[1] - bx[0]));
-  w.setzeBlock(6, 64, 5, SC.B.ZAUN, "system"); var g2 = bwMesh(w).durchsichtig; wahr(bwFlaechen(g2) > 10, "Querlatten zwischen den Pfosten: " + bwFlaechen(g2));
+  w.setzeBlock(6, 64, 5, SC.B.ZAUN, "system"); var g2 = bwMesh(w).form; wahr(bwFlaechen(g2) > 10, "Querlatten zwischen den Pfosten: " + bwFlaechen(g2));
 });
 test("Tür und Leiter sind dünne Platten (#102)", function(){
-  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.TUER_X, "system"); var g = bwMesh(w).durchsichtig, bx = bwBereich(g, 0), bz = bwBereich(g, 2);
+  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.TUER_X, "system"); var g = bwMesh(w).form, bx = bwBereich(g, 0), bz = bwBereich(g, 2);
   wahr(bx[1] - bx[0] < 0.2 && bz[1] - bz[0] > 0.9, "Tür zu: dünn in x, breit in z"); gleich(bx[0] > 5.3 && bx[1] < 5.7, true, "Tür in der Mitte");
-  var w2 = leereWelt(); w2.setzeBlock(5, 64, 5, SC.B.LEITER_N, "system"); var g2 = bwMesh(w2).durchsichtig, z2 = bwBereich(g2, 2); wahr(z2[1] - z2[0] < 0.2 && z2[0] < 5.2, "Leiter Nord an der Nordkante des Blocks");
-  var w3 = leereWelt(); w3.setzeBlock(5, 64, 5, SC.B.LEITER_O, "system"); var x3 = bwBereich(bwMesh(w3).durchsichtig, 0); wahr(x3[1] > 5.8, "Leiter Ost an der Ostkante");
-  var w4 = leereWelt(); w4.setzeBlock(5, 64, 5, SC.B.TUER_X_OFFEN, "system"); var z4 = bwBereich(bwMesh(w4).durchsichtig, 2); wahr(z4[1] - z4[0] < 0.2, "offene Tür seitlich: dünn in z");
+  var w2 = leereWelt(); w2.setzeBlock(5, 64, 5, SC.B.LEITER_N, "system"); var g2 = bwMesh(w2).form, z2 = bwBereich(g2, 2); wahr(z2[1] - z2[0] < 0.2 && z2[0] < 5.2, "Leiter Nord an der Nordkante des Blocks");
+  var w3 = leereWelt(); w3.setzeBlock(5, 64, 5, SC.B.LEITER_O, "system"); var x3 = bwBereich(bwMesh(w3).form, 0); wahr(x3[1] > 5.8, "Leiter Ost an der Ostkante");
+  var w4 = leereWelt(); w4.setzeBlock(5, 64, 5, SC.B.TUER_X_OFFEN, "system"); var z4 = bwBereich(bwMesh(w4).form, 2); wahr(z4[1] - z4[0] < 0.2, "offene Tür seitlich: dünn in z");
 });
 test("Kollision: Zaun und geschlossene Tür sperren, Fackel und offene Tür nicht (#102)", function(){
   var w = leereWelt(); [[SC.B.ZAUN, 4], [SC.B.TUER_X, 6], [SC.B.FACKEL, 8], [SC.B.TUER_X_OFFEN, 10], [SC.B.LEITER_N, 12]].forEach(function(p){ w.setzeBlock(p[1], 64, 5, p[0], "system"); });

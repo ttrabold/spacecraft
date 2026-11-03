@@ -8,7 +8,7 @@ test("Bett: acht Blöcke (Fuß und Kopf je Richtung), niedrig und begehbar (#118
   gleich(SC.BLOECKE[SC.B.BETT_FUSS_N].inAuswahl, true, "im Kreativ wählbar"); BETT_FUSS.slice(1).concat(BETT_KOPF).forEach(function(n){ gleich(SC.BLOECKE[SC.B[n]].inAuswahl, false, n); });
 });
 test("Bett: im Mesher ein flacher Kasten mit eigener Oberseite (#118)", function(){
-  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.BETT_FUSS_N, "system"); var m = SC.Mesher.chunk(w, 0, 0, SC.Licht.chunk(w, 0, 0)), g = m.durchsichtig; gleich(g.indizes.length / 6, 6, "sechs Flächen");
+  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.BETT_FUSS_N, "system"); var m = SC.Mesher.chunk(w, 0, 0, SC.Licht.chunk(w, 0, 0)), g = m.form; gleich(g.indizes.length / 6, 6, "sechs Flächen");
   var hoch = -1e9; for(var i = 1; i < g.positionen.length; i += 3) hoch = Math.max(hoch, g.positionen[i]); wahr(hoch < 64.7 && hoch > 64.4, "halbhoch: " + hoch);
   var uvs = {}; for(var j = 0; j < g.uv.length; j += 2) uvs[Math.round(g.uv[j] * 1000) + "," + Math.round(g.uv[j + 1] * 1000)] = 1; wahr(Object.keys(uvs).length >= 8, "mindestens zwei Kacheln (Oberseite und Seite)");
   gleich(SC.Licht.opak[SC.B.BETT_FUSS_N], 0, "lässt Licht durch");
@@ -136,5 +136,24 @@ test("Wiedereinstieg: Bett auf diesem Planeten, Gast und Gastgeber mit Gästen b
   }).then(function(){
     var h = Object.create(SC.Gastgeber.prototype); h.spieler = [{ id: "g1", verbunden: true }]; var m = wiederSpiel({ raum: h }); bettAufPlanet(m, "glutfrost", 500, 70, 500); m.daten.spieler.bett = { planet: "glutfrost", x: 500, y: 70, z: 500 };
     return m._wiederEinstieg().then(function(){ gleich(m.log.length, 1, "kein Planetenwechsel für alle Gäste wegen eines Todes"); gleich(m.log[0][0], "wiederbeleben"); });
+  });
+});
+test("Bett: die Decke läuft in allen vier Richtungen von Fuß zu Kopf durch", function(){
+  var R = { N: [0, -1], S: [0, 1], O: [1, 0], W: [-1, 0] }, uf = SC.Mesher.uvFuer(SC.BLOECKE[SC.B.BETT_FUSS_N].seiten.oben), uk = SC.Mesher.uvFuer(SC.BLOECKE[SC.B.BETT_KOPF_N].seiten.oben);
+  Object.keys(R).forEach(function(r){
+    var w = leereWelt(), fx = 7, fz = 7, d = R[r], kx = fx + d[0], kz = fz + d[1];
+    w.setzeBlock(fx, 64, fz, SC.B["BETT_FUSS_" + r], "system"); w.setzeBlock(kx, 64, kz, SC.B["BETT_KOPF_" + r], "system");
+    var g = SC.Mesher.chunk(w, 0, 0, SC.Licht.chunk(w, 0, 0)).form, p = g.positionen, uv = g.uv, oben = 64 + SC.BLOECKE[SC.B.BETT_FUSS_N].form.b[1];
+    // gemeinsame Kante: x bzw. z genau zwischen Fuß und Kopf; dort zeigt der Fuß seinen offenen Rand (Kachel unten, v klein), der Kopf seinen offenen Rand (Kachel oben, v groß)
+    var kante = d[0] ? Math.max(fx, kx) : Math.max(fz, kz), achse = d[0] ? 0 : 2, fussV = [], kopfV = [];
+    for(var i = 0; i < p.length / 3; i++){
+      if(Math.abs(p[i * 3 + 1] - oben) > 1e-4 || Math.abs(p[i * 3 + achse] - kante) > 1e-4) continue;
+      var u = uv[i * 2], v = uv[i * 2 + 1];
+      if(u >= uf[0] - 1e-6 && u <= uf[2] + 1e-6 && v >= uf[1] - 1e-6 && v <= uf[3] + 1e-6) fussV.push(v);
+      else if(u >= uk[0] - 1e-6 && u <= uk[2] + 1e-6 && v >= uk[1] - 1e-6 && v <= uk[3] + 1e-6) kopfV.push(v);
+    }
+    gleich(fussV.length, 2, r + ": zwei Ecken des Fußes an der Kante"); gleich(kopfV.length, 2, r + ": zwei Ecken des Kopfes an der Kante");
+    wahr(fussV.every(function(v){ return Math.abs(v - uf[1]) < 1e-6; }), r + ": Fuß zeigt seinen offenen Rand zum Kopf");
+    wahr(kopfV.every(function(v){ return Math.abs(v - uk[3]) < 1e-6; }), r + ": Kopf zeigt seinen offenen Rand zum Fuß");
   });
 });

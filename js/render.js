@@ -54,6 +54,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.uniforms = uni;
     this.matFest = new THREE.ShaderMaterial({ uniforms: uni, vertexShader: VS, fragmentShader: FS });
     var uniD = Object.assign({}, uni, { alphaMin: { value: 0.02 } });
+    // Sonderformen: wie fest (Tiefenpuffer, Ausschnitt ab alphaMin 0,5), aber beidseitig – Kreuzformen haben nur eine Fläche je Ebene
+    this.matForm = new THREE.ShaderMaterial({ uniforms: uni, vertexShader: VS, fragmentShader: FS, side: THREE.DoubleSide });
     this.matDurch = new THREE.ShaderMaterial({ uniforms: uniD, vertexShader: VS, fragmentShader: FS, transparent: true, depthWrite: false, side: THREE.DoubleSide });
     this.chunks = new Map();
     this._baueHimmel();
@@ -216,7 +218,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
   };
 
   SC.Render.prototype._entferne = function(c){
-    [c.fest, c.durch].forEach(function(m){ if(m){ m.parent && m.parent.remove(m); m.geometry.dispose(); } });
+    [c.fest, c.form, c.durch].forEach(function(m){ if(m){ m.parent && m.parent.remove(m); m.geometry.dispose(); } });
   };
 
   function geometrie(g){
@@ -232,8 +234,9 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
 
   SC.Render.prototype._baue = function(cx, cz){
     var w = this._welt, k = this.planet.chunkSchluessel(cx, cz), alt = this.chunks.get(k);
-    var m = SC.Mesher.chunk(w, cx, cz, SC.Licht.chunk(w, cx, cz)), c = { cx: SC.mod(cx, this.planet.chunksProSeite), cz: SC.mod(cz, this.planet.chunksProSeite), fest: null, durch: null };
+    var m = SC.Mesher.chunk(w, cx, cz, SC.Licht.chunk(w, cx, cz)), c = { cx: SC.mod(cx, this.planet.chunksProSeite), cz: SC.mod(cz, this.planet.chunksProSeite), fest: null, form: null, durch: null };
     if(m.fest.indizes.length){ c.fest = new THREE.Mesh(geometrie(m.fest), this.matFest); this.szene.add(c.fest); }
+    if(m.form.indizes.length){ c.form = new THREE.Mesh(geometrie(m.form), this.matForm); this.szene.add(c.form); }
     if(m.durchsichtig.indizes.length){ c.durch = new THREE.Mesh(geometrie(m.durchsichtig), this.matDurch); c.durch.renderOrder = 1; this.szene.add(c.durch); }
     if(alt) this._entferne(alt);
     this.chunks.set(k, c);
@@ -294,6 +297,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.chunks.forEach(function(c){
       var x = SC.chunkVersatz(c.cx, px, P), z = SC.chunkVersatz(c.cz, pz, P);
       if(c.fest) c.fest.position.set(x, 0, z);
+      if(c.form) c.form.position.set(x, 0, z);
       if(c.durch) c.durch.position.set(x, 0, z);
     });
     // Kamera

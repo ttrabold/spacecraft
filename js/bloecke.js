@@ -34,7 +34,10 @@ SC.TEXTUREN = {
 SC.BLOECKE = {};
 (function(){
   function alle(t){ return { oben: t, seite: t, unten: t }; }
-  var BETT = { typ: "kasten", a: [0, 0, 0], b: [1, 0.56, 1] };
+  // Bett: flacher Kasten; drehOben legt die Deckenkachel so, dass ihr unterer Rand (Fuß offen, Kopf geschlossen) zum Kopf zeigt –
+  // ungedreht zeigt er nach Süden (+z), 1 = Westen, 2 = Norden, 3 = Osten
+  function bett(dreh){ return { typ: "kasten", a: [0, 0, 0], b: [1, 0.56, 1], drehOben: dreh }; }
+  var BETT = { N: bett(2), S: bett(0), O: bett(3), W: bett(1) };
   // Zauberkugel: Tisch (Platte mit Rand, vier Beine) und eine Kristallkugel aus Kästen darauf; t = Kachel aus seiten, o = andere Kachel für die Oberseite
   var ZAUBER = { typ: "mehrteilig", teile: [
     { a: [0.02, 0.7, 0.02], b: [0.98, 0.82, 0.98], t: "seite", o: "oben" },
@@ -109,14 +112,14 @@ SC.BLOECKE = {};
     [SC.B.TUER_X_OFFEN_OBEN, "tuer", alle("tuer_oben"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 0 } }],
     [SC.B.TUER_Z_OFFEN_OBEN, "tuer", alle("tuer_oben"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 0 } }],
     // Betten: flacher Kasten, begehbar; nur das Fußende Nord steht in der Kreativ-Auswahl
-    [SC.B.BETT_FUSS_N, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, true, { form: BETT }],
-    [SC.B.BETT_FUSS_S, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
-    [SC.B.BETT_FUSS_O, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
-    [SC.B.BETT_FUSS_W, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
-    [SC.B.BETT_KOPF_N, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
-    [SC.B.BETT_KOPF_S, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
-    [SC.B.BETT_KOPF_O, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
-    [SC.B.BETT_KOPF_W, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT }],
+    [SC.B.BETT_FUSS_N, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, true, { form: BETT.N }],
+    [SC.B.BETT_FUSS_S, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.S }],
+    [SC.B.BETT_FUSS_O, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.O }],
+    [SC.B.BETT_FUSS_W, "bett", { oben: "bett_fuss_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.W }],
+    [SC.B.BETT_KOPF_N, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.N }],
+    [SC.B.BETT_KOPF_S, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.S }],
+    [SC.B.BETT_KOPF_O, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.O }],
+    [SC.B.BETT_KOPF_W, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.W }],
     [SC.B.ZAUBERKUGEL, "zauberkugel", { oben: "zauber_tisch_oben", seite: "zauber_tisch", unten: "zauber_tisch", kugel: "zauber_kugel" }, true, true, 9, [0.7, 0.5, 1.0], true, true, { form: ZAUBER }],
     [SC.B.TRUHE, "truhe", { oben: "truhe_oben", seite: "truhe_seite", unten: "truhe_seite" }, true, false, 0, null, true, true]
   ];

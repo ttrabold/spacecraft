@@ -35,29 +35,32 @@ SC.Mesher = {};
 
   SC.Mesher.chunk = function(welt, cx, cz, licht){
     var rg = licht._region, R = rg.R, M = rg.M, bl = rg.bloecke, hi = rg.himmel, bk = rg.block, qu = rg.quelle;
-    var aus = { fest: new Puffer(), durchsichtig: new Puffer() };
+    // form: Sonderformen (Tür, Bett, Leiter, Zaun, Pflanzen …) mit Tiefenpuffer und Ausschnitt statt Mischung; im durchsichtigen Teil
+    // ohne Tiefenpuffer lagen ihre Flächen je nach Zeichenreihenfolge übereinander (Türen flackerten, Bettseiten über der Decke)
+    var aus = { fest: new Puffer(), durchsichtig: new Puffer(), form: new Puffer() };
     function ri(x, y, z){ return (y * R + z) * R + x; }
     function blockAn(x, y, z){ return y < 0 ? SC.B.GRUNDGESTEIN : y >= H ? SC.B.LUFT : bl[ri(x, y, z)]; }
 
     // Sonderformen (def.form): Fackel/Kreuz, Zaun/Pfosten, Platten für Türen und Leitern. Licht aus der eigenen Zelle, alles im durchsichtigen Teil
     // (doppelseitig gezeichnet, deshalb genügt eine Fläche je Ebene).
-    function viereck(puf, x, y, z, ecken, uv, L, fak, glueht){
+    // dreh (0–3, optional): Kachel um dreh × 90° gedreht auflegen (Bettdecke je Richtung)
+    function viereck(puf, x, y, z, ecken, uv, L, fak, glueht, dreh){
       var basis = puf.n;
       for(var e = 0; e < 4; e++){
-        var c = ecken[e];
+        var c = ecken[e], k = (e + (dreh || 0)) % 4;
         puf.p.push(x + c[0], y + c[1], z + c[2]);
-        puf.uv.push(e === 0 || e === 3 ? uv[0] : uv[2], e < 2 ? uv[1] : uv[3]);
+        puf.uv.push(k === 0 || k === 3 ? uv[0] : uv[2], k < 2 ? uv[1] : uv[3]);
         puf.l.push(L.h * fak, L.b * (glueht ? 1 : fak));
         puf.f.push(L.f[0], L.f[1], L.f[2]);
       }
       puf.i.push(basis, basis + 1, basis + 2, basis, basis + 2, basis + 3);
       puf.n += 4;
     }
-    function kasten(puf, x, y, z, a, b, uv, L, glueht, ohneUnten, uvJeFlaeche){   // uvJeFlaeche(f) (optional): eigene Kachel je Fläche, z. B. Oberseite des Betts
+    function kasten(puf, x, y, z, a, b, uv, L, glueht, ohneUnten, uvJeFlaeche, drehOben){   // uvJeFlaeche(f) (optional): eigene Kachel je Fläche, z. B. Oberseite des Betts
       for(var f = 0; f < 6; f++){
         if(ohneUnten && f === 3) continue;
         var F = FL[f];
-        viereck(puf, x, y, z, F.e.map(function(c){ return [c[0] ? b[0] : a[0], c[1] ? b[1] : a[1], c[2] ? b[2] : a[2]]; }), uvJeFlaeche ? uvJeFlaeche(f) : uv, L, F.h, glueht);
+        viereck(puf, x, y, z, F.e.map(function(c){ return [c[0] ? b[0] : a[0], c[1] ? b[1] : a[1], c[2] ? b[2] : a[2]]; }), uvJeFlaeche ? uvJeFlaeche(f) : uv, L, F.h, glueht, f === 2 ? drehOben : 0);
       }
     }
     function verbunden(id){ var d = SC.BLOECKE[id]; return d.form === "pfosten" || (d.fest && !d.durchsichtig); }
@@ -94,7 +97,7 @@ SC.Mesher = {};
         });
       } else if(fm.typ === "kasten"){
         var uO = SC.Mesher.uvFuer(def.seiten.oben), uU = SC.Mesher.uvFuer(def.seiten.unten);
-        kasten(puf, x, y, z, fm.a, fm.b, uv, L, gl, false, function(f){ return f === 2 ? uO : f === 3 ? uU : uv; });
+        kasten(puf, x, y, z, fm.a, fm.b, uv, L, gl, false, function(f){ return f === 2 ? uO : f === 3 ? uU : uv; }, fm.drehOben);
       } else if(fm.typ === "platte"){
         var t = 0.08, c = Math.max(t / 2, Math.min(1 - t / 2, fm.versatz));
         kasten(puf, x, y, z, fm.achse === "x" ? [c - t / 2, 0, 0] : [0, 0, c - t / 2], fm.achse === "x" ? [c + t / 2, 1, 1] : [1, 1, c + t / 2], uv, L, gl, false);
@@ -105,7 +108,7 @@ SC.Mesher = {};
       var rx = x + M, rz = z + M, id = bl[ri(rx, y, rz)];
       if(id === SC.B.LUFT) continue;
       var def = SC.BLOECKE[id], dt = durch[id], puf = dt ? aus.durchsichtig : aus.fest;
-      if(def.form !== "wuerfel"){ formBlock(aus.durchsichtig, x, y, z, rx, rz, id, def); continue; }
+      if(def.form !== "wuerfel"){ formBlock(aus.form, x, y, z, rx, rz, id, def); continue; }
       for(var f = 0; f < 6; f++){
         var F = FL[f], nx = rx + F.n[0], ny = y + F.n[1], nz = rz + F.n[2];
         if(ny < 0) continue;
@@ -150,6 +153,6 @@ SC.Mesher = {};
         puf.n += 4;
       }
     }
-    return { fest: aus.fest.fertig(), durchsichtig: aus.durchsichtig.fertig() };
+    return { fest: aus.fest.fertig(), durchsichtig: aus.durchsichtig.fertig(), form: aus.form.fertig() };
   };
 })();

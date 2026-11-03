@@ -50,14 +50,26 @@ SC.UI = function(wurzel, o){
     if(!el){ if(alpha <= 0) return; el = this._schlaf = document.createElement("div"); el.className = "schlaf"; this.wurzel.appendChild(el); }
     el.style.opacity = alpha; el.textContent = text || ""; el.hidden = alpha <= 0;
   };
+  // Merkmal des fokussierten Elements: Aktion und Kennung, um nach einem Neuladen dasselbe Element wiederzufinden
+  function merk(el){ return el && el.getAttribute("data-aktion") ? { aktion: el.getAttribute("data-aktion"), i: el.getAttribute("data-i") || el.getAttribute("data-platz") || el.getAttribute("data-id") } : null; }
+  SC.UI.prototype._fokusMerkmal = function(){ var a = document.activeElement; return this.ebene.contains(a) ? merk(a) : null; };
+  SC.UI.prototype._holeFokus = function(m){
+    if(!m) return null;
+    var selector = '[data-aktion="' + m.aktion + '"]';
+    if(m.i) selector += '[data-i="' + m.i + '"], [data-aktion="' + m.aktion + '"][data-platz="' + m.i + '"], [data-aktion="' + m.aktion + '"][data-id="' + m.i + '"]';
+    var el = this.ebene.querySelector(selector); if(!el) return null;
+    el.focus(); return el;
+  };
   SC.UI.prototype._zeige = function(html, aktionen, opt){
+    var m = this._fokusMerkmal();
     this.ebene.innerHTML = '<div class="fenster panel' + (opt && opt.seite ? " seite" : "") + '">' + html + "</div>";
     this.ebene.hidden = false; this._aktionen = aktionen || {};
     this._startZone = (opt && opt.startZone) || null;
-    // Beim Öffnen fällt der Fokus in die Startzone (im Rucksack z. B. ins Raster)
-    if(this._startZone){
+    // Beim Neuladen bleibt der Cursor auf dem Element, das ihn hatte; beim Öffnen (oder wenn das Element hier nicht vorkommt) fällt er in die Startzone
+    var e = this._holeFokus(m);
+    if(!e && this._startZone){
       var z = this.ebene.querySelector('[data-zone="' + this._startZone + '"]');
-      if(z){ var e = this._fokusListe(z)[0]; if(e){ e.focus(); this.beiFokus(e); } }
+      if(z){ var f = this._fokusListe(z)[0]; if(f){ f.focus(); this.beiFokus(f); } }
     }
   };
   // Bedienung mit Gamepad: Fokus über die Knöpfe und Eingaben des offenen Fensters bewegen
@@ -86,7 +98,7 @@ SC.UI = function(wurzel, o){
     var r = zone || this._fenster(); if(!r) return [];
     return Array.prototype.filter.call(r.querySelectorAll("button, input:not([type=file]), label.knopf"), function(el){ return !el.disabled && (el.offsetParent !== null || el.getClientRects().length > 0); });
   };
-  // Der Fokus rollt ins Sichtbare; der Handler _beiFokus zieht das Detail nach (Task 7)
+  // Der Fokus rollt ins Sichtbare; der Handler _beiFokus des offenen Panels zieht das Detail nach
   SC.UI.prototype.beiFokus = function(el){
     if(!el) return;
     try{ el.scrollIntoView({ block: "nearest", inline: "nearest" }); }catch(err){ el.scrollIntoView(); }

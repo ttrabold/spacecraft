@@ -98,6 +98,14 @@
       },
       fertig: function(){ ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); }
     };
+    // Der Controller: der Fokus zeigt das Rezept, Y stellt her – aber nur, wenn der Herstellen-Knopf frei wäre
+    ui._beiFokus = function(el){ if(el.getAttribute("data-aktion") === "rezept") aktionen.rezept.call(ui, el, el.getAttribute("data-id")); };
+    ui._kurzaktion = function(el){
+      if(el.getAttribute("data-aktion") !== "rezept") return;
+      var r = SC.Crafting.rezept(el.getAttribute("data-id"));
+      if(!r || r !== gewaehlt || !SC.Crafting.baubar(rs, r, wahl, o).ok) return;
+      aktionen.herstellen.call(ui);
+    };
     zeichne();
   };
 

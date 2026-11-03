@@ -200,3 +200,12 @@ test("Kreativ: Werkbank und Truhe lassen sich antippen (#99)", function(){
     ui: { zeigeWerkbank: function(){ offen.push("werkbank"); }, zeigeTruhe: function(){ offen.push("truhe"); } }, truheOeffnen: SC.Spiel.prototype.truheOeffnen };
   gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 60, z: 3 }), true); gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 4, y: 60, z: 3 }), true); gleich(offen.join(), "werkbank,truhe");
 });
+test("Y stellt das fokussierte Rezept her", function(){
+  var a = wb(); document.body.appendChild(a.w);   // focus() braucht das Fenster im Dokument
+  wb.aend = 0;
+  a.k.rucksack.lege({ block: SC.B.BRETTER, anzahl: 6 });
+  a.ui.zeigeWerkbank(a.k, a.o);
+  var r = a.w.querySelector('[data-aktion="rezept"][data-id="zaun"]'); r.focus(); a.ui.beiFokus(r); a.ui.kurzaktion();
+  gleich(wb.aend, 1, "hergestellt"); gleich(a.k.rucksack.hat(SC.B.ZAUN), 4);
+  a.w.remove();
+});

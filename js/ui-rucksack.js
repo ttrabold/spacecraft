@@ -95,6 +95,14 @@
       }
       return '<div class="reihe">' + k.join("") + "</div>";
     }
+    // Auswahl: dieselbe Formel für Antippen und für den Fokus
+    function waehle(el){
+      var i = el.getAttribute("data-i"), p = el.getAttribute("data-platz");
+      if(i !== null){ var s = rs.plaetze[+i]; gewaehlt = s ? { i: +i, sache: s } : null; }
+      else if(p){ gewaehlt = a[p] ? { platz: p, sache: { gegenstand: a[p] }, ausgeruestet: true } : null; }
+      else return false;
+      return true;
+    }
     function zeichne(){
       var w = kampf.werte;
       ui._zeige(
@@ -111,11 +119,11 @@
         i = +el.getAttribute("data-i"); var s = rs.plaetze[i];
         // Zweiter Tipp auf einen anderen Platz verschiebt dorthin
         if(gewaehlt && !gewaehlt.ausgeruestet && gewaehlt.i !== i && !s){ rs.tausche(gewaehlt.i, i); gewaehlt = null; o.beiAenderung && o.beiAenderung(); zeichne(); return; }
-        gewaehlt = s ? { i: i, sache: s } : null; zeichne();
+        waehle(el); zeichne();
       },
       aplatz: function(el){
         var p = el.getAttribute("data-platz"); if(p === "waffe"){ var wi = kampf.spieler.auswahl; if(rs.plaetze[wi]) gewaehlt = { i: wi, sache: rs.plaetze[wi] }; zeichne(); return; }
-        gewaehlt = a[p] ? { platz: p, sache: { gegenstand: a[p] }, ausgeruestet: true } : null; zeichne();
+        waehle(el); zeichne();
       },
       anlegen: function(){
         var g = gewaehlt.sache.gegenstand, p = SC.GEGENSTAENDE[g.art].platz, alt = a[p];
@@ -135,6 +143,14 @@
       wegwerfen: function(){ var s = rs.nimm(gewaehlt.i); gewaehlt = null; o.beiWegwerfen && o.beiWegwerfen(s); o.beiAenderung && o.beiAenderung(); zeichne(); },
       handwerk: function(){ ui.zeigeWerkbank(kampf, { station: "hand", beiAenderung: o.beiAenderung, beiFertig: function(){ ui.zeigeRucksack(kampf, o); } }); },
       fertig: function(){ ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); }
+    };
+    // Der Controller: der Fokus zieht das Detail nach, Y ist die Kurzaktion auf dem fokussierten Feld (anlegen oder in die Schnellleiste) – ohne das Verschieben, das ein zweiter Tipp auslöst
+    ui._beiFokus = function(el){ if(waehle(el)) zeichne(); };
+    ui._kurzaktion = function(el){
+      var i = el.getAttribute("data-i"); if(i === null) return;
+      var s = rs.plaetze[+i]; if(!s) return;
+      if(s.gegenstand){ waehle(el); aktionen.anlegen.call(ui); return; }
+      if(+i >= 9){ waehle(el); aktionen.leiste.call(ui); }
     };
     zeichne();
   };

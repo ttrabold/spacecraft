@@ -9,3 +9,43 @@ test("Besiegt-Bildschirm ist freundlich", function(){ var w=document.createEleme
 test("Kampf-HUD zeigt Balken", function(){ var w=document.createElement("div"),ui=ui2(w),k=k2(),s=k.spieler; s.schnellleiste=[1,2,3,4,5,6,7,8,9]; ui.hud(s,{}); ui.kampfHud(k,[]); wahr(w.querySelector(".balken-lp")&&w.querySelector(".balken-xp")); ui.kampfHud(null); wahr(w.querySelector(".kampf").hidden); });
 test("Kreativ-Ausrüstung in der Blockauswahl", function(){ var w=document.createElement("div"),ui=ui2(w),g=null; ui.zeigeBlockauswahl(function(){},{ausruestung:true,beiGegenstand:function(a,s){g=[a,s];}}); w.querySelector('[data-aktion="reiter"][data-id="ausruestung"]').click(); w.querySelector('[data-art="laserschwert"][data-selt="4"]').click(); gleich(g.join(),"laserschwert,4"); });
 test("Kampf-HUD: Panzerungsbalken nur im Fahrzeug", function(){ var w=document.createElement("div"),ui=ui2(w),k=k2(),s=k.spieler; s.schnellleiste=[1,2,3,4,5,6,7,8,9]; ui.hud(s,{}); ui.kampfHud(k,[]); var b=w.querySelector(".balken-fahrzeug"); wahr(b&&b.hidden,"ohne Fahrzeug aus"); ui.kampfHud(k,[],{ panzerung: 60, max: 120, name: "Schwebeflitzer" }); wahr(!b.hidden,"sichtbar"); gleich(b.querySelector("i").style.width,"50%"); wahr(b.textContent.indexOf("Schwebeflitzer")>=0,"Name"); });
+test("Detail folgt dem Fokus ohne Antippen", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  var g={id:"b",art:"helm",seltenheit:2,werte:{schutz:9},name:"Blauer Helm"};
+  k.rucksack.plaetze[10]={gegenstand:g};
+  ui.zeigeRucksack(k,{});
+  var f=w.querySelector('.rs-platz[data-i="10"]'); f.focus(); ui.beiFokus(f);
+  wahr(w.querySelector(".rs-detail h3").textContent.indexOf("Blauer Helm")>=0,"Name ohne Antippen");
+  gleich(document.activeElement.getAttribute("data-i"),"10","Fokus bleibt");
+  w.remove();
+});
+test("Y legt den fokussierten Gegenstand an", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  k.rucksack.plaetze[10]={gegenstand:{id:"b",art:"helm",seltenheit:2,werte:{schutz:9},name:"Blauer Helm"}};
+  ui.zeigeRucksack(k,{});
+  var f=w.querySelector('.rs-platz[data-i="10"]'); f.focus(); ui.kurzaktion();
+  gleich(k.ausruestung.helm.id,"b","angelegt");
+  w.remove();
+});
+test("Y legt ein Rasterfeld in die Schnellleiste", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  k.rucksack.plaetze[12]={block:SC.B.STEIN,anzahl:3};
+  k.rucksack.plaetze[0]=null;   // Feld 0 ist sonst durch das Startschwert belegt
+  ui.zeigeRucksack(k,{});
+  var f=w.querySelector('.rs-platz[data-i="12"]'); f.focus(); ui.kurzaktion();
+  gleich(k.rucksack.plaetze[0].block,SC.B.STEIN,"in die Schnellleiste");
+  w.remove();
+});
+test("Der Rucksack öffnet im Raster", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  ui.zeigeRucksack(k,{});
+  gleich(document.activeElement.closest("[data-zone]").getAttribute("data-zone"),"raster");
+  w.remove();
+});
+test("Vom Rucksack zur Werkbank fällt der Fokus in die Rezeptliste", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  ui.zeigeRucksack(k,{});
+  var kn=w.querySelector('[data-aktion="handwerk"]'); kn.focus(); kn.click();
+  gleich(document.activeElement.closest("[data-zone]").getAttribute("data-zone"),"liste","das gemerkte Feld gibt es hier nicht");
+  w.remove();
+});

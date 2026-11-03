@@ -75,6 +75,7 @@ Gespielt wird von Kindern, am iPad mit Touch oder Controller, am Rechner mit der
 - Dann wird angelegt, der alte Gegenstand kommt in den Rucksack (an den Platz, an dem der neue lag), und ein Hinweis erscheint: „Neuer Helm angelegt: Schutz 5 → 9“ (`ui.hinweis`, Text in `SC.T`).
 - **Nur Rüstung und Schild** (Plätze helm, brust, handschuhe, stiefel, schild). Waffen nie, sie werden über die Schnellleiste gehalten.
 - Gilt überall, wo Ausrüstung in den Rucksack kommt, durch Aufsammeln: auf Planeten (Beutekugel) und im All (`js/raumflug.js`, Beute aus Kämpfen). Nicht für Hergestelltes (Werkbank) und nicht für die Kreativ-Ausrüstung aus der Blockauswahl.
+- **Abschaltbar (Entscheidung des Nutzers):** neue Einstellung „Bessere Ausrüstung automatisch anlegen“ in den Einstellungen, **Standard an**. Ist sie aus, landet Beute wie bisher nur im Rucksack. Gespeichert wie die anderen Einstellungen (`SC.Einstellungen`, Standardwert in `standard()`, ältere gespeicherte Einstellungen ohne das Feld gelten als „an“).
 - Mehrspieler: Das Anlegen passiert dort, wo die Beute heute im Rucksack des Aufsammelnden landet; ein Gast sieht dasselbe Verhalten wie im Einzelspiel.
 
 ## Rahmen
@@ -106,4 +107,3 @@ Gespielt wird von Kindern, am iPad mit Touch oder Controller, am Rechner mit der
 ## Offen für später
 
 - Dasselbe Bedienmuster (ein Cursor, Aktionsmenü) für Truhe und Werkbank, falls es sich im Rucksack bewährt.
-- Ob das automatische Anlegen abschaltbar sein soll (Einstellung), falls es den Kindern nicht gefällt.

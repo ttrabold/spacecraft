@@ -767,3 +767,33 @@ Meilenstein „Spiel-UI und Controller-Navigation“ anlegen, ein Issue je Task 
 
 
 
+
+## Nachtrag aus der Browserprüfung (Seitenpanel und HUD)
+
+Die Menüebene `.ebene` liegt über dem HUD (`z-index` 3 gegen 2), und das Seitenpanel nimmt die rechte Seite ein. Dadurch war im Spiel (1180×820, Controller) die Controller-Hilfe unsichtbar und die Hotbar verdeckt. Entscheidung des Nutzers: Hilfe und Hotbar rücken in die freie Weltfläche links vom Panel, die Welt bleibt gedimmt.
+
+- Modify: `js/ui.js` (`_zeige`, `schliesse`), `css/style.css`
+- Test: `tests/test-ui.js`
+
+In `_zeige` setzt `opt.seite` die Klasse `seitenpanel` am HUD-Element (`this.hudEl.classList.toggle("seitenpanel", !!(opt && opt.seite))`), `schliesse()` räumt sie weg. Damit das HUD über der Menüebene liegt, nur solange ein Seitenpanel offen ist:
+
+```css
+.hud.seitenpanel{z-index:4}
+.hud.seitenpanel .leiste{left:calc((100% - min(420px,42%))/2);max-width:calc(100% - min(420px,42%) - 16px)}
+.hud.seitenpanel .controller-hilfe{right:calc(min(420px,42%) + 14px + env(safe-area-inset-right));max-width:calc(100% - min(420px,42%) - 28px)}
+```
+
+Zentrierte Fenster behalten das bisherige Verhalten (HUD hinter der Dimmung). Die Positionen sind Optik und auf der Testseite nicht prüfbar; geprüft wird die Klasse am HUD.
+
+Test (vorher failend):
+
+```js
+test("Bei einem Seitenpanel liegt das HUD über der Menüebene", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  ui.zeigeRucksack(k,{});
+  wahr(w.querySelector(".hud").classList.contains("seitenpanel"),"Klasse am HUD fehlt");
+  ui.schliesse();
+  wahr(!w.querySelector(".hud").classList.contains("seitenpanel"),"Klasse bleibt nach dem Schließen");
+  w.remove();
+});
+```

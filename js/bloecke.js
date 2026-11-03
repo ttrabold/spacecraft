@@ -58,7 +58,7 @@ SC.BLOECKE = {};
     [SC.B.SCHNEE, "schnee", { oben: "schnee_oben", seite: "schnee_seite", unten: "erde" }, true, false, 0, null, true, true],
     [SC.B.WASSER, "wasser", alle("wasser"), false, true, 0, null, false, true],
     [SC.B.STAMM, "stamm", { oben: "stamm_oben", seite: "stamm_seite", unten: "stamm_oben" }, true, false, 0, null, true, true],
-    [SC.B.BLAETTER, "blaetter", alle("blaetter"), true, true, 0, null, true, true],
+    [SC.B.BLAETTER, "blaetter", alle("blaetter"), true, true, 0, null, true, true, { ausschnitt: true }],
     [SC.B.KRISTALL, "kristall", alle("kristall"), true, false, 12, [1.0, 0.45, 0.85], true, true],
     // Pflanze: gekreuzte Flächen, durchgehbar wie in Minecraft (Issue #17)
     [SC.B.LEUCHTPILZ, "leuchtpilz", alle("leuchtpilz"), false, true, 10, [0.4, 0.95, 1.0], true, true, { form: "pflanze" }],
@@ -70,7 +70,7 @@ SC.BLOECKE = {};
     [SC.B.WOLLE_GELB, "wolleGelb", alle("wolle_gelb"), true, false, 0, null, true, true],
     [SC.B.WOLLE_WEISS, "wolleWeiss", alle("wolle_weiss"), true, false, 0, null, true, true],
     [SC.B.METALL, "metall", alle("metall"), true, false, 0, null, true, true],
-    [SC.B.METALLGITTER, "metallgitter", alle("metallgitter"), true, true, 0, null, true, true],
+    [SC.B.METALLGITTER, "metallgitter", alle("metallgitter"), true, true, 0, null, true, true, { ausschnitt: true }],
     [SC.B.TECHNIK, "technik", alle("technik"), true, false, 8, [0.3, 0.8, 1.0], true, true],
     [SC.B.LEUCHT_CYAN, "leuchtCyan", alle("leucht_cyan"), true, false, 15, [0.35, 0.95, 1.0], true, true],
     [SC.B.LEUCHT_PINK, "leuchtPink", alle("leucht_pink"), true, false, 15, [1.0, 0.4, 0.85], true, true],
@@ -78,7 +78,7 @@ SC.BLOECKE = {};
     [SC.B.BETON, "beton", alle("beton"), true, false, 0, null, true, true],
     [SC.B.KISTE, "kiste", { oben: "kiste_oben", seite: "kiste_seite", unten: "kiste_seite" }, true, false, 6, [1.0, 0.8, 0.35], false, false],
     [SC.B.KISTE_OFFEN, "kisteOffen", { oben: "kiste_offen", seite: "kiste_seite", unten: "kiste_seite" }, true, false, 0, null, false, false],
-    [SC.B.LAVA, "lava", alle("lava"), false, true, 15, [1.0, 0.5, 0.15], false, true],
+    [SC.B.LAVA, "lava", alle("lava"), false, true, 15, [1.0, 0.5, 0.15], false, true, { ausschnitt: true }],
     [SC.B.EIS, "eis", alle("eis"), true, true, 0, null, true, true],
     [SC.B.SCHLAMM, "schlamm", alle("schlamm"), true, false, 0, null, true, true],
     [SC.B.BASALT, "basalt", alle("basalt"), true, false, 0, null, true, true],
@@ -124,7 +124,7 @@ SC.BLOECKE = {};
     [SC.B.TRUHE, "truhe", { oben: "truhe_oben", seite: "truhe_seite", unten: "truhe_seite" }, true, false, 0, null, true, true]
   ];
   D.forEach(function(d){
-    var b = SC.BLOECKE[d[0]] = { id: d[0], name: SC.T.bloecke[d[1]], seiten: d[2], fest: d[3], durchsichtig: d[4], leuchten: d[5], lichtFarbe: d[6], zerstoerbar: d[7], inAuswahl: d[8], form: "wuerfel", klettern: false };
+    var b = SC.BLOECKE[d[0]] = { id: d[0], name: SC.T.bloecke[d[1]], seiten: d[2], fest: d[3], durchsichtig: d[4], leuchten: d[5], lichtFarbe: d[6], zerstoerbar: d[7], inAuswahl: d[8], form: "wuerfel", klettern: false, ausschnitt: false };   // ausschnitt: durchsichtig für Licht und Flächen, Kachel nur mit Löchern oder deckend – gezeichnet mit Tiefenpuffer
     if(d[9]) for(var k in d[9]) b[k] = d[9][k];
   });
 })();

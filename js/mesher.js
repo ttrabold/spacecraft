@@ -107,7 +107,7 @@ SC.Mesher = {};
     for(var y = 0; y < H; y++) for(var z = 0; z < 16; z++) for(var x = 0; x < 16; x++){
       var rx = x + M, rz = z + M, id = bl[ri(rx, y, rz)];
       if(id === SC.B.LUFT) continue;
-      var def = SC.BLOECKE[id], dt = durch[id], puf = dt ? aus.durchsichtig : aus.fest;
+      var def = SC.BLOECKE[id], dt = durch[id], puf = dt ? (def.ausschnitt ? aus.form : aus.durchsichtig) : aus.fest;
       if(def.form !== "wuerfel"){ formBlock(aus.form, x, y, z, rx, rz, id, def); continue; }
       for(var f = 0; f < 6; f++){
         var F = FL[f], nx = rx + F.n[0], ny = y + F.n[1], nz = rz + F.n[2];

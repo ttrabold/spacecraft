@@ -26,3 +26,7 @@ test("Formblöcke (Tür, Bett) kommen in einen eigenen Teil mit Tiefenpuffer, Gl
   wahr(m.form && m.form.indizes.length>0,"Tür im Formteil");
   gleich(m.durchsichtig.indizes.length/6,6,"im durchsichtigen Teil nur das Glas (6 Flächen)");
 });
+test("Blätter, Metallgitter und Lava (nur Löcher bzw. deckend) kommen in den Teil mit Tiefenpuffer, Wasser und Eis bleiben durchsichtig", function(){
+  ["BLAETTER","METALLGITTER","LAVA"].forEach(function(n){ var w=leereWelt(); w.setzeBlock(5,64,5,SC.B[n],"system"); var m=SC.Mesher.chunk(w,0,0,SC.Licht.chunk(w,0,0)); gleich(flaechen(m.form),6,n+" im Formteil"); gleich(flaechen(m.durchsichtig),0,n+" nicht durchsichtig gezeichnet"); });
+  ["WASSER","EIS"].forEach(function(n){ var w=leereWelt(); w.setzeBlock(5,64,5,SC.B[n],"system"); var m=SC.Mesher.chunk(w,0,0,SC.Licht.chunk(w,0,0)); wahr(flaechen(m.durchsichtig)>0,n+" bleibt durchsichtig"); });
+});

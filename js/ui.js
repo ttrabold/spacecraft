@@ -152,6 +152,17 @@ SC.UI = function(wurzel, o){
   SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._startZone = null; };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
 
+  // Zuordnung der Gamepad-Werte aus SC.Gamepad.zuMenue zu den Aktionen des offenen Fensters
+  SC.UI.prototype.menueAktion = function(r){
+    if(r === "ok") this.bestaetige();
+    else if(r === "zurueck") this.zurueck();
+    else if(r === "schliessen") this.schliesse();
+    else if(r === "zoneVor") this.zone(1);
+    else if(r === "zoneZurueck") this.zone(-1);
+    else if(r === "kurzaktion") this.kurzaktion();
+    else if(r) this.navigiere(r);
+  };
+
   // Großer Planetenname bei der Ankunft (blendet nach 3 s aus)
   // Vollbild-Glühen zum Kaschieren von Übergängen (Austritt, Eintritt, Sprung)
   // Cockpit im All: Ziel, Flugzeit, Schild; null blendet aus

@@ -46,7 +46,7 @@ SC.Spiel = function(o){
     var ui = s.ui, imMenue = !s._laeuft || ui.offen() || s.entwickler.offen();
     if(imMenue){
       var r = s.eingabe.menueGamepad();
-      if(r === "ok") ui.bestaetige(); else if(r === "zurueck") ui.zurueck(); else if(r) ui.navigiere(r);
+      if(r) ui.menueAktion(r);
     }
     requestAnimationFrame(menueSchleife);
   })();

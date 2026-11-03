@@ -120,7 +120,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
     return b;
   };
 
-  // Gamepad in Menüs: liefert -1/1, "ok", "zurueck" oder null
+  // Gamepad in Menüs: liefert "ok", "zurueck", "schliessen", "kurzaktion", "zoneVor"/"zoneZurueck", eine Richtung ("hoch", "runter", "links", "rechts") oder null
   SC.Eingabe.prototype.menueGamepad = function(){
     var gp = SC.Gamepad.erstes(); if(!gp) return null;
     if(this._gpModus !== "menue"){ SC.Gamepad.vorbereiten(gp, this._gpm); this._gpModus = "menue"; this._gpm.menueRichtung = null; return null; }

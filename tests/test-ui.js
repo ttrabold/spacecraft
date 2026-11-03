@@ -168,3 +168,13 @@ test("Rucksack und Werkbank sind Seitenpanels", function(){
     w.remove();
   });
 });
+test("menueAktion ruft die passende UI-Aktion", function(){
+  var gerufen=[], w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w);
+  ui.bestaetige=function(){gerufen.push("ok");}; ui.zurueck=function(){gerufen.push("zurueck");};
+  ui.schliesse=function(){gerufen.push("schliesse");};
+  ui.zone=function(s){gerufen.push("zone"+s);}; ui.kurzaktion=function(){gerufen.push("kurz");};
+  ui.navigiere=function(r){gerufen.push(r);};
+  ["ok","zurueck","schliessen","hoch","runter","links","rechts","zoneVor","zoneZurueck","kurzaktion"].forEach(function(r){ ui.menueAktion(r); });
+  gleich(gerufen.join(","),"ok,zurueck,schliesse,hoch,runter,links,rechts,zone1,zone-1,kurz");
+  w.remove();
+});

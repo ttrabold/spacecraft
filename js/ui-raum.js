@@ -197,7 +197,7 @@
       return;
     }
     if(!this._modal){ this._modal = document.createElement("div"); this._modal.className = "ebene anfrage-ebene"; this.wurzel.insertBefore(this._modal, this.hinweisEl); }
-    this._modal.innerHTML = '<div class="fenster anfrage"><h2>' + esc(fuelle(a.vorlage || SC.T.moechteMitspielen, { name: a.name })) + "</h2>" +
+    this._modal.innerHTML = '<div class="fenster panel anfrage"><h2>' + esc(fuelle(a.vorlage || SC.T.moechteMitspielen, { name: a.name })) + "</h2>" +
       '<div class="reihe"><button class="haupt" data-aktion="ja">' + esc(SC.T.ja) + '</button><button class="gefahr" data-aktion="nein">' + esc(SC.T.nein) + "</button></div></div>";
     this._modal.hidden = false;
     function antworte(ja){ var l = ui._anfragen, i = l.indexOf(a); if(i < 0) return; l.splice(i, 1); a.antwort(ja); ui._naechsteAnfrage(); }

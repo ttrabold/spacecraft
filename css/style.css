@@ -56,7 +56,7 @@ input[type=range]{width:100%}
 .status .modus-anzeige,.status .fps{position:static}
 .status .kampf{position:static;width:100%;transform:none}
 button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-offset:3px}
-@supports (backdrop-filter: blur(1px)){ .ebene .fenster:not(.seite):not(.anfrage){backdrop-filter:blur(4px)} }
+/* Kein backdrop-filter: die Welt zeichnet hinter Menüs weiter, und iPad/iPhone müssten die Unschärfe jedes Bild neu rechnen */
 
 /* HUD */
 .hud{position:absolute;inset:0;pointer-events:none}

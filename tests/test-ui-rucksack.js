@@ -68,3 +68,4 @@ test("Vom Rucksack zur Werkbank fällt der Fokus in die Rezeptliste", function()
   gleich(document.activeElement.closest("[data-zone]").getAttribute("data-zone"),"liste","das gemerkte Feld gibt es hier nicht");
   w.remove();
 });
+test("Kampf-HUD: roter Trefferrand nur kurz nach einem Treffer im Dokument (Leistung auf iPad/iPhone)", function(){ var w=document.createElement("div"),ui=ui2(w),k=k2(),s=k.spieler; s.schnellleiste=[1,2,3,4,5,6,7,8,9]; ui.hud(s,{}); ui.kampfHud(k,[]); var r=w.querySelector(".treffer-rand"); wahr(r.hidden,"ohne Treffer verborgen"); k.letzterTreffer={zeit:k.uhr,richtung:[1,0,0]}; ui.kampfHud(k,[]); wahr(!r.hidden,"frisch getroffen sichtbar"); k.uhr+=700; ui.kampfHud(k,[]); wahr(r.hidden,"nach 600 ms wieder verborgen"); });

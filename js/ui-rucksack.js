@@ -52,7 +52,8 @@
     q(".balken-hitze").hidden = !heiss; q(".balken-hitze").classList.toggle("ueberhitzt", kampf.uhr < kampf.ueberhitztBis); q(".balken-hitze i").style.width = 100 * kampf.hitze + "%";
     // Treffer: roter Rand und Pfeil aus der Richtung des Angriffs
     var t = kampf.letzterTreffer, frisch = t && kampf.uhr - t.zeit < 600;
-    q(".treffer-rand").style.opacity = frisch ? 1 - (kampf.uhr - t.zeit) / 600 : 0;
+    // Der Rand ist bildschirmfüllend mit 80 px Weichzeichnung: nur im Dokument, solange er leuchtet – sonst kostet er auf iPad/iPhone jedes Bild
+    var rand = q(".treffer-rand"); rand.hidden = !frisch; if(frisch) rand.style.opacity = 1 - (kampf.uhr - t.zeit) / 600;
     var pf = q(".treffer-pfeil"); pf.hidden = !frisch;
     if(frisch){ var sp = kampf.spieler, w0 = Math.atan2(-t.richtung[0], -t.richtung[2]) - sp.blick[0]; pf.style.transform = "translate(-50%,-50%) rotate(" + (-w0) + "rad) translateY(-90px)"; }
   };

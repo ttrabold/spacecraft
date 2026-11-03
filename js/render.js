@@ -212,7 +212,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
   };
 
   SC.Render.prototype.welt = function(welt){
-    var r = this; this.chunks.forEach(function(c){ r._entferne(c); }); this.chunks.clear(); this._welt = welt;
+    var r = this; this.chunks.forEach(function(c){ r._entferne(c); }); this.chunks.clear(); this._welt = welt; this._lage = null;
   };
 
   SC.Render.prototype._entferne = function(c){
@@ -245,6 +245,10 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var pcx = Math.floor(spieler.pos[0] / 16), pcz = Math.floor(spieler.pos[2] / 16), sw = this.sichtweite;
     w.neuZuZeichnen.forEach(function(k){ if(r.chunks.has(k)){ var t = k.split(","); r._baue(+t[0], +t[1]); } });
     w.neuZuZeichnen.clear();
+    // Ruhig (alles geladen, gleicher Chunk, gleiche Sichtweite): nichts zu tun. Sonst entstehen jedes Bild ~3000 Wegwerf-Schlüssel,
+    // deren Aufräumen in Safari mit großer Welt immer wieder Bilder verzögert (iPad: 8 % lange Bilder bei Sichtweite 16)
+    var lage = pcx + "," + pcz + "," + sw;
+    if(this.ausstehend === 0 && this._lage === lage) return;
     var start = performance.now(), fehlend = [];
     for(var dx = -sw; dx <= sw; dx++) for(var dz = -sw; dz <= sw; dz++){
       if(dx * dx + dz * dz > sw * sw) continue;
@@ -267,6 +271,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
       var t = k.split(","), ddx = Math.abs(SC.mod(+t[0] - pcx + n / 2, n) - n / 2), ddz = Math.abs(SC.mod(+t[1] - pcz + n / 2, n) - n / 2);
       if(ddx > weg + 1 || ddz > weg + 1) w.entlade(+t[0], +t[1]);
     });
+    this._lage = lage;
   };
 
   SC.Render.prototype.setzeMitspieler = function(liste){ this._mitspieler = liste; };

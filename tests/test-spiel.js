@@ -28,3 +28,17 @@ test("Bildrate: begrenzt auf 60 zeichnet bei 120 Hz jedes zweite Bild", function
   // Bildschirm minimal schneller als 60 Hz: kein Bild fällt aus
   gleich(zaehle(folge(600, 60.1), 60), 600, "60,1 Hz");
 });
+test("Chunk-Verwaltung arbeitet nur bei Änderungen (Leistung: sonst ~3000 Wegwerf-Objekte pro Bild bei Sichtweite 16)", function(){
+  var planet = new SC.Planet({ id: "start", seed: 5 }), w = new SC.Welt(planet), aufrufe = 0, gebaut = [];
+  var r = { _welt: w, planet: planet, sichtweite: 3, chunks: new Map(), _entferne: function(){},
+    _baue: function(cx, cz){ gebaut.push(cx + "," + cz); this.chunks.set(planet.chunkSchluessel(cx, cz), { cx: cx, cz: cz }); } };
+  var orig = planet.chunkSchluessel; planet.chunkSchluessel = function(a, b){ aufrufe++; return orig.call(this, a, b); };
+  var sp = { pos: [100, 70, 100] }, verwalte = SC.Render.prototype._verwalte;
+  for(var i = 0; i < 40 && r.ausstehend !== 0; i++) verwalte.call(r, sp);
+  gleich(r.ausstehend, 0, "alles geladen");
+  aufrufe = 0; gebaut = []; verwalte.call(r, sp); verwalte.call(r, sp);
+  gleich(aufrufe, 0, "ruhig: keine Schlüssel"); gleich(gebaut.length, 0, "ruhig: nichts gebaut");
+  w.neuZuZeichnen.add(planet.chunkSchluessel(6, 6)); verwalte.call(r, sp); gleich(gebaut.join(" "), "6,6", "geänderter Chunk wird neu gebaut");
+  gebaut = []; sp.pos = [100 + 16 * 2, 70, 100]; verwalte.call(r, sp); wahr(gebaut.length > 0, "nach Bewegung um zwei Chunks wird nachgeladen");
+  gebaut = []; aufrufe = 0; r.sichtweite = 4; verwalte.call(r, sp); wahr(gebaut.length > 0, "größere Sichtweite lädt nach");
+});

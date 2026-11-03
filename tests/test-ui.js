@@ -93,6 +93,69 @@ test("Statusfeld zeigt die Stufe und die Kampf-Balken", function(){
   ui.statusSache(null); gleich(st.querySelector(".status-sache").textContent,"");
   w.remove();
 });
+function zf(html, aktionen){ var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w); ui._zeige(html,aktionen); return { w: w, ui: ui }; }
+function raster(z){ var h='<div data-zone="'+z+'" style="display:grid;grid-template-columns:repeat(3,40px);grid-auto-rows:40px;gap:0">'; for(var i=0;i<9;i++) h+='<button data-aktion="x" data-i="'+i+'">'+i+'</button>'; return h+'</div>'; }
+test("Steuerkreuz springt im Raster eine ganze Reihe", function(){
+  var a=zf(raster("raster"),{x:function(){}}); a.ui.zone(0);
+  gleich(document.activeElement.getAttribute("data-i"),"0");
+  a.ui.navigiere("runter"); gleich(document.activeElement.getAttribute("data-i"),"3","eine Reihe runter");
+  a.ui.navigiere("runter"); gleich(document.activeElement.getAttribute("data-i"),"6");
+  a.ui.navigiere("rechts"); gleich(document.activeElement.getAttribute("data-i"),"7","ein Feld rechts");
+  a.ui.navigiere("hoch"); gleich(document.activeElement.getAttribute("data-i"),"4","eine Reihe hoch");
+  a.w.remove();
+});
+test("Am Rand der Zone wird innerhalb der Zone wrapped", function(){
+  var a=zf(raster("liste"),{x:function(){}}); a.ui.zone(0);
+  a.ui.navigiere("hoch"); gleich(document.activeElement.getAttribute("data-i"),"6","wrapped zur letzten Reihe");
+  a.ui.navigiere("links"); gleich(document.activeElement.getAttribute("data-i"),"8","wrapped in der Reihe");
+  a.w.remove();
+});
+test("Liste ohne Raster: eine Zeile je Element, Bewegung in Leserichtung", function(){
+  var b=zf('<div data-zone="liste"><button data-aktion="x" style="display:block">1</button><button data-aktion="x" style="display:block">2</button></div>',{x:function(){}});
+  b.ui.zone(0); b.ui.navigiere("runter"); gleich(document.activeElement.textContent,"2");
+  b.ui.navigiere("links"); gleich(document.activeElement.textContent,"1","Zeile mit einem Feld: Leserichtung");
+  b.w.remove();
+});
+test("LB/RB wechseln die Zone", function(){
+  var a=zf('<div data-zone="ausruestung"><button data-aktion="x">A</button></div><div data-zone="detail"><button data-aktion="x">D</button></div>',{x:function(){}});
+  a.ui.zone(0); gleich(document.activeElement.textContent,"A");
+  a.ui.zone(1); gleich(document.activeElement.textContent,"D");
+  a.ui.zone(-1); gleich(document.activeElement.textContent,"A");
+  a.w.remove();
+});
+test("Bewegung bleibt in der Zone des Fokus", function(){
+  var a=zf('<div data-zone="a"><button data-aktion="x" data-i="a0" style="display:block">a0</button><button data-aktion="x" data-i="a1" style="display:block">a1</button></div><div data-zone="b"><button data-aktion="x" data-i="b0" style="display:block">b0</button></div>',{x:function(){}});
+  a.ui.zone(0);
+  a.ui.navigiere("runter"); gleich(document.activeElement.getAttribute("data-i"),"a1");
+  a.ui.navigiere("runter"); gleich(document.activeElement.getAttribute("data-i"),"a0","wrapped in der Zone, nicht in Zone b");
+  a.w.remove();
+});
+test("Der Fokus rollt ins Sichtbare", function(){
+  var h='<div data-zone="raster" style="display:block;height:60px;overflow:auto">';
+  for(var i=0;i<10;i++) h+='<button data-aktion="x" data-i="'+i+'" style="display:block;height:20px">'+i+'</button>';
+  var a=zf(h+'</div>',{x:function(){}}); a.ui.zone(0);
+  for(var i=0;i<5;i++) a.ui.navigiere("runter");
+  wahr(a.w.querySelector("[data-zone]").scrollTop>0,"gerollt");
+  a.w.remove();
+});
+test("Regler werden direkt verstellt", function(){
+  var a=zf('<div data-zone="a"><input type="range" data-aktion="x" value="5" step="1"><button data-aktion="x">ok</button></div>',{x:function(){}});
+  a.ui.zone(0); gleich(document.activeElement.type,"range");
+  a.ui.navigiere("rechts"); gleich(document.activeElement.value,"6","verstellt");
+  a.ui.navigiere("links"); gleich(document.activeElement.value,"5");
+  a.ui.navigiere("runter"); gleich(document.activeElement.tagName,"BUTTON","verlässt den Regler");
+  a.w.remove();
+});
+test("B verlässt zuerst die Zone", function(){
+  var geschlossen=false, w=document.createElement("div"); document.body.appendChild(w);
+  var ui=ui2(w);
+  ui._zeige('<div data-zone="raster"><button data-aktion="x">R</button></div><div data-zone="detail"><button data-aktion="x">D</button></div><div data-zone="unten"><button data-aktion="fertig">F</button></div>',
+    {x:function(){},fertig:function(){geschlossen=true;}}, { startZone: "raster" });
+  ui.zone(1); gleich(document.activeElement.textContent,"D");
+  ui.zurueck(); gleich(document.activeElement.textContent,"R","erst die Zone verlassen");
+  ui.zurueck(); wahr(geschlossen,"dann geschlossen");
+  w.remove();
+});
 test("Rucksack und Werkbank sind Seitenpanels", function(){
   var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
   ui.zeigeRucksack(k,{}); wahr(w.querySelector(".fenster").classList.contains("seite"),"Rucksack");

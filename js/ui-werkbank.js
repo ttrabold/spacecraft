@@ -78,8 +78,8 @@
     }
     function zeichne(){
       ui._zeige("<h2>" + esc(o.station === "hand" ? T.handwerkTitel : T.werkbankTitel) + "</h2>" +
-        '<div class="wb"><div class="wb-liste">' + liste.map(karte).join("") + '</div><div class="wb-detail">' + detail() + "</div></div>" +
-        '<div class="reihe"><button data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen, { seite: true, startZone: "liste" });
+        '<div class="wb"><div class="wb-liste" data-zone="liste">' + liste.map(karte).join("") + '</div><div class="wb-detail" data-zone="detail">' + detail() + "</div></div>" +
+        '<div class="reihe" data-zone="aktionen"><button data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen, { seite: true, startZone: "liste" });
     }
     var aktionen = {
       rezept: function(el, id){ gewaehlt = SC.Crafting.rezept(id); wahl = gewaehlt.art === "fahrzeug" ? fzStandard() : {}; zeichne(); },
@@ -114,9 +114,9 @@
     }
     function zeichne(){
       ui._zeige("<h2>" + esc(T.truheTitel) + "</h2>" +
-        (plaetze ? '<div class="rs-raster">' + plaetze.map(function(s, i){ return platz(s, "tplatz", i); }).join("") + "</div>" : "<p>…</p>") +
-        "<h3>" + esc(T.rucksackTitel) + '</h3><div class="rs-raster">' + rs.plaetze.map(function(s, i){ return platz(s, "rplatz", i); }).join("") + "</div>" +
-        '<p class="leer">' + esc(T.truheTipp) + '</p><div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen, { seite: true, startZone: "raster" });
+        (plaetze ? '<div class="rs-raster" data-zone="raster">' + plaetze.map(function(s, i){ return platz(s, "tplatz", i); }).join("") + "</div>" : "<p>…</p>") +
+        "<h3>" + esc(T.rucksackTitel) + '</h3><div class="rs-raster" data-zone="rucksack">' + rs.plaetze.map(function(s, i){ return platz(s, "rplatz", i); }).join("") + "</div>" +
+        '<p class="leer">' + esc(T.truheTipp) + '</p><div class="reihe" data-zone="aktionen"><button class="haupt" data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen, { seite: true, startZone: "raster" });
     }
     function antwort(r){
       if(r.plaetze === null){ ui.hinweis(T.truheWeg); plaetze = plaetze || []; } else plaetze = r.plaetze;

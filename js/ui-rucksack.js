@@ -99,11 +99,11 @@
       var w = kampf.werte;
       ui._zeige(
         "<h2>" + esc(SC.T.rucksackTitel) + "</h2>" +
-        '<div class="rs"><div class="rs-links"><div class="rs-ausruestung">' + PLAETZE.map(ausrHtml).join("") + "</div>" +
+        '<div class="rs"><div class="rs-links"><div class="rs-ausruestung" data-zone="ausruestung">' + PLAETZE.map(ausrHtml).join("") + "</div>" +
         '<div class="rs-werte">' + esc(SC.T.stufe) + " " + w.stufe + " · " + esc(SC.T.werteName.lp) + " " + w.lpMax + " · " + esc(SC.T.werteName.schutz) + " " + w.schutz + (w.schildMax ? " · " + esc(SC.T.werteName.schild) + " " + w.schildMax : "") + "</div>" +
-        '<div class="rs-detail">' + detail() + "</div></div>" +
-        '<div class="rs-raster">' + rs.plaetze.map(platzHtml).join("") + "</div></div>" +
-        '<div class="reihe"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+        '<div class="rs-detail" data-zone="detail">' + detail() + "</div></div>" +
+        '<div class="rs-raster" data-zone="raster">' + rs.plaetze.map(platzHtml).join("") + "</div></div>" +
+        '<div class="reihe" data-zone="aktionen"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
         aktionen, { seite: true, startZone: "raster" });
     }
     var aktionen = {

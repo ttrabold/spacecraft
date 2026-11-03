@@ -54,41 +54,102 @@ SC.UI = function(wurzel, o){
     this.ebene.innerHTML = '<div class="fenster panel' + (opt && opt.seite ? " seite" : "") + '">' + html + "</div>";
     this.ebene.hidden = false; this._aktionen = aktionen || {};
     this._startZone = (opt && opt.startZone) || null;
+    // Beim Öffnen fällt der Fokus in die Startzone (im Rucksack z. B. ins Raster)
+    if(this._startZone){
+      var z = this.ebene.querySelector('[data-zone="' + this._startZone + '"]');
+      if(z){ var e = this._fokusListe(z)[0]; if(e){ e.focus(); this.beiFokus(e); } }
+    }
   };
   // Bedienung mit Gamepad: Fokus über die Knöpfe und Eingaben des offenen Fensters bewegen
   // Ein offener Dialog (Beitrittsanfrage) liegt über allem und bekommt den Fokus
   SC.UI.prototype._fenster = function(){ return this.modalOffen() ? this._modal : this.ebene.hidden ? this.wurzel.querySelector(".entwickler:not([hidden])") : this.ebene; };
   SC.UI.prototype.modalOffen = function(){ return !!(this._modal && !this._modal.hidden); };
-  SC.UI.prototype._fokusListe = function(){
-    var r = this._fenster();
-    if(!r) return [];
+  // Zeilen aus der Geometrie: was auf derselben Höhe liegt (Toleranz halbe Elementhöhe), ist eine Zeile
+  function zeilen(liste){
+    var z = [];
+    liste.forEach(function(el){
+      var r = el.getBoundingClientRect(), hb = Math.max(8, r.height / 2), gef = null;
+      for(var i = 0; i < z.length; i++) if(Math.abs(z[i].top - r.top) < hb){ gef = z[i]; break; }
+      if(gef) gef.el.push(el); else z.push({ top: r.top, el: [el] });
+    });
+    return z.sort(function(a, b){ return a.top - b.top; });
+  }
+  // Horizontale Mitte eines Elements: für die Frage, welches Feld in einer Zeile am nächsten liegt
+  function mitte(el){ var r = el.getBoundingClientRect(); return r.left + r.width / 2; }
+  SC.UI.prototype._zonen = function(){
+    var r = this._fenster(); if(!r) return [];
+    var z = Array.prototype.filter.call(r.querySelectorAll("[data-zone]"), function(el){ return !el.hidden && el.querySelector("button,input,label.knopf"); });
+    return z.length ? z : [r];
+  };
+  SC.UI.prototype._zone = function(el){ return (el && el.closest && el.closest("[data-zone]")) || this._fenster(); };
+  SC.UI.prototype._fokusListe = function(zone){
+    var r = zone || this._fenster(); if(!r) return [];
     return Array.prototype.filter.call(r.querySelectorAll("button, input:not([type=file]), label.knopf"), function(el){ return !el.disabled && (el.offsetParent !== null || el.getClientRects().length > 0); });
   };
-  SC.UI.prototype.navigiere = function(schritt){
-    var l = this._fokusListe(); if(!l.length) return;
-    var a = document.activeElement;
-    // Regler mit links/rechts verstellen, solange sie den Fokus haben
-    if(a && a.type === "range" && l.indexOf(a) >= 0 && this._reglerModus){ a.value = +a.value + schritt * (+a.step || 1); a.dispatchEvent(new Event("input", { bubbles: true })); return; }
-    var i = l.indexOf(a), n = i < 0 ? (schritt > 0 ? 0 : l.length - 1) : SC.mod(i + schritt, l.length);
-    l[n].focus(); this._reglerModus = false;
+  // Der Fokus rollt ins Sichtbare; der Handler _beiFokus zieht das Detail nach (Task 7)
+  SC.UI.prototype.beiFokus = function(el){
+    if(!el) return;
+    try{ el.scrollIntoView({ block: "nearest", inline: "nearest" }); }catch(err){ el.scrollIntoView(); }
+    if(this._beiFokus) this._beiFokus(el);
+  };
+  SC.UI.prototype.kurzaktion = function(){ if(this._kurzaktion) this._kurzaktion(document.activeElement); };
+  // LB/RB: eine Zone weiter, 0 = erste Zone. Ohne Marker ist das ganze Fenster eine Zone.
+  SC.UI.prototype.zone = function(schritt){
+    var z = this._zonen(); if(!z.length) return;
+    var i = z.indexOf(this._zone(document.activeElement));
+    i = i < 0 ? 0 : SC.mod(i + schritt, z.length);
+    var l = this._fokusListe(z[i]); if(l.length){ l[0].focus(); this.beiFokus(l[0]); }
+  };
+  // Steuerkreuz: hoch/runter eine Zeile, links/rechts ein Feld. Bewegung bleibt in der Zone des Fokus, am Rand wird innerhalb der Zone wrapped.
+  SC.UI.prototype.navigiere = function(richtung){
+    var l = this._fokusListe(this._zone(document.activeElement)); if(!l.length) return;
+    var a = document.activeElement, i = l.indexOf(a), vor = (richtung === "runter" || richtung === "rechts") ? 1 : -1;
+    // Regler werden direkt verstellt; hoch und runter verlassen das Feld
+    if(a && a.type === "range" && i >= 0 && (richtung === "links" || richtung === "rechts")){
+      a.value = +a.value + (richtung === "rechts" ? 1 : -1) * (+a.step || 1);
+      a.dispatchEvent(new Event("input", { bubbles: true })); return;
+    }
+    var n;
+    if(i < 0) n = vor > 0 ? 0 : l.length - 1;
+    else{
+      var z = zeilen(l), zi = 0;
+      for(var j = 0; j < z.length; j++) if(z[j].el.indexOf(a) >= 0) zi = j;
+      if(z.length === 1 || z[zi].el.length === 1) n = SC.mod(i + vor, l.length);
+      else if(richtung === "links" || richtung === "rechts"){
+        var re = z[zi];
+        n = l.indexOf(re.el[(re.el.indexOf(a) + vor + re.el.length) % re.el.length]);
+      }
+      else{
+        var re = z[(zi + vor + z.length) % z.length], c = mitte(a), best = re.el[0], bd = Infinity;
+        re.el.forEach(function(el){ var d = Math.abs(mitte(el) - c); if(d < bd){ bd = d; best = el; } });
+        n = l.indexOf(best);
+      }
+    }
+    l[n].focus(); this.beiFokus(l[n]);
   };
   SC.UI.prototype.bestaetige = function(){
     var a = document.activeElement, l = this._fokusListe();
     if(!a || l.indexOf(a) < 0){ if(l.length) l[0].focus(); return; }
-    if(a.type === "range"){ this._reglerModus = !this._reglerModus; a.classList.toggle("regeln", this._reglerModus); return; }
     if(a.type === "checkbox"){ a.click(); return; }
     if(a.tagName === "LABEL"){ var inp = a.querySelector("input"); if(inp) inp.click(); return; }
     if(a.tagName === "INPUT") return;
     a.click();
   };
+  // B: erst die Zone verlassen (zurück zur Öffnungszone), dann das Fenster schließen
   SC.UI.prototype.zurueck = function(){
     var r = this._fenster();
     if(!r || r === this._modal) return; // Anfrage nur mit Ja oder Nein beantworten
+    if(this._startZone){
+      var z = r.querySelector('[data-zone="' + this._startZone + '"]');
+      if(z && this._zone(document.activeElement) !== z){
+        var l = this._fokusListe(z); if(l.length){ l[0].focus(); this.beiFokus(l[0]); return; }
+      }
+    }
     var k = r.querySelector('[data-aktion="weiter"], [data-aktion="fertig"], [data-aktion="zurueck"], [data-ew="zu"]');
     if(k) k.click();
   };
 
-  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; };
+  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._startZone = null; };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
 
   // Großer Planetenname bei der Ankunft (blendet nach 3 s aus)

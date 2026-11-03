@@ -100,6 +100,14 @@ SC.Beute.alsSache = function(b){ return b.block !== undefined ? { block: b.block
     return { id: id, art: art, stufe: stufe, seltenheit: selt, werte: werte, sonder: sonder, name: name(art, selt, zf) };
   }
 
+  // Eindeutig besser: Platz leer, oder kein Wert schlechter und mindestens einer besser, ohne eine Sonderfähigkeit des Getragenen zu verlieren
+  SC.Beute.eindeutigBesser = function(neu, alt){
+    if(!alt) return true;
+    if(alt.sonder && alt.sonder !== neu.sonder) return false;
+    var v = SC.Beute.vergleiche(neu, alt), besser = false;
+    for(var k in v){ if(v[k] < 0) return false; if(v[k] > 0) besser = true; }
+    return besser;
+  };
   SC.Beute.vergleiche = function(neu, alt){
     var v = {}, a = (alt && alt.werte) || {}, k;
     for(k in neu.werte) v[k] = neu.werte[k] - (a[k] || 0);

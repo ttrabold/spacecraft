@@ -15,3 +15,14 @@ test("besiegt behält alles und setzt zurück", function(){ var k=kampf(); k.aus
 test("Erholung nach fünf Sekunden", function(){ var k=kampf(); k.trifftSpieler(50,[0,0,1]); var lp=k.werte.lp; k.schritt(3000,1); gleich(k.werte.lp,lp); k.schritt(9000,1); wahr(k.werte.lp>lp); });
 test("Ausrüstung zählt in die Werte", function(){ var k=kampf(),lp0=k.werte.lpMax; k.ausruestung.brust={id:"b",art:"brust",werte:{schutz:12,lp:20}}; k.ausruestung.stiefel={id:"s",art:"stiefel",werte:{schutz:3},sonder:"doppelsprung"}; k.ruestungAnwenden(); gleich(k.werte.schutz,15); gleich(k.werte.lpMax,lp0+20); wahr(k.spieler.doppelsprung); });
 test("Kiste öffnen gibt Beute und wird offen", function(){ var k=kampf(); k.welt.setzeBlock(8,61,8,SC.B.KISTE,"system"); var b=SC.Kampf.oeffneKiste(k.welt,k,8,61,8,{typ:"lager",stufe:2},SC.zufall(1)); wahr(b.length>=2&&b.length<=4); wahr(b.every(function(g){return g.seltenheit>=1;})); gleich(k.welt.holeBlock(8,61,8),SC.B.KISTE_OFFEN); wahr(k.daten.planeten.start.kisten["8,61,8"]); gleich(SC.Kampf.oeffneKiste(k.welt,k,8,61,8,{typ:"lager",stufe:2},SC.zufall(1)).length,0); });
+test("Automatisch anlegen tauscht bessere Rüstung aus dem Rucksack, Waffen nie", function(){
+  var k = kampf(), alt = { id: "a", art: "helm", seltenheit: 0, werte: { schutz: 5 }, name: "Alt" }, neu = { id: "n", art: "helm", seltenheit: 1, werte: { schutz: 9 }, name: "Neu" };
+  k.ausruestung.helm = alt; k.rucksack.plaetze[12] = { gegenstand: neu };
+  var r = k.automatischAnlegen(neu);
+  gleich(r.platz, "helm"); gleich(r.alt.id, "a"); gleich(k.ausruestung.helm.id, "n"); gleich(k.rucksack.plaetze[12].gegenstand.id, "a"); wahr(k.werte.schutz >= 9);
+  var w = { id: "w", art: "laserschwert", seltenheit: 4, werte: { schaden: 99 }, name: "W" }; k.rucksack.plaetze[13] = { gegenstand: w };
+  gleich(k.automatischAnlegen(w), null, "Waffe nie");
+  var gleichgut = { id: "g", art: "helm", seltenheit: 0, werte: { schutz: 9 }, name: "G" }; k.rucksack.plaetze[14] = { gegenstand: gleichgut };
+  gleich(k.automatischAnlegen(gleichgut), null, "gleich gut: nichts");
+  gleich(k.automatischAnlegen({ id: "fehlt", art: "helm", werte: { schutz: 50 } }), null, "nicht im Rucksack: nichts");
+});

@@ -21,6 +21,18 @@ SC.Kampf = function(welt, spieler, daten, zf){
   function blickFlach(sp){ return [-Math.sin(sp.blick[0]), -Math.cos(sp.blick[0])]; }
   function ring(welt, a, b){ var P = welt.planet.groesse; return [SC.mod(b[0] - a[0] + P / 2, P) - P / 2, b[1] - a[1], SC.mod(b[2] - a[2] + P / 2, P) - P / 2]; }
 
+  // Aufgesammelte Rüstung anlegen, wenn sie eindeutig besser ist: tauscht mit dem Getragenen im Rucksack → { platz, alt, neu } oder null (Waffen nie)
+  var AUTO = { helm: 1, brust: 1, handschuhe: 1, stiefel: 1, schild: 1 };
+  K.automatischAnlegen = function(g){
+    var platz = SC.GEGENSTAENDE[g.art] && SC.GEGENSTAENDE[g.art].platz, pl = this.rucksack.plaetze, i = -1;
+    if(!AUTO[platz]) return null;
+    for(var j = 0; j < pl.length; j++) if(pl[j] && pl[j].gegenstand && pl[j].gegenstand.id === g.id){ i = j; break; }
+    var alt = this.ausruestung[platz] || null;
+    if(i < 0 || !SC.Beute.eindeutigBesser(g, alt)) return null;
+    this.ausruestung[platz] = g; pl[i] = alt ? { gegenstand: alt } : null;
+    this.ruestungAnwenden();
+    return { platz: platz, alt: alt, neu: g };
+  };
   K.ruestungAnwenden = function(){
     var w = this.werte, a = this.ausruestung, sonder = new Set();
     w.schutz = 0; w.schildMax = 0; w.schadenBonus = 0; w.tempoBonus = 0; w.erholungBonus = 0;

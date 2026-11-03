@@ -5,3 +5,13 @@ test("Sonderkraft erst ab Lila und passend zum Platz", function(){ var zf=SC.zuf
 test("Namen sind deutsch und kindgerecht", function(){ var g=SC.Beute.erzeuge(SC.zufall(5),{stufe:3,art:"helm",mindest:1}); wahr(/Helm/.test(g.name)); wahr(!/töt|blut/i.test(g.name)); });
 test("Vergleich", function(){ var a={werte:{schutz:10,lp:5}},b={werte:{schutz:7}}; var v=SC.Beute.vergleiche(a,b); gleich(v.schutz,3); gleich(v.lp,5); gleich(SC.Beute.vergleiche(a,null).schutz,10); });
 test("Ort beeinflusst die Art", function(){ var zf=SC.zufall(6),st=0,hh=0; for(var i=0;i<600;i++){ var a=SC.Beute.erzeuge(zf,{stufe:5,ort:"station"}).art,b=SC.Beute.erzeuge(zf,{stufe:5,ort:"herrenhaus"}).art; if(/blaster/.test(a)) st++; if(/blaster/.test(b)) hh++; } wahr(st>hh); });
+test("Eindeutig besser: leerer Platz, besser ohne Verlust, gleich, schlechter, Sonderfähigkeit", function(){
+  var h = function(w, sonder){ return { id: "x", art: "helm", werte: w, sonder: sonder || null }; };
+  wahr(SC.Beute.eindeutigBesser(h({ schutz: 5 }), null), "leer");
+  wahr(SC.Beute.eindeutigBesser(h({ schutz: 9 }), h({ schutz: 5 })), "besser");
+  wahr(!SC.Beute.eindeutigBesser(h({ schutz: 5 }), h({ schutz: 5 })), "gleich");
+  wahr(!SC.Beute.eindeutigBesser(h({ schutz: 9, lp: 0 }), h({ schutz: 5, lp: 10 })), "ein Wert schlechter");
+  wahr(SC.Beute.eindeutigBesser(h({ schutz: 9, lp: 10 }), h({ schutz: 5 })), "neuer Wert dazu");
+  wahr(!SC.Beute.eindeutigBesser(h({ schutz: 9 }), h({ schutz: 5 }, "dornen")), "Sonderfähigkeit ginge verloren");
+  wahr(SC.Beute.eindeutigBesser(h({ schutz: 9 }, "dornen"), h({ schutz: 5 }, "dornen")), "gleiche Sonderfähigkeit");
+});

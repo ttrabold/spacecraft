@@ -161,6 +161,7 @@
             var r = k.trifftGegner(g, akt.schaden, [d[0], 0, d[2]]); s._zahl(g, r.schaden); if(r.besiegt) s.besiege(g); else a.spiele("treffer"); });
         }
         if(k.ueberhitztBis <= t) this._heiss = false;
+        this._abbau = null;   // mit Waffe läuft nie ein Abbau → kein Riss am Block (#127)
       } else if(ziel && e.abbauenGehalten) this.abbauFortschritt(ziel, dt);
       else this._abbau = null;
       // Setzen, Kiste öffnen

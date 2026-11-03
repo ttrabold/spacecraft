@@ -188,6 +188,7 @@ git add js/ui.js js/survival.js tests/test-ui.js && git commit -m "Statusfeld ob
 
 **Files:**
 - Modify: `js/ui.js` (`_zeige`, Zeile 53), `js/ui-rucksack.js` (`zeigeRucksack`, `zeigeTruhe`), `js/ui-werkbank.js` (`zeigeWerkbank`)
+- Modify: `css/style.css` (Regeln für den Inhalt des Statusfelds, siehe Schritt 4)
 - Test: `tests/test-ui.js`
 
 **Interfaces:**
@@ -230,14 +231,25 @@ SC.UI.prototype._zeige = function(html, aktionen, opt){
 (`startZone` wird erst in Task 4 wirksam, wenn `zone()` und `_fokusListe(zone)` existieren; hier wird nur das Feld gesetzt.)
 In `zeigeRucksack`, `zeigeWerkbank` und `zeigeTruhe` die `ui._zeige(...)`-Aufrufe um ein drittes Argument ergänzen: `{ seite: true, startZone: "raster" }` (Rucksack), `{ seite: true, startZone: "liste" }` (Werkbank), `{ seite: true, startZone: "raster" }` (Truhe). Die Zonen-Marker selbst kommen in Task 4.
 
-- [ ] **Step 4: Grüne Testseite**
+- [ ] **Step 4: Statusfeld im CSS (Folgearbeit aus Task 2)**
+
+Die neuen Elemente im Statusfeld haben noch keine Regeln, und zwei alte Regeln richten sich jetzt am Panel aus statt an der HUD-Ecke. In `css/style.css`:
+```css
+.status-stufe{font-size:20px;letter-spacing:2px;color:#3ef0ff}
+.status-sache{font-size:15px;color:#eef2fa;min-height:20px}
+.status .modus-anzeige,.status .fps{position:static}
+.status .kampf{position:static;width:100%}
+```
+`.modus-anzeige` (Zeile 60) und `.fps` (Zeile 62) verlieren dabei ihre absolute Position und folgen dem Zeilenfluss des Panels; dasselbe gilt für `.kampf` (Zeile 84), dessen `width:min(500px,90%)` nicht zur Panelbreite `min(300px,40%)` passt. Die tote Regel `.kampf-stufe` (Zeile 85) fällt weg – das Element existiert seit Task 2 nicht mehr. Diese Regeln sind Optik und auf der Testseite nicht prüfbar; die visuelle Prüfung macht der Controller im Browser.
+
+- [ ] **Step 5: Grüne Testseite**
 
 Run: `bash scripts/tests-wsl.sh Seitenpanels` → keine ❌. Danach die volle Testseite.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add js/ui.js js/ui-rucksack.js js/ui-werkbank.js tests/test-ui.js && git commit -m "Seitenpanels im Spiel: Rucksack, Werkbank und Truhe lassen die Welt sichtbar"
+git add js/ui.js js/ui-rucksack.js js/ui-werkbank.js css/style.css tests/test-ui.js && git commit -m "Seitenpanels im Spiel: Rucksack, Werkbank und Truhe lassen die Welt sichtbar"
 ```
 
 ---

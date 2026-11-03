@@ -42,6 +42,25 @@ test("Der Rucksack öffnet im Raster", function(){
   gleich(document.activeElement.closest("[data-zone]").getAttribute("data-zone"),"raster");
   w.remove();
 });
+test("Y bei einer Waffe legt nichts an", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  var feld=k.rucksack.plaetze[0], waffe=feld && feld.gegenstand;
+  wahr(waffe, "Startwaffe im Schnellleistenfeld 0");
+  ui.zeigeRucksack(k,{});
+  var f=w.querySelector('.rs-platz[data-i="0"]'); f.focus(); ui.kurzaktion();
+  gleich(k.waffe(), waffe, "die Waffe bleibt");
+  gleich(k.rucksack.plaetze[0], feld, "Feld unverändert");
+  w.remove();
+});
+test("Fokus auf dem Waffenplatz zeigt dasselbe wie das Antippen", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  ui.zeigeRucksack(k,{});
+  var g=k.waffe(); wahr(g, "Startwaffe");
+  var f=w.querySelector('.rs-aplatz[data-platz="waffe"]'); f.focus(); ui.beiFokus(f);
+  wahr(w.querySelector(".rs-detail h3").textContent.indexOf(g.name)>=0, "Detail zeigt den Namen");
+  gleich(document.activeElement.getAttribute("data-platz"), "waffe", "Fokus bleibt auf dem Knopf");
+  w.remove();
+});
 test("Vom Rucksack zur Werkbank fällt der Fokus in die Rezeptliste", function(){
   var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
   ui.zeigeRucksack(k,{});

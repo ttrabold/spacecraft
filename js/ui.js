@@ -57,7 +57,7 @@ SC.UI = function(wurzel, o){
     if(!m) return null;
     var selector = '[data-aktion="' + m.aktion + '"]';
     if(m.i) selector += '[data-i="' + m.i + '"], [data-aktion="' + m.aktion + '"][data-platz="' + m.i + '"], [data-aktion="' + m.aktion + '"][data-id="' + m.i + '"]';
-    var el = this.ebene.querySelector(selector); if(!el) return null;
+    var el = this.ebene.querySelector(selector); if(!el || el.disabled) return null;   // ein gesperrtes Feld kann den Fokus nicht halten
     el.focus(); return el;
   };
   SC.UI.prototype._zeige = function(html, aktionen, opt){

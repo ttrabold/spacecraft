@@ -200,6 +200,18 @@ test("Kreativ: Werkbank und Truhe lassen sich antippen (#99)", function(){
     ui: { zeigeWerkbank: function(){ offen.push("werkbank"); }, zeigeTruhe: function(){ offen.push("truhe"); } }, truheOeffnen: SC.Spiel.prototype.truheOeffnen };
   gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 3, y: 60, z: 3 }), true); gleich(SC.Spiel.prototype.benutzeBlock.call(fake, { x: 4, y: 60, z: 3 }), true); gleich(offen.join(), "werkbank,truhe");
 });
+test("Fokus fällt aus einem gesperrten Knopf in die Startzone", function(){
+  var a = wb(); document.body.appendChild(a.w);   // focus() braucht das Fenster im Dokument
+  a.k.rucksack.lege({ block: SC.B.BRETTER, anzahl: 3 });
+  a.ui.zeigeWerkbank(a.k, a.o);
+  a.w.querySelector('[data-aktion="rezept"][data-id="zaun"]').click();
+  var kn = a.w.querySelector('[data-aktion="herstellen"]'); wahr(!kn.disabled, "mit Brettern frei");
+  kn.focus(); kn.click();                          // die Bretter sind weg, der Knopf ist jetzt gesperrt
+  wahr(a.w.querySelector('[data-aktion="herstellen"]').disabled, "nach dem Herstellen gesperrt");
+  gleich(document.activeElement.tagName, "BUTTON", "der Fokus liegt nicht auf body");
+  gleich(document.activeElement.closest("[data-zone]").getAttribute("data-zone"), "liste", "Rückfall in die Startzone");
+  a.w.remove();
+});
 test("Y stellt das fokussierte Rezept her", function(){
   var a = wb(); document.body.appendChild(a.w);   // focus() braucht das Fenster im Dokument
   wb.aend = 0;

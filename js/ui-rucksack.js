@@ -99,7 +99,11 @@
     function waehle(el){
       var i = el.getAttribute("data-i"), p = el.getAttribute("data-platz");
       if(i !== null){ var s = rs.plaetze[+i]; gewaehlt = s ? { i: +i, sache: s } : null; }
-      else if(p){ gewaehlt = a[p] ? { platz: p, sache: { gegenstand: a[p] }, ausgeruestet: true } : null; }
+      else if(p){
+        // Die Waffe liegt nicht in der Ausrüstung, sondern im Schnellleistenfeld der Auswahl
+        if(p === "waffe"){ var wi = kampf.spieler.auswahl; gewaehlt = rs.plaetze[wi] ? { i: wi, sache: rs.plaetze[wi] } : null; }
+        else gewaehlt = a[p] ? { platz: p, sache: { gegenstand: a[p] }, ausgeruestet: true } : null;
+      }
       else return false;
       return true;
     }
@@ -121,10 +125,7 @@
         if(gewaehlt && !gewaehlt.ausgeruestet && gewaehlt.i !== i && !s){ rs.tausche(gewaehlt.i, i); gewaehlt = null; o.beiAenderung && o.beiAenderung(); zeichne(); return; }
         waehle(el); zeichne();
       },
-      aplatz: function(el){
-        var p = el.getAttribute("data-platz"); if(p === "waffe"){ var wi = kampf.spieler.auswahl; if(rs.plaetze[wi]) gewaehlt = { i: wi, sache: rs.plaetze[wi] }; zeichne(); return; }
-        waehle(el); zeichne();
-      },
+      aplatz: function(el){ waehle(el); zeichne(); },
       anlegen: function(){
         var g = gewaehlt.sache.gegenstand, p = SC.GEGENSTAENDE[g.art].platz, alt = a[p];
         a[p] = g; rs.plaetze[gewaehlt.i] = alt ? { gegenstand: alt } : null;
@@ -149,7 +150,11 @@
     ui._kurzaktion = function(el){
       var i = el.getAttribute("data-i"); if(i === null) return;
       var s = rs.plaetze[+i]; if(!s) return;
-      if(s.gegenstand){ waehle(el); aktionen.anlegen.call(ui); return; }
+      if(s.gegenstand){
+        // Waffen werden nicht angelegt: dieselbe Regel wie beim Antippen (knoepfe), die Ausrüstung hat keinen Waffenplatz
+        if(SC.GEGENSTAENDE[s.gegenstand.art].platz === "waffe") return;
+        waehle(el); aktionen.anlegen.call(ui); return;
+      }
       if(+i >= 9){ waehle(el); aktionen.leiste.call(ui); }
     };
     zeichne();

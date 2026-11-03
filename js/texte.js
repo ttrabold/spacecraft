@@ -112,7 +112,7 @@ SC.T = {
   rezeptName: { zauberkugel: "Zauberkugel", wolle: "Rote Wolle", bett: "Bett", bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
   kristallName: { blau: "Blau", gruen: "Grün", rot: "Rot", gelb: "Gelb", violett: "Violett", weiss: "Weiß" },
   ausruestungTitel: "Ausrüstung", materialienTitel: "Materialien",
-  anlegen: "Anlegen", ablegen: "Ablegen", inSchnellleiste: "In die Schnellleiste", wegwerfen: "Wegwerfen",
+  anlegen: "Anlegen", ablegen: "Ablegen", verschieben: "Verschieben", rucksackInfoLeer: "Leerer Platz", inSchnellleiste: "In die Schnellleiste", wegwerfen: "Wegwerfen",
   platzName: { waffe: "Waffe", helm: "Helm", brust: "Brust", handschuhe: "Hände", stiefel: "Stiefel", schild: "Schild" },
   ueberhitzt: "Überhitzt!",
   kisteLeer: "Diese Kiste ist leer.",

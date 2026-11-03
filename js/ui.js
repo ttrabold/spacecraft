@@ -13,6 +13,8 @@ SC.UI = function(wurzel, o){
   this._aktionen = {};
   this._klickH = function(ev){ var el = ev.target.closest && ev.target.closest("[data-aktion]"); if(el && wurzel.contains(el)) ui._klick(el); };
   wurzel.addEventListener("click", this._klickH);
+  // Esc in einem Panel mit eigenem Menü schließt zuerst dieses (vor der Tastatursteuerung des Spiels am window)
+  wurzel.addEventListener("keydown", function(ev){ if((ev.key === "Escape" || ev.key === "Esc") && ui._beiZurueck && ui._beiZurueck()){ ev.stopPropagation(); ev.preventDefault(); } });
 };
 
 (function(){
@@ -92,6 +94,8 @@ SC.UI = function(wurzel, o){
   function mitte(el){ var r = el.getBoundingClientRect(); return r.left + r.width / 2; }
   SC.UI.prototype._zonen = function(){
     var r = this._fenster(); if(!r) return [];
+    // Eine exklusive Zone (z. B. das Aktionsmenü im Rucksack) ist, solange sie da ist, die einzige
+    var ex = r.querySelector("[data-zone].exklusiv"); if(ex) return [ex];
     var z = Array.prototype.filter.call(r.querySelectorAll("[data-zone]"), function(el){ return !el.hidden && el.querySelector("button,input,label.knopf"); });
     return z.length ? z : [r];
   };
@@ -153,6 +157,7 @@ SC.UI = function(wurzel, o){
   SC.UI.prototype.zurueck = function(){
     var r = this._fenster();
     if(!r || r === this._modal) return; // Anfrage nur mit Ja oder Nein beantworten
+    if(this._beiZurueck && this._beiZurueck()) return; // das offene Panel schließt zuerst sein eigenes Menü
     if(this._startZone){
       var z = r.querySelector('[data-zone="' + this._startZone + '"]');
       if(z && this._zone(document.activeElement) !== z){
@@ -163,7 +168,7 @@ SC.UI = function(wurzel, o){
     if(k) k.click();
   };
 
-  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._startZone = null; this.hudEl.classList.remove("seitenpanel"); };
+  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._beiZurueck = null; this._startZone = null; this.hudEl.classList.remove("seitenpanel"); };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
   // Für die Controller-Hilfe: zusätzlich das Entwicklerpanel (in der Eingabe und in _fenster ein Menü)
   SC.UI.prototype.menueOffen = function(){ return this.offen() || !!(this.wurzel.querySelector(".entwickler:not([hidden])")); };

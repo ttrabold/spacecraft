@@ -67,100 +67,118 @@
   };
 
   // Rucksack und Ausrüstung; Bedienung durch Antippen (geht auch mit Touch und Gamepad)
+  // Rucksack: ein Cursor (der Fokus) und ein Aktionsmenü direkt am Gegenstand. menue = { i } (Rucksackplatz) oder { platz } (angelegte Rüstung) oder null;
+  // der Waffenplatz der Ausrüstung steht für das Schnellleistenfeld der gehaltenen Waffe. Spec: docs/superpowers/specs/2026-11-03-inventar-aktionsmenue-design.md
   SC.UI.prototype.zeigeRucksack = function(kampf, o){
-    var ui = this, rs = kampf.rucksack, a = kampf.ausruestung, gewaehlt = null;
+    var ui = this, rs = kampf.rucksack, a = kampf.ausruestung, menue = null, cursor = null;
     o = o || {};
+    function ziel(el){
+      var i = el.getAttribute("data-i"), p = el.getAttribute("data-platz");
+      if(i !== null) return { i: +i };
+      if(p === "waffe") return { i: kampf.spieler.auswahl };
+      return p ? { platz: p } : null;
+    }
+    function sacheVon(m){ return !m ? null : m.platz ? (a[m.platz] ? { gegenstand: a[m.platz] } : null) : rs.plaetze[m.i]; }
+    function gleicheStelle(x, y){ return !!x && !!y && x.i === y.i && x.platz === y.platz; }
+    function sachName(s){ return s.gegenstand ? s.gegenstand.name : SC.BLOECKE[s.block].name + (s.anzahl > 1 ? " × " + s.anzahl : ""); }
+    // Knöpfe des Menüs, erste = vorausgewählt; Wegwerfen nie zuerst
+    function knoepfe(m, s){
+      if(m.platz) return ["ablegen", "abbrechen"];
+      var k = [], g = s.gegenstand, platz = g && SC.GEGENSTAENDE[g.art].platz;
+      if(g && platz !== "waffe") k.push("anlegen");
+      else if(m.i >= 9) k.push("leiste");
+      return k.concat(["verschieben", "wegwerfen", "abbrechen"]);
+    }
+    var KNOPF = { anlegen: "anlegen", ablegen: "ablegen", leiste: "inSchnellleiste", verschieben: "verschieben", wegwerfen: "wegwerfen", abbrechen: "abbrechen" };
+    function menueHtml(m){
+      var s = sacheVon(m), g = s.gegenstand, kopf;
+      if(g){
+        var platz = SC.GEGENSTAENDE[g.art].platz, alt = m.platz || platz === "waffe" ? null : a[platz];
+        kopf = '<h3 style="color:' + SC.SELTENHEIT[g.seltenheit || 0].farbe + '">' + esc(g.name) + "</h3>" + wertZeilen(g, m.platz ? null : SC.Beute.vergleiche(g, alt));
+      } else kopf = "<h3>" + esc(sachName(s)) + "</h3>";
+      return '<div class="rs-menue exklusiv panel" data-zone="menue">' + kopf + '<div class="reihe">' + knoepfe(m, s).map(function(k, n){
+        return '<button' + (n === 0 ? ' class="haupt"' : k === "wegwerfen" ? ' class="gefahr"' : "") + ' data-aktion="' + k + '">' + esc(SC.T[KNOPF[k]]) + "</button>";
+      }).join("") + "</div></div>";
+    }
     function platzHtml(s, i){
       var inhalt = "", stil = "";
       if(s && s.gegenstand){ inhalt = '<img src="' + SC.UI.gegenstandBild(s.gegenstand) + '" alt="">'; stil = ' style="border-color:' + SC.SELTENHEIT[s.gegenstand.seltenheit || 0].farbe + '"'; }
       else if(s){ inhalt = '<img src="' + SC.UI.blockBild(s.block) + '" alt=""><b class="anzahl">' + s.anzahl + "</b>"; }
-      return '<button class="rs-platz' + (i < 9 ? " leiste" : "") + (gewaehlt && gewaehlt.i === i ? " gewaehlt" : "") + '" data-aktion="platz" data-i="' + i + '"' + stil + ">" + inhalt + "</button>";
+      var h = '<button class="rs-platz' + (i < 9 ? " leiste" : "") + '" data-aktion="platz" data-i="' + i + '"' + stil + ">" + inhalt + "</button>";
+      // Das Menü steht als eigene Zeile direkt unter der Reihe des Platzes
+      if(menue && !menue.platz && i === Math.floor(menue.i / 9) * 9 + 8) h += menueHtml(menue);
+      return h;
     }
     function ausrHtml(p){
       var g = p === "waffe" ? kampf.waffe() : a[p];
       return '<button class="rs-aplatz" data-aktion="aplatz" data-platz="' + p + '"' + (g ? ' style="border-color:' + SC.SELTENHEIT[g.seltenheit || 0].farbe + '"' : "") + ">" +
         (g ? '<img src="' + SC.UI.gegenstandBild(g) + '" alt="">' : "") + "<small>" + esc(SC.T.platzName[p]) + "</small></button>";
     }
-    function detail(){
-      if(!gewaehlt) return '<p class="leer">' + esc(SC.T.rucksackTipp) + "</p>";
-      var s = gewaehlt.sache;
-      if(s.block !== undefined) return "<h3>" + esc(SC.BLOECKE[s.block].name) + " × " + s.anzahl + "</h3>" + knoepfe(false);
-      var g = s.gegenstand, platz = SC.GEGENSTAENDE[g.art].platz, alt = gewaehlt.ausgeruestet ? null : platz === "waffe" ? kampf.waffe() : a[platz];
-      return '<h3 style="color:' + SC.SELTENHEIT[g.seltenheit || 0].farbe + '">' + esc(g.name) + "</h3><div>" + esc(SC.T.seltenheitName[g.seltenheit || 0]) + " · " + esc(SC.T.stufe) + " " + g.stufe + "</div>" +
-        wertZeilen(g, gewaehlt.ausgeruestet || alt === g ? null : SC.Beute.vergleiche(g, alt)) + knoepfe(true, platz);
-    }
-    function knoepfe(istGegenstand, platz){
-      var k = [];
-      if(gewaehlt.ausgeruestet) k.push('<button data-aktion="ablegen">' + esc(SC.T.ablegen) + "</button>");
-      else {
-        if(istGegenstand && platz !== "waffe") k.push('<button class="haupt" data-aktion="anlegen">' + esc(SC.T.anlegen) + "</button>");
-        if(gewaehlt.i >= 9) k.push('<button data-aktion="leiste">' + esc(SC.T.inSchnellleiste) + "</button>");
-        k.push('<button class="gefahr" data-aktion="wegwerfen">' + esc(SC.T.wegwerfen) + "</button>");
-      }
-      return '<div class="reihe">' + k.join("") + "</div>";
-    }
-    // Auswahl: dieselbe Formel für Antippen und für den Fokus
-    function waehle(el){
-      var i = el.getAttribute("data-i"), p = el.getAttribute("data-platz");
-      if(i !== null){ var s = rs.plaetze[+i]; gewaehlt = s ? { i: +i, sache: s } : null; }
-      else if(p){
-        // Die Waffe liegt nicht in der Ausrüstung, sondern im Schnellleistenfeld der Auswahl
-        if(p === "waffe"){ var wi = kampf.spieler.auswahl; gewaehlt = rs.plaetze[wi] ? { i: wi, sache: rs.plaetze[wi] } : null; }
-        else gewaehlt = a[p] ? { platz: p, sache: { gegenstand: a[p] }, ausgeruestet: true } : null;
-      }
-      else return false;
-      return true;
+    // Info-Zeile: was unter dem Cursor liegt (folgt dem Fokus, ohne neu zu zeichnen)
+    function infoText(el){
+      var m = el && ziel(el); if(!m) return "";
+      var s = sacheVon(m); return s ? sachName(s) : el.getAttribute("data-platz") ? SC.T.platzName[el.getAttribute("data-platz")] : SC.T.rucksackInfoLeer;
     }
     function zeichne(){
       var w = kampf.werte;
       ui._zeige(
         "<h2>" + esc(SC.T.rucksackTitel) + "</h2>" +
-        '<div class="rs"><div class="rs-links"><div class="rs-ausruestung" data-zone="ausruestung">' + PLAETZE.map(ausrHtml).join("") + "</div>" +
+        '<div class="rs"><div class="rs-links"><div class="rs-ausruestung" data-zone="ausruestung">' + PLAETZE.map(ausrHtml).join("") + (menue && menue.platz ? menueHtml(menue) : "") + "</div>" +
         '<div class="rs-werte">' + esc(SC.T.stufe) + " " + w.stufe + " · " + esc(SC.T.werteName.lp) + " " + w.lpMax + " · " + esc(SC.T.werteName.schutz) + " " + w.schutz + (w.schildMax ? " · " + esc(SC.T.werteName.schild) + " " + w.schildMax : "") + "</div>" +
-        '<div class="rs-detail" data-zone="detail">' + detail() + "</div></div>" +
+        '<div class="rs-info"></div></div>' +
         '<div class="rs-raster" data-zone="raster">' + rs.plaetze.map(platzHtml).join("") + "</div></div>" +
         '<div class="reihe" data-zone="aktionen"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
         aktionen, { seite: true, startZone: "raster" });
+      // Offenes Menü: Cursor auf die erste Aktion; sonst zurück auf den Platz, an dem man war
+      var f = menue ? ui.ebene.querySelector(".rs-menue button") : cursor && ui.ebene.querySelector(cursor.platz ? '.rs-aplatz[data-platz="' + cursor.platz + '"]' : '.rs-platz[data-i="' + cursor.i + '"]');
+      if(f) f.focus();
+      var info = ui.ebene.querySelector(".rs-info"); if(info) info.textContent = infoText(menue ? null : document.activeElement);
+    }
+    function fertigMit(){ menue = null; o.beiAenderung && o.beiAenderung(); zeichne(); }
+    // Tipp, Klick oder A auf einen Platz: Cursor dorthin; gleicher Platz bei offenem Menü = erste Aktion; belegt = Menü; leer = Menü zu
+    function tippe(el){
+      el.focus();
+      var m = ziel(el), stelle = el.getAttribute("data-platz") ? { platz: el.getAttribute("data-platz") } : { i: +el.getAttribute("data-i") };
+      cursor = stelle;
+      if(menue && gleicheStelle(menue, m)){ var erste = ui.ebene.querySelector(".rs-menue button"); if(erste) erste.click(); return; }
+      menue = sacheVon(m) ? m : null; zeichne();
     }
     var aktionen = {
-      platz: function(el, i){
-        i = +el.getAttribute("data-i"); var s = rs.plaetze[i];
-        // Zweiter Tipp auf einen anderen Platz verschiebt dorthin
-        if(gewaehlt && !gewaehlt.ausgeruestet && gewaehlt.i !== i && !s){ rs.tausche(gewaehlt.i, i); gewaehlt = null; o.beiAenderung && o.beiAenderung(); zeichne(); return; }
-        waehle(el); zeichne();
-      },
-      aplatz: function(el){ waehle(el); zeichne(); },
+      platz: function(el){ tippe(el); },
+      aplatz: function(el){ tippe(el); },
       anlegen: function(){
-        var g = gewaehlt.sache.gegenstand, p = SC.GEGENSTAENDE[g.art].platz, alt = a[p];
-        a[p] = g; rs.plaetze[gewaehlt.i] = alt ? { gegenstand: alt } : null;
-        kampf.ruestungAnwenden(); gewaehlt = null; o.beiAenderung && o.beiAenderung(); zeichne();
+        var i = menue.i, g = rs.plaetze[i].gegenstand, p = SC.GEGENSTAENDE[g.art].platz, alt = a[p];
+        a[p] = g; rs.plaetze[i] = alt ? { gegenstand: alt } : null; kampf.ruestungAnwenden(); fertigMit();
       },
       ablegen: function(){
-        if(rs.lege({ gegenstand: a[gewaehlt.platz] }) === 0){ a[gewaehlt.platz] = null; kampf.ruestungAnwenden(); gewaehlt = null; o.beiAenderung && o.beiAenderung(); }
-        else ui.hinweis(SC.T.rucksackVoll);
-        zeichne();
+        var p = menue.platz;
+        if(rs.lege({ gegenstand: a[p] }) === 0){ a[p] = null; kampf.ruestungAnwenden(); fertigMit(); }
+        else { ui.hinweis(SC.T.rucksackVoll); menue = null; zeichne(); }
       },
       leiste: function(){
         var ziel = -1; for(var j = 0; j < 9; j++) if(!rs.plaetze[j]){ ziel = j; break; }
         if(ziel < 0) ziel = kampf.spieler.auswahl;
-        rs.tausche(gewaehlt.i, ziel); gewaehlt = null; o.beiAenderung && o.beiAenderung(); zeichne();
+        rs.tausche(menue.i, ziel); fertigMit();
       },
-      wegwerfen: function(){ var s = rs.nimm(gewaehlt.i); gewaehlt = null; o.beiWegwerfen && o.beiWegwerfen(s); o.beiAenderung && o.beiAenderung(); zeichne(); },
+      wegwerfen: function(){ var s = rs.nimm(menue.i); o.beiWegwerfen && o.beiWegwerfen(s); fertigMit(); },
+      abbrechen: function(){ menue = null; zeichne(); },
       handwerk: function(){ ui.zeigeWerkbank(kampf, { station: "hand", beiAenderung: o.beiAenderung, beiFertig: function(){ ui.zeigeRucksack(kampf, o); } }); },
       fertig: function(){ ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); }
     };
-    // Der Controller: der Fokus zieht das Detail nach, Y ist die Kurzaktion auf dem fokussierten Feld (anlegen oder in die Schnellleiste) – ohne das Verschieben, das ein zweiter Tipp auslöst
-    ui._beiFokus = function(el){ if(waehle(el)) zeichne(); };
+    // Controller: der Fokus zieht die Info-Zeile nach; Y legt sofort an bzw. legt in die Schnellleiste (ohne Menü); B schließt zuerst das Menü
+    ui._beiFokus = function(el){ var info = ui.ebene.querySelector(".rs-info"); if(info && !(el.closest && el.closest(".rs-menue"))) info.textContent = infoText(el); };
     ui._kurzaktion = function(el){
       var i = el.getAttribute("data-i"); if(i === null) return;
       var s = rs.plaetze[+i]; if(!s) return;
+      cursor = { i: +i };
       if(s.gegenstand){
-        // Waffen werden nicht angelegt: dieselbe Regel wie beim Antippen (knoepfe), die Ausrüstung hat keinen Waffenplatz
+        // Waffen werden nicht angelegt: dieselbe Regel wie im Menü, die Ausrüstung hat keinen Waffenplatz
         if(SC.GEGENSTAENDE[s.gegenstand.art].platz === "waffe") return;
-        waehle(el); aktionen.anlegen.call(ui); return;
+        menue = { i: +i }; aktionen.anlegen.call(ui); return;
       }
-      if(+i >= 9){ waehle(el); aktionen.leiste.call(ui); }
+      if(+i >= 9){ menue = { i: +i }; aktionen.leiste.call(ui); }
     };
+    ui._beiZurueck = function(){ if(!menue) return false; menue = null; zeichne(); return true; };
     zeichne();
   };
 })();

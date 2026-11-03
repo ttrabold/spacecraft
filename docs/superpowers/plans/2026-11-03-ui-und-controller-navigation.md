@@ -4,7 +4,7 @@
 
 **Goal:** Ruhige, lesbare Panels und eine Controller-Navigation, die in Inventaren in Reihen und Spalten bewegt (nicht in Leserichtung). Gespielt wird überwiegend am iPad im Querformat mit Controller.
 
-**Architecture:** Zwei Commits. Commit 1 (Look): CSS-Grundgerüst, Statusfeld oben links, Seitenpanels für Rucksack/Werkbank/Truhe. Commit 2 (Navigation): Zonen und Richtungsbewegung in `js/ui.js`, Richtungswerte und Zonentasten in `js/gamepad.js`, Mapping in `js/spiel.js`, Detail folgt dem Fokus in `js/ui-rucksack.js` und `js/ui-werkbank.js`.
+**Architecture:** Zwei thematische Hälften: Look (Tasks 1–3: CSS-Grundgerüst, Statusfeld oben links, Seitenpanels für Rucksack/Werkbank/Truhe) und Navigation (Tasks 4–8: Zonen und Richtungsbewegung in `js/ui.js`, Richtungswerte und Zonentasten in `js/gamepad.js`, Mapping in `js/spiel.js`, Detail folgt dem Fokus in `js/ui-rucksack.js` und `js/ui-werkbank.js`). Committet wird pro Task, wie es die Task-Schritte vorgeben.
 
 **Tech Stack:** Reines JavaScript ohne Build-Schritt, Namensraum `SC`; Tests auf der Testseite (`bash scripts/tests-wsl.sh`, oder `tests/index.html` im Browser).
 
@@ -66,7 +66,7 @@ Test-Helfer (bereits in `tests/helfer.js` und `tests/test-gamepad.js` vorhanden)
 - Test: keine (CSS ist auf der Testseite nicht prüfbar) – Prüfung im Browser
 
 **Interfaces:**
-- Produces: Klassen `.status`, `.fenster.seite`, `.fokus-cursor` (Rahmen um das fokussierte Element); Panels im Spiel ohne `backdrop-filter`, Unscharfe nur in `@supports (backdrop-filter: none)`-Menüs.
+- Produces: Klassen `.status`, `.fenster.seite`, `.fokus-cursor` (Rahmen um das fokussierte Element); Panels im Spiel ohne `backdrop-filter`, Unscharfe nur in stillstehenden Menüs (`@supports (backdrop-filter: blur(1px))`).
 
 - [ ] **Step 1: CSS schreiben**
 
@@ -148,7 +148,7 @@ h.innerHTML = '<div class="fadenkreuz"></div>' +
   '<div class="kampf" hidden></div><div class="modus-anzeige"></div><div class="fps"></div></div>' +
   '<div class="leiste"></div>';
 ```
-Stufe: wenn `extra.status` eine Zahl enthält oder `kampfHud` läuft – in `kampfHud` ergänzen:
+Stufe: das existing `.kampf-stufe`-Element in `kampfHud` wird durch `.status-stufe` im Statusfeld ersetzt (ein Element, kein zweites), `kampfHud` schreibt es:
 ```js
 var st = this.hudEl.querySelector(".status-stufe");
 if(st) st.textContent = SC.T.stufe + " " + w.stufe;
@@ -246,7 +246,9 @@ git add js/ui.js js/ui-rucksack.js js/ui-werkbank.js tests/test-ui.js && git com
 
 **Files:**
 - Modify: `js/ui.js` (`_fokusListe` 60–64, `navigiere` 65–72, `bestaetige` 73–81, `zurueck` 82–87, `schliesse` 89)
+- Modify: `js/ui-rucksack.js`, `js/ui-werkbank.js` (die `data-zone`-Marker in den HTML-Vorlagen – Attribute, nicht CSS)
 - Modify: `css/style.css` (Zeilen 91–104: Zonen als Panels mit Abstand)
+- Modify: `tests/test-gamepad.js` (Zeile 8, bestehender Test „Menü mit dem Steuerkreuz bedienen“)
 - Test: `tests/test-ui.js`
 
 **Interfaces:**
@@ -288,6 +290,13 @@ test("LB/RB wechseln die Zone", function(){
   a.ui.zone(-1); gleich(document.activeElement.textContent,"A");
   a.w.remove();
 });
+test("Bewegung bleibt in der Zone des Fokus", function(){
+  var a=zf('<div data-zone="a"><button data-aktion="x" data-i="a0" style="display:block">a0</button><button data-aktion="x" data-i="a1" style="display:block">a1</button></div><div data-zone="b"><button data-aktion="x" data-i="b0" style="display:block">b0</button></div>',{x:function(){}});
+  a.ui.zone(0);
+  a.ui.navigiere("runter"); gleich(document.activeElement.getAttribute("data-i"),"a1");
+  a.ui.navigiere("runter"); gleich(document.activeElement.getAttribute("data-i"),"a0","wrapped in der Zone, nicht in Zone b");
+  a.w.remove();
+});
 test("Der Fokus rollt ins Sichtbare", function(){
   var h='<div data-zone="raster" style="display:block;height:60px;overflow:auto">';
   for(var i=0;i<10;i++) h+='<button data-aktion="x" data-i="'+i+'" style="display:block;height:20px">'+i+'</button>';
@@ -315,7 +324,7 @@ test("B verlässt zuerst die Zone", function(){
   w.remove();
 });
 ```
-Run: `bash scripts/tests-wsl.sh Zone` – erwartet ❌ bei „Steuerkreuz springt …“, „LB/RB …“, „Regler …“ und „B verlässt …“, weil `navigiere` noch eine Zahl erwartet und `zone()`, `beiFokus`, `kurzaktion` noch fehlen.
+Run: `bash scripts/tests-wsl.sh Zone` – erwartet ❌ bei „Steuerkreuz springt …“, „LB/RB …“, „Bewegung bleibt in der Zone …“, „Regler …“ und „B verlässt …“, weil `navigiere` noch eine Zahl erwartet und `zone()`, `beiFokus`, `kurzaktion` noch fehlen.
 
 - [ ] **Step 2: Implementieren**
 
@@ -353,7 +362,7 @@ SC.UI.prototype.zone = function(schritt){
   var l = this._fokusListe(z[i]); if(l.length){ l[0].focus(); this.beiFokus(l[0]); }
 };
 SC.UI.prototype.navigiere = function(richtung){
-  var l = this._fokusListe(); if(!l.length) return;
+  var l = this._fokusListe(this._zone(document.activeElement)); if(!l.length) return;
   var a = document.activeElement, i = l.indexOf(a), vor = (richtung === "runter" || richtung === "rechts") ? 1 : -1;
   if(a && a.type === "range" && i >= 0 && (richtung === "links" || richtung === "rechts")){
     a.value = +a.value + (richtung === "rechts" ? 1 : -1) * (+a.step || 1);
@@ -384,7 +393,7 @@ SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.inn
 ```
 `zurueck()`: erst die Startzone (`_startZone`) – wenn die Zone des Fokus eine andere ist, dorthin zurück; sonst der vorhandene Knopf (`weiter`, `fertig`, `zurueck`, `data-ew="zu"`).
 `_zeige` fokussiert beim Öffnen die Startzone: nach dem `innerHTML`, `if(this._startZone){ var z = this.ebene.querySelector('[data-zone="' + this._startZone + '"]'); if(z) this.beiFokus(this._fokusListe(z)[0]); }`.
-`css/style.css`: Zonen als Panels – `.rs-ausruestung`, `.rs-detail`, `.rs-raster`, `.wb-liste`, `.wb-detail`, `.reihe` bekommen `data-zone` und den Panel-Abstand (12 px); `.rs-platz:focus-visible` bleibt der gelbe Cursor (2 px, Abstand 3 px).
+`css/style.css`: Zonen als Panels mit Abstand (12 px) für `.rs-ausruestung`, `.rs-detail`, `.rs-raster`, `.wb-liste`, `.wb-detail`, `.reihe`; die `data-zone`-Marker stehen in den HTML-Vorlagen von `js/ui-rucksack.js` und `js/ui-werkbank.js` (nicht in CSS); `.rs-platz:focus-visible` bleibt der gelbe Cursor (2 px, Abstand 3 px).
 
 - [ ] **Step 3: Grüne Testseite**
 
@@ -631,7 +640,7 @@ ui._kurzaktion = function(el){
   if(+i >= 9){ ui._beiFokus(el); aktionen.leiste.call(ui); }
 };
 ```
-(`zeichnen`-Aufrufe rufen `ui._holeFokus(merk)`, damit der Cursor nicht springt.)
+(`zeichne`-Aufrufe rufen `ui._holeFokus(merk)`, damit der Cursor nicht springt.)
 - `zeigeRucksack(kampf, o)` wird mit `ui._zeige(html, aktionen, { seite: true, startZone: "raster" })` aufgerufen.
 
 `js/ui-werkbank.js`: `data-zone="liste"` auf `.wb-liste`, `data-zone="detail"` auf das Detail, `data-zone="unten"` auf die Reihe mit `fertig`; `ui._beiFokus` setzt das fokussierte Rezept als `gewaehlt`; `ui._kurzaktion` ruft `aktionen.herstellen.call(ui)`, wenn das Rezept herstellbar ist.

@@ -68,6 +68,14 @@ SC.Mesher = {};
       if(fm === "kreuz"){
         viereck(puf, x, y, z, [[0.15, 0, 0.15], [0.85, 0, 0.85], [0.85, 1, 0.85], [0.15, 1, 0.15]], uv, L, 0.95, gl);
         viereck(puf, x, y, z, [[0.85, 0, 0.15], [0.15, 0, 0.85], [0.15, 1, 0.85], [0.85, 1, 0.15]], uv, L, 0.95, gl);
+      } else if(fm === "pflanze"){
+        // Gekreuzte Flächen über die ganze Zelle wie Minecraft-Pflanzen (Issue #17);
+        // entfällt, wenn die Zelle rundum von undurchsichtigen Blöcken verdeckt ist
+        var verdeckt = true;
+        for(var f = 0; f < 6; f++) if(!opak[blockAn(rx + FL[f].n[0], y + FL[f].n[1], rz + FL[f].n[2])]){ verdeckt = false; break; }
+        if(verdeckt) return;
+        viereck(puf, x, y, z, [[0, 0, 0], [1, 0, 1], [1, 1, 1], [0, 1, 0]], uv, L, 0.95, gl);
+        viereck(puf, x, y, z, [[1, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 0]], uv, L, 0.95, gl);
       } else if(fm === "pfosten"){
         kasten(puf, x, y, z, [0.375, 0, 0.375], [0.625, 1, 0.625], uv, L, gl, true);
         [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(n){

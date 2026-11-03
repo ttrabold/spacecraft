@@ -57,7 +57,7 @@ SC.BLOECKE = {};
     [SC.B.STAMM, "stamm", { oben: "stamm_oben", seite: "stamm_seite", unten: "stamm_oben" }, true, false, 0, null, true, true],
     [SC.B.BLAETTER, "blaetter", alle("blaetter"), true, true, 0, null, true, true],
     [SC.B.KRISTALL, "kristall", alle("kristall"), true, false, 12, [1.0, 0.45, 0.85], true, true],
-    [SC.B.LEUCHTPILZ, "leuchtpilz", alle("leuchtpilz"), true, true, 10, [0.4, 0.95, 1.0], true, true],
+    [SC.B.LEUCHTPILZ, "leuchtpilz", alle("leuchtpilz"), true, true, 10, [0.4, 0.95, 1.0], true, true, { form: "pflanze" }],
     [SC.B.BRETTER, "bretter", alle("bretter"), true, false, 0, null, true, true],
     [SC.B.STEINZIEGEL, "steinziegel", alle("steinziegel"), true, false, 0, null, true, true],
     [SC.B.GLAS, "glas", alle("glas"), true, true, 0, null, true, true],
@@ -78,7 +78,7 @@ SC.BLOECKE = {};
     [SC.B.EIS, "eis", alle("eis"), true, true, 0, null, true, true],
     [SC.B.SCHLAMM, "schlamm", alle("schlamm"), true, false, 0, null, true, true],
     [SC.B.BASALT, "basalt", alle("basalt"), true, false, 0, null, true, true],
-    // Stufe 6a: [..., { form, klettern }] – form: "kreuz" | "pfosten" | { typ: "platte", achse, versatz } (Standard Würfel)
+    // Stufe 6a: [..., { form, klettern }] – form: "kreuz" | "pflanze" | "pfosten" | { typ: "platte", achse, versatz } (Standard Würfel)
     [SC.B.EISENERZ, "eisenerz", alle("eisenerz"), true, false, 0, null, true, true],
     [SC.B.TITAN, "titan", alle("titan"), true, false, 0, null, true, true],
     [SC.B.GLUTSTAHL, "glutstahl", alle("glutstahl"), true, false, 3, [1.0, 0.45, 0.15], true, true],

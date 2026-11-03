@@ -168,7 +168,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.hand.position.set(0.42, -0.36, -0.7); this.hand.rotation.set(0.2, -0.6, 0);
     this.kamera.add(this.hand); this._handId = -1;
   };
-  // Form eines Blocks in der Hand (Fackel, Zaun, Leiter, Tür): ein Geometrie-Puffer mit der Kachel des Blocks; null = normaler Würfel
+  // Form eines Blocks in der Hand (Fackel, Pflanze, Zaun, Leiter, Tür): ein Geometrie-Puffer mit der Kachel des Blocks; null = normaler Würfel
   SC.Render.handForm = function(b){
     if(!b || !b.seiten || !b.form || b.form === "wuerfel") return null;
     var q = SC.Mesher.uvFuer(b.seiten.seite), pos = [], uv = [], idx = [];
@@ -178,6 +178,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
         .forEach(function(f){ viereck(f.map(function(k){ return [k[0] ? c[0] : a[0], k[1] ? c[1] : a[1], k[2] ? c[2] : a[2]]; })); });
     }
     if(b.form === "kreuz"){ viereck([[-0.13, -0.15, -0.13], [0.13, -0.15, 0.13], [0.13, 0.15, 0.13], [-0.13, 0.15, -0.13]]); viereck([[0.13, -0.15, -0.13], [-0.13, -0.15, 0.13], [-0.13, 0.15, 0.13], [0.13, 0.15, -0.13]]); }
+    else if(b.form === "pflanze"){ viereck([[-0.15, -0.15, -0.15], [0.15, -0.15, 0.15], [0.15, 0.15, 0.15], [-0.15, 0.15, -0.15]]); viereck([[0.15, -0.15, -0.15], [-0.15, -0.15, 0.15], [-0.15, 0.15, 0.15], [0.15, 0.15, -0.15]]); }
     else if(b.form === "pfosten"){ kasten([-0.035, -0.15, -0.035], [0.035, 0.15, 0.035]); kasten([-0.15, -0.07, -0.015], [0.15, -0.02, 0.015]); kasten([-0.15, 0.05, -0.015], [0.15, 0.1, 0.015]); }
     else if(b.form.typ === "mehrteilig") b.form.teile.forEach(function(p){ kasten([(p.a[0] - 0.5) * 0.3, (p.a[1] - 0.5) * 0.3, (p.a[2] - 0.5) * 0.3], [(p.b[0] - 0.5) * 0.3, (p.b[1] - 0.5) * 0.3, (p.b[2] - 0.5) * 0.3]); });   // Tisch mit Kugel
     else if(b.form.typ === "kasten") kasten([-0.15, -0.15, -0.15], [0.15, -0.15 + (b.form.b[1] - b.form.a[1]) * 0.3, 0.15]);   // flacher Kasten: Bett

@@ -182,5 +182,14 @@ test("Controller-Hilfe in Menüs zeigt die Zonentasten", function(){
   var l=SC.controllerHilfe({menue:true});
   ["✚","LB","RB","A","Y","B","☰"].forEach(function(t){ wahr(l.some(function(z){ return z.taste===t; }), t + " fehlt"); });
   wahr(l.some(function(z){ return z.text===SC.T.steuerHilfe.zone; }), "Zone");
+  wahr(l.some(function(z){ return z.taste==="B" && z.text===SC.T.steuerHilfe.zurueck; }), "B zeigt Zurück");
   var s=SC.controllerHilfe({survival:true}); wahr(!s.some(function(z){ return z.text===SC.T.steuerHilfe.zone; }), "ohne Menü keine Zone");
+});
+test("Das Entwicklerpanel gilt als offenes Menü", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w);
+  gleich(ui.menueOffen(), false);
+  var e=document.createElement("div"); e.className="entwickler"; w.appendChild(e);
+  gleich(ui.menueOffen(), true);
+  e.hidden = true; gleich(ui.menueOffen(), false);
+  w.remove();
 });

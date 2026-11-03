@@ -73,7 +73,7 @@ SC.controllerHilfe = function(k){
   if(k.menue){
     z("✚", "✚", T.fokus); z("LB", "◀▶", T.zone); z("RB", "◀▶", T.zone);
     z("A", "⬤", T.auswaehlen); z("Y", "⬤", T.anlegen);
-    z("B", "⬤", T.menue); z("☰", "☰", T.schliessen);
+    z("B", "⬤", T.zurueck); z("☰", "☰", T.schliessen);
     return l;
   }
   if(k.zuschauerImAll){ z("☰", "☰", T.menue); return l; }

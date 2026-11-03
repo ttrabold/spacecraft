@@ -163,6 +163,8 @@ SC.UI = function(wurzel, o){
 
   SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._startZone = null; };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
+  // Für die Controller-Hilfe: zusätzlich das Entwicklerpanel (in der Eingabe und in _fenster ein Menü)
+  SC.UI.prototype.menueOffen = function(){ return this.offen() || !!(this.wurzel.querySelector(".entwickler:not([hidden])")); };
 
   // Zuordnung der Gamepad-Werte aus SC.Gamepad.zuMenue zu den Aktionen des offenen Fensters
   SC.UI.prototype.menueAktion = function(r){

@@ -16,7 +16,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0e0b2e;color:#eef2fa;
 /* Menüs: dunkler Grund, Pixel-Rahmen, Akzent Cyan */
 [hidden]{display:none!important}
 .ebene{z-index:3;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(7,11,36,.72);pointer-events:auto;padding:16px;box-sizing:border-box;overflow:auto}
-.fenster{background:#151236;border:3px solid #3ef0ff;box-shadow:0 0 0 3px #0e0b2e,0 0 24px rgba(62,240,255,.35);padding:20px 24px;max-width:860px;width:100%;max-height:100%;overflow-x:hidden;overflow-y:auto;box-sizing:border-box;-webkit-user-select:text;user-select:text}
+.fenster{background:#151236;max-width:860px;width:100%;max-height:100%;overflow-x:hidden;overflow-y:auto;box-sizing:border-box;-webkit-user-select:text;user-select:text}
 .titel{margin:0 0 12px;font-size:44px;letter-spacing:6px;color:#3ef0ff;text-shadow:0 0 12px rgba(62,240,255,.6);text-align:center}
 h2{margin:0 0 14px;color:#3ef0ff}
 button,.knopf{box-sizing:border-box;font:inherit;font-size:17px;min-height:48px;padding:8px 16px;border:2px solid #4a5a8a;background:#232056;color:#eef2fa;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border-radius:0}
@@ -45,6 +45,15 @@ input[type=range]{width:100%}
 .raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
 .block{flex-direction:column;justify-content:center;min-height:96px;padding:6px;font-size:12px;text-align:center}
 .block img,.leiste-platz img{width:40px;height:40px;image-rendering:pixelated}
+/* Ruhige Panels: dichte Flächen, kein Leuchten, fester Abstandsrhythmus */
+.panel{background:#1b1845;border:1px solid #3a3a5a;border-radius:10px;padding:12px 14px;box-sizing:border-box}
+.fenster{max-width:860px;padding:16px 18px;border:1px solid #3a3a5a;box-shadow:none;border-radius:12px}
+.fenster.seite{position:absolute;right:0;top:0;bottom:0;width:min(420px,42%);max-width:none;border-radius:0;border-left:1px solid #3a3a5a;overflow-y:auto}
+.status{position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));width:min(300px,40%)}
+.status .balken{margin:4px 0}
+button:focus-visible,label.knopf:focus-visible,input:focus-visible{outline:2px solid #ffd95c;outline-offset:3px;border-radius:4px}
+@supports (backdrop-filter: blur(1px)){ .ebene:not(.seite) .fenster{backdrop-filter:blur(4px)} }
+
 /* HUD */
 .hud{position:absolute;inset:0;pointer-events:none}
 .fadenkreuz{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;background:linear-gradient(#fff,#fff) center/2px 100% no-repeat,linear-gradient(#fff,#fff) center/100% 2px no-repeat;mix-blend-mode:difference}
@@ -70,10 +79,6 @@ input[type=range]{width:100%}
 .ew-reihe select{font:inherit;padding:6px;background:#0e0b2e;color:#eef2fa;border:2px solid #4a5a8a;max-width:160px}
 .ew-reihe input[type=number]{width:70px;font:inherit;padding:6px;background:#0e0b2e;color:#eef2fa;border:2px solid #4a5a8a}
 .ew-zeile{display:flex;align-items:center;gap:6px}
-
-/* Gamepad: sichtbarer Fokus in Menüs */
-button:focus-visible,input:focus-visible,label.knopf:focus-visible,button:focus,label.knopf:focus{outline:3px solid #ffd95c;outline-offset:2px}
-input[type=range].regeln{outline:3px solid #3ef0ff}
 
 /* Survival: Kampf-HUD */
 .kampf{position:absolute;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(500px,90%);display:flex;flex-direction:column;gap:4px;pointer-events:none}
@@ -160,7 +165,7 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
   background:radial-gradient(circle,#3ef0ff 0 2px,transparent 3px),linear-gradient(#3ef0ff,#3ef0ff) center top/2px 9px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) center bottom/2px 9px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) left center/9px 2px no-repeat,linear-gradient(#3ef0ff,#3ef0ff) right center/9px 2px no-repeat}
 .fadenkreuz.fahrzeug.ziel{border-color:#ff4a5c;transform:scale(.85);transition:transform .1s;
   background:radial-gradient(circle,#ff4a5c 0 3px,transparent 4px),linear-gradient(#ff4a5c,#ff4a5c) center top/2px 11px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) center bottom/2px 11px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) left center/11px 2px no-repeat,linear-gradient(#ff4a5c,#ff4a5c) right center/11px 2px no-repeat}
-.controller-hilfe{position:absolute;right:calc(14px + env(safe-area-inset-right));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;pointer-events:none;z-index:2;background:rgba(14,11,46,.55);border:1px solid rgba(62,240,255,.35);padding:8px 10px;color:#eef2fa;font-size:13px;font-weight:600}
+.controller-hilfe{position:absolute;right:calc(14px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:5px;pointer-events:none;z-index:2;background:rgba(14,11,46,.55);border:1px solid rgba(62,240,255,.35);padding:8px 10px;color:#eef2fa;font-size:13px;font-weight:600}
 .ch-zeile{display:flex;align-items:center;gap:7px;white-space:nowrap;text-shadow:0 1px 2px #000}
 .ch-taste{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 5px;box-sizing:border-box;border-radius:6px;background:#2b2f3a;border:1px solid #6b7385;font-size:11px;font-weight:800;color:#fff}
 .ch-taste.a,.ch-taste.b,.ch-taste.x,.ch-taste.y,.ch-taste.rund{border-radius:50%;width:24px;padding:0;font-size:13px}

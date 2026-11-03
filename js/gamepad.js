@@ -1,14 +1,14 @@
 // Gamepad (Standard-Belegung, z. B. Xbox-, PlayStation- und MFi-Controller am iPad):
 // linker Stick laufen, rechter Stick umsehen, A springen, B sinken, RT abbauen, LT setzen,
 // LB/RB Schnellleiste, X Blockauswahl, Y Ansicht, Start Menü, Select Entwicklerwerkzeuge, L3 rennen.
-// In Menüs: Steuerkreuz/Stick wählen, A bestätigen, B zurück.
+// In Menüs: Steuerkreuz/Stick bewegt in Reihen und Spalten, LB/RB wechseln die Zone, Y legt an, B zurück, Start schließt.
 SC.Gamepad = {};
 (function(){
-  var TOT = 0.25, BLICK = 2.6;
+  var TOT = 0.25, BLICK = 2.6, WIEDER = 200;
   var K = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, SELECT: 8, START: 9, L3: 10, HOCH: 12, RUNTER: 13, LINKS: 14, RECHTS: 15 };
   SC.Gamepad.K = K;
 
-  SC.Gamepad.neuerZustand = function(){ return { vorher: [], menueAchse: 0, menueZeit: 0 }; };
+  SC.Gamepad.neuerZustand = function(){ return { vorher: [], menueRichtung: null, menueZeit: 0 }; };
   function gedrueckt(p, i){ var b = p.buttons[i]; return !!b && (b.pressed || b.value > 0.5); }
   function achse(v){ return Math.abs(v || 0) < TOT ? 0 : v; }
 
@@ -32,17 +32,23 @@ SC.Gamepad = {};
     return e;
   };
 
-  // Menüsteuerung: liefert -1/1 (Auswahl), "ok", "zurueck" oder null; Stick wiederholt beim Halten
+  // Menüsteuerung: "ok", "zurueck", "schliessen", "kurzaktion", "zoneVor"/"zoneZurueck"
+  // oder eine Richtung ("hoch", "runter", "links", "rechts"); Halten wiederholt etwa alle 200 ms
   SC.Gamepad.zuMenue = function(p, z, jetzt){
     var neu = function(i){ return gedrueckt(p, i) && !z.vorher[i]; }, r = null;
     if(neu(K.A)) r = "ok";
-    else if(neu(K.B) || neu(K.START)) r = "zurueck";
-    else if(neu(K.HOCH) || neu(K.LINKS)) r = -1;
-    else if(neu(K.RUNTER) || neu(K.RECHTS)) r = 1;
+    else if(neu(K.START)) r = "schliessen";
+    else if(neu(K.B)) r = "zurueck";
+    else if(neu(K.LB)) r = "zoneZurueck";
+    else if(neu(K.RB)) r = "zoneVor";
+    else if(neu(K.Y)) r = "kurzaktion";
     else {
-      var v = achse((p.axes || [])[1]) || achse((p.axes || [])[0]), s = v > 0 ? 1 : v < 0 ? -1 : 0;
-      if(s && (s !== z.menueAchse || jetzt - z.menueZeit > 300)){ r = s; z.menueZeit = jetzt; }
-      z.menueAchse = s;
+      var ax = p.axes || [];
+      var s = gedrueckt(p, K.HOCH) ? "hoch" : gedrueckt(p, K.RUNTER) ? "runter" :
+              gedrueckt(p, K.LINKS) ? "links" : gedrueckt(p, K.RECHTS) ? "rechts" :
+              achse(ax[1]) > 0 ? "runter" : achse(ax[1]) < 0 ? "hoch" : achse(ax[0]) > 0 ? "rechts" : achse(ax[0]) < 0 ? "links" : null;
+      if(s && (s !== z.menueRichtung || jetzt - z.menueZeit > WIEDER)){ r = s; z.menueZeit = jetzt; }
+      z.menueRichtung = s;
     }
     for(var i = 0; i < p.buttons.length; i++) z.vorher[i] = gedrueckt(p, i);
     return r;

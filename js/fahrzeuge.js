@@ -308,7 +308,11 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     F.neu(welt, "raumschiff", p, 0, { id: "schiff", fundort: "schiff" });
     return true;
   };
-  F.inLava = function(welt, f){ return welt.holeBlock(f.pos[0], f.pos[1] + 0.3, f.pos[2]) === SC.B.LAVA; };
+  // Nur im geladenen Bereich: holeBlock würde den Chunk eines fernen Fahrzeugs erzeugen, die Darstellung ihn wieder entladen – jedes Bild von vorn (auf dem iPad über 100 ms)
+  F.inLava = function(welt, f){
+    if(welt.istGeladen && !welt.istGeladen(welt.planet.wickel(Math.floor(f.pos[0])) >> 4, welt.planet.wickel(Math.floor(f.pos[2])) >> 4)) return false;
+    return welt.holeBlock(f.pos[0], f.pos[1] + 0.3, f.pos[2]) === SC.B.LAVA;
+  };
   F.sichereStart = function(welt, startpunkt){
     if(welt.fahrzeuge.has("start") || !startpunkt) return;
     var p = F.startPos(welt, startpunkt);

@@ -240,3 +240,8 @@ test("Fundort ohne freien Platz wird nicht jede Sekunde neu durchsucht", functio
   try{ SC.Fahrzeug.fundorteNah(w, [b.x, 80, b.z]); var erst = n; SC.Fahrzeug.fundorteNah(w, [b.x, 80, b.z]); SC.Fahrzeug.fundorteNah(w, [b.x, 80, b.z]); wahr(erst > 0, "einmal gesucht"); gleich(n, erst, "nicht erneut"); }
   finally{ SC.Fahrzeug.fundortPos = alt; }
 });
+test("Lava-Prüfung erzeugt keinen Chunk für ein fernes Fahrzeug (Leistung: sonst jedes Bild neu erzeugt)", function(){
+  var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), f = SC.Fahrzeug.neu(w, "buggy", [1500.5, 70, 1500.5], 0), vorher = w.chunks.size;
+  wahr(!SC.Fahrzeug.inLava(w, f), "ungeladen: nicht in Lava"); gleich(w.chunks.size, vorher, "kein Chunk erzeugt");
+  w.chunk(1500 >> 4, 1500 >> 4); w.setzeBlock(1500, 70, 1500, SC.B.LAVA, "system"); wahr(SC.Fahrzeug.inLava(w, f), "geladen: Lava wird erkannt");
+});

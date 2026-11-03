@@ -74,12 +74,13 @@ Test-Helfer (bereits in `tests/helfer.js` und `tests/test-gamepad.js` vorhanden)
 ```css
 /* Ruhige Panels: dichte Flächen, kein Leuchten, fester Abstandsrhythmus */
 .panel{background:#1b1845;border:1px solid #3a3a5a;border-radius:10px;padding:12px 14px;box-sizing:border-box}
-.fenster{max-width:860px;padding:16px 18px;border:1px solid #3a3a5a;box-shadow:none;border-radius:12px}
+.fenster{max-width:860px;border:1px solid #3a3a5a;box-shadow:none;border-radius:12px}
 .fenster.seite{position:absolute;right:0;top:0;bottom:0;width:min(420px,42%);max-width:none;border-radius:0;border-left:1px solid #3a3a5a;overflow-y:auto}
 .status{position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));width:min(300px,40%)}
 .status .balken{margin:4px 0}
 button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-offset:3px}
 ```
+Das Padding kommt nur von `.panel` (`12px 14px`): würden beide Werte geschrieben, stünden zwei Regeln gleicher Spezifität, und die spätere gewinnt – jedes Fenster bekommt über `_zeige` die Klasse `panel`, also die dichte Fläche.
 Die Unscharfe nur in stillstehenden Menüs:
 ```css
 @supports (backdrop-filter: blur(1px)){ .ebene .fenster:not(.seite){backdrop-filter:blur(4px)} }
@@ -238,9 +239,9 @@ Die neuen Elemente im Statusfeld haben noch keine Regeln, und zwei alte Regeln r
 .status-stufe{font-size:20px;letter-spacing:2px;color:#3ef0ff}
 .status-sache{font-size:15px;color:#eef2fa;min-height:20px}
 .status .modus-anzeige,.status .fps{position:static}
-.status .kampf{position:static;width:100%}
+.status .kampf{position:static;width:100%;transform:none}
 ```
-`.modus-anzeige` (Zeile 60) und `.fps` (Zeile 62) verlieren dabei ihre absolute Position und folgen dem Zeilenfluss des Panels; dasselbe gilt für `.kampf` (Zeile 84), dessen `width:min(500px,90%)` nicht zur Panelbreite `min(300px,40%)` passt. Die tote Regel `.kampf-stufe` (Zeile 85) fällt weg – das Element existiert seit Task 2 nicht mehr. Diese Regeln sind Optik und auf der Testseite nicht prüfbar; die visuelle Prüfung macht der Controller im Browser.
+`.modus-anzeige` (Zeile 60) und `.fps` (Zeile 62) verlieren dabei ihre absolute Position und folgen dem Zeilenfluss des Panels; dasselbe gilt für `.kampf` (Zeile 84), dessen `width:min(500px,90%)` nicht zur Panelbreite `min(300px,40%)` passt. `transform:none` ist nötig, weil die Grundregel `transform:translateX(-50%)` steht – eine Transformation wirkt auch bei `position:static` und würde die Balken um die halbe Breite nach links schieben. Die tote Regel `.kampf-stufe` (Zeile 85) fällt weg – das Element existiert seit Task 2 nicht mehr. Diese Regeln sind Optik und auf der Testseite nicht prüfbar; die visuelle Prüfung macht der Controller im Browser.
 
 - [ ] **Step 5: Grüne Testseite**
 

@@ -85,6 +85,14 @@ test("Statusfeld oben links zeigt Modus und die gewählte Sache", function(){
   wahr(st.contains(w.querySelector(".modus-anzeige")),"Modusanzeige im Statusfeld");
     w.remove();
 });
+test("Statusfeld zeigt die Anzahl der gewählten Sache mit ×", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), s=new SC.Spieler({id:"a",pos:[0,0,0],modus:"kreativ",schnellleiste:[1,2,3,4,5,6,7,8,9]});
+  ui.hud(s,{status:{name:"Erz",anzahl:7}});
+  gleich(w.querySelector(".status-sache").textContent,"Erz × 7","Anzahl über 1 mit ×");
+  ui.hud(s,{status:{name:"Erz",anzahl:1}});
+  gleich(w.querySelector(".status-sache").textContent,"Erz","bei einer Sache kein ×");
+  w.remove();
+});
 test("Statusfeld zeigt die Stufe und die Kampf-Balken", function(){
   var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2(), s=k.spieler;
   s.schnellleiste=[1,2,3,4,5,6,7,8,9]; ui.hud(s,{}); ui.kampfHud(k,[]);
@@ -156,17 +164,32 @@ test("B verlässt zuerst die Zone", function(){
   ui.zurueck(); wahr(geschlossen,"dann geschlossen");
   w.remove();
 });
-test("Rucksack und Werkbank sind Seitenpanels", function(){
+test("Rucksack, Werkbank und Truhe sind Seitenpanels", function(){
   var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
   ui.zeigeRucksack(k,{}); wahr(w.querySelector(".fenster").classList.contains("seite"),"Rucksack");
   ui.zeigeWerkbank(k,{station:"hand"}); wahr(w.querySelector(".fenster").classList.contains("seite"),"Werkbank");
-  var s=new SC.Slots(uiBackend());
-  return s.speichere(SC.Spielstand.neu({name:"Sternenhafen",seedText:"a",modus:"kreativ"})).then(function(){
-    return leereUI(w,s).zeigeWeltliste();
-  }).then(function(){
-    wahr(!w.querySelector(".fenster").classList.contains("seite"),"Weltliste bleibt zentrales Fenster");
-    w.remove();
+  var anb={hole:function(){ return Promise.resolve({ plaetze: [] }); },nimm:function(){ return Promise.resolve({ plaetze: [] }); },lege:function(){ return Promise.resolve({ plaetze: [] }); }};
+  ui.zeigeTruhe(k,anb,{});
+  return new Promise(function(ok){ setTimeout(ok,0); }).then(function(){
+    wahr(w.querySelector(".fenster").classList.contains("seite"),"Truhe");
+    var s=new SC.Slots(uiBackend());
+    return s.speichere(SC.Spielstand.neu({name:"Sternenhafen",seedText:"a",modus:"kreativ"})).then(function(){
+      return leereUI(w,s).zeigeWeltliste();
+    }).then(function(){
+      wahr(!w.querySelector(".fenster").classList.contains("seite"),"Weltliste bleibt zentrales Fenster");
+      w.remove();
+    });
   });
+});
+test("Seitenpanels: die Blockauswahl mit ihrer Raster-Zone", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w);
+  ui.zeigeBlockauswahl(function(){},{});
+  var fehlt=[];
+  if(!w.querySelector(".fenster").classList.contains("seite")) fehlt.push("Blockauswahl ohne Seitenpanel");
+  var r=w.querySelector(".raster.bl");
+  if(!r || r.getAttribute("data-zone")!=="raster") fehlt.push("Blockraster ohne Zone");
+  gleich(fehlt.join(","),"","Beides da");
+  w.remove();
 });
 test("menueAktion ruft die passende UI-Aktion", function(){
   var gerufen=[], w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w);

@@ -111,7 +111,7 @@ button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-off
 .rs-detail{min-height:90px;font-size:14px}.rs-detail h3{margin:0 0 4px}
 .besser{color:#5fdc5f}.schlechter{color:#ff6f6f}.sonder{color:#ffd95c}
 /* Zonen: die markierten Bereiche sind Panels mit 12 px Abstand – der Cursor bewegt sich Zone für Zone */
-.rs-ausruestung[data-zone],.rs-detail[data-zone],.rs-raster[data-zone],.wb-liste[data-zone],.wb-detail[data-zone],.reihe[data-zone]{background:#151236;border:1px solid #3a3a5a;border-radius:10px;padding:12px;box-sizing:border-box}
+.rs-ausruestung[data-zone],.rs-detail[data-zone],.rs-raster[data-zone],.raster[data-zone],.wb-liste[data-zone],.wb-detail[data-zone],.reihe[data-zone]{background:#151236;border:1px solid #3a3a5a;border-radius:10px;padding:12px;box-sizing:border-box}
 .rs-raster{flex:2 1 320px;min-width:0;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
 .rs-platz{position:relative;min-height:0;aspect-ratio:1;padding:2px;justify-content:center}
 .rs-platz.leiste{background:#2b2766}.rs-platz.gewaehlt{background:#33306f}
@@ -199,5 +199,5 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
 
 /* Fahrzeugbau (Stufe 6b) */
 .wb-fz{font-size:26px;line-height:1.1}
-.wb-farbe{width:28px;height:28px;min-height:0;padding:0;border:3px solid #3a3a5a;border-radius:6px}.wb-farbe.an{outline:3px solid #ffd95c}
+.wb-farbe{width:28px;height:28px;min-height:0;padding:0;border:3px solid #3a3a5a;border-radius:6px}.wb-farbe.an{border-color:#eef2fa}
 .wb-fzwerte{margin:8px 0;color:#aab3d6}

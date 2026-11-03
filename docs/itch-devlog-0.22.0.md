@@ -6,7 +6,7 @@ Das Aussehen ist ruhiger geworden und die Menüs lassen sich am Controller deutl
 
 - **Statusfeld oben links:** Stufe, Lebensanzeige, Schild und Hitze – dazu der Name und die Anzahl der Sache, die man gerade ausgewählt hat. Modusanzeige und Bildrate stehen jetzt in demselben Feld.
 - **Ruhige Panels:** dichte dunkelblaue Flächen mit feinem Rand, kein Leuchten. Eine Unscharfe gibt es nur noch in Menüs, die stillstehen.
-- **Inventare sind Seitenpanels:** Rucksack, Werkbank und Truhe nehmen das rechte Seitenteil ein, die Welt links bleibt sichtbar. Weltliste, Einstellungen, Anleitung und Pause bleiben zentrale Fenster.
+- **Inventare sind Seitenpanels:** Rucksack, Werkbank, Truhe und Blockauswahl nehmen das rechte Seitenteil ein, die Welt links bleibt sichtbar. Weltliste, Einstellungen, Anleitung und Pause bleiben zentrale Fenster.
 - **Steuerkreuz in Reihen und Spalten:** hoch und runter springt eine ganze Reihe, links und rechts ein Feld – im 9-spaltigen Raster des Rucksacks (36 Felder) endlich ein wirklicher Reihenwechsel statt das nächste Feld in Leserichtung. Am Rand wird innerhalb des Bereichs umgebrochen.
 - **Bereich wechseln mit LB/RB:** Ausrüstung, Detail, Raster und die Knöpfe unten sind getrennte Bereiche; ohne Bereiche ist das ganze Fenster einer.
 - **Das Detail folgt dem Fokus:** Name und Werte erscheinen sofort, ohne das Feld erst anzutippen. A bleibt die Aktions-Taste.

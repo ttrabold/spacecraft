@@ -47,8 +47,8 @@ Alternativen „alles unten in einer Zone“ und „Hotbar in der rechten Daumen
 
 - **Panels im Spiel dicht, ohne Unscharfe.** `backdrop-filter` über dem Leinwandbild kostet auf
   älteren iPads Bilder pro Sekunde. Unscharfe nur dort, wo die Welt stillsteht (offene Menüs).
-- **Seitenpanels im Spiel, Fenster bleiben Fenster.** Rucksack, Werkbank und Truhe werden
-  Seitenteil (Welt sichtbar, weil ein offenes Menü die Welt ohnehin anhält – `js/survival.js:189`);
+- **Seitenpanels im Spiel, Fenster bleiben Fenster.** Rucksack, Werkbank, Truhe und Blockauswahl
+  werden Seitenteil (Welt sichtbar, weil ein offenes Menü die Welt ohnehin anhält – `js/survival.js:189`);
   Weltliste, Einstellungen und Anleitung bleiben zentrale Fenster.
 - **Statusfeld oben links:** Stufe, Lebensanzeige, Schutz, Schild, Hitze, Name und Anzahl der
   gewählten Sache. Die Modusanzeige unten links und die FPS-Anzeige ziehen in dieses Feld;

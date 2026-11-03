@@ -7,10 +7,10 @@
 
   // Abbauen: Fortschritt je Ziel; fertig → Block in den Rucksack (voll → bleibt stehen)
   S.abbauFortschritt = function(ziel, dt){
-    var w = this.welt, k = this.kampf, id = w.holeBlock(ziel.x, ziel.y, ziel.z), waffe = k.waffe();
+    var w = this.welt, k = this.kampf, id = w.holeBlock(ziel.x, ziel.y, ziel.z);
     var schl = ziel.x + "," + ziel.y + "," + ziel.z;
     if(!this._abbau || this._abbau.schl !== schl) this._abbau = { schl: schl, t: 0 };
-    var dauer = SC.Abbau.zeit(id, waffe && waffe.art);
+    var dauer = SC.Abbau.zeit(id);
     if(!isFinite(dauer)){ this._abbau.t = 0; return false; }
     this._abbau.t += dt;
     if(this._abbau.t + 1e-9 < dauer) return false;
@@ -22,7 +22,7 @@
   };
   S.abbauAnteil = function(ziel){
     if(!ziel || !this._abbau || this._abbau.schl !== ziel.x + "," + ziel.y + "," + ziel.z) return 0;
-    var waffe = this.kampf.waffe(), d = SC.Abbau.zeit(this.welt.holeBlock(ziel.x, ziel.y, ziel.z), waffe && waffe.art);
+    var d = SC.Abbau.zeit(this.welt.holeBlock(ziel.x, ziel.y, ziel.z));
     return isFinite(d) ? Math.min(1, this._abbau.t / d) : 0;
   };
 

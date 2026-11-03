@@ -50,7 +50,7 @@ SC.Rucksack.STAPEL = 64;
   R.alsDaten = function(){ return this.plaetze.map(function(s){ return s ? JSON.parse(JSON.stringify(s)) : null; }); };
 })();
 
-// Abbauen im Survival: Zeit je Härte, Laserschwert halbiert; was ein Block ergibt
+// Abbauen im Survival: Zeit je Härte (Hand halbiert, war bisher das Laserschwert); was ein Block ergibt
 SC.Abbau = {};
 (function(){
   var B = SC.B, ZEIT = {};
@@ -66,11 +66,11 @@ SC.Abbau = {};
   [B.WERKBANK, B.FACKEL, B.ZAUN, B.LEITER_N, B.LEITER_S, B.LEITER_O, B.LEITER_W, B.TUER_X, B.TUER_Z, B.TUER_X_OFFEN, B.TUER_Z_OFFEN, B.TUER_X_OBEN, B.TUER_Z_OBEN, B.TUER_X_OFFEN_OBEN, B.TUER_Z_OFFEN_OBEN, B.TRUHE, B.ZAUBERKUGEL, B.BETT_FUSS_N, B.BETT_FUSS_S, B.BETT_FUSS_O, B.BETT_FUSS_W, B.BETT_KOPF_N, B.BETT_KOPF_S, B.BETT_KOPF_O, B.BETT_KOPF_W].forEach(function(id){ ZEIT[id] = 0.9; });
   var GRUND = {}; GRUND[B.LEITER_S] = GRUND[B.LEITER_O] = GRUND[B.LEITER_W] = B.LEITER_N; GRUND[B.TUER_Z] = GRUND[B.TUER_X_OFFEN] = GRUND[B.TUER_Z_OFFEN] = GRUND[B.TUER_X_OBEN] = GRUND[B.TUER_Z_OBEN] = GRUND[B.TUER_X_OFFEN_OBEN] = GRUND[B.TUER_Z_OFFEN_OBEN] = B.TUER_X;
   [B.BETT_FUSS_S, B.BETT_FUSS_O, B.BETT_FUSS_W, B.BETT_KOPF_N, B.BETT_KOPF_S, B.BETT_KOPF_O, B.BETT_KOPF_W].forEach(function(id){ GRUND[id] = B.BETT_FUSS_N; });
-  SC.Abbau.zeit = function(id, waffenArt){
+  SC.Abbau.zeit = function(id){
     var b = SC.BLOECKE[id];
     if(!b || !b.zerstoerbar) return Infinity;
     var t = ZEIT[id] !== undefined ? ZEIT[id] : 1;
-    return waffenArt === "laserschwert" ? t / 2 : t;
+    return t / 2;   // Hand: schnelle Abbauart (war bisher das Laserschwert)
   };
   SC.Abbau.ergibt = function(id){ return id === B.GRAS ? B.ERDE : id === B.GLAS ? null : GRUND[id] || id; };
 })();

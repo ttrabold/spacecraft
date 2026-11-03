@@ -33,28 +33,31 @@
   // fahrzeug (optional): { panzerung, max, name } – Panzerungsbalken, solange man im Fahrzeug sitzt
   SC.UI.prototype.kampfHud = function(kampf, bemerkt, fahrzeug){
     var el = this.hudEl.querySelector(".kampf"); if(!el) return;
-    if(!kampf){ el.hidden = true; return; }
-    el.hidden = false;
+    if(!kampf){ if(!el.hidden) el.hidden = true; return; }
+    if(el.hidden) el.hidden = false;
     if(!el.firstChild) el.innerHTML =
       '<div class="balken balken-xp"><i></i></div>' +
       '<div class="balken balken-lp"><i></i><span></span></div><div class="balken balken-schild"><i></i></div>' +
       '<div class="balken balken-fahrzeug" hidden><i></i><span></span></div><div class="balken balken-hitze"><i></i></div><div class="treffer-rand"></div><div class="treffer-pfeil">▲</div>';
+    // Das HUD läuft jedes Bild: nur schreiben, was sich geändert hat – jede Schreibung kostet auf iPad/iPhone Layout und Neuzeichnen des Statusfelds
     var w = kampf.werte, q = function(s){ return el.querySelector(s); };
+    function text(e, t){ if(e && e.textContent !== t) e.textContent = t; }
+    function zeige(e, an){ if(e.hidden === an) e.hidden = !an; }
+    function breite(e, p){ p = p + "%"; if(e._breite !== p){ e._breite = p; e.style.width = p; } }
     // Die Stufe steht im Statusfeld oben links (ein Element, nicht zwei)
-    var st = this.hudEl.querySelector(".status-stufe");
-    if(st) st.textContent = SC.T.stufe + " " + w.stufe;
-    q(".balken-xp i").style.width = (w.stufe >= SC.Werte.MAX_STUFE ? 100 : 100 * w.erfahrung / SC.Werte.erfahrungFuer(w.stufe)) + "%";
-    q(".balken-lp i").style.width = 100 * w.lp / w.lpMax + "%"; q(".balken-lp span").textContent = Math.ceil(w.lp) + " / " + w.lpMax;
-    q(".balken-schild").hidden = !w.schildMax; q(".balken-schild i").style.width = (w.schildMax ? 100 * w.schild / w.schildMax : 0) + "%";
-    var fz = q(".balken-fahrzeug"); fz.hidden = !fahrzeug;
-    if(fahrzeug){ fz.querySelector("i").style.width = Math.round(100 * fahrzeug.panzerung / fahrzeug.max) + "%"; fz.querySelector("span").textContent = fahrzeug.name + " · " + (fahrzeug.label || SC.T.fahrzeugPanzerung) + " " + Math.ceil(fahrzeug.panzerung); }
-    var waffe = kampf.waffe(), heiss = waffe && SC.GEGENSTAENDE[waffe.art].waffe.typ === "blaster";
-    q(".balken-hitze").hidden = !heiss; q(".balken-hitze").classList.toggle("ueberhitzt", kampf.uhr < kampf.ueberhitztBis); q(".balken-hitze i").style.width = 100 * kampf.hitze + "%";
+    text(this.hudEl.querySelector(".status-stufe"), SC.T.stufe + " " + w.stufe);
+    breite(q(".balken-xp i"), w.stufe >= SC.Werte.MAX_STUFE ? 100 : 100 * w.erfahrung / SC.Werte.erfahrungFuer(w.stufe));
+    breite(q(".balken-lp i"), 100 * w.lp / w.lpMax); text(q(".balken-lp span"), Math.ceil(w.lp) + " / " + w.lpMax);
+    zeige(q(".balken-schild"), !!w.schildMax); breite(q(".balken-schild i"), w.schildMax ? 100 * w.schild / w.schildMax : 0);
+    var fz = q(".balken-fahrzeug"); zeige(fz, !!fahrzeug);
+    if(fahrzeug){ breite(fz.querySelector("i"), Math.round(100 * fahrzeug.panzerung / fahrzeug.max)); text(fz.querySelector("span"), fahrzeug.name + " · " + (fahrzeug.label || SC.T.fahrzeugPanzerung) + " " + Math.ceil(fahrzeug.panzerung)); }
+    var waffe = kampf.waffe(), heiss = waffe && SC.GEGENSTAENDE[waffe.art].waffe.typ === "blaster", hz = q(".balken-hitze");
+    zeige(hz, !!heiss); hz.classList.toggle("ueberhitzt", kampf.uhr < kampf.ueberhitztBis); breite(q(".balken-hitze i"), 100 * kampf.hitze);
     // Treffer: roter Rand und Pfeil aus der Richtung des Angriffs
-    var t = kampf.letzterTreffer, frisch = t && kampf.uhr - t.zeit < 600;
+    var t = kampf.letzterTreffer, frisch = !!(t && kampf.uhr - t.zeit < 600);
     // Der Rand ist bildschirmfüllend mit 80 px Weichzeichnung: nur im Dokument, solange er leuchtet – sonst kostet er auf iPad/iPhone jedes Bild
-    var rand = q(".treffer-rand"); rand.hidden = !frisch; if(frisch) rand.style.opacity = 1 - (kampf.uhr - t.zeit) / 600;
-    var pf = q(".treffer-pfeil"); pf.hidden = !frisch;
+    var rand = q(".treffer-rand"); zeige(rand, frisch); if(frisch) rand.style.opacity = 1 - (kampf.uhr - t.zeit) / 600;
+    var pf = q(".treffer-pfeil"); zeige(pf, frisch);
     if(frisch){ var sp = kampf.spieler, w0 = Math.atan2(-t.richtung[0], -t.richtung[2]) - sp.blick[0]; pf.style.transform = "translate(-50%,-50%) rotate(" + (-w0) + "rad) translateY(-90px)"; }
   };
 

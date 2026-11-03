@@ -477,7 +477,8 @@ SC.UI = function(wurzel, o){
     }
     // Statusfeld: die gerade gewählte Sache (Rucksackplatz)
     if(extra && extra.status) this.statusSache(extra.status.name, extra.status.anzahl);
-    var f = h.querySelector(".fps"); f.hidden = !(extra && extra.fpsAnzeigen); if(!f.hidden) f.textContent = (extra.fps || 0) + " FPS";
+    var f = h.querySelector(".fps"), fa = !!(extra && extra.fpsAnzeigen); if(f.hidden === fa) f.hidden = !fa;
+    if(fa){ var ft = (extra.fps || 0) + " FPS"; if(f.textContent !== ft) f.textContent = ft; } // nur bei Änderung schreiben (siehe kampfHud)
   };
   // Textzeile im Statusfeld; null setzt sie leer
   SC.UI.prototype.statusSache = function(name, anzahl){

@@ -66,7 +66,7 @@ Test-Helfer (bereits in `tests/helfer.js` und `tests/test-gamepad.js` vorhanden)
 - Test: keine (CSS ist auf der Testseite nicht prüfbar) – Prüfung im Browser
 
 **Interfaces:**
-- Produces: Klassen `.status` und `.fenster.seite`; der Fokus-Rahmen (gelb, 2 px, Abstand 3 px) ist eine Outline-Regel auf `:focus` und `:focus-visible` – es gibt keine `.fokus-cursor`-Klasse. Panels im Spiel ohne `backdrop-filter`, Unscharfe nur in stillstehenden Menüs (`@supports (backdrop-filter: blur(1px))`, Selektor `.ebene .fenster:not(.seite)`).
+- Produces: Klassen `.status` und `.fenster.seite`; der Fokus-Rahmen (gelb, 2 px, Abstand 3 px) ist eine Outline-Regel auf `:focus` – es gibt keine `.fokus-cursor`-Klasse. Panels im Spiel ohne `backdrop-filter`, Unscharfe nur in stillstehenden Menüs (`@supports (backdrop-filter: blur(1px))`, Selektor `.ebene .fenster:not(.seite)`).
 
 - [ ] **Step 1: CSS schreiben**
 

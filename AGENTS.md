@@ -45,6 +45,7 @@ Die Tests laufen im Browser: `tests/index.html` öffnen, erwartet: keine ❌-Zei
 - Größere Änderungen zuerst ins Test-Repo: `git push test <branch>:main`, dann in der Vorschau prüfen. Erst nach Bestätigung per Fast-Forward nach `main` und `git push origin main`.
 - Test-Vorschau und Live-Seite teilen sich denselben Origin und damit denselben `localStorage`. Dort nie Speicherstände löschen oder überschreiben. Zerstörende Tests nur per `file://` oder `localhost`.
 - Nicht pushen, ohne dass der Nutzer es verlangt.
+- **GitHub (Issues und Board) erst nach dem Push:** Status, Kommentare und das Schließen von Issues sowie Board-Einträge nur ändern, wenn der Stand auch nach `main` gepusht ist (`Fixes #N` schließt Issues ohnehin erst mit dem Push). Vorher den Stand nur im Chat oder in der ROADMAP festhalten.
 
 ## Projektmanagement
 
@@ -74,6 +75,6 @@ Das Projekt läuft über viele Sessions. Jede Session muss ohne Vorwissen weiter
 **Am Ende jeder Session (oder bevor der Kontext knapp wird):**
 
 - `docs/ROADMAP.md` aktualisieren: Stand, was zuletzt passiert ist, nächster konkreter Schritt, offene Fragen an den Nutzer.
-- Erledigte Issues schließen, angefangene mit kurzem Kommentar zum Stand versehen, Board-Status anpassen.
+- Erledigte Issues schließen, angefangene mit kurzem Kommentar zum Stand versehen, Board-Status anpassen – nur für Arbeit, die bereits nach `main` gepusht ist (siehe „Veröffentlichen“).
 - Aufgeschobene Punkte oder neue Ideen als Issue anlegen statt sie nur im Chat zu erwähnen.
 - Änderungen an Docs committen (nicht pushen, ohne dass der Nutzer es verlangt).

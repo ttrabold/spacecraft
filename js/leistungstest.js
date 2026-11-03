@@ -23,19 +23,29 @@
     setTimeout(function(){ los(s); }, ANLAUF);
   }
   function los(s){
+    // Während der Messung nur ein kleines Kästchen in der Ecke (ein großes Feld über der Leinwand verfälscht die Messung); die Tabelle kommt erst am Ende
     var anz = document.createElement("div"); anz.className = "leistung";
-    anz.style.cssText = "position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:9;background:#000;color:#fff;font:14px/1.35 monospace;padding:8px 12px;white-space:pre;pointer-events:none";
+    anz.style.cssText = "position:absolute;right:4px;bottom:4px;z-index:9;background:#000;color:#fff;font:11px monospace;padding:2px 4px;pointer-events:none";
     document.getElementById("ui").appendChild(anz);
     var st = document.createElement("style"); document.head.appendChild(st);
-    var n = 0, alt = s._bild; s._bild = function(t){ n++; return alt.call(this, t); };
-    var kopf = "Spacecraft " + (window.V || "") + "  dpr " + devicePixelRatio + "  Leinwand " + s.leinwand.width + "x" + s.leinwand.height + "  Bildrate " + s.einstellungen.bildrate + "\n" + navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 90) + "\n", zeilen = [];
-    function zeige(z){ anz.textContent = kopf + zeilen.join("\n") + (z ? "\n" + z : "\nfertig"); }
+    var re = s.render.renderer, n = 0, ms = 0, alt = s._bild, altR = re.render;
+    s._bild = function(t){ n++; return alt.call(this, t); };
+    re.render = function(){ var a = performance.now(); altR.apply(this, arguments); ms += performance.now() - a; };
+    var kopf = "Spacecraft " + (window.V || "") + "  dpr " + devicePixelRatio + "  Leinwand " + s.leinwand.width + "x" + s.leinwand.height + "  Bildrate " + s.einstellungen.bildrate + "\n" + navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 90) + "\n" + "Fall                        Bilder/s  Zeichnen/Bild\n", zeilen = [];
     (function fall(i){
-      if(i >= FAELLE.length){ st.textContent = ""; s._bild = alt; zeige(""); console.log(anz.textContent); return; }
-      st.textContent = FAELLE[i][1]; zeige("misst: " + FAELLE[i][0] + " …");
+      if(i >= FAELLE.length){
+        st.textContent = ""; s._bild = alt; re.render = altR;
+        anz.style.cssText = "position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:9;background:#000;color:#fff;font:14px/1.35 monospace;padding:8px 12px;white-space:pre;pointer-events:none";
+        anz.textContent = kopf + zeilen.join("\n") + "\nfertig"; console.log(anz.textContent); return;
+      }
+      st.textContent = FAELLE[i][1]; anz.textContent = (i + 1) + "/" + FAELLE.length;
       setTimeout(function(){
-        n = 0; var t0 = performance.now();
-        setTimeout(function(){ zeilen.push((FAELLE[i][0] + "                              ").slice(0, 28) + Math.round(n * 1000 / (performance.now() - t0)) + " fps"); fall(i + 1); }, MESSEN);
+        n = 0; ms = 0; var t0 = performance.now();
+        setTimeout(function(){
+          var fps = Math.round(n * 1000 / (performance.now() - t0));
+          zeilen.push((FAELLE[i][0] + "                              ").slice(0, 28) + ("   " + fps).slice(-4) + "      " + (n ? (ms / n).toFixed(2) : "-") + " ms");
+          fall(i + 1);
+        }, MESSEN);
       }, RUHE);
     })(0);
   }

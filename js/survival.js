@@ -7,6 +7,7 @@
 
   // Abbauen: Fortschritt je Ziel; fertig → Block in den Rucksack (voll → bleibt stehen)
   S.abbauFortschritt = function(ziel, dt){
+    if(this.kampf.waffe()) return false;   // Mit ausgerüsteter Waffe wird nicht abgebaut – die Angriffstaste kämpft nur, abbauen geht nur mit leerer Hand (#127)
     var w = this.welt, k = this.kampf, id = w.holeBlock(ziel.x, ziel.y, ziel.z);
     var schl = ziel.x + "," + ziel.y + "," + ziel.z;
     if(!this._abbau || this._abbau.schl !== schl) this._abbau = { schl: schl, t: 0 };
@@ -138,7 +139,7 @@
       }
       k.blocken(e.setzenGehalten && wdef && wdef.typ === "schwert"); sp.blockt = k.blockt; s.render.blocke(k.blockt);
       if(sp.imLava && !imFz){ var lr = k.lava(dt); if(lr.schaden > 0) a.spiele("getroffen"); }
-      // Angreifen bzw. Abbauen
+      // Angreifen bzw. Abbauen: mit Waffe wird nur gekämpft (#127), ohne Waffe abgebaut
       if(imFz && imFz.sitz === 0){ if(e.abbauen || e.abbauenGehalten) this._bordschuss(imFz.f, t); } // Fahrer: Bordgeschütz statt eigener Waffe
       else if(waffe && (e.abbauen || e.abbauenGehalten)){
         var richtung = sp.richtung();
@@ -160,7 +161,6 @@
             var r = k.trifftGegner(g, akt.schaden, [d[0], 0, d[2]]); s._zahl(g, r.schaden); if(r.besiegt) s.besiege(g); else a.spiele("treffer"); });
         }
         if(k.ueberhitztBis <= t) this._heiss = false;
-        if(wdef.typ === "schwert" && ziel && e.abbauenGehalten) this.abbauFortschritt(ziel, dt);
       } else if(ziel && e.abbauenGehalten) this.abbauFortschritt(ziel, dt);
       else this._abbau = null;
       // Setzen, Kiste öffnen

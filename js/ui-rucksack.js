@@ -104,7 +104,7 @@
       var inhalt = "", stil = "";
       if(s && s.gegenstand){ inhalt = '<img src="' + SC.UI.gegenstandBild(s.gegenstand) + '" alt="">'; stil = ' style="border-color:' + SC.SELTENHEIT[s.gegenstand.seltenheit || 0].farbe + '"'; }
       else if(s){ inhalt = '<img src="' + SC.UI.blockBild(s.block) + '" alt=""><b class="anzahl">' + s.anzahl + "</b>"; }
-      var h = '<button class="rs-platz' + (i < 9 ? " leiste" : "") + (verschieben === i ? " verschiebt" : "") + '" data-aktion="platz" data-i="' + i + '"' + stil + ">" + inhalt + "</button>";
+      var h = '<button class="rs-platz' + (i < 9 ? " schnell" : "") + (verschieben === i ? " verschiebt" : "") + '" data-aktion="platz" data-i="' + i + '"' + stil + ">" + inhalt + "</button>";
       // Das Menü steht als eigene Zeile direkt unter der Reihe des Platzes
       if(menue && !menue.platz && i === Math.floor(menue.i / 9) * 9 + 8) h += menueHtml(menue);
       return h;

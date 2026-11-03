@@ -169,3 +169,14 @@ test("Tipp neben das Menü schließt es", function(){ rsAuf(function(w,ui,k){
   wahr(!w.querySelector(".rs-menue"),"zu"); gleich(document.activeElement.getAttribute("data-i"),"12","Cursor auf dem Platz");
   rsPlatz(w,12).click(); w.querySelector(".rs-menue h3").click(); wahr(w.querySelector(".rs-menue"),"Tipp ins Menü schließt nicht");
 }); });
+test("Rucksack-Raster: die Schnellleisten-Reihe sitzt im Raster wie die anderen (iPad: 34 px zu hoch durch die HUD-Regel .leiste)", function(){
+  var f = document.createElement("iframe"); f.style.cssText = "position:absolute;left:-3000px;top:0;width:1366px;height:938px;border:0"; document.body.appendChild(f);
+  var d = f.contentDocument; d.open(); d.write('<link rel="stylesheet" href="../css/style.css"><div class="ebene" style="position:fixed;inset:0"></div>'); d.close();
+  return new Promise(function(fertig){ f.onload = fertig; setTimeout(fertig, 1500); }).then(function(){
+    var w = document.createElement("div"), ui = ui2(w), k = k2(); ui.zeigeRucksack(k, {}); d.querySelector(".ebene").innerHTML = ui.ebene.innerHTML;
+    var top = function(s){ return d.querySelector(s).getBoundingClientRect().top; }, g = top(".rs-raster"), p0 = top('.rs-platz[data-i="0"]'), p9 = top('.rs-platz[data-i="9"]'), p18 = top('.rs-platz[data-i="18"]');
+    document.body.removeChild(f);
+    wahr(p0 > g, "erste Reihe im Panel: " + p0 + " > " + g);
+    wahr(Math.abs((p9 - p0) - (p18 - p9)) < 1, "gleiche Reihenabstände: " + (p9 - p0) + " / " + (p18 - p9));
+  });
+});

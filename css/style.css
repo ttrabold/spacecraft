@@ -60,6 +60,11 @@ button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-off
 
 /* HUD */
 .hud{position:absolute;inset:0;pointer-events:none}
+/* Offenes Seitenpanel: die Welt bleibt gedimt, aber das HUD liegt über der Menüebene – Hilfe und Hotbar rücken in die freie Weltfläche links vom Panel (Panelbreite min(420px,42%), siehe .fenster.seite) */
+.hud.seitenpanel{z-index:4}
+.hud.seitenpanel .leiste{left:calc((100% - min(420px,42%))/2);max-width:calc(100% - min(420px,42%) - 16px)}
+/* Die Hilfe hängt in der UI-Wurzel neben dem HUD (kein Kind von .hud), darum der Geschwister-Selektor; ihr z-index 2 muss mit der Ebene mithalten, sonst bleibt sie unter der Dimmung */
+.hud.seitenpanel ~ .controller-hilfe{right:calc(min(420px,42%) + 14px + env(safe-area-inset-right));max-width:calc(100% - min(420px,42%) - 28px);z-index:4}
 .fadenkreuz{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;background:linear-gradient(#fff,#fff) center/2px 100% no-repeat,linear-gradient(#fff,#fff) center/100% 2px no-repeat;mix-blend-mode:difference}
 .modus-anzeige{position:absolute;left:calc(12px + env(safe-area-inset-left));bottom:calc(12px + env(safe-area-inset-bottom));font-size:14px;color:#aab3d6;text-shadow:0 1px 2px #000}
 .touch ~ .hud .modus-anzeige{display:none}

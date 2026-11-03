@@ -65,6 +65,8 @@ SC.UI = function(wurzel, o){
     this.ebene.innerHTML = '<div class="fenster panel' + (opt && opt.seite ? " seite" : "") + '">' + html + "</div>";
     this.ebene.hidden = false; this._aktionen = aktionen || {};
     this._startZone = (opt && opt.startZone) || null;
+    // Bei einem Seitenpanel liegt das HUD über der Menüebene: Hilfe und Hotbar rücken in die freie Weltfläche links vom Panel
+    this.hudEl.classList.toggle("seitenpanel", !!(opt && opt.seite));
     // Beim Neuladen bleibt der Cursor auf dem Element, das ihn hatte; beim Öffnen (oder wenn das Element hier nicht vorkommt) fällt er in die Startzone
     var e = this._holeFokus(m);
     if(!e && this._startZone){
@@ -161,7 +163,7 @@ SC.UI = function(wurzel, o){
     if(k) k.click();
   };
 
-  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._startZone = null; };
+  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._startZone = null; this.hudEl.classList.remove("seitenpanel"); };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
   // Für die Controller-Hilfe: zusätzlich das Entwicklerpanel (in der Eingabe und in _fenster ein Menü)
   SC.UI.prototype.menueOffen = function(){ return this.offen() || !!(this.wurzel.querySelector(".entwickler:not([hidden])")); };

@@ -193,3 +193,11 @@ test("Das Entwicklerpanel gilt als offenes Menü", function(){
   e.hidden = true; gleich(ui.menueOffen(), false);
   w.remove();
 });
+test("Bei einem Seitenpanel liegt das HUD über der Menüebene", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  ui.zeigeRucksack(k,{});
+  wahr(w.querySelector(".hud").classList.contains("seitenpanel"),"Klasse am HUD fehlt");
+  ui.schliesse();
+  wahr(!w.querySelector(".hud").classList.contains("seitenpanel"),"Klasse bleibt nach dem Schließen");
+  w.remove();
+});

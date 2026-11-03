@@ -22,7 +22,8 @@
     return true;
   };
   S.abbauAnteil = function(ziel){
-    if(!ziel || !this._abbau || this._abbau.schl !== ziel.x + "," + ziel.y + "," + ziel.z) return 0;
+    if(!ziel || this.kampf.waffe()) return 0;   // dieselbe Regel wie oben: mit Waffe kein Riss am Block (#127)
+    if(!this._abbau || this._abbau.schl !== ziel.x + "," + ziel.y + "," + ziel.z) return 0;
     var d = SC.Abbau.zeit(this.welt.holeBlock(ziel.x, ziel.y, ziel.z));
     return isFinite(d) ? Math.min(1, this._abbau.t / d) : 0;
   };

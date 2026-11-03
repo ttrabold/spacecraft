@@ -60,7 +60,16 @@ SC.Spiel.prototype.raum = null;        // SC.Gastgeber, SC.Gast oder null
 // Netz-Adapter für Räume (in Tests ersetzbar, z. B. durch SC.Netz.speicherNetz().adapter())
 SC.Spiel.adapter = function(){ return SC.Netz.peerjs(); };
 // Bildrate begrenzen: Bild zur Zeit t fällig, wenn seit dem letzten gezeichneten genug Zeit vergangen ist (2 ms Spielraum für schwankende Bildtakte)
-SC.Spiel.bildFaellig = function(t, letzte, max){ return !max || t - letzte >= 1000 / max - 2; };
+// Bildrate begrenzen: z.soll ist der nächste Zeitpunkt auf einem festen Raster (1000/max ms). Gemessen am Raster statt am letzten Bild,
+// damit auf iOS nach einem späten Bild das folgende frühe nicht wegfällt; frühe Bilder ziehen das Raster mit (Bildschirm etwas über 60 Hz)
+SC.Spiel.takt = function(z, t, max){
+  if(!max) return true;
+  var I = 1000 / max;
+  if(z.soll === undefined || t - z.soll > I) z.soll = t; // Start oder lange Pause: Raster neu setzen
+  if(t < z.soll - 4) return false;
+  z.soll = Math.min(z.soll + I, t + I);
+  return true;
+};
 
 // Startpunkt neuer Welten: Spalte über Land, spiralförmig um die Planetenmitte gesucht
 SC.Spiel.startpunkt = function(planet){
@@ -152,7 +161,7 @@ SC.Spiel.startpunkt = function(planet){
     this._laeuft = true; this._t0 = performance.now();
     if(!daten.spieler.pos) this.speichere("auto");
     var lauf = this._lauf = (this._lauf || 0) + 1; // nach einem Neustart (Planetenwechsel) endet die alte Bildschleife
-    requestAnimationFrame(function bild(t){ if(!s._laeuft || s._lauf !== lauf) return; if(SC.Spiel.bildFaellig(t, s._t0, +s.einstellungen.bildrate)) s._bild(t); requestAnimationFrame(bild); });
+    var takt = {}; requestAnimationFrame(function bild(t){ if(!s._laeuft || s._lauf !== lauf) return; if(SC.Spiel.takt(takt, t, +s.einstellungen.bildrate)) s._bild(t); requestAnimationFrame(bild); });
   };
 
   SC.Spiel.prototype._bild = function(t){

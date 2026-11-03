@@ -16,10 +16,15 @@ test("Offenes Menü hält Gegner und Geschosse an", function(){ var s=survSpiel(
 test("Einzelspiel: Rolle allein, kein Raum", function(){ var s=survSpiel(); gleich(s.rolle,"allein"); gleich(s.raum,null); });
 test("Blockhaltung wird zurückgesetzt, wenn ein Menü aufgeht oder der Spieler besiegt ist", function(){ var s=survSpiel(),an=[]; s.render={markiere:function(){},wesen:{risse:function(){},funken:function(){},zahl:function(){}},ausruestung:function(){},hieb:function(){},blocke:function(x){an.push(x);},fps:60}; s.eingabe={touchAktiv:false,gamepadAktiv:false}; s.auftauchen={schritt:function(){},zerfallen:[]}; s.einstellungen={fpsAnzeigen:false}; s.ui={hinweis:function(){},hud:function(){},kampfHud:function(){},zeigeBesiegt:function(){}}; s._zf=SC.zufall(1); s.tageszeit=0.5; var e={ausweichen:false,setzenGehalten:false,abbauen:false,abbauenGehalten:false,setzen:false,vor:false,zurueck:false,links:false,rechts:false}; s.kampf.blockt=true; s._survival(e,0.1,true,1000); gleich(an[an.length-1],false); gleich(s.kampf.blockt,false); gleich(s.raumIch(true).blockt,false); });
 test("Bildrate: begrenzt auf 60 zeichnet bei 120 Hz jedes zweite Bild", function(){
-  var t = 0, gezeichnet = 0, letzte = -1000;
-  for(var i = 0; i < 120; i++){ t = i * 1000 / 120; if(SC.Spiel.bildFaellig(t, letzte, 60)){ gezeichnet++; letzte = t; } }
-  gleich(gezeichnet, 60);
-  gezeichnet = 0; letzte = -1000; for(var j = 0; j < 60; j++){ t = j * 1000 / 60; if(SC.Spiel.bildFaellig(t, letzte, 60)){ gezeichnet++; letzte = t; } } gleich(gezeichnet, 60, "60 Hz: jedes Bild");
-  gezeichnet = 0; letzte = -1000; for(var k = 0; k < 60; k++){ t = k * 1000 / 60; if(SC.Spiel.bildFaellig(t, letzte, 30)){ gezeichnet++; letzte = t; } } gleich(gezeichnet, 30, "30");
-  gleich(SC.Spiel.bildFaellig(5, 4, 0), true, "unbegrenzt");
+  function zaehle(zeiten, max){ var z = {}, n = 0; zeiten.forEach(function(t){ if(SC.Spiel.takt(z, t, max)) n++; }); return n; }
+  function folge(n, hz, zitter){ var l = []; for(var i = 0; i < n; i++) l.push(i * 1000 / hz + (zitter ? (i % 2 ? zitter : -zitter) : 0)); return l; }
+  gleich(zaehle(folge(120, 120), 60), 60, "120 Hz: jedes zweite");
+  gleich(zaehle(folge(60, 60), 60), 60, "60 Hz: jedes Bild");
+  gleich(zaehle(folge(60, 60), 30), 30, "30");
+  gleich(SC.Spiel.takt({}, 5, 0), true, "unbegrenzt");
+  // iOS: ein spätes Bild, dann ein frühes (Abstände 21,7 und 11,7 ms) – keins darf wegfallen (gemessen: 361 von 400 gezeichnet, 53 statt 58 fps)
+  gleich(zaehle(folge(60, 60, 2.5), 60), 60, "60 Hz mit Zittern: jedes Bild");
+  gleich(zaehle(folge(240, 120, 1), 60), 120, "120 Hz mit Zittern: jedes zweite");
+  // Bildschirm minimal schneller als 60 Hz: kein Bild fällt aus
+  gleich(zaehle(folge(600, 60.1), 60), 600, "60,1 Hz");
 });

@@ -225,7 +225,7 @@
       } else if(g.art === "kugel" && survival){
         var sache = g.sache, erg = SC.Kugel.schritt(w, g, sp, k.rucksack, dt);
         if(erg === "voll" && t - (s._vollHinweis || 0) > 3000){ s._vollHinweis = t; s.ui.hinweis(SC.T.rucksackVoll, 1500); }
-        if(erg === "aufgesammelt"){ a.spiele("aufsammeln", { seltenheit: sache.gegenstand ? sache.gegenstand.seltenheit : 0 }); if(sache.gegenstand) s.ui.hinweis(sache.gegenstand.name, 2000); if(gast) s.speichere("fund"); }
+        if(erg === "aufgesammelt"){ a.spiele("aufsammeln", { seltenheit: sache.gegenstand ? sache.gegenstand.seltenheit : 0 }); if(sache.gegenstand && !s._beuteAnlegen(sache.gegenstand)) s.ui.hinweis(sache.gegenstand.name, 2000); if(gast) s.speichere("fund"); }
       }
     });
     k.schritt(t, dt);
@@ -253,6 +253,14 @@
     var sp = this.spieler;
     if(sp.modus !== "survival"){ sp.handBlock = undefined; return; }
     var s = this.kampf.rucksack.plaetze[sp.auswahl]; sp.handBlock = s && s.block !== undefined ? s.block : -1;
+  };
+  // Aufgesammelte Rüstung, die eindeutig besser ist, gleich anlegen (Einstellung autoAnlegen, Standard an) → true mit Hinweis
+  S._beuteAnlegen = function(g){
+    if(this.einstellungen && this.einstellungen.autoAnlegen === false) return false;
+    var r = this.kampf.automatischAnlegen(g); if(!r) return false;
+    var haupt = Object.keys(SC.GEGENSTAENDE[g.art].haupt)[0], wert = function(x){ return x && x.werte ? (x.werte[haupt] || 0) : 0; };
+    this.ui.hinweis(SC.T.autoAngelegt.replace("{name}", g.name).replace("{wert}", SC.T.werteName[haupt] || haupt).replace("{alt}", wert(r.alt)).replace("{neu}", wert(g)), 2500);
+    return true;
   };
   S._hudSurvival = function(survival, waffe, wdef){
     var sp = this.spieler, k = this.kampf, ein = this.eingabe;

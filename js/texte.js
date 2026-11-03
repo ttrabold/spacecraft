@@ -76,7 +76,7 @@ SC.T = {
   sichtweite: "Sichtweite",
   empfindlichkeit: "Maus-/Wischempfindlichkeit",
   touchGroesse: "Größe der Touch-Knöpfe",
-  fpsAnzeigen: "FPS anzeigen", bildrate: "Höchste Bildrate (Bilder pro Sekunde)", bildrateFrei: "Unbegrenzt", aufloesung: "Auflösung", aufloesungNormal: "Normal (sparsam)", aufloesungHoch: "Hoch (scharf, braucht mehr Leistung)",
+  fpsAnzeigen: "FPS anzeigen", autoAnlegen: "Bessere Ausrüstung automatisch anlegen", autoAngelegt: "Neu angelegt: {name} ({wert} {alt} → {neu})", bildrate: "Höchste Bildrate (Bilder pro Sekunde)", bildrateFrei: "Unbegrenzt", aufloesung: "Auflösung", aufloesungNormal: "Normal (sparsam)", aufloesungHoch: "Hoch (scharf, braucht mehr Leistung)",
   fertig: "Fertig",
   bloeckeTitel: "Blöcke",
   speichernFehlgeschlagen: "Speichern hat nicht geklappt. Bitte die Welt exportieren!",

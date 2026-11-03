@@ -133,7 +133,7 @@ SC.Spiel.prototype.all = null;
     if(this.spieler.modus !== "survival" || !this.kampf) return;
     var g = SC.Beute.erzeuge(SC.zufall((Math.random() * 4294967296) >>> 0), { stufe: this.kampf.werte.stufe });
     if(this.kampf.rucksack.lege({ gegenstand: g })) this.ui.hinweis(SC.T.rucksackVoll, 2000);
-    else { this.ui.hinweis(SC.T.allBeute.replace("{name}", g.name), 2500); this.audio.spiele("aufsammeln", { seltenheit: g.seltenheit }); }
+    else { if(!this._beuteAnlegen(g)) this.ui.hinweis(SC.T.allBeute.replace("{name}", g.name), 2500); this.audio.spiele("aufsammeln", { seltenheit: g.seltenheit }); }
   };
   // Schild leer im All: zurück auf den Ausgangsplaneten, am Landepunkt auf den Boden (die Welt ist noch dessen Welt)
   S._notsprung = function(f){

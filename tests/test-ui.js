@@ -236,3 +236,8 @@ test("Blockauswahl: Zonen erreichen die Reiter und die untere Reihe", function()
   ui.zone(1); gleich(document.activeElement.getAttribute("data-aktion"), "fertig", "RB zur unteren Reihe");
   w.remove();
 });
+test("Einstellung automatisch anlegen: Standard an, alte Einstellungen gelten als an, Schalter in den Einstellungen", function(){
+  gleich(SC.Einstellungen.standard().autoAnlegen, true);
+  localStorage.setItem("sc-testalt:einstellungen", JSON.stringify({ sichtweite: 6 })); gleich(SC.Einstellungen.lade("testalt").autoAnlegen, true); localStorage.removeItem("sc-testalt:einstellungen");
+  var w = document.createElement("div"), ui = leereUI(w); ui.zeigeEinstellungen(function(){}); var c = w.querySelector("#e-auto"); wahr(c && c.checked, "Schalter an");
+});

@@ -42,3 +42,10 @@ test("Chunk-Verwaltung arbeitet nur bei Änderungen (Leistung: sonst ~3000 Wegwe
   gebaut = []; sp.pos = [100 + 16 * 2, 70, 100]; verwalte.call(r, sp); wahr(gebaut.length > 0, "nach Bewegung um zwei Chunks wird nachgeladen");
   gebaut = []; aufrufe = 0; r.sichtweite = 4; verwalte.call(r, sp); wahr(gebaut.length > 0, "größere Sichtweite lädt nach");
 });
+test("Aufgesammelte bessere Rüstung wird angelegt, mit Hinweis; abgeschaltet nicht", function(){
+  var s = survSpiel(), k = s.kampf, h = []; s.ui.hinweis = function(t){ h.push(t); }; s.einstellungen = SC.Einstellungen.standard();
+  var neu = { id: "n", art: "helm", seltenheit: 1, werte: { schutz: 9 }, name: "Blauer Helm" }; k.rucksack.plaetze[10] = { gegenstand: neu };
+  wahr(s._beuteAnlegen(neu)); gleich(k.ausruestung.helm.id, "n"); wahr(h[0].indexOf("Blauer Helm") >= 0 && h[0].indexOf("→ 9") >= 0, h[0]);
+  var neu2 = { id: "m", art: "helm", seltenheit: 2, werte: { schutz: 20 }, name: "Roter Helm" }; k.rucksack.plaetze[11] = { gegenstand: neu2 };
+  s.einstellungen.autoAnlegen = false; wahr(!s._beuteAnlegen(neu2)); gleich(k.ausruestung.helm.id, "n");
+});

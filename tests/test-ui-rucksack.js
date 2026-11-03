@@ -154,3 +154,18 @@ test("Verschieben: der Hinweis bleibt, wenn der Controller den Cursor bewegt", f
   rsPlatz(w,20).click(); w.querySelector('.rs-menue [data-aktion="verschieben"]').click();
   var p=rsPlatz(w,21); p.focus(); ui.beiFokus(p); wahr(w.querySelector(".rs-info").textContent.indexOf(SC.T.wohin)>=0);
 }); });
+test("Menü offen, dann Werkbank: B führt zu einem frischen Rucksack ohne altes Menü", function(){ rsAuf(function(w,ui,k){
+  ui.zeigeRucksack(k,{}); rsPlatz(w,12).click(); w.querySelector('[data-aktion="handwerk"]').click();
+  wahr(!w.querySelector(".rs-raster"),"Werkbank offen"); ui.menueAktion("zurueck");
+  wahr(w.querySelector(".rs-raster"),"zurück im Rucksack (Zurück der Werkbank)"); wahr(!w.querySelector(".rs-menue"),"kein altes Menü");
+  var f=rsPlatz(w,12); f.focus(); ui.kurzaktion(); gleich(k.ausruestung.helm && k.ausruestung.helm.id,"h","Y wirkt wieder (Haken des Rucksacks)");
+}); });
+test("Menü offen, dann besiegt: B führt zum Weiter", function(){ rsAuf(function(w,ui,k){
+  var weiter=false; ui.zeigeRucksack(k,{}); rsPlatz(w,12).click(); ui.zeigeBesiegt(function(){weiter=true;});
+  ui.menueAktion("zurueck"); wahr(weiter,"Weiter ausgelöst"); wahr(!w.querySelector(".rs-raster"),"kein Rucksack");
+}); });
+test("Tipp neben das Menü schließt es", function(){ rsAuf(function(w,ui,k){
+  ui.zeigeRucksack(k,{}); rsPlatz(w,12).click(); w.querySelector(".rs-werte").click();
+  wahr(!w.querySelector(".rs-menue"),"zu"); gleich(document.activeElement.getAttribute("data-i"),"12","Cursor auf dem Platz");
+  rsPlatz(w,12).click(); w.querySelector(".rs-menue h3").click(); wahr(w.querySelector(".rs-menue"),"Tipp ins Menü schließt nicht");
+}); });

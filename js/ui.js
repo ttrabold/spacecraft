@@ -11,7 +11,11 @@ SC.UI = function(wurzel, o){
   wurzel.innerHTML = '<div class="hud" hidden></div><div class="ebene" hidden></div><div class="hinweise"></div>';
   this.hudEl = wurzel.querySelector(".hud"); this.ebene = wurzel.querySelector(".ebene"); this.hinweisEl = wurzel.querySelector(".hinweise");
   this._aktionen = {};
-  this._klickH = function(ev){ var el = ev.target.closest && ev.target.closest("[data-aktion]"); if(el && wurzel.contains(el)) ui._klick(el); };
+  this._klickH = function(ev){
+    var el = ev.target.closest && ev.target.closest("[data-aktion]");
+    if(el && wurzel.contains(el)) ui._klick(el);
+    else if(!el && ui._beiKlickLeer && ui.ebene.contains(ev.target)) ui._beiKlickLeer(ev.target);   // Tipp auf eine Stelle ohne Aktion im offenen Fenster
+  };
   wurzel.addEventListener("click", this._klickH);
   // Esc in einem Panel mit eigenem Menü schließt zuerst dieses (vor der Tastatursteuerung des Spiels am window)
   wurzel.addEventListener("keydown", function(ev){ if((ev.key === "Escape" || ev.key === "Esc") && ui._beiZurueck && ui._beiZurueck()){ ev.stopPropagation(); ev.preventDefault(); } });
@@ -168,7 +172,7 @@ SC.UI = function(wurzel, o){
     if(k) k.click();
   };
 
-  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._beiZurueck = null; this._startZone = null; this.hudEl.classList.remove("seitenpanel"); };
+  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._beiZurueck = null; this._beiKlickLeer = null; this._startZone = null; this.hudEl.classList.remove("seitenpanel"); };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
   // Für die Controller-Hilfe: zusätzlich das Entwicklerpanel (in der Eingabe und in _fenster ein Menü)
   SC.UI.prototype.menueOffen = function(){ return this.offen() || !!(this.wurzel.querySelector(".entwickler:not([hidden])")); };

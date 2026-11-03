@@ -185,7 +185,11 @@
       }
       if(+i >= 9){ menue = { i: +i }; aktionen.leiste.call(ui); }
     };
-    ui._beiZurueck = function(){ if(!menue && verschieben === null) return false; menue = null; verschieben = null; zeichne(); return true; };
+    // Die Haken gelten nur, solange der Rucksack das gezeigte Panel ist (nach Werkbank oder Besiegt-Bildschirm nicht mehr)
+    function aktiv(){ return ui._aktionen === aktionen && !ui.ebene.hidden; }
+    ui._beiZurueck = function(){ if(!aktiv() || (!menue && verschieben === null)) return false; menue = null; verschieben = null; zeichne(); return true; };
+    // Tipp neben das Menü (auf eine Stelle ohne Aktion) schließt es; ein Tipp ins Menü selbst nicht
+    ui._beiKlickLeer = function(ziel){ if(!aktiv() || !menue || (ziel.closest && ziel.closest(".rs-menue"))) return; menue = null; zeichne(); };
     zeichne();
   };
 })();

@@ -66,7 +66,7 @@ Test-Helfer (bereits in `tests/helfer.js` und `tests/test-gamepad.js` vorhanden)
 - Test: keine (CSS ist auf der Testseite nicht prüfbar) – Prüfung im Browser
 
 **Interfaces:**
-- Produces: Klassen `.status`, `.fenster.seite`, `.fokus-cursor` (Rahmen um das fokussierte Element); Panels im Spiel ohne `backdrop-filter`, Unscharfe nur in stillstehenden Menüs (`@supports (backdrop-filter: blur(1px))`).
+- Produces: Klassen `.status` und `.fenster.seite`; der Fokus-Rahmen (gelb, 2 px, Abstand 3 px) ist eine Outline-Regel auf `:focus` und `:focus-visible` – es gibt keine `.fokus-cursor`-Klasse. Panels im Spiel ohne `backdrop-filter`, Unscharfe nur in stillstehenden Menüs (`@supports (backdrop-filter: blur(1px))`, Selektor `.ebene .fenster:not(.seite)`).
 
 - [ ] **Step 1: CSS schreiben**
 
@@ -78,13 +78,13 @@ Test-Helfer (bereits in `tests/helfer.js` und `tests/test-gamepad.js` vorhanden)
 .fenster.seite{position:absolute;right:0;top:0;bottom:0;width:min(420px,42%);max-width:none;border-radius:0;border-left:1px solid #3a3a5a;overflow-y:auto}
 .status{position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));width:min(300px,40%)}
 .status .balken{margin:4px 0}
-button:focus-visible,label.knopf:focus-visible,input:focus-visible{outline:2px solid #ffd95c;outline-offset:3px;border-radius:4px}
+button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-offset:3px}
 ```
 Die Unscharfe nur in stillstehenden Menüs:
 ```css
-@supports (backdrop-filter: blur(1px)){ .ebene:not(.seite) .fenster{backdrop-filter:blur(4px)} }
+@supports (backdrop-filter: blur(1px)){ .ebene .fenster:not(.seite){backdrop-filter:blur(4px)} }
 ```
-Der Fokus-Cursor bleibt gelb (2 px, Abstand 3 px), die bisherige `outline:3px`-Regel (Zeile 75) wird ersetzt; `input[type=range].regeln` (Zeile 76) fällt weg (Task 4). Controller-Hilfe nach oben rechts: `.controller-hilfe` (Zeile 163) von `top:50%` auf `top:calc(12px + env(safe-area-inset-top))` ohne `transform`. Modusanzeige und FPS ziehen in `.status` (Task 2).
+Der Fokus-Cursor bleibt gelb (2 px, Abstand 3 px) und steht auf `:focus` – nicht auf `:focus-visible`, weil der Controller-Fokus per `focus()` gesetzt wird und älteres Safari eine unbekannte Pseudo-Klasse im Selektor verwirft. Die bisherige `outline:3px`-Regel (Zeile 75) wird ersetzt; `input[type=range].regeln` (Zeile 76) fällt weg (Task 4). Die Auswahl `.rs-platz.gewaehlt` (Zeile 103) ist keine Outline mehr, sondern eine Flächenfüllung (`background:#2b2766`), damit der gelbe Rahmen nur der Cursor ist. Controller-Hilfe nach oben rechts: `.controller-hilfe` (Zeile 163) von `top:50%` auf `top:calc(12px + env(safe-area-inset-top))` ohne `transform`. Modusanzeige und FPS ziehen in `.status` (Task 2).
 
 - [ ] **Step 2: Im Browser prüfen**
 

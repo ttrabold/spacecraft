@@ -24,8 +24,9 @@ gehauen; zum Abbauen legt man die Waffe im Rucksack ab (leere Hand).“
 
 - Zum Abbauen muss die Waffe im Rucksack abgelegt werden (Platz tauschen) – mehr Hin-und-Her,
   aber einfache Regel.
-- Abbauen mit leerer Hand ist langsamer als bisher mit Schwert (bisher halbe Zeit):
-  das ist die eigentliche Balance-Änderung.
+- **Abbauen mit leerer Hand bleibt so schnell wie bisher mit ausgerüstetem Schwert**
+  (Entscheidung des Nutzers): die Zeiten der Tabelle werden in `SC.Abbau.zeit` pauschal
+  halbiert – die Hand ist jetzt die einzige Abbauart.
 
 ## Ansätze (im Chat entschieden)
 
@@ -40,22 +41,24 @@ gehauen; zum Abbauen legt man die Waffe im Rucksack ab (leere Hand).“
 - **Regel an einer Stelle:** Guard in `SC.Spiel#abbauFortschritt` (`js/survival.js`): mit
   `kampf.waffe()` sofort `false`. Der Schwert-Zweig in `_survival` ruft `abbauFortschritt`
   nicht mehr (nur noch Hieb/Schuss). Guard macht die Regel direkt testbar.
-- `SC.Abbau.zeit` (js/rucksack.js): Schwert-Bonus `t / 2` entfällt, Parameter `waffenArt`
-  wird nicht mehr benötigt; Kommentar „Laserschwert halbiert“ streichen.
+- `SC.Abbau.zeit` (js/rucksack.js): der Schwert-Bonus wird zum Hand-Faktor – die Tabelle bleibt,
+  `zeit(id)` liefert die halbe Zeit wie bisher für das Laserschwert; Kommentar
+  „Laserschwert halbiert“ wird zu „Hand halbiert (war das Schwert)“.
 - Riss-Overlay und Abbau-Sound: nichts zu ändern (`abbauAnteil` geht ohne laufenden Abbau
   automatisch auf 0; Sound läuft über das Block-Ereignis).
 - **Anleitung (js/texte.js)** an drei Stellen anpassen, z. B. Maus:
   „Linke Maustaste – angreifen (mit Waffe) oder Block abbauen (ohne Waffe); im Fahrzeug schießen“;
   sinngleich für Touch (⛏/⚔) und Controller (RT).
 - **Tests:** neu in `tests/test-spiel.js`: mit ausgerüsteter Waffe baut
-  `abbauFortschritt` nicht ab (Block bleibt, Riss-Anteil 0); ohne Waffe weiter grün
-  (`survSpiel` hat bereits Waffe = null). `tests/test-rucksack.js`: `Abbauzeiten`-Zeile
-  ohne Schwert-Bonus anpassen (`STEIN` → 1.4).
+  `abbauFortschritt` nicht ab (Block bleibt, Riss-Anteil 0); ohne Waffe weiter grün.
+  Anpassungen wegen des neuen Hand-Faktors: `tests/test-rucksack.js` (`Abbauzeiten`:
+  ERDE 0.2, STEIN 0.7) und `tests/test-spiel.js` („Abbauen dauert und füllt den Rucksack“
+  mit kürzeren Zeitschritten).
 - **Version:** 0.21.0 (Balance-Änderung → MINOR; 0.20.1 von Issue #17 ist noch ungepusht).
 - **Issue** auf GitHub: Titel „Laserschwert baut nie ab (nur mit leerer Hand)“, Label `kampf`,
   Meilenstein „Später“, ins Projektboard; Commit verweist mit `Fixes #N`.
 
-## Offen beim Nutzer
+## Entschieden
 
-- Ob das Ablegen im Rucksack für die Kinder als zu viel Hin-und-Her empfunden wird
-  (Akzeptanz der Folge oben) – sonst wäre Ansatz 1 die mildere Variante.
+- Hand-Abbauzeiten = bisherige Schwertgeschwindigkeit (Nutzer, 2026-11-03).
+- Ablegen im Rucksack als Folge der gewählten Regel akzeptiert.

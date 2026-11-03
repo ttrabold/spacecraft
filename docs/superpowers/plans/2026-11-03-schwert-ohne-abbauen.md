@@ -146,7 +146,7 @@ git commit -m "Anleitung: Angriffstaste mit Waffe greift nur, abbauen ohne Waffe
 - [x] **Step 1: Volle Testseite in Chrome**
 
 Run: `bash scripts/tests-wsl.sh`
-Expected: keine ❌, `Fertig: 624 ok, 0 fehlgeschlagen` (623 + 1 neuer Test aus Task 2).
+Expected: keine ❌, `Fertig: 626 ok, 0 fehlgeschlagen` (623 + 3 neue Tests aus Task 2 und dem Fix-Pass).
 
 - [x] **Step 2: ROADMAP-Eintrag** (Stand: Regel + Hand-Faktor entschieden und umgesetzt; GitHub-Status erst nach dem Push) und Commit:
 ```bash

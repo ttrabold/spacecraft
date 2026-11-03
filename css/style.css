@@ -51,8 +51,8 @@ input[type=range]{width:100%}
 .fenster.seite{position:absolute;right:0;top:0;bottom:0;width:min(420px,42%);max-width:none;border-radius:0;border-left:1px solid #3a3a5a;overflow-y:auto}
 .status{position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));width:min(300px,40%)}
 .status .balken{margin:4px 0}
-button:focus-visible,label.knopf:focus-visible,input:focus-visible{outline:2px solid #ffd95c;outline-offset:3px;border-radius:4px}
-@supports (backdrop-filter: blur(1px)){ .ebene:not(.seite) .fenster{backdrop-filter:blur(4px)} }
+button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-offset:3px}
+@supports (backdrop-filter: blur(1px)){ .ebene .fenster:not(.seite){backdrop-filter:blur(4px)} }
 
 /* HUD */
 .hud{position:absolute;inset:0;pointer-events:none}
@@ -104,7 +104,7 @@ button:focus-visible,label.knopf:focus-visible,input:focus-visible{outline:2px s
 .besser{color:#5fdc5f}.schlechter{color:#ff6f6f}.sonder{color:#ffd95c}
 .rs-raster{flex:2 1 320px;min-width:0;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
 .rs-platz{position:relative;min-height:0;aspect-ratio:1;padding:2px;justify-content:center}
-.rs-platz.leiste{background:#2b2766}.rs-platz.gewaehlt{outline:3px solid #ffd95c}
+.rs-platz.leiste{background:#2b2766}.rs-platz.gewaehlt{background:#2b2766}
 .besiegt{text-align:center}.besiegt h1{color:#ffd95c;font-size:44px;margin:4px 0 10px}
 .reiter{margin:0 0 10px}
 

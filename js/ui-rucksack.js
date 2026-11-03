@@ -36,11 +36,13 @@
     if(!kampf){ el.hidden = true; return; }
     el.hidden = false;
     if(!el.firstChild) el.innerHTML =
-      '<div class="kampf-stufe"></div><div class="balken balken-xp"><i></i></div>' +
+      '<div class="balken balken-xp"><i></i></div>' +
       '<div class="balken balken-lp"><i></i><span></span></div><div class="balken balken-schild"><i></i></div>' +
       '<div class="balken balken-fahrzeug" hidden><i></i><span></span></div><div class="balken balken-hitze"><i></i></div><div class="treffer-rand"></div><div class="treffer-pfeil">▲</div>';
     var w = kampf.werte, q = function(s){ return el.querySelector(s); };
-    q(".kampf-stufe").textContent = SC.T.stufe + " " + w.stufe;
+    // Die Stufe steht im Statusfeld oben links (ein Element, nicht zwei)
+    var st = this.hudEl.querySelector(".status-stufe");
+    if(st) st.textContent = SC.T.stufe + " " + w.stufe;
     q(".balken-xp i").style.width = (w.stufe >= SC.Werte.MAX_STUFE ? 100 : 100 * w.erfahrung / SC.Werte.erfahrungFuer(w.stufe)) + "%";
     q(".balken-lp i").style.width = 100 * w.lp / w.lpMax + "%"; q(".balken-lp span").textContent = Math.ceil(w.lp) + " / " + w.lpMax;
     q(".balken-schild").hidden = !w.schildMax; q(".balken-schild i").style.width = (w.schildMax ? 100 * w.schild / w.schildMax : 0) + "%";

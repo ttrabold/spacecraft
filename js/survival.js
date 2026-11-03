@@ -271,7 +271,10 @@
     // Fahrer eines bewaffneten Fahrzeugs im Survival: Zielkreis, rot mit Gegner darunter
     var imFz = this._imFahrzeug(), kreuz = null;
     if(survival && imFz && imFz.sitz === 0 && SC.Fahrzeug.def(imFz.f).geschuetz){ var bz = this._bordZiel(imFz.f); kreuz = bz && bz.gegner ? "fahrzeug-ziel" : "fahrzeug"; }
-    ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen, leiste: survival ? k.rucksack.plaetze.slice(0, 9) : null, all: !!this.all, fadenkreuz: kreuz });
+    var sache = survival && !imFz ? k.rucksack.plaetze[sp.auswahl] : null;
+    ui.hud(sp, { fps: this.render.fps, fpsAnzeigen: this.einstellungen.fpsAnzeigen,
+      leiste: survival ? k.rucksack.plaetze.slice(0, 9) : null, all: !!this.all, fadenkreuz: kreuz,
+      status: sache ? { name: sache.gegenstand ? sache.gegenstand.name : SC.BLOECKE[sache.block].name, anzahl: sache.anzahl || 1 } : { name: "", anzahl: 0 } });
     var fz = imFz && { panzerung: imFz.f.panzerung, max: SC.Fahrzeug.def(imFz.f).panzerung, name: SC.Fahrzeug.def(imFz.f).name, label: SC.Fahrzeug.def(imFz.f).unzerstoerbar ? SC.T.allSchild : SC.T.fahrzeugPanzerung };
     ui.kampfHud(survival ? k : null, [], fz);
   };

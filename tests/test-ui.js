@@ -75,3 +75,21 @@ test("Controller-Hilfe am Rand: zeigen, aktualisieren, ausblenden", function(){
   var h = w.querySelector(".controller-hilfe"); wahr(h && !h.hidden); gleich(h.querySelectorAll(".ch-zeile").length, 2); wahr(h.textContent.indexOf("Springen") >= 0); wahr(h.querySelector(".ch-taste.a"), "A farbig");
   ui.controllerHilfe(null); wahr(h.hidden, "weg");
 });
+test("Statusfeld oben links zeigt Modus und die gewählte Sache", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2(), s=k.spieler;
+  s.schnellleiste=[1,2,3,4,5,6,7,8,9];
+  ui.hud(s,{status:{name:"Blauer Helm",anzahl:1}});
+  var st=w.querySelector(".status"); wahr(st,"Statusfeld fehlt");
+  wahr(st.textContent.indexOf("Blauer Helm")>=0,"Name der gewählten Sache");
+  gleich(st.querySelector(".status-sache").textContent,"Blauer Helm");
+  wahr(st.contains(w.querySelector(".modus-anzeige")),"Modusanzeige im Statusfeld");
+    w.remove();
+});
+test("Statusfeld zeigt die Stufe und die Kampf-Balken", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2(), s=k.spieler;
+  s.schnellleiste=[1,2,3,4,5,6,7,8,9]; ui.hud(s,{}); ui.kampfHud(k,[]);
+    var st=w.querySelector(".status"); wahr(st.contains(w.querySelector(".kampf")),"Balken im Statusfeld");
+  gleich(st.querySelector(".status-stufe").textContent,"Stufe 1");
+  ui.statusSache(null); gleich(st.querySelector(".status-sache").textContent,"");
+  w.remove();
+});

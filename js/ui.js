@@ -360,7 +360,10 @@ SC.UI = function(wurzel, o){
     var h = this.hudEl, zus = spieler.modus === "zuschauer";
     h.hidden = false;
     if(!this._hudGebaut){
-      h.innerHTML = '<div class="fadenkreuz"></div><div class="modus-anzeige"></div><div class="fps"></div><div class="kampf" hidden></div><div class="leiste"></div>';
+      h.innerHTML = '<div class="fadenkreuz"></div>' +
+        '<div class="status panel"><div class="status-stufe"></div><div class="status-sache"></div>' +
+        '<div class="kampf" hidden></div><div class="modus-anzeige"></div><div class="fps"></div></div>' +
+        '<div class="leiste"></div>';
       this._hudGebaut = true; this._leisteSchl = "";
     }
     // im bewaffneten Fahrzeug: Zielkreis statt Kreuz, rot mit Gegner darunter
@@ -382,7 +385,15 @@ SC.UI = function(wurzel, o){
       h.querySelector(".modus-anzeige").textContent = (MODI[spieler.modus] || MODI.kreativ)() + (spieler.fliegt && !zus ? " · " + SC.T.fliegt : "");
       var ui = this; this._hudAktionen = { leiste: function(el, i){ spieler.auswahl = +i; ui._leisteSchl = ""; } };
     }
+    // Statusfeld: die gerade gewählte Sache (Rucksackplatz)
+    if(extra && extra.status) this.statusSache(extra.status.name, extra.status.anzahl);
     var f = h.querySelector(".fps"); f.hidden = !(extra && extra.fpsAnzeigen); if(!f.hidden) f.textContent = (extra.fps || 0) + " FPS";
+  };
+  // Textzeile im Statusfeld; null setzt sie leer
+  SC.UI.prototype.statusSache = function(name, anzahl){
+    var el = this.hudEl.querySelector(".status-sache"); if(!el) return;
+    var text = name ? name + (anzahl > 1 ? " × " + anzahl : "") : "";
+    if(el.textContent !== text) el.textContent = text;
   };
   SC.UI.prototype.verbergeHud = function(){ this.hudEl.hidden = true; };
 

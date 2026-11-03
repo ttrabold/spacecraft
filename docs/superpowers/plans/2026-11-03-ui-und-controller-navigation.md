@@ -678,7 +678,7 @@ git add js/ui.js js/ui-rucksack.js js/ui-werkbank.js tests/test-ui-rucksack.js t
 
 **Interfaces:**
 - `SC.controllerHilfe(k)` bekommt `k.menue`; für ein offenes Menü liefert sie die Menüzeilen (Steuerkreuz, LB/RB, A, Y, B, Start).
-- Neue `SC.T.steuerHilfe`-Schlüssel: `fokus` („Auswahl bewegen“), `zone` („Bereich wechseln“), `auswaehlen` („Auswählen“), `anlegen` („Anlegen“), `schliessen` („Schließen“).
+- Neue `SC.T.steuerHilfe`-Schlüssel: `fokus` („Auswahl bewegen“), `zone` („Bereich wechseln“), `auswaehlen` („Auswählen“), `anlegen` („Anlegen“), `zurueck` („Zurück“), `schliessen` („Schließen“).
 
 - [ ] **Step 1: Test schreiben (failend)**
 
@@ -687,23 +687,33 @@ test("Controller-Hilfe in Menüs zeigt die Zonentasten", function(){
   var l=SC.controllerHilfe({menue:true});
   ["✚","LB","RB","A","Y","B","☰"].forEach(function(t){ wahr(l.some(function(z){ return z.taste===t; }), t + " fehlt"); });
   wahr(l.some(function(z){ return z.text===SC.T.steuerHilfe.zone; }), "Zone");
+  wahr(l.some(function(z){ return z.taste==="B" && z.text===SC.T.steuerHilfe.zurueck; }), "B zeigt Zurück");
   var s=SC.controllerHilfe({survival:true}); wahr(!s.some(function(z){ return z.text===SC.T.steuerHilfe.zone; }), "ohne Menü keine Zone");
 });
+test("Das Entwicklerpanel gilt als offenes Menü", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w);
+  gleich(ui.menueOffen(), false);
+  var e=document.createElement("div"); e.className="entwickler"; w.appendChild(e);
+  gleich(ui.menueOffen(), true);
+  e.hidden = true; gleich(ui.menueOffen(), false);
+  w.remove();
+});
 ```
-Run: `bash scripts/tests-wsl.sh "Controller-Hilfe"` – erwartet ❌ (`k.menue` wird noch nicht behandelt).
+Run: `bash scripts/tests-wsl.sh "Controller-Hilfe"` und `bash scripts/tests-wsl.sh Entwicklerpanel` – erwartet ❌ (`k.menue` wird noch nicht behandelt, `menueOffen` fehlt).
 
 - [ ] **Step 2: Implementieren**
 
 `js/gamepad.js` in `SC.controllerHilfe` ganz oben:
 ```js
 if(k.menue){
-  z("✚", "✚", T.fokus); z("LB", "◀▶", T.zone); z("A", "⬤", T.auswaehlen); z("Y", "⬤", T.anlegen);
-  z("B", "⬤", T.menue); z("☰", "☰", T.schliessen);
+  z("✚", "✚", T.fokus); z("LB", "◀▶", T.zone); z("RB", "◀▶", T.zone); z("A", "⬤", T.auswaehlen); z("Y", "⬤", T.anlegen);
+  z("B", "⬤", T.zurueck); z("☰", "☰", T.schliessen);
   return l;
 }
 ```
 `js/ui.js` Zeile 137: `CH_KLASSE` um `"✚": "kreuz"` ergänzen, damit das Symbol wie die Steuerkreuz-Taste aussieht.
-`js/survival.js`: das Objekt für `SC.controllerHilfe` um `menue: ui.offen()` ergänzen.
+`js/ui.js`: `SC.UI.prototype.menueOffen = function(){ return this.offen() || !!(this.wurzel.querySelector(".entwickler:not([hidden])")); };` – das Entwicklerpanel gilt in der Eingabe (`js/spiel.js:46`) und in `_fenster()` (`js/ui.js:77`) als Menü, sonst zeigt die Hilfe dort Tasten der Welt, obwohl sie im Menü wirken.
+`js/survival.js`: das Objekt für `SC.controllerHilfe` um `menue: ui.menueOffen()` ergänzen.
 
 - [ ] **Step 3: Grüne Testseite und im Browser ansehen**
 

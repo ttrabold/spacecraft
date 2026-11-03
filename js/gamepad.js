@@ -66,10 +66,16 @@ SC.Gamepad = {};
 })();
 
 // Controller-Hilfe am Bildrand: Tasten mit Symbol und Text je nach Lage → [{taste, symbol, text}]
-// k: { all, zuschauerImAll, fahrzeug: {fahrer, geschuetz}, fahrzeugNah, survival, waffe, schwert }
+// k: { menue, all, zuschauerImAll, fahrzeug: {fahrer, geschuetz}, fahrzeugNah, survival, waffe, schwert }
 SC.controllerHilfe = function(k){
   var T = SC.T.steuerHilfe, l = [];
   function z(taste, symbol, text){ l.push({ taste: taste, symbol: symbol, text: text }); }
+  if(k.menue){
+    z("✚", "✚", T.fokus); z("LB", "◀▶", T.zone); z("RB", "◀▶", T.zone);
+    z("A", "⬤", T.auswaehlen); z("Y", "⬤", T.anlegen);
+    z("B", "⬤", T.menue); z("☰", "☰", T.schliessen);
+    return l;
+  }
   if(k.zuschauerImAll){ z("☰", "☰", T.menue); return l; }
   if(k.all){
     z("RT", "💥", T.laser); z("LB", "🎯", T.ziel); z("RB", "⚡", T.sprung);

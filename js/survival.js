@@ -265,7 +265,7 @@
     // Controller vorn: Hilfe am Rand statt Touch-Knöpfen
     if(ui.controllerHilfe){
       var vorn = ein && (ein.controllerVorn ? ein.controllerVorn() : ein.gamepadAktiv), imF = this._imFahrzeug();
-      ui.controllerHilfe(vorn ? SC.controllerHilfe({ all: !!this.all && !this.all.zuschauer, zuschauerImAll: !!(this.all && this.all.zuschauer), survival: survival, waffe: !!waffe, schwert: !!(wdef && wdef.typ === "schwert"), fahrzeugNah: !!fzNah && !imF,
+      ui.controllerHilfe(vorn ? SC.controllerHilfe({ menue: ui.offen(), all: !!this.all && !this.all.zuschauer, zuschauerImAll: !!(this.all && this.all.zuschauer), survival: survival, waffe: !!waffe, schwert: !!(wdef && wdef.typ === "schwert"), fahrzeugNah: !!fzNah && !imF,
         fahrzeug: imF && !this.all ? { fahrer: imF.sitz === 0, geschuetz: !!SC.Fahrzeug.def(imF.f).geschuetz } : null }) : null);
     }
     // Fahrer eines bewaffneten Fahrzeugs im Survival: Zielkreis, rot mit Gegner darunter

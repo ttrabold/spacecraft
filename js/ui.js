@@ -220,7 +220,7 @@ SC.UI = function(wurzel, o){
     Array.prototype.forEach.call(this.wurzel.querySelectorAll(".planet-marker"), function(m){ if(!da[m.getAttribute("data-id")]) m.hidden = true; });
   };
   // Controller-Hilfe am rechten Rand (liste aus SC.controllerHilfe, null blendet aus)
-  var CH_KLASSE = { A: "a", B: "b", X: "x", Y: "y", "▲": "kreuz", "▼": "kreuz", "☰": "rund" };
+  var CH_KLASSE = { A: "a", B: "b", X: "x", Y: "y", "✚": "kreuz", "▲": "kreuz", "▼": "kreuz", "☰": "rund" };
   SC.UI.prototype.controllerHilfe = function(liste){
     var h = this.wurzel.querySelector(".controller-hilfe");
     if(!liste){ if(h) h.hidden = true; this._chSchl = null; return; }

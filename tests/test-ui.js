@@ -178,3 +178,9 @@ test("menueAktion ruft die passende UI-Aktion", function(){
   gleich(gerufen.join(","),"ok,zurueck,schliesse,hoch,runter,links,rechts,zone1,zone-1,kurz");
   w.remove();
 });
+test("Controller-Hilfe in Menüs zeigt die Zonentasten", function(){
+  var l=SC.controllerHilfe({menue:true});
+  ["✚","LB","RB","A","Y","B","☰"].forEach(function(t){ wahr(l.some(function(z){ return z.taste===t; }), t + " fehlt"); });
+  wahr(l.some(function(z){ return z.text===SC.T.steuerHilfe.zone; }), "Zone");
+  var s=SC.controllerHilfe({survival:true}); wahr(!s.some(function(z){ return z.text===SC.T.steuerHilfe.zone; }), "ohne Menü keine Zone");
+});

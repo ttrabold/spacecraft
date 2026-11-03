@@ -104,7 +104,7 @@
         '<div class="rs-detail">' + detail() + "</div></div>" +
         '<div class="rs-raster">' + rs.plaetze.map(platzHtml).join("") + "</div></div>" +
         '<div class="reihe"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
-        aktionen);
+        aktionen, { seite: true, startZone: "raster" });
     }
     var aktionen = {
       platz: function(el, i){

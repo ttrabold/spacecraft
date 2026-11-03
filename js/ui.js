@@ -50,8 +50,10 @@ SC.UI = function(wurzel, o){
     if(!el){ if(alpha <= 0) return; el = this._schlaf = document.createElement("div"); el.className = "schlaf"; this.wurzel.appendChild(el); }
     el.style.opacity = alpha; el.textContent = text || ""; el.hidden = alpha <= 0;
   };
-  SC.UI.prototype._zeige = function(html, aktionen){
-    this.ebene.innerHTML = '<div class="fenster">' + html + "</div>"; this.ebene.hidden = false; this._aktionen = aktionen || {};
+  SC.UI.prototype._zeige = function(html, aktionen, opt){
+    this.ebene.innerHTML = '<div class="fenster panel' + (opt && opt.seite ? " seite" : "") + '">' + html + "</div>";
+    this.ebene.hidden = false; this._aktionen = aktionen || {};
+    this._startZone = (opt && opt.startZone) || null;
   };
   // Bedienung mit Gamepad: Fokus über die Knöpfe und Eingaben des offenen Fensters bewegen
   // Ein offener Dialog (Beitrittsanfrage) liegt über allem und bekommt den Fokus

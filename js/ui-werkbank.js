@@ -79,7 +79,7 @@
     function zeichne(){
       ui._zeige("<h2>" + esc(o.station === "hand" ? T.handwerkTitel : T.werkbankTitel) + "</h2>" +
         '<div class="wb"><div class="wb-liste">' + liste.map(karte).join("") + '</div><div class="wb-detail">' + detail() + "</div></div>" +
-        '<div class="reihe"><button data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen);
+        '<div class="reihe"><button data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen, { seite: true, startZone: "liste" });
     }
     var aktionen = {
       rezept: function(el, id){ gewaehlt = SC.Crafting.rezept(id); wahl = gewaehlt.art === "fahrzeug" ? fzStandard() : {}; zeichne(); },
@@ -116,7 +116,7 @@
       ui._zeige("<h2>" + esc(T.truheTitel) + "</h2>" +
         (plaetze ? '<div class="rs-raster">' + plaetze.map(function(s, i){ return platz(s, "tplatz", i); }).join("") + "</div>" : "<p>…</p>") +
         "<h3>" + esc(T.rucksackTitel) + '</h3><div class="rs-raster">' + rs.plaetze.map(function(s, i){ return platz(s, "rplatz", i); }).join("") + "</div>" +
-        '<p class="leer">' + esc(T.truheTipp) + '</p><div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen);
+        '<p class="leer">' + esc(T.truheTipp) + '</p><div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(T.fertig) + "</button></div>", aktionen, { seite: true, startZone: "raster" });
     }
     function antwort(r){
       if(r.plaetze === null){ ui.hinweis(T.truheWeg); plaetze = plaetze || []; } else plaetze = r.plaetze;

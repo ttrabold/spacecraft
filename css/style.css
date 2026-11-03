@@ -51,6 +51,10 @@ input[type=range]{width:100%}
 .fenster.seite{position:absolute;right:0;top:0;bottom:0;width:min(420px,42%);max-width:none;border-radius:0;border-left:1px solid #3a3a5a;overflow-y:auto}
 .status{position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));width:min(300px,40%)}
 .status .balken{margin:4px 0}
+.status-stufe{font-size:20px;letter-spacing:2px;color:#3ef0ff}
+.status-sache{font-size:15px;color:#eef2fa;min-height:20px}
+.status .modus-anzeige,.status .fps{position:static}
+.status .kampf{position:static;width:100%}
 button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-offset:3px}
 @supports (backdrop-filter: blur(1px)){ .ebene .fenster:not(.seite){backdrop-filter:blur(4px)} }
 
@@ -82,7 +86,6 @@ button:focus,label.knopf:focus,input:focus{outline:2px solid #ffd95c;outline-off
 
 /* Survival: Kampf-HUD */
 .kampf{position:absolute;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(500px,90%);display:flex;flex-direction:column;gap:4px;pointer-events:none}
-.kampf-stufe{position:absolute;left:0;top:-22px;font-weight:bold;color:#ffd95c;text-shadow:0 1px 2px #000}
 .balken{position:relative;height:12px;background:rgba(0,0,0,.55);border:2px solid #0e0b2e}
 .balken i{position:absolute;left:0;top:0;bottom:0;display:block}
 .balken span{position:absolute;inset:0;font-size:10px;line-height:12px;text-align:center;color:#fff;text-shadow:0 1px 1px #000}

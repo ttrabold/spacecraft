@@ -93,3 +93,15 @@ test("Statusfeld zeigt die Stufe und die Kampf-Balken", function(){
   ui.statusSache(null); gleich(st.querySelector(".status-sache").textContent,"");
   w.remove();
 });
+test("Rucksack und Werkbank sind Seitenpanels", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w), k=k2();
+  ui.zeigeRucksack(k,{}); wahr(w.querySelector(".fenster").classList.contains("seite"),"Rucksack");
+  ui.zeigeWerkbank(k,{station:"hand"}); wahr(w.querySelector(".fenster").classList.contains("seite"),"Werkbank");
+  var s=new SC.Slots(uiBackend());
+  return s.speichere(SC.Spielstand.neu({name:"Sternenhafen",seedText:"a",modus:"kreativ"})).then(function(){
+    return leereUI(w,s).zeigeWeltliste();
+  }).then(function(){
+    wahr(!w.querySelector(".fenster").classList.contains("seite"),"Weltliste bleibt zentrales Fenster");
+    w.remove();
+  });
+});

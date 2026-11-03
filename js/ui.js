@@ -210,6 +210,14 @@ SC.UI = function(wurzel, o){
       this.wurzel.appendChild(k);
     }
     k.hidden = false;
+    // Lage am Statusfeld oben links: darunter, wenn Platz ist, sonst rechts daneben (Handy quer); nur bei Änderung schreiben
+    var st = this.hudEl.hidden ? null : this.hudEl.querySelector(".status");
+    if(st){
+      var sr = st.getBoundingClientRect(), wr = this.wurzel.getBoundingClientRect(), kh = k.offsetHeight, darunter = sr.bottom + 12 + kh <= wr.bottom - 90;
+      var ort = darunter ? [sr.left - wr.left, sr.bottom - wr.top + 12] : [sr.right - wr.left + 12, sr.top - wr.top];
+      var lt = Math.round(ort[0]) + "px", tp = Math.round(ort[1]) + "px";
+      if(k.style.left !== lt) k.style.left = lt; if(k.style.top !== tp) k.style.top = tp;
+    }
     // Maßstab: alle Planeten passen hinein, das Schiff klebt notfalls am Rand
     var mx = 0, mz = 0, r = 1;
     info.planeten.forEach(function(p){ mx += p.x / info.planeten.length; mz += p.z / info.planeten.length; });

@@ -241,3 +241,21 @@ test("Einstellung automatisch anlegen: Standard an, alte Einstellungen gelten al
   localStorage.setItem("sc-testalt:einstellungen", JSON.stringify({ sichtweite: 6 })); gleich(SC.Einstellungen.lade("testalt").autoAnlegen, true); localStorage.removeItem("sc-testalt:einstellungen");
   var w = document.createElement("div"), ui = leereUI(w); ui.zeigeEinstellungen(function(){}); var c = w.querySelector("#e-auto"); wahr(c && c.checked, "Schalter an");
 });
+test("Im All liegt die Sternenkarte nicht über dem Statusfeld (iPad und Handy quer)", function(){
+  function pruefe(b, h){
+    var f = document.createElement("iframe"); f.style.cssText = "position:absolute;left:-3000px;top:0;width:" + b + "px;height:" + h + "px;border:0"; document.body.appendChild(f);
+    var d = f.contentDocument; d.open(); d.write('<link rel="stylesheet" href="../css/style.css"><div id="ui" style="position:fixed;inset:0"></div>'); d.close();
+    return new Promise(function(fertig){ f.onload = fertig; setTimeout(fertig, 1500); }).then(function(){
+      var ui = leereUI(d.getElementById("ui")), sp = new SC.Spieler({ id: "a", pos: [0, 0, 0], modus: "survival" });
+      var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), ds = SC.Spielstand.neu({ name: "K", seedText: "k", modus: "survival" }), k = new SC.Kampf(w, sp, ds, SC.zufall(9));
+      ui.hud(sp, { fps: 60, fpsAnzeigen: true, status: { name: "Einfaches Laserschwert", anzahl: 1 } }); ui.kampfHud(k, []);
+      ui.allKarte({ planeten: [{ id: "a", name: "A", x: 0, z: 0 }, { id: "b", name: "B", x: 100, z: 50 }], schiff: { x: 10, z: 10, blick: 0 }, marker: [] }, function(){});
+      var s = d.querySelector(".status").getBoundingClientRect(), m = d.querySelector(".sternenkarte").getBoundingClientRect();
+      document.body.removeChild(f);
+      var ueber = !(m.left >= s.right || m.right <= s.left || m.top >= s.bottom || m.bottom <= s.top);
+      wahr(!ueber, b + "×" + h + ": Karte " + [Math.round(m.left), Math.round(m.top), Math.round(m.right), Math.round(m.bottom)] + " / Status " + [Math.round(s.left), Math.round(s.top), Math.round(s.right), Math.round(s.bottom)]);
+      wahr(m.bottom <= h && m.right <= b, b + "×" + h + ": Karte im Bild");
+    });
+  }
+  return pruefe(1366, 938).then(function(){ return pruefe(844, 390); });
+});

@@ -422,7 +422,7 @@ SC.UI = function(wurzel, o){
       return '<button class="block" data-aktion="block" data-block="' + id + '" title="' + esc(SC.BLOECKE[id].name) + '"><img src="' + SC.UI.blockBild(id) + '" alt=""><span>' + esc(SC.BLOECKE[id].name) + "</span></button>";
     }).join("");
     // Kreativ: zweiter Reiter mit Ausrüstung aller Arten und Seltenheiten
-    var reiter = opt.ausruestung ? '<div class="reihe reiter"><button class="modus an" data-aktion="reiter" data-id="bloecke">' + esc(SC.T.bloeckeTitel) + '</button><button class="modus" data-aktion="reiter" data-id="ausruestung">' + esc(SC.T.ausruestungTitel) + "</button></div>" : "";
+    var reiter = opt.ausruestung ? '<div class="reihe reiter" data-zone="reiter"><button class="modus an" data-aktion="reiter" data-id="bloecke">' + esc(SC.T.bloeckeTitel) + '</button><button class="modus" data-aktion="reiter" data-id="ausruestung">' + esc(SC.T.ausruestungTitel) + "</button></div>" : "";
     var ausr = opt.ausruestung ? '<div class="raster ausr" hidden>' + Object.keys(SC.GEGENSTAENDE).map(function(a){
       return [0, 1, 2, 3, 4].map(function(s){ return '<button class="block" data-aktion="gegenstand" data-art="' + a + '" data-selt="' + s + '" style="border-color:' + SC.SELTENHEIT[s].farbe + '"><img src="' + SC.UI.gegenstandBild({ art: a, seltenheit: s }) + '" alt=""><span>' + esc(SC.T.gegenstand[a][0]) + "</span></button>"; }).join("");
     }).join("") + "</div>" : "";
@@ -434,7 +434,7 @@ SC.UI = function(wurzel, o){
       return '<button class="block" data-aktion="material" data-block="' + id + '" title="' + esc(SC.BLOECKE[id].name) + '"><img src="' + SC.UI.blockBild(id) + '" alt=""><span>' + esc(SC.BLOECKE[id].name) + "</span></button>";
     }).join("") + "</div>" : "";
     var fz = opt.beiFahrzeug ? '<div class="raster fz" hidden>' + Object.keys(SC.FAHRZEUGE).map(function(a){ return '<button class="block" data-aktion="fahrzeug" data-art="' + a + '"><span>' + esc(SC.FAHRZEUGE[a].name) + "</span></button>"; }).join("") + "</div>" : "";
-    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl" data-zone="raster">' + kacheln + "</div>" + ausr + mat + fz + '<div class="reihe"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl" data-zone="raster">' + kacheln + "</div>" + ausr + mat + fz + '<div class="reihe" data-zone="aktionen"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
       {
         block: function(el){ beiWahl(+el.getAttribute("data-block")); },
         fahrzeug: function(el){ opt.beiFahrzeug(el.getAttribute("data-art")); },

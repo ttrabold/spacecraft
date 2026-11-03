@@ -224,3 +224,15 @@ test("Bei einem Seitenpanel liegt das HUD über der Menüebene", function(){
   wahr(!w.querySelector(".hud").classList.contains("seitenpanel"),"Klasse bleibt nach dem Schließen");
   w.remove();
 });
+test("Blockauswahl: Zonen erreichen die Reiter und die untere Reihe", function(){
+  var w=document.createElement("div"); document.body.appendChild(w); var ui=ui2(w);
+  ui.zeigeBlockauswahl(function(){}, {ausruestung:true});
+  var f=w.querySelector('.raster.bl button'); f.focus();
+  wahr(w.querySelector('.reihe.reiter').getAttribute("data-zone")==="reiter","Reiter-Zone fehlt");
+  wahr(w.querySelector('.reihe:not(.reiter)').getAttribute("data-zone")==="aktionen","untere Reihe ohne Zone");
+  // Im Dokument stehen die Reiter vor dem Raster: von der Raster-Zone führt LB zu den Reitern, RB zur unteren Reihe
+  ui.zone(-1); gleich(document.activeElement.getAttribute("data-aktion"), "reiter", "LB von der Raster-Zone zu den Reitern");
+  ui.zone(1); gleich(document.activeElement.getAttribute("data-aktion"), "block", "RB zurück ins Raster");
+  ui.zone(1); gleich(document.activeElement.getAttribute("data-aktion"), "fertig", "RB zur unteren Reihe");
+  w.remove();
+});

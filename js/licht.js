@@ -9,9 +9,14 @@ SC.Licht = {};
 
   function ri(x, y, z){ return (y * R + z) * R + x; }
 
-  // Blöcke von Chunk und Rand in ein Feld kopieren
+  // Arbeitspuffer für die Region, einmal angelegt und für jeden Chunk wiederverwendet (sonst ~3 MB neuer Speicher je Chunk,
+  // deren Aufräumen das Nachladen auf iPad/iPhone stocken lässt). Das Ergebnis von SC.Licht.chunk gilt bis zum nächsten Aufruf.
+  var N = R * H * R, BL = null, HI, BK, QU, SCH;
+  function puffer(){ if(!BL){ BL = new Uint8Array(N); HI = new Uint8Array(N); BK = new Uint8Array(N); QU = new Uint8Array(N); SCH = new Int32Array(N * 2); } }
+
+  // Blöcke von Chunk und Rand in ein Feld kopieren (die 3×3 Chunks decken die ganze Region ab, jede Zelle wird geschrieben)
   function region(welt, cx, cz){
-    var bl = new Uint8Array(R * H * R);
+    var bl = BL;
     for(var i = -1; i <= 1; i++) for(var j = -1; j <= 1; j++){
       var c = welt.chunk(cx + i, cz + j), ox = M + i * 16, oz = M + j * 16;
       var xa = Math.max(0, -ox), xb = Math.min(16, R - ox), za = Math.max(0, -oz), zb = Math.min(16, R - oz);
@@ -42,8 +47,10 @@ SC.Licht = {};
   }
 
   SC.Licht.chunk = function(welt, cx, cz){
-    var bl = region(welt, cx, cz), n = R * H * R;
-    var himmel = new Uint8Array(n), block = new Uint8Array(n), quelle = new Uint8Array(n), schlange = new Int32Array(n * 2);
+    puffer();
+    var bl = region(welt, cx, cz), n = N;
+    var himmel = HI, block = BK, quelle = QU, schlange = SCH;
+    himmel.fill(0); block.fill(0); quelle.fill(0);
     // Himmel: von oben bis zum ersten undurchsichtigen Block volles Licht
     var l = 0;
     for(var z = 0; z < R; z++) for(var x = 0; x < R; x++){

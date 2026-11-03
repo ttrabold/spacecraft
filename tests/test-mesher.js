@@ -11,3 +11,12 @@ test("Ganz verdeckte Pflanze entfällt (#17)", function(){ var w=leereWelt(); w.
 test("Pflanze ist durchgehbar und lässt Licht durch (#17)", function(){ wahr(!SC.BLOECKE[SC.B.LEUCHTPILZ].fest, "durchgehbar"); gleich(SC.Licht.opak[SC.B.LEUCHTPILZ], 0); wahr(SC.Abbau.zeit(SC.B.LEUCHTPILZ) < 3, "weiter abbaubar"); });
 test("Geometrie hat passende Längen", function(){ var w=leereWelt(); w.setzeBlock(5,64,5,SC.B.STEIN,"system"); var g=SC.Mesher.chunk(w,0,0,SC.Licht.chunk(w,0,0)).fest,n=g.positionen.length/3; gleich(g.uv.length,n*2); gleich(g.licht.length,n*2); gleich(g.farbe.length,n*3); });
 test("Chunk-Mesh schnell genug", function(){ var w=new SC.Welt(new SC.Planet({id:"start",seed:77})); for(var i=2;i<=4;i++)for(var j=2;j<=4;j++) w.chunk(i,j); var t=performance.now(); var l=SC.Licht.chunk(w,3,3); SC.Mesher.chunk(w,3,3,l); var ms=performance.now()-t; wahr(ms<40,"zu langsam: "+ms.toFixed(1)+" ms"); });
+test("Licht rechnet in wiederverwendeten Puffern und bleibt gleich (Leistung: sonst ~3 MB Speicher je Chunk)", function(){
+  var w = new SC.Welt(new SC.Planet({ id: "start", seed: 77 })); w.setzeBlock(5, 64, 5, SC.B.LEUCHT_PINK, "system");
+  var a = SC.Licht.chunk(w, 0, 0), ah = Array.prototype.slice.call(a.himmel), ab = Array.prototype.slice.call(a.block), am = SC.Mesher.chunk(w, 0, 0, a).fest.positionen.length;
+  var b = SC.Licht.chunk(w, 3, 2);
+  wahr(b._region.himmel === a._region.himmel && b._region.bloecke === a._region.bloecke, "dieselben Arbeitspuffer");
+  var c = SC.Licht.chunk(w, 0, 0);
+  gleich(Array.prototype.slice.call(c.himmel).join(), ah.join(), "Himmelslicht gleich"); gleich(Array.prototype.slice.call(c.block).join(), ab.join(), "Blocklicht gleich");
+  gleich(SC.Mesher.chunk(w, 0, 0, c).fest.positionen.length, am, "Geometrie gleich");
+});

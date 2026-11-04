@@ -50,7 +50,7 @@ SC.KI = {};
   function schuss(g, def, ziel, d, zf, schw){
     var w = def.waffe, gen = SC.SCHWIERIGKEIT[schw] ? SC.SCHWIERIGKEIT[schw].genauigkeit : 0.6;
     var str = w.streuung * (1.6 - gen), auge = [g.pos[0], g.pos[1] + g.hoehe * 0.75, g.pos[2]];
-    var dz = [d[0], d[1] + 1.1 - g.hoehe * 0.75, d[2]];
+    var dz = [d[0], d[1] + (ziel.mitte !== undefined ? ziel.mitte : 1.1) - g.hoehe * 0.75, d[2]];
     if(w.art === "spucke" || w.art === "glut"){ var hd = Math.hypot(dz[0], dz[2]); dz[1] += hd * hd * 6 / (w.tempo * w.tempo); }   // im Bogen zielen
     var l = Math.hypot(dz[0], dz[1], dz[2]) || 1, r = [dz[0] / l + (zf() - 0.5) * str, dz[1] / l + (zf() - 0.5) * str, dz[2] / l + (zf() - 0.5) * str];
     var rl = Math.hypot(r[0], r[1], r[2]);
@@ -67,7 +67,7 @@ SC.KI = {};
     if(g.sturmBis > 0) g.sturmBis -= dt;
     var heim = ring(welt, g.pos, g.heim || g.pos), heimAbst = Math.hypot(heim[0], heim[2]);
     var d = ziel ? ring(welt, g.pos, ziel.pos) : null, abst = d ? Math.hypot(d[0], d[2]) : Infinity;
-    var sieht = !!(ziel && ziel.sichtbar && abst <= def.sicht && SC.KI.sieht(welt, [g.pos[0], g.pos[1] + g.hoehe * 0.8, g.pos[2]], [ziel.pos[0], ziel.pos[1] + 1.5, ziel.pos[2]], def.sicht));
+    var sieht = !!(ziel && ziel.sichtbar && abst <= def.sicht && SC.KI.sieht(welt, [g.pos[0], g.pos[1] + g.hoehe * 0.8, g.pos[2]], [ziel.pos[0], ziel.pos[1] + (ziel.mitte !== undefined ? ziel.mitte : 1.5), ziel.pos[2]], def.sicht));
     if(sieht){ g.bemerkt = true; g.vergessen = 6; }
     else if(g.bemerkt && (g.vergessen -= dt) <= 0) g.bemerkt = false;
     if(!ziel) g.bemerkt = false;
@@ -170,7 +170,7 @@ SC.KI = {};
       if(g.besitzer && ctx.besitzer){ SC.KI.tierZuBesitzer(welt, g, ctx.besitzer.pos, g.nr); return akt; }
       aufgeben(g); if(g.entfernen) return akt;
     }
-    g.fliegt = false; g.zeit = (g.zeit || 0) + dt;
+    g.fliegt = false; g.zeit = (g.zeit || 0) + dt; g.cd = Math.max(0, (g.cd || 0) - dt);
     var vx = 0, vz = 0;
     if(!g.haeltStill && g.wild){
       var sd = 3.5, weg = null;
@@ -189,7 +189,27 @@ SC.KI = {};
       // Begleiter: dem Besitzer folgen (schneller, wenn er weit weg ist); zu weit, in Lava/Wasser oder feststeckend → neben den Besitzer
       var o = ring(welt, g.pos, ctx.besitzer.pos), dist = Math.hypot(o[0], o[2]);
       if(dist > 24 || Math.abs(o[1]) > 12 || tierGefahr(welt, g.pos[0], g.pos[1], g.pos[2])){ SC.KI.tierZuBesitzer(welt, g, ctx.besitzer.pos, g.nr); return akt; }
-      if(dist > 3.5){
+      var zg = ctx.ziel;
+      if(zg && dist <= 18){
+        // Kampf (ctx.ziel: ein Gegner in der Nähe des Besitzers, ctx.werte.schaden): Stil je Art
+        var dz = ring(welt, g.pos, zg.pos), dl = Math.hypot(dz[0], dz[2]), rz = richtungZu(dz), sz = [-rz[1], rz[0]], st = def.stil, tz = def.tempo;
+        g.blick = Math.atan2(-dz[0], -dz[2]);
+        if(!g.seiteZeit || g.zeit > g.seiteZeit){ g.seite = zf() < 0.5 ? -1 : 1; g.seiteZeit = g.zeit + 1.5 + zf() * 1.5; }
+        if(st === "nah" || st === "robust"){
+          if(dl > 1.1){ vx = rz[0] * tz * 1.1; vz = rz[1] * tz * 1.1; if(g.aufBoden && zf() < 0.03) g.geschw[1] = 6; }
+          else if(g.cd <= 0){ akt.push({ art: "hieb", ziel: zg.id, schaden: ctx.werte.schaden }); g.cd = st === "robust" ? 1.4 : 1.0; }
+        } else if(st === "ablenker"){
+          var ma = dl > 3.2 ? 1 : dl < 1.8 ? -1 : 0; vx = (rz[0] * ma + sz[0] * 0.9 * g.seite) * tz; vz = (rz[1] * ma + sz[1] * 0.9 * g.seite) * tz;
+          if(dl < 2.4 && g.cd <= 0){ akt.push({ art: "hieb", ziel: zg.id, schaden: ctx.werte.schaden * 0.8 }); g.cd = 1.6; }
+        } else {
+          var mf = dl < 4 ? -1 : dl > 8 ? 1 : 0; vx = (rz[0] * mf + sz[0] * 0.3 * g.seite) * tz * 0.8; vz = (rz[1] * mf + sz[1] * 0.3 * g.seite) * tz * 0.8;
+          if(dl <= 11 && g.cd <= 0){
+            var von = [g.pos[0], g.pos[1] + g.hoehe * 0.7, g.pos[2]], dy = zg.pos[1] + zg.hoehe * 0.5 - von[1], ln = Math.hypot(dz[0], dy, dz[2]) || 1;
+            akt.push({ art: "schuss", pos: von, richtung: [dz[0] / ln, dy / ln, dz[2] / ln], tempo: 26, schaden: ctx.werte.schaden, farbe: def.schussFarbe || "#ffe36b" }); g.cd = 1.3;
+          }
+        }
+        if((vx || vz) && tierGefahr(welt, g.pos[0] + vx * 0.2, g.pos[1], g.pos[2] + vz * 0.2)){ vx = 0; vz = 0; }
+      } else if(dist > 3.5){
         var fo = richtungZu(o), tb = def.tempo * (dist > 9 ? 1.6 : dist > 6 ? 1.2 : 0.9); vx = fo[0] * tb; vz = fo[1] * tb; g.blick = Math.atan2(-vx, -vz);
         if(tierGefahr(welt, g.pos[0] + fo[0] * 0.7, g.pos[1], g.pos[2] + fo[1] * 0.7)){ vx = 0; vz = 0; }
       } else g.blick = Math.atan2(-o[0], -o[2]);

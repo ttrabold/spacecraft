@@ -200,9 +200,9 @@ test("Eingaben beim Fangen: Bewegung gesperrt, Klick, Leertaste und A zählen al
   s._fang = null; var e3 = { vor: true }; s._fangEingabe(e3); gleich(e3.vor, true, "ohne Fang bleibt alles");
 });
 // Begleiter: rauslassen, folgen, Zustände (Aufgabe 7)
-function boden(w){ for(var x = -10; x < 40; x++) for(var z = -10; z < 40; z++){ w.setzeBlock(x, 89, z, SC.B.STEIN, "system"); for(var y = 90; y < 93; y++) w.setzeBlock(x, y, z, SC.B.LUFT, "system"); } }
+function tierBoden(w){ for(var x = -10; x < 40; x++) for(var z = -10; z < 40; z++){ w.setzeBlock(x, 89, z, SC.B.STEIN, "system"); for(var y = 90; y < 93; y++) w.setzeBlock(x, y, z, SC.B.LUFT, "system"); } }
 function tierSpiel(){
-  var s = survSpiel(); boden(s.welt); s.spieler.pos = [4.5, 90, 4.5]; s.render = { wesen: { funken: function(){}, zahl: function(){}, risse: function(){} } }; s._zf = SC.zufall(1); s.tageszeit = 0.5; s.eingabe = {}; s.raum = null; s.all = null;
+  var s = survSpiel(); tierBoden(s.welt); s.spieler.pos = [4.5, 90, 4.5]; s.render = { wesen: { funken: function(){}, zahl: function(){}, risse: function(){} } }; s._zf = SC.zufall(1); s.tageszeit = 0.5; s.eingabe = {}; s.raum = null; s.all = null;
   s.auftauchen = { tiere: function(){}, schritt: function(){}, zerfallen: [] }; s._imFzOrig = s._imFahrzeug; s._fz = null; s._imFahrzeug = function(){ return s._fz; }; s._hinweise = []; s.ui.hinweis = function(t){ s._hinweise.push(t); };
   s.begleiter = function(){ var l = []; s.welt.wesen.forEach(function(e){ if(e.art === "tier" && e.besitzer) l.push(e); }); return l; };
   s.laufe = function(n, dt){ for(var i = 0; i < n; i++) s._tiere(dt || 0.1, false); };
@@ -244,4 +244,44 @@ test("Name, Stufe und Leben im Wesen folgen dem Käfigtier, Leben zurück in den
 });
 test("Zeit vergeht für Stärkung der Käfigtiere, nicht bei offenem Menü", function(){
   var s = tierSpiel(), t = tierDrin(s, "hund"); SC.Tier.staerken(t, "streicheln"); s._tiere(10, true); gleich(t.staerke.rest, 120, "Menü offen: steht"); s._tiere(10, false); gleich(Math.round(t.staerke.rest), 110);
+});
+// Begleiter kämpfen, Gegner greifen sie an, K.o., Erfahrung (Aufgabe 8)
+function gegnerNah(s, pos, lp){ var d = SC.GEGNER.krabbler; return SC.Wesen.neu(s.welt, "gegner", { gegnerArt: "krabbler", stufe: 1, pos: pos, heim: pos.slice(), lp: lp || 500, lpMax: lp || 500, breite: d.breite, hoehe: d.hoehe, bemerkt: true, vergessen: 6 }); }
+function kampfSpiel(art){
+  var s = tierSpiel(); s.auftauchen.gegnerBesiegt = function(){}; s.audio = { spiele: function(){} };
+  var t = tierDrin(s, art); s._tierRaus(t.id); s.laufe(1); return { s: s, t: t, e: s.begleiter()[0] };
+}
+test("Begleiter (Nahkampf) greift einen bemerkten Gegner in der Nähe des Besitzers an", function(){
+  var k = kampfSpiel("hund"), g = gegnerNah(k.s, [4.5, 90, -1.5]); k.s.laufe(60);
+  wahr(g.lp < 500, "Gegner hat Schaden: " + g.lp);
+});
+test("Begleiter ignoriert Gegner, die den Besitzer nicht bemerkt haben, und ferne", function(){
+  var k = kampfSpiel("hund"), g = gegnerNah(k.s, [4.5, 90, -1.5]); g.bemerkt = false; k.s.laufe(40); gleich(g.lp, 500, "nicht bemerkt");
+  g.bemerkt = true; g.pos = [4.5, 90, -30.5]; k.s.laufe(40); gleich(g.lp, 500, "zu weit vom Besitzer");
+});
+test("Fernkämpfer schießt, der Schuss trifft nur Gegner und nie Mitspieler", function(){
+  var k = kampfSpiel("frosch"), g = gegnerNah(k.s, [4.5, 90, -4.5]); var n = 0;
+  for(var i = 0; i < 60; i++){ k.s.laufe(1); k.s.welt.wesen.forEach(function(e){ if(e.art === "geschoss" && e.tier){ n = Math.max(n, 1); wahr(e.team === "spieler", "Team"); } }); }
+  wahr(n > 0, "Schuss gesehen");
+  var sg = { id: 9, pos: [4.5, 90, 0.5], richtung: [0, 0, -1], tempo: 30, team: "spieler", tier: true, lebensdauer: 5, schaden: 5 }, r = SC.Geschoss.schritt(k.s.welt, sg, 0.2, [{ id: "mitspieler", pos: [4.5, 90, -1.5] }]);
+  wahr(!r || r.treffer !== "spieler", "Tierschuss trifft keinen Mitspieler");
+});
+test("Begleiter besiegt den Gegner: Besitzer und Tier bekommen Erfahrung", function(){
+  var k = kampfSpiel("hund"), g = gegnerNah(k.s, [4.5, 90, -1.5], 1); k.s.laufe(40);
+  wahr(!k.s.welt.wesen.has(g.id), "Gegner besiegt"); wahr(k.t.erfahrung > 0 || k.t.stufe > 1, "Tier hat Erfahrung: " + k.t.erfahrung + "/" + k.t.stufe); wahr(k.s.kampf.werte.erfahrung > 0 || k.s.kampf.werte.stufe > 1, "Besitzer auch");
+});
+test("Gegner nehmen den Begleiter als Ziel, wenn er näher ist; Ablenker bevorzugt", function(){
+  var k = kampfSpiel("hund"), s = k.s, g = gegnerNah(s, [4.5, 90, -8.5]); k.e.pos = [4.5, 90, -6.5];
+  var basis = { pos: s.spieler.pos, sichtbar: true }, z = s._tierZielFuer(g, basis); wahr(z && z.tier === k.e && z.sichtbar, "Hund näher");
+  k.e.pos = [4.5, 90, 3.5]; gleich(s._tierZielFuer(g, basis), null, "Spieler näher");
+  var h = kampfSpiel("hase"), g2 = gegnerNah(h.s, [4.5, 90, 4.5 + 7]); h.e.pos = [4.5, 90, 4.5 + 6]; // Spieler 7 weg (näher als 8), Hase 1 weg: Hase näher ohnehin
+  wahr(h.s._tierZielFuer(g2, { pos: h.s.spieler.pos, sichtbar: true }), "Hase wird gewählt");
+});
+test("Gegnerhieb und Gegnerschuss treffen den Begleiter; bei 0 Leben K.o. im Käfig", function(){
+  var k = kampfSpiel("hund"), s = k.s, g = gegnerNah(s, [4.5, 90, -1.5]); k.e.pos = [4.5, 90, -0.5];
+  var lp0 = k.e.lp; s._tierGetroffen(k.e, g, { art: "hieb", reichweite: 1.5, schaden: 5 }); wahr(k.e.lp < lp0, "Hieb trifft");
+  var gs = { id: 99, pos: [4.5, 90.3, -6.5], richtung: [0, 0, 1], tempo: 30, team: "gegner", lebensdauer: 5, schaden: 5 }, r = SC.Geschoss.schritt(s.welt, gs, 0.3, null); wahr(r && r.treffer === "tier" && r.id === k.e.id, "Schuss trifft das Tier: " + JSON.stringify(r));
+  s._tierTreffer(k.e, 1e6); gleich(s.begleiter().length, 0, "Wesen weg"); gleich(k.t.koRest, 60); gleich(k.t.draussen, false); gleich(k.t.lp, 0); gleich(s.kampf.kaefig.rauslassen(k.t.id), "ko");
+  wahr(s._hinweise.some(function(h){ return h.indexOf(k.t.name) >= 0; }), "Hinweis mit Namen");
+  SC.Tier.zeit(k.t, 60); gleich(s.kampf.kaefig.rauslassen(k.t.id), "ok", "nach 1 Minute wieder fit");
 });

@@ -105,6 +105,7 @@
     if(this.render){ this.render.wesen.funken(g.pos, def.boss ? "#ffad47" : "#ffd95c", def.boss ? 60 : 24, this.spieler.pos); if(!gg || r.nah) this.render.wesen.zahl([g.pos[0], g.pos[1] + g.hoehe + 0.6, g.pos[2]], "+" + r.erfahrung + " EP", "#ffd95c", this.spieler.pos); }
     this.audio.spiele("zerfall");
     if(!gg) this.beuteAuswerfen(g.pos, r.beute.map(SC.Beute.alsSache));
+    if(r) this._tiereErfahrung((r && r.erfahrung) || 0, g.pos);
     if(r.aufstiege){ this.audio.spiele("aufstieg"); this.ui.hinweis(SC.T.stufeAuf + " " + SC.T.stufe + " " + k.werte.stufe, 3000); }
     return r;
   };
@@ -196,9 +197,11 @@
       if(g.art === "gegner"){
         if(!gast){
           if(g.entfernen){ s.auftauchen._entferne(g, false); s.auftauchen.gegnerBesiegt(g, s.daten.spielzeit || 0); return; }
-          SC.KI.schritt(w, g, ziele ? SC.Raum.zielFuer(w, g, ziele) : zielSp, dt, zf, schw).forEach(function(akt){
+          var zl0 = ziele ? SC.Raum.zielFuer(w, g, ziele) : zielSp, zl = s._tierZielFuer(g, zl0) || zl0;   // Begleiter (Haustiere) können das Ziel sein
+          SC.KI.schritt(w, g, zl, dt, zf, schw).forEach(function(akt){
             if(akt.art === "ruf"){ var rd = SC.GEGNER[akt.gegnerArt], rs = Math.max(1, g.stufe - 2), re = SC.Wesen.neu(w, "gegner", { gegnerArt: akt.gegnerArt, stufe: rs, pos: akt.pos, heim: akt.pos.slice(), lp: rd.lp(rs), lpMax: rd.lp(rs), breite: rd.breite, hoehe: rd.hoehe, ort: g.ort, gerufenVon: g.id, bemerkt: true }); return; }
             if(akt.art === "schuss"){ SC.Wesen.neu(w, "geschoss", { pos: akt.pos, richtung: akt.richtung, tempo: akt.tempo, schaden: akt.schaden, team: "gegner", art: akt.geschossArt, lebensdauer: 3, farbe: akt.farbe }); a.spiele(akt.geschossArt === "spucke" ? "spucker" : "blaster"); }
+            else if(zl && zl.tier) s._tierGetroffen(zl.tier, g, akt);
             else { var r = gastgeber ? gastgeber.gegnerAktion(g, akt, ziele) : k.gegnerAktion(g, akt); if(r && r.schaden > 0) a.spiele("getroffen"); else if(r && r.abgeprallt) a.spiele("blocken"); }
           });
         }
@@ -217,6 +220,8 @@
         } else if(r2.treffer === "spieler"){
           var ts = gastgeber && g.team === "spieler" ? gastgeber.pvpTrifft(r2.id, g.schaden, g.geschw || g.richtung, g.schuetze, g) : gastgeber ? gastgeber.geschossTrifft(g, r2.id) : k.trifftSpieler(g.schaden, g.geschw || g.richtung, g);
           if(ts) a.spiele(ts.abgeprallt ? "abprall" : ts.schaden > 0 ? "getroffen" : "blocken");
+        } else if(r2.treffer === "tier"){
+          var tz2 = w.wesen.get(r2.id); if(tz2) s._tierTreffer(tz2, g.schaden * (SC.SCHWIERIGKEIT[schw] || SC.SCHWIERIGKEIT.normal).schaden);
         } else if(r2.treffer === "block" && g.abprall && !g.abgeprallt){
           // Abprall-Schüsse prallen einmal von der Wand ab
           var gv = g.geschw, m = Math.abs(gv[0]) > Math.abs(gv[1]) ? (Math.abs(gv[0]) > Math.abs(gv[2]) ? 0 : 2) : (Math.abs(gv[1]) > Math.abs(gv[2]) ? 1 : 2);

@@ -64,7 +64,7 @@
   S._tierWesen = function(t, pos, nr){
     var d = SC.TIERE[t.art], wt = SC.Tier.werte(t);
     return SC.Wesen.neu(this.welt, "tier", { tierArt: t.art, tierId: t.id, besitzer: this.daten.spieler.figurId, nr: nr, name: t.name, stufe: t.stufe, lp: Math.min(t.lp, wt.lpMax), lpMax: wt.lpMax,
-      halsband: "#ffd95c", pos: pos, heim: pos.slice(), breite: d.breite, hoehe: d.hoehe });
+      schaden: wt.schaden, halsband: "#ffd95c", pos: pos, heim: pos.slice(), breite: d.breite, hoehe: d.hoehe });
   };
   S._tiereAbgleichen = function(){
     var w = this.welt, sp = this.spieler, k = this.kampf, s = this, fid = this.daten.spieler.figurId, n = 0;
@@ -75,11 +75,52 @@
       var e = da[t.id], wt = SC.Tier.werte(t);
       if(!e){ e = s._tierWesen(t, sp.pos.slice(), n); if(e) SC.KI.tierZuBesitzer(w, e, sp.pos, n); }
       else {
-        delete da[t.id]; t.lp = Math.max(0, Math.min(e.lp, wt.lpMax)); e.lp = t.lp; e.lpMax = wt.lpMax; e.name = t.name; e.stufe = t.stufe;
+        delete da[t.id]; t.lp = Math.max(0, Math.min(e.lp, wt.lpMax)); e.lp = t.lp; e.lpMax = wt.lpMax; e.schaden = wt.schaden; e.name = t.name; e.stufe = t.stufe;
       }
       n++;
     });
     for(var id in da){ var e2 = da[id], t2 = k.kaefig.tier(id); if(t2 && !e2.ko) t2.lp = Math.max(0, Math.min(e2.lp, SC.Tier.werte(t2).lpMax)); SC.Wesen.entferne(w, e2.id); }
+  };
+  // --- Kampf: Ziel für Gegner, Treffer auf Begleiter, K.o., Erfahrung ---
+  // Nimmt ein Gegner statt des Spielers lieber einen Begleiter ins Ziel? (näher als 80 % des Abstands zum Spieler; Ablenker (Hase, Affe) auch noch bis 4 Blöcke weiter) → Ziel oder null
+  S._tierZielFuer = function(g, basis){
+    var w = this.welt, best = null, bd = Infinity, db = basis ? Math.hypot(ring(w, g.pos, basis.pos)[0], ring(w, g.pos, basis.pos)[2]) : Infinity;
+    w.wesen.forEach(function(e){
+      if(e.art !== "tier" || !e.besitzer) return;
+      var d = ring(w, g.pos, e.pos), l = Math.hypot(d[0], d[2]);
+      if(l > 14 || Math.abs(d[1]) > 3) return;
+      var abl = SC.TIERE[e.tierArt].stil === "ablenker";
+      if((l < db * 0.8 || (abl && l < 8 && l <= db + 4)) && l < bd){ bd = l; best = e; }
+    });
+    return best ? { pos: best.pos, sichtbar: true, tier: best, mitte: best.hoehe * 0.5 } : null;
+  };
+  // Hieb oder Stampfen eines Gegners gegen einen Begleiter
+  S._tierGetroffen = function(e, g, akt){
+    var t = SC.Kampf.aktionTrifft(this.welt, g, akt, e.pos, true);
+    if(t) this._tierTreffer(e, t.schaden * (SC.SCHWIERIGKEIT[this.daten.schwierigkeit] || SC.SCHWIERIGKEIT.normal).schaden);
+  };
+  S._tierTreffer = function(e, schaden){
+    if(!(schaden > 0) || e.ko) return;
+    e.lp -= schaden; this.audio.spiele("treffer"); this._zahl({ pos: e.pos, hoehe: e.hoehe }, schaden);
+    if(e.lp <= 0) this._tierKo(e);
+  };
+  // K.o.: freundlich verpuffen, zurück in den Käfig, nach 1 Minute wieder fit (Erfahrung bleibt)
+  S._tierKo = function(e){
+    var t = this.kampf.kaefig.tier(e.tierId); e.ko = true;
+    if(t){ t.lp = 0; t.koRest = 60; t.draussen = false; t.staerke = null; this.ui.hinweis(SC.T.tierKo.replace("{name}", t.name), 3000); }
+    this.render.wesen.funken(e.pos, "#ffe36b", 18, this.spieler.pos); this.audio.spiele("zerfall");
+    SC.Wesen.entferne(this.welt, e.id);
+  };
+  // Erfahrung für den Besitzer besiegter Gegner: Begleiter in 30 Blöcken Umkreis bekommen dieselbe Menge (Stufe höchstens die des Besitzers)
+  S._tiereErfahrung = function(xp, pos){
+    if(!(xp > 0) || !this.kampf) return;
+    var w = this.welt, k = this.kampf, s = this;
+    k.kaefig.plaetze.forEach(function(t){
+      if(!t || !t.draussen) return;
+      var nah = false; w.wesen.forEach(function(e){ if(e.tierId === t.id){ var d = ring(w, e.pos, pos); nah = Math.hypot(d[0], d[2]) < 30; } });
+      if(!nah) return;
+      if(SC.Tier.gibErfahrung(t, xp, k.werte.stufe)){ s.ui.hinweis(SC.T.tierStufe.replace("{name}", t.name).replace("{stufe}", t.stufe), 2500); s.audio.spiele("aufstieg"); }
+    });
   };
   S._tierRaus = function(id){ var r = this.kampf.kaefig.rauslassen(id); if(r === "ok") this._tiereAbgleichen(); return r; };
   S._tierRein = function(id){ if(!this.kampf.kaefig.tier(id)) return; this.kampf.kaefig.zurueck(id); this._tiereAbgleichen(); };
@@ -108,7 +149,19 @@
         if(!b){ SC.Wesen.entferne(w, e.id); return; }   // Besitzer weg (Gast getrennt)
         c = { spieler: alle, besitzer: { pos: b.pos } };
       }
-      SC.KI.tier(w, e, c, dt, zf);
+      if(e.besitzer){
+        // Ziel: der nächste Gegner, der den Besitzer bemerkt hat (oder von ihm getroffen wurde), nahe beim Besitzer
+        var bz = c.besitzer.pos, zg = null, zd = 16;
+        w.wesen.forEach(function(x){ if(x.art !== "gegner" || !x.bemerkt) return; var d = ring(w, bz, x.pos), l = Math.hypot(d[0], d[2]); if(l < zd && Math.abs(d[1]) < 6){ zd = l; zg = x; } });
+        c = { spieler: c.spieler, besitzer: c.besitzer, ziel: zg, werte: { schaden: e.schaden || 1 } };
+      }
+      SC.KI.tier(w, e, c, dt, zf).forEach(function(a){
+        if(a.art === "hieb"){
+          var gg = w.wesen.get(a.ziel); if(!gg || gg.art !== "gegner") return;
+          var d = ring(w, e.pos, gg.pos), r = s.kampf.trifftGegner(gg, a.schaden, [d[0], 0, d[2]]);
+          s._zahl(gg, r.schaden); if(r.besiegt) s.besiege(gg); else s.audio.spiele("treffer");
+        } else if(a.art === "schuss") s._spielerSchuss({ pos: a.pos, richtung: a.richtung, tempo: a.tempo, schaden: a.schaden, team: "spieler", art: "laser", lebensdauer: 0.6, farbe: a.farbe, tier: true });
+      });
     });
   };
 })();

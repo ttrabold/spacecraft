@@ -67,6 +67,7 @@ SC.Tier = {};
   art("affe", "Kleiner Affe", "rankenmoor", 1, "ablenker", 0.9, 1.0, 4.4, 0.4, 0.7, ["Bananas", "Kletti", "Mocki"],
     modell({ farbe: "#8a5a3a", bauch: "#e8c8a0", breite: 0.28, rumpf: 0.34, laenge: 0.3, bein: 0.2, kopf: 0.28, kopfHoch: 0.95, kopfFarbe: "#e8c8a0", ohr: [0.1, 0.1, 0.17], ohrFarbe: "#8a5a3a", schwanz: [0.06, 0.06, 0.5], nase: "#3a2a2a" }));
 
+  [["frosch", "#7dff5a"], ["pinguin", "#d8f2ff"], ["glutsalamander", "#ff7a2a"], ["leuchtkaefer", "#f4ff7a"], ["eule", "#e8d8b0"]].forEach(function(p){ SC.TIERE[p[0]].schussFarbe = p[1]; });
   var T = SC.Tier;
   T.arten = function(planetId){ return Object.keys(SC.TIERE).filter(function(a){ return SC.TIERE[a].planet === planetId; }); };
   function neueId(){ return Math.floor(Math.random() * 4294967296).toString(36) + Date.now().toString(36); }

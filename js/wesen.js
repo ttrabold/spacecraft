@@ -79,18 +79,26 @@ SC.Geschoss.schritt = function(welt, g, dt, spieler){
       if(t >= 0 && t < bestT){ bestT = t; best = { treffer: "wesen", id: e.id }; }
     });
     // Spaßkampf: mit Spieler-Array (nur dann übergeben) treffen Spieler-Geschosse alle außer dem Schützen
-    if(Array.isArray(spieler)) spieler.forEach(function(p){
+    if(Array.isArray(spieler) && !g.tier) spieler.forEach(function(p){
       if(p.id === g.schuetze) return;
       var tp = SC.Wesen.strecke(a, b, p.pos, SC.PHYSIK.breite, SC.PHYSIK.hoehe);
       if(tp >= 0 && tp < bestT){ bestT = tp; best = { treffer: "spieler", id: p.id }; }
     });
-  } else if(Array.isArray(spieler)){
-    // Im Raum: mehrere Spieler {id, pos}; Treffer nennt die ID
+  } else {
+    // Gegner-Geschosse treffen auch Begleiter (Haustiere)
+    welt.wesen.forEach(function(e){
+      if(e.art !== "tier" || !e.besitzer) return;
+      var tt = SC.Wesen.strecke(a, b, [e.pos[0], e.pos[1] - 0.1, e.pos[2]], e.breite + 0.3, e.hoehe + 0.3);
+      if(tt >= 0 && tt < bestT){ bestT = tt; best = { treffer: "tier", id: e.id }; }
+    });
+  }
+  if(g.team !== "spieler" && Array.isArray(spieler)){
+    // Gegner-Geschosse im Raum: mehrere Spieler {id, pos}; Treffer nennt die ID
     spieler.forEach(function(p){
       var tp = SC.Wesen.strecke(a, b, p.pos, SC.PHYSIK.breite, SC.PHYSIK.hoehe);
       if(tp >= 0 && tp < bestT){ bestT = tp; best = { treffer: "spieler", id: p.id }; }
     });
-  } else if(spieler){
+  } else if(g.team !== "spieler" && spieler){
     var ts = SC.Wesen.strecke(a, b, spieler.pos, SC.PHYSIK.breite, SC.PHYSIK.hoehe);
     if(ts >= 0 && ts < bestT){ bestT = ts; best = { treffer: "spieler" }; }
   }

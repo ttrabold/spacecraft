@@ -95,13 +95,18 @@ SC.RenderWesen = function(szene, planet){
         }
       } else if(e.art === "tier"){
         o.g.rotation.y = e.blick || 0;
-        var lt = Math.max(0.35, licht), gehen2 = Math.hypot(e.geschw[0], e.geschw[2]) > 0.3, sw2 = gehen2 ? Math.sin(uhr / 90 + e.id) * 0.55 : 0, cham = e.tierArt === "chamaeleon";
+        var lt = Math.max(0.35, licht), gehen2 = Math.hypot(e.geschw[0], e.geschw[2]) > 0.3, gang = SC.TIERE[e.tierArt].gang, sw2 = gehen2 ? Math.sin(uhr / (gang === "trippeln" ? 45 : gang === "kriechen" ? 200 : 90) + e.id) * 0.55 : 0, cham = e.tierArt === "chamaeleon";
         o.teile.forEach(function(t){
           if(cham && (t.teil === "rumpf" || t.teil === "kopf" || t.teil === "schwanz")) t.mesh.material.color.setHSL(((uhr / 5000) + e.id * 0.13) % 1, 0.55, 0.5).multiplyScalar(lt);
           else if(t.leuchtet) t.mesh.material.color.copy(t.farbe); else t.mesh.material.color.copy(t.farbe).multiplyScalar(lt);
-          if(/^bein/.test(t.teil)) t.mesh.rotation.x = (/VL$|HR$/.test(t.teil) ? 1 : -1) * sw2;
+          if(/^bein/.test(t.teil)){
+            if(gang === "huepfen") t.mesh.rotation.x = (/^beinH/.test(t.teil) ? 1 : -1) * (e.geschw[1] > 0.5 ? 0.7 : e.geschw[1] < -0.5 ? -0.5 : 0);   // Sprung: Hinterbeine strecken sich
+            else t.mesh.rotation.x = (/VL$|HR$/.test(t.teil) ? 1 : -1) * sw2 * (gang === "trippeln" ? 0.6 : gang === "kriechen" || gang === "schlaengeln" ? 0.5 : 1);
+          }
           if(/^fluegel/.test(t.teil) && SC.TIERE[e.tierArt].fliegt) t.mesh.rotation.z = (/L$/.test(t.teil) ? 1 : -1) * Math.sin(uhr / 70 + e.id) * 0.7;
         });
+        if(gang === "watscheln") o.g.rotation.z = gehen2 ? Math.sin(uhr / 130 + e.id) * 0.22 : 0;   // Pinguin watschelt von Seite zu Seite
+        else if(gang === "schlaengeln") o.g.rotation.z = 0;
         // Namensschild nur an Begleitern; neu zeichnen, wenn sich Name, Stufe oder Leben ändern
         o.schild.visible = !!e.besitzer;
         if(e.besitzer){

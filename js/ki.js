@@ -171,6 +171,7 @@ SC.KI = {};
       aufgeben(g); if(g.entfernen) return akt;
     }
     g.fliegt = !!def.fliegt;   // Flieger (Eule, Leuchtkäfer) schweben, kennen weder Schwerkraft noch Lava- oder Wasserfurcht
+    var la = def.gang === "huepfen" ? 2.2 : 0.7;   // Hüpfer überspringen schmale Streifen: weiter vorausschauen
     var gefahr = g.fliegt ? function(){ return false; } : tierGefahr;
     g.zeit = (g.zeit || 0) + dt; g.cd = Math.max(0, (g.cd || 0) - dt);
     var vx = 0, vz = 0;
@@ -185,7 +186,7 @@ SC.KI = {};
       if(g.modus !== "steht" && g.richtung){
         var t = def.tempo * (g.modus === "flieht" ? 1 : 0.35); vx = g.richtung[0] * t; vz = g.richtung[1] * t; g.blick = Math.atan2(-vx, -vz);
         // Gefahr voraus (Lava, Wasser): stehen bleiben und neu überlegen
-        if(gefahr(welt, g.pos[0] + g.richtung[0] * 0.7, g.pos[1], g.pos[2] + g.richtung[1] * 0.7)){ vx = 0; vz = 0; g.modus = "steht"; g.bis = g.zeit + 0.3; }
+        if(gefahr(welt, g.pos[0] + g.richtung[0] * la, g.pos[1], g.pos[2] + g.richtung[1] * la)){ vx = 0; vz = 0; g.modus = "steht"; g.bis = g.zeit + 0.3; }
       }
     } else if(!g.haeltStill && g.besitzer && ctx.besitzer){
       // Begleiter: dem Besitzer folgen (schneller, wenn er weit weg ist); zu weit, in Lava/Wasser oder feststeckend → neben den Besitzer
@@ -216,7 +217,7 @@ SC.KI = {};
         var wi = (g.nr || 0) * 2.1 + 0.7, os = dist > 6 ? o : [o[0] + Math.sin(wi) * 2.4, o[1], o[2] + Math.cos(wi) * 2.4], od = Math.hypot(os[0], os[2]);
         if(od > 0.8){
           var fo = richtungZu(os), tb = def.tempo * (dist > 9 ? 1.6 : dist > 6 ? 1.2 : od > 2 ? 0.9 : 0.5); vx = fo[0] * tb; vz = fo[1] * tb; g.blick = Math.atan2(-vx, -vz);
-          if(gefahr(welt, g.pos[0] + fo[0] * 0.7, g.pos[1], g.pos[2] + fo[1] * 0.7)){ vx = 0; vz = 0; }
+          if(gefahr(welt, g.pos[0] + fo[0] * la, g.pos[1], g.pos[2] + fo[1] * la)){ vx = 0; vz = 0; }
         } else g.blick = Math.atan2(-o[0], -o[2]);
       }
     }
@@ -230,6 +231,18 @@ SC.KI = {};
       };
       (ctx.nachbarn || []).forEach(function(n){ if(n !== g && Math.abs(n.pos[1] - g.pos[1]) < 2) ab(n.pos, n.breite); });
       if(g.besitzer && ctx.besitzer) ab(ctx.besitzer.pos, 0.6);
+    }
+    // Gangart: Hüpfer bewegen sich nur in Sprüngen (am Boden Pause, in der Luft Schwung in Sprungrichtung); Schleicher gehen stockend; Schlängler pendeln seitlich
+    if(def.gang === "huepfen" && !g.fliegt){
+      if(g.aufBoden){
+        g.hopWait = (g.hopWait === undefined ? 0 : g.hopWait) - dt; g.hopV = null;
+        if((vx || vz) && g.hopWait <= 0){ g.geschw[1] = def.hupf; g.hopWait = def.pause[0] + zf() * (def.pause[1] - def.pause[0]); g.hopV = [vx * 2.2, vz * 2.2]; }
+        vx = 0; vz = 0;
+      } else if(g.hopV){ vx = g.hopV[0]; vz = g.hopV[1]; }
+    } else if(def.gang === "schleichen"){
+      g.schl = (g.schl || 0) + dt; if(Math.floor(g.schl / 0.7) % 2 === 1){ vx = 0; vz = 0; }
+    } else if(def.gang === "schlaengeln" && (vx || vz)){
+      var sl = Math.hypot(vx, vz), sw = Math.sin(g.zeit * 5) * 0.6; vx += -vz / sl * sw * sl; vz += vx / sl * sw * sl;
     }
     // Flieger halten ihre Höhe: Wildtiere über dem Boden, Begleiter über dem Besitzer, mit leichtem Auf und Ab
     if(g.fliegt){

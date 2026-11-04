@@ -345,3 +345,39 @@ test("Flieger (Eule, Leuchtkäfer) schweben, Läufer bleiben am Boden", function
   s.welt.setzeBlock(24, 90, 4, SC.B.LAVA, "system"); eule.pos = [24.5, 91.8, 4.5]; s.laufe(5); wahr(s.begleiter().indexOf(eule) >= 0 && Math.abs(eule.pos[0] - 24.5) < 3, "über Lava kein Teleport");
   var w = wild(s.welt, "eule", [10.5, 90, 20.5]); s.spieler.pos = [4.5, 90, 4.5]; s.laufe(40); wahr(w.pos[1] > 90.9 && w.pos[1] < 93, "wilde Eule schwebt: " + w.pos[1]);
 });
+// Fortbewegung je Art
+function tierPlatte(s){ tierBoden(s.welt); }
+function laufProbe(art, schritte, o){
+  var s = tierSpiel(), e = wild(s.welt, art, [20.5, 90, 20.5]), zf = SC.zufall(3), r = { y: [], v: [], luft: [], boden: e.pos[1] };
+  s.spieler.pos = [-9.5, 90, -9.5]; e.modus = "geht"; e.richtung = [1, 0]; e.bis = 1e9; e.zeit = 0;
+  for(var i = 0; i < schritte; i++){ SC.KI.tier(s.welt, e, { spieler: [], nachbarn: [e] }, 0.05, zf); e.bis = 1e9; e.modus = "geht"; e.richtung = [1, 0]; r.y.push(e.pos[1]); r.v.push(Math.hypot(e.geschw[0], e.geschw[2])); r.luft.push(!e.aufBoden); if(e.pos[0] > 30) e.pos[0] = 12; }
+  r.e = e; return r;
+}
+test("Frosch hüpft: Sprünge mit Pausen, Vorwärtsschwung nur in der Luft", function(){
+  var r = laufProbe("frosch", 300), hops = 0, max = 0;
+  for(var i = 1; i < r.y.length; i++){ if(r.luft[i] && !r.luft[i - 1]) hops++; max = Math.max(max, r.y[i] - 90); if(!r.luft[i] && !r.luft[i - 1] && r.v[i] > 0.01) throw new Error("am Boden läuft er: Schritt " + i + " v=" + r.v[i]); }
+  wahr(hops >= 5, "Sprünge: " + hops); wahr(max > 0.3, "Sprunghöhe: " + max); wahr(r.v.some(function(v){ return v > 1; }), "bewegt sich in der Luft");
+});
+test("Hase hüpft schneller und öfter als der Frosch", function(){
+  var h = laufProbe("hase", 300), f = laufProbe("frosch", 300), n = function(r){ var c = 0; for(var i = 1; i < r.luft.length; i++) if(r.luft[i] && !r.luft[i - 1]) c++; return c; };
+  wahr(n(h) > n(f), "Hase " + n(h) + " > Frosch " + n(f));
+});
+test("Läufer bleiben am Boden, Schleicher gehen stockend, Salamander schlängelt", function(){
+  var h = laufProbe("hund", 200); wahr(Math.max.apply(null, h.y) < 90.3, "Hund springt nicht (nur Stufen)"); wahr(h.v.every(function(v){ return v > 0.5; }), "Hund läuft durchgehend");
+  var c = laufProbe("chamaeleon", 200); wahr(c.v.some(function(v){ return v === 0; }) && c.v.some(function(v){ return v > 0.3; }), "Chamäleon: bewegt sich und steht");
+  var sa = laufProbe("glutsalamander", 200), z0 = 20.5, abw = 0; sa.r = sa.e; var sz = laufProbe("glutsalamander", 120); abw = Math.abs(sz.e.pos[2] - 20.5); var maxAbw = 0;
+  var s2 = tierSpiel(), e2 = wild(s2.welt, "glutsalamander", [10.5, 90, 20.5]), zf = SC.zufall(3); s2.spieler.pos = [-9.5, 90, -9.5];
+  for(var i = 0; i < 100; i++){ SC.KI.tier(s2.welt, e2, { spieler: [], nachbarn: [e2] }, 0.05, zf); e2.modus = "geht"; e2.bis = 1e9; e2.richtung = [1, 0]; maxAbw = Math.max(maxAbw, Math.abs(e2.pos[2] - 20.5)); }
+  wahr(maxAbw > 0.08, "pendelt seitlich: " + maxAbw);
+});
+test("Begleiter hüpft dem Besitzer nach", function(){
+  var s = tierSpiel(), t = tierDrin(s, "frosch"); s._tierRaus(t.id); s.laufe(1); s.spieler.pos = [24.5, 90, 4.5]; var e = s.begleiter()[0], hops = 0, vorher = false, boden0 = true;
+  for(var i = 0; i < 160; i++){ s.laufe(1, 0.05); var luft = !e.aufBoden; var davor = vorher; if(luft && !vorher) hops++; vorher = luft; if(!luft && !davor) gleich(Math.hypot(e.geschw[0], e.geschw[2]) < 0.01, true, "am Boden steht er"); }
+  wahr(hops >= 4, "hüpft: " + hops); wahr(Math.hypot(e.pos[0] - 24.5, e.pos[2] - 4.5) < 5, "kommt an: " + e.pos);
+});
+test("Pinguin watschelt (Rollen) und Frosch streckt beim Sprung die Hinterbeine", function(){
+  var rw = new SC.RenderWesen(new THREE.Scene(), { groesse: 2048 }), welt = { wesen: new Map() };
+  welt.wesen.set(1, tierEnt(1, "pinguin", { geschw: [1.5, 0, 0] })); welt.wesen.set(2, tierEnt(2, "frosch", { geschw: [1, 5, 0] }));
+  rw.bild(welt, [10, 60, 10], 0.016, 1, 500); wahr(Math.abs(rw.objekte.get(1).g.rotation.z) > 0.01, "Pinguin rollt");
+  var hb = rw.objekte.get(2).teile.filter(function(t){ return t.teil === "beinHL"; })[0]; wahr(Math.abs(hb.mesh.rotation.x) > 0.3, "Hinterbein gestreckt");
+});

@@ -214,7 +214,8 @@
         gastgeber.spieler.forEach(function(g){ if(!g.verbunden) return; var l = []; w.wesen.forEach(function(e){ if(e.art === "tier" && e.besitzer === g.id) l.push({ id: e.tierId, lp: Math.ceil(e.lp) }); }); if(l.length) gastgeber.tierStand(g.id, l, []); });
       }
     }
-    var zf = this._zf || Math.random, ctx = { spieler: alle }, fid = this.daten.spieler.figurId;
+    var nachbarn = []; w.wesen.forEach(function(e){ if(e.art === "tier") nachbarn.push(e); });
+    var zf = this._zf || Math.random, ctx = { spieler: alle, nachbarn: nachbarn }, fid = this.daten.spieler.figurId;
     w.wesen.forEach(function(e){
       if(e.art !== "tier") return;
       var c = ctx;
@@ -222,11 +223,11 @@
         var b = e.besitzer === fid ? sp : null;
         if(!b) alle.forEach(function(z){ if(z.id === e.besitzer) b = z; });
         if(!b){ SC.Wesen.entferne(w, e.id); return; }   // Besitzer weg (Gast getrennt)
-        c = { spieler: alle, besitzer: { pos: b.pos } };
+        c = { spieler: alle, nachbarn: nachbarn, besitzer: { pos: b.pos } };
         // Ziel: der nächste Gegner, der den Besitzer bemerkt hat (oder von ihm getroffen wurde), nahe beim Besitzer
         var bz = b.pos, zg = null, zd = 16;
         w.wesen.forEach(function(x){ if(x.art !== "gegner" || !x.bemerkt) return; var d = ring(w, bz, x.pos), l = Math.hypot(d[0], d[2]); if(l < zd && Math.abs(d[1]) < 6){ zd = l; zg = x; } });
-        c = { spieler: c.spieler, besitzer: c.besitzer, ziel: zg, werte: { schaden: e.schaden || 1 } };
+        c = { spieler: c.spieler, nachbarn: nachbarn, besitzer: c.besitzer, ziel: zg, werte: { schaden: e.schaden || 1 } };
       }
       SC.KI.tier(w, e, c, dt, zf).forEach(function(a){
         if(a.art === "hieb"){

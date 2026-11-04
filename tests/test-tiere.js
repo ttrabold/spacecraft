@@ -320,3 +320,28 @@ test("Entwicklerwerkzeuge: Tiere geben füllt Käfig, Netz und Futter", function
     pn = new SC.Entwickler.Panel(w, spiel); pn.zeige(); var kn = w.querySelector('[data-ew="tiere"]'); wahr(kn, "Knopf"); kn.click();
   gleich(k.kaefig.plaetze.filter(Boolean).length, SC.Tier.arten("start").length); gleich(k.rucksack.hat(SC.B.NETZ), 1); gleich(k.rucksack.hat(SC.B.TIERFUTTER), 16);
 });
+// Abstand und Flieger
+test("Mehrere Begleiter laufen nicht ineinander und nicht in den Besitzer", function(){
+  var s = tierSpiel(); ["hund", "katze", "fuchs"].forEach(function(a){ var t = tierDrin(s, a); s._tierRaus(t.id); }); s.laufe(1);
+  var b = s.begleiter(); gleich(b.length, 3); b.forEach(function(e){ e.pos = [4.5, 90, 4.5]; });   // alle auf einem Haufen im Besitzer
+  s.laufe(200);
+  for(var i = 0; i < 3; i++){
+    wahr(Math.hypot(b[i].pos[0] - 4.5, b[i].pos[2] - 4.5) >= 1.0, "Abstand zum Besitzer " + i + ": " + Math.hypot(b[i].pos[0] - 4.5, b[i].pos[2] - 4.5));
+    for(var j = i + 1; j < 3; j++) wahr(Math.hypot(b[i].pos[0] - b[j].pos[0], b[i].pos[2] - b[j].pos[2]) >= 1.0, "Abstand " + i + "/" + j + ": " + Math.hypot(b[i].pos[0] - b[j].pos[0], b[i].pos[2] - b[j].pos[2]));
+  }
+  s.spieler.pos = [14.5, 90, 4.5]; s.laufe(120); b.forEach(function(e){ wahr(Math.hypot(e.pos[0] - 14.5, e.pos[2] - 4.5) < 5, "folgt"); });
+  for(var i2 = 0; i2 < 3; i2++) for(var j2 = i2 + 1; j2 < 3; j2++) wahr(Math.hypot(b[i2].pos[0] - b[j2].pos[0], b[i2].pos[2] - b[j2].pos[2]) >= 1.0, "nach dem Folgen " + i2 + "/" + j2);
+});
+test("Wildtiere schieben sich auseinander", function(){
+  var s = tierSpiel(), a = wild(s.welt, "hase", [20.5, 90, 20.5]), b = wild(s.welt, "hase", [20.5, 90, 20.5]); s.spieler.pos = [4.5, 90, 4.5];
+  s.laufe(40); wahr(Math.hypot(a.pos[0] - b.pos[0], a.pos[2] - b.pos[2]) >= 0.7, "Abstand: " + Math.hypot(a.pos[0] - b.pos[0], a.pos[2] - b.pos[2]));
+});
+test("Flieger (Eule, Leuchtkäfer) schweben, Läufer bleiben am Boden", function(){
+  gleich(SC.TIERE.eule.fliegt, true); gleich(SC.TIERE.leuchtkaefer.fliegt, true); wahr(!SC.TIERE.hund.fliegt && !SC.TIERE.hase.fliegt);
+  var s = tierSpiel(), e = tierDrin(s, "eule"), h = tierDrin(s, "hund"); s._tierRaus(e.id); s._tierRaus(h.id); s.laufe(60);
+  var eule = s.begleiter().filter(function(x){ return x.tierArt === "eule"; })[0], hund = s.begleiter().filter(function(x){ return x.tierArt === "hund"; })[0];
+  wahr(eule.pos[1] > 90 + 1.0, "Eule schwebt: " + eule.pos[1]); wahr(eule.aufBoden === false, "nicht auf dem Boden"); wahr(hund.pos[1] < 90.1, "Hund geht am Boden: " + hund.pos[1]);
+  s.spieler.pos = [20.5, 90, 4.5]; s.laufe(120); wahr(Math.hypot(eule.pos[0] - 20.5, eule.pos[2] - 4.5) < 5 && eule.pos[1] > 91, "Eule folgt fliegend");
+  s.welt.setzeBlock(24, 90, 4, SC.B.LAVA, "system"); eule.pos = [24.5, 91.8, 4.5]; s.laufe(5); wahr(s.begleiter().indexOf(eule) >= 0 && Math.abs(eule.pos[0] - 24.5) < 3, "über Lava kein Teleport");
+  var w = wild(s.welt, "eule", [10.5, 90, 20.5]); s.spieler.pos = [4.5, 90, 4.5]; s.laufe(40); wahr(w.pos[1] > 90.9 && w.pos[1] < 93, "wilde Eule schwebt: " + w.pos[1]);
+});

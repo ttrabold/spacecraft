@@ -100,6 +100,7 @@ SC.RenderWesen = function(szene, planet){
           if(cham && (t.teil === "rumpf" || t.teil === "kopf" || t.teil === "schwanz")) t.mesh.material.color.setHSL(((uhr / 5000) + e.id * 0.13) % 1, 0.55, 0.5).multiplyScalar(lt);
           else if(t.leuchtet) t.mesh.material.color.copy(t.farbe); else t.mesh.material.color.copy(t.farbe).multiplyScalar(lt);
           if(/^bein/.test(t.teil)) t.mesh.rotation.x = (/VL$|HR$/.test(t.teil) ? 1 : -1) * sw2;
+          if(/^fluegel/.test(t.teil) && SC.TIERE[e.tierArt].fliegt) t.mesh.rotation.z = (/L$/.test(t.teil) ? 1 : -1) * Math.sin(uhr / 70 + e.id) * 0.7;
         });
         // Namensschild nur an Begleitern; neu zeichnen, wenn sich Name, Stufe oder Leben ändern
         o.schild.visible = !!e.besitzer;

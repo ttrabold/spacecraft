@@ -354,7 +354,7 @@ SC.Gast = function(o){
     willkommen: function(n){ this.willkommen = n; this._bestaetige(n.wunschNr, n.abgelehnt); this.farbe = n.farbe; this.spieler = n.spieler || []; this.pvp = !!n.pvp; ruf(this.o.beiWillkommen, n); },
     chunk: function(n){ ruf(this.o.beiChunk, n.k, n.daten); },
     bereit: function(){
-      this._runde++; this._ausr = undefined; ruf(this.o.beiBereit); // nach (Wieder-)Eintritt die Ausrüstung neu schicken
+      this._runde++; this._ausr = undefined; this._tiereJ = undefined; ruf(this.o.beiBereit); // nach (Wieder-)Eintritt die Ausrüstung neu schicken
       this._status("verbunden"); this._abschluss(null);
     },
     spieler: function(n){
@@ -400,7 +400,7 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
     welt.wesen.forEach(function(e){
       if(e.art === "tier"){
         var tn = { id: e.id, art: "tier", tierArt: e.tierArt, pos: r3(e.pos), blick: r2(e.blick || 0) };
-        if(e.wild){ tn.wild = true; if(e.fangVon) tn.fangVon = e.fangVon; }
+        if(e.wild){ tn.wild = true; tn.fangVon = e.fangVon || null; }   // null gehört dazu: der Gast löscht die Sperre
         else { tn.tierId = e.tierId; tn.besitzer = e.besitzer; tn.name = e.name; tn.stufe = e.stufe; tn.lp = Math.ceil(e.lp); tn.lpMax = e.lpMax; tn.halsband = e.halsband; }
         l.push(tn);
       } else if(e.art === "gegner"){

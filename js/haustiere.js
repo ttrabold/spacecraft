@@ -10,9 +10,9 @@
   // Netz in der Hand + Angriffstaste: das nächste Wildtier im Blickfeld (Kegel von etwa 60°, bis 4,5 Blöcke) wird gefangen, sofern der Käfig Platz hat und kein anderer es gerade fängt
   S._fangVersuch = function(){
     if(this._fang) return false;
-    var w = this.welt, sp = this.spieler, k = this.kampf, b = [-Math.sin(sp.blick[0]), -Math.cos(sp.blick[0])], best = null, bd = Infinity;
+    var s = this, w = this.welt, sp = this.spieler, k = this.kampf, b = [-Math.sin(sp.blick[0]), -Math.cos(sp.blick[0])], best = null, bd = Infinity;
     w.wesen.forEach(function(e){
-      if(e.art !== "tier" || !e.wild || e.fangVon) return;
+      if(e.art !== "tier" || !e.wild || (e.fangVon && e.fangVon !== (s.daten.spieler.figurId || "ich"))) return;
       var d = ring(w, sp.pos, e.pos), l = Math.hypot(d[0], d[2]);
       if(l > FANG_REICHWEITE || Math.abs(d[1]) > 2.5 || (l > 1.2 && (b[0] * d[0] + b[1] * d[2]) / l < 0.5)) return;
       if(l < bd){ bd = l; best = e; }
@@ -55,7 +55,7 @@
     } else {
       var t = SC.Tier.neu(tier.tierArt, this._zf);
       if(!k.kaefig.lege(t)){ this._fangEnde(tier, false); this.ui.hinweis(SC.T.kaefigVoll, 2500); return; }
-      this._fangEnde(tier, true); SC.Wesen.entferne(w, tier.id); this.render.wesen.funken(tier.pos, "#ffe36b", 28, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 4 });
+      this._fangEnde(tier, true); SC.Wesen.entferne(w, tier.id); if(typeof this.speichere === "function") this.speichere("fund"); this.render.wesen.funken(tier.pos, "#ffe36b", 28, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 4 });
       this.ui.hinweis(SC.T.neuGefangen.replace("{name}", t.name + " (" + SC.TIERE[t.art].name + ")"), 3000);
     }
   };
@@ -69,6 +69,7 @@
       schaden: wt.schaden, halsband: (this.raum && this.raum.farbe) || "#ffd95c", pos: pos, heim: pos.slice(), breite: d.breite, hoehe: d.hoehe });
   };
   S._tiereAbgleichen = function(){
+    if(this.raum instanceof SC.Gast) return;   // beim Gast kommen die Wesen gespiegelt vom Gastgeber; hier ändert sich nur der Käfig
     var w = this.welt, sp = this.spieler, k = this.kampf, s = this, fid = this.daten.spieler.figurId, n = 0;
     var erlaubt = sp.modus !== "zuschauer" && !this.all && !this._imFahrzeug(), da = {};
     w.wesen.forEach(function(e){ if(e.art === "tier" && e.besitzer === fid) da[e.tierId] = e; });
@@ -132,12 +133,15 @@
   // --- Streicheln und Füttern: Benutzen-Taste (wie Bett und Truhe) auf ein eigenes Begleitertier in Reichweite ---
   // Mit Tierfutter in der Hand wird gefüttert (5 min stärker, heilt), sonst gestreichelt (2 min stärker). → true, wenn ein Tier gemeint war
   S._tierBenutzen = function(){
-    var w = this.welt, sp = this.spieler, k = this.kampf, fid = this.daten.spieler.figurId, b = [-Math.sin(sp.blick[0]), -Math.cos(sp.blick[0])], best = null, bd = Infinity;
+    var w = this.welt, sp = this.spieler, k = this.kampf, fid = this.daten.spieler.figurId, best = null, bd = Infinity;
+    // Nur das Tier, das man ansieht (Blickstrahl durch die großzügige Hülle des Tieres), und nur, wenn kein Block davor liegt – sonst bleibt Setzen, Truhe, Bett und Tür wie sonst
+    var aug = sp.augen(), r = sp.richtung(), ende = [aug[0] + r[0] * 4, aug[1] + r[1] * 4, aug[2] + r[2] * 4], z = SC.zielen(w, aug, r, 4);
+    var blockAb = z ? Math.hypot(z.x + 0.5 - aug[0], z.y + 0.5 - aug[1], z.z + 0.5 - aug[2]) - 0.5 : Infinity;
     w.wesen.forEach(function(e){
       if(e.art !== "tier" || e.besitzer !== fid) return;
-      var d = ring(w, sp.pos, e.pos), l = Math.hypot(d[0], d[2]);
-      if(l > 4 || Math.abs(d[1]) > 2.5 || (l > 1.2 && (b[0] * d[0] + b[1] * d[2]) / l < 0.5)) return;
-      if(l < bd){ bd = l; best = e; }
+      var d = ring(w, sp.pos, e.pos), t = SC.Wesen.strecke(aug, ende, [sp.pos[0] + d[0], e.pos[1] - 0.2, sp.pos[2] + d[2]], e.breite + 0.9, e.hoehe + 0.9);
+      if(t < 0 || t * 4 > blockAb + 0.3) return;
+      if(t < bd){ bd = t; best = e; }
     });
     var t = best && k.kaefig.tier(best.tierId); if(!t) return false;
     var hand = k.rucksack.plaetze[sp.auswahl], futter = !!(hand && hand.block === SC.B.TIERFUTTER) && !(t.staerke && t.staerke.art === "fuettern" && t.staerke.rest > 295);
@@ -197,7 +201,7 @@
       this._tiereListe = sp.modus !== "zuschauer" && !this.all && !this._imFahrzeug() ? SC.Raum.tiereListe(this.kampf.kaefig.plaetze) : [];
       return;
     }
-    if(this.all){ this._tiereAbgleichen(); return; }
+    if(this.all){ this.kampf.kaefig.plaetze.forEach(function(t){ if(t) SC.Tier.zeit(t, dt); }); this._tiereAbgleichen(); return; }
     if(offen && !raum) return;
     var gastgeber = raum instanceof SC.Gastgeber ? raum : null, ziele = gastgeber ? SC.Raum.mitspielerZiele(gastgeber, this.raumIch(offen)) : null, alle = ziele || [{ id: this.daten.spieler.figurId, pos: sp.pos, modus: sp.modus }];
     if((this._tierZeit = (this._tierZeit || 0) + dt) >= 1){

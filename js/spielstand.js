@@ -115,7 +115,8 @@ SC.Spielstand = {};
     if(s.schild === undefined) s.schild = null;
     if(!s.rucksack || s.rucksack.length !== 36) s.rucksack = leererRucksack();
     if(!s.ausruestung) s.ausruestung = leereAusruestung();
-    if(!Array.isArray(s.kaefig) || s.kaefig.length !== 18) s.kaefig = leererKaefig();   // Haustiere (0.24.0)
+    // Haustiere (0.24.0): Käfig immer 18 Plätze; Einträge mit unbekannter Art verwerfen, Tiere nie ersatzlos löschen
+    var kf = leererKaefig(); if(Array.isArray(s.kaefig)) s.kaefig.slice(0, 18).forEach(function(t, i){ if(t && SC.TIERE && SC.TIERE[t.art]) kf[i] = t; }); s.kaefig = kf;
     // Stufe 3: Figurname, Figur-ID, Mitspieler
     if(typeof s.name !== "string") s.name = "";
     if(!s.figurId) s.figurId = neueId();

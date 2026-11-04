@@ -216,6 +216,7 @@
         if(r2.treffer === "wesen" && g.optisch){ SC.Wesen.entferne(w, g.id); return; } // optisch: verschwindet am Gegner
         if(r2.treffer === "wesen"){
           var ziel2 = w.wesen.get(r2.id), tg = k.trifftGegner(ziel2, g.schaden, g.geschw || g.richtung, g);
+          if(tg.abgeprallt && g.tier){ SC.Wesen.entferne(w, g.id); a.spiele("abprall"); return; }   // Tierschüsse prallen nicht zurück (sonst träfen sie Besitzer und Mitspieler)
           if(tg.abgeprallt){ g.team = "gegner"; g.geschw = [-g.geschw[0], -g.geschw[1], -g.geschw[2]]; g.richtung = [-g.richtung[0], -g.richtung[1], -g.richtung[2]]; g.lebensdauer = 2; a.spiele("abprall"); return; }
           s._zahl(ziel2, tg.schaden); if(tg.besiegt) s.besiege(ziel2); else a.spiele("treffer");
         } else if(r2.treffer === "spieler"){

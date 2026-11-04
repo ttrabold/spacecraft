@@ -291,7 +291,7 @@ test("Streicheln überschreibt keine stärkere Fütterung", function(){
   var u = tierNeu(); gleich(SC.Tier.staerken(u, "streicheln"), true); gleich(SC.Tier.staerken(u, "fuettern"), true); gleich(u.staerke.art, "fuettern");
 });
 test("Streicheln stärkt 120 s, Füttern verbraucht Futter und stärkt 300 s", function(){
-  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5];
+  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5]; ziele(s, k.e);
   gleich(s._tierBenutzen(), true); gleich(k.t.staerke.art, "streicheln"); gleich(k.t.staerke.rest, 120);
   s.kampf.rucksack.plaetze[0] = { block: SC.B.TIERFUTTER, anzahl: 2 }; s.spieler.auswahl = 0; k.t.lp = 1; k.e.lp = 1;
   gleich(s._tierBenutzen(), true); gleich(k.t.staerke.art, "fuettern"); gleich(k.t.staerke.rest, 300); gleich(s.kampf.rucksack.plaetze[0].anzahl, 1, "ein Futter verbraucht"); gleich(k.e.lp, SC.Tier.werte(k.t).lpMax, "geheilt (Wesen)");
@@ -305,7 +305,7 @@ test("Fremdes Tier, Wildtier oder weit entferntes: Benutzen tut nichts", functio
   k.e.besitzer = s.daten.spieler.figurId; k.e.pos = [4.5, 90, 20.5]; wild(s.welt, "hase", [4.5, 90, 2.5]); gleich(s._tierBenutzen(), false, "Wildtier"); gleich(k.t.staerke, null);
 });
 test("Rechtsklick auf das eigene Tier streichelt es, Blöcke setzt man dann nicht", function(){
-  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5]; s.render.markiere = function(){}; s.render.wesen.risse = function(){}; s.render.blocke = function(){}; s.render.ausruestung = function(){}; s.render.hieb = function(){}; s.render.fps = 60; s.eingabe = { touchAktiv: false, gamepadAktiv: false };
+  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5]; ziele(s, k.e); s.render.markiere = function(){}; s.render.wesen.risse = function(){}; s.render.blocke = function(){}; s.render.ausruestung = function(){}; s.render.hieb = function(){}; s.render.fps = 60; s.eingabe = { touchAktiv: false, gamepadAktiv: false };
   s.einstellungen = { fpsAnzeigen: false }; s.ui.hud = function(){}; s.ui.kampfHud = function(){}; s.ui.zeigeBesiegt = function(){}; s.kampf.rucksack.plaetze[0] = { block: SC.B.STEIN, anzahl: 5 }; s.spieler.auswahl = 0;
   var e = { ausweichen: false, setzenGehalten: false, abbauen: false, abbauenGehalten: false, setzen: true, vor: false, zurueck: false, links: false, rechts: false };
   s._survival(e, 0.05, false, 1000); gleich(k.t.staerke && k.t.staerke.art, "streicheln"); gleich(s.kampf.rucksack.plaetze[0].anzahl, 5, "kein Block gesetzt");
@@ -380,4 +380,43 @@ test("Pinguin watschelt (Rollen) und Frosch streckt beim Sprung die Hinterbeine"
   welt.wesen.set(1, tierEnt(1, "pinguin", { geschw: [1.5, 0, 0] })); welt.wesen.set(2, tierEnt(2, "frosch", { geschw: [1, 5, 0] }));
   rw.bild(welt, [10, 60, 10], 0.016, 1, 500); wahr(Math.abs(rw.objekte.get(1).g.rotation.z) > 0.01, "Pinguin rollt");
   var hb = rw.objekte.get(2).teile.filter(function(t){ return t.teil === "beinHL"; })[0]; wahr(Math.abs(hb.mesh.rotation.x) > 0.3, "Hinterbein gestreckt");
+});
+// Prüfer-Befunde (Review des Branchs)
+function ziele(s, e){   // Blick auf das Tier richten (Gier und Neigung)
+  var sp = s.spieler, d = [e.pos[0] - sp.pos[0], e.pos[2] - sp.pos[2]]; sp.blick[0] = Math.atan2(-d[0], -d[1]);
+  var h = sp.augen()[1] - (e.pos[1] + e.hoehe / 2), nick = Math.atan2(h, Math.hypot(d[0], d[1])); sp.blick[1] = nick; if(sp.richtung()[1] > 0) sp.blick[1] = -nick;
+}
+test("Gast: Rauslassen ändert nur den Käfig, kein lokales Doppelwesen", function(){
+  var s = tierSpiel(), t = tierDrin(s, "hund"); s.raum = Object.create(SC.Gast.prototype);
+  gleich(s._tierRaus(t.id), "ok"); gleich(t.draussen, true); gleich(s.begleiter().length, 0, "kein Geisterwesen"); s._tiereAbgleichen(); gleich(s.begleiter().length, 0);
+  s._tierRein(t.id); gleich(t.draussen, false);
+});
+test("Gespiegelte Fang-Sperre verschwindet, wenn der Gastgeber sie aufhebt", function(){
+  var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), h = SC.Wesen.neu(w, "tier", { tierArt: "hase", wild: true, pos: [5, 90, 5], breite: 0.4, hoehe: 0.7, fangVon: "A" }), g = new SC.Welt(new SC.Planet({ id: "start", seed: 5 }));
+  SC.Raum.spiegleWesen(g, SC.Raum.wesenListe(w, 0), 0.1, 0); gleich(g.wesen.get(h.id).fangVon, "A"); h.fangVon = null;
+  SC.Raum.spiegleWesen(g, SC.Raum.wesenListe(w, 0), 0.1, 0); gleich(g.wesen.get(h.id).fangVon || null, null, "Sperre weg");
+});
+test("Eigene Sperre zählt nicht als gesperrt (Gast fängt nach daneben sofort nochmal)", function(){
+  var t = fangSpiel(), s = t.s; t.e.fangVon = s.daten.spieler.figurId; s._fangVersuch(); wahr(s._fang, "eigene Sperre blockiert nicht");
+});
+test("Setzen streichelt nur, wenn man das Tier ansieht, und nicht durch Blöcke hindurch", function(){
+  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5]; ziele(s, k.e); wahr(s._tierBenutzen(), "Tier im Blick");
+  s.spieler.blick[0] += 0.9; gleich(s._tierBenutzen(), false, "Tier seitlich: kein Streicheln");
+  ziele(s, k.e); s.welt.setzeBlock(4, 91, 3, SC.B.STEIN, "system"); s.welt.setzeBlock(4, 90, 3, SC.B.STEIN, "system"); k.t.staerke = null; gleich(s._tierBenutzen(), false, "Wand davor");
+});
+test("Neu verbundener Gast schickt seine Tierliste wieder", function(){
+  return mpTiere(function(u, r){
+    r.g.takt(0.1, zustandMitTieren([gastTier("hund")])); wahr(r.g._tiereJ, "Liste gemerkt"); SC.Gast.NACHRICHTEN.bereit.call(r.g, {}); gleich(r.g._tiereJ, undefined, "nach Wiedereintritt neu schicken");
+  });
+});
+test("Stärkung und K.o.-Pause laufen auch im All weiter", function(){
+  var s = tierSpiel(), t = tierDrin(s, "hund"); SC.Tier.staerken(t, "streicheln"); s.all = {}; s._tiere(10, false); gleich(Math.round(t.staerke.rest), 110);
+});
+test("Spielstand: Käfig mit falscher Länge oder unbekannter Art verliert keine Tiere", function(){
+  var d = SC.Spielstand.neu({ name: "A" }), t = SC.Tier.neu("hund", SC.zufall(1)); d.spieler.kaefig = [t, { id: "x", art: "drache", name: "?", stufe: 1, erfahrung: 0, lp: 1 }, null]; var m = SC.Spielstand.migriere(d).daten.spieler.kaefig;
+  gleich(m.length, 18); gleich(m[0].id, t.id, "Hund bleibt"); wahr(m.every(function(x){ return !x || SC.TIERE[x.art]; }), "unbekannte Art verworfen");
+  d.spieler.kaefig = new Array(30).fill(null); d.spieler.kaefig[2] = t; m = SC.Spielstand.migriere(d).daten.spieler.kaefig; gleich(m.length, 18); gleich(m[2].id, t.id);
+});
+test("Gefangenes Tier wird sofort gespeichert", function(){
+  var t = fangSpiel(), s = t.s, grund = []; s.speichere = function(g){ grund.push(g); }; s._fangVersuch(); fangBisZone(s._fang.fang); s._fangDruck = true; s._fangBild(0.01, false); wahr(grund.indexOf("fund") >= 0, "gespeichert: " + grund.join());
 });

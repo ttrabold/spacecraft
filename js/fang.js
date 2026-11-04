@@ -1,5 +1,5 @@
 // Fang-Minispiel „Zielring“ (reine Logik, ohne Oberfläche): ein Ring zieht sich zusammen, im grünen Bereich drücken.
-// Treffer nötig = Seltenheit + 1 (gewöhnlich 1, selten 2, sehr selten 3); jede Runde läuft der Ring schneller, seltene Tiere haben eine engere Zone.
+// Treffer nötig = Seltenheit + 1 (gewöhnlich 1, selten 2, sehr selten 3); jede Runde läuft der Ring schneller; seltene Tiere starten mit schnellerem Ring (die Zone wird dafür etwas breiter, damit es fair bleibt).
 SC.Fang = function(seltenheit){
   this.seltenheit = seltenheit || 0; this.noetig = this.seltenheit + 1; this.treffer = 0; this.runde = 0; this.fertig = null;
   this.zone = [0.16 - 0.02 * this.seltenheit, 0.36 + 0.02 * this.seltenheit];

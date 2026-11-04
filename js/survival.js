@@ -168,7 +168,8 @@
       } else if(ziel && e.abbauenGehalten) this.abbauFortschritt(ziel, dt);
       else this._abbau = null;
       // Setzen, Kiste öffnen
-      if(e.setzen && ziel){
+      if(e.setzen && !gast && this._tierBenutzen()){ /* Tier gestreichelt oder gefüttert */ }
+      else if(e.setzen && ziel){
         if(this.benutzeBlock(ziel)){ /* Werkbank geöffnet */ }
         else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gast) gast.kiste(ziel.x, ziel.y, ziel.z);
         else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gastgeber){ if(gastgeber.oeffneKiste(ziel.x, ziel.y, ziel.z).length) a.spiele("kiste"); }

@@ -122,6 +122,23 @@
       if(SC.Tier.gibErfahrung(t, xp, k.werte.stufe)){ s.ui.hinweis(SC.T.tierStufe.replace("{name}", t.name).replace("{stufe}", t.stufe), 2500); s.audio.spiele("aufstieg"); }
     });
   };
+  // --- Streicheln und Füttern: Benutzen-Taste (wie Bett und Truhe) auf ein eigenes Begleitertier in Reichweite ---
+  // Mit Tierfutter in der Hand wird gefüttert (5 min stärker, heilt), sonst gestreichelt (2 min stärker). → true, wenn ein Tier gemeint war
+  S._tierBenutzen = function(){
+    var w = this.welt, sp = this.spieler, k = this.kampf, fid = this.daten.spieler.figurId, b = [-Math.sin(sp.blick[0]), -Math.cos(sp.blick[0])], best = null, bd = Infinity;
+    w.wesen.forEach(function(e){
+      if(e.art !== "tier" || e.besitzer !== fid) return;
+      var d = ring(w, sp.pos, e.pos), l = Math.hypot(d[0], d[2]);
+      if(l > 4 || Math.abs(d[1]) > 2.5 || (l > 1.2 && (b[0] * d[0] + b[1] * d[2]) / l < 0.5)) return;
+      if(l < bd){ bd = l; best = e; }
+    });
+    var t = best && k.kaefig.tier(best.tierId); if(!t) return false;
+    var hand = k.rucksack.plaetze[sp.auswahl], futter = !!(hand && hand.block === SC.B.TIERFUTTER) && !(t.staerke && t.staerke.art === "fuettern" && t.staerke.rest > 295);
+    if(futter && SC.Tier.staerken(t, "fuettern")){ k.rucksack.verbrauche(sp.auswahl); best.lp = t.lp; this.ui.hinweis(SC.T.gefuettert.replace("{name}", t.name), 2500); }
+    else if(SC.Tier.staerken(t, "streicheln")) this.ui.hinweis(SC.T.gestreichelt.replace("{name}", t.name), 2500);
+    this.render.wesen.funken([best.pos[0], best.pos[1] + best.hoehe + 0.2, best.pos[2]], "#ff7fb0", 10, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 1 });
+    return true;
+  };
   S._tierRaus = function(id){ var r = this.kampf.kaefig.rauslassen(id); if(r === "ok") this._tiereAbgleichen(); return r; };
   S._tierRein = function(id){ if(!this.kampf.kaefig.tier(id)) return; this.kampf.kaefig.zurueck(id); this._tiereAbgleichen(); };
 

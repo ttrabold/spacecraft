@@ -209,3 +209,8 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
 .fang-zone{border-style:solid;border-color:rgba(80,240,120,.75);box-sizing:border-box}
 .fang-ring{border:4px solid #fff;box-sizing:border-box;box-shadow:0 0 12px #3ef0ff}
 .fang-text{position:absolute;left:50%;top:calc(50% + 190px);transform:translateX(-50%);font-size:22px;font-weight:bold;color:#fff;text-shadow:0 0 6px #000}
+/* Käfig (Haustiere): Platz mit Emoji, Stufe unten links; draußen = grüner Rand, K.o. = blass */
+.kf-emoji{font-size:26px;line-height:1}
+.rs-platz.draussen{box-shadow:inset 0 0 0 2px #5fdc5f}
+.rs-platz.ko{opacity:.55}
+.kf-name{font-size:16px;padding:8px 10px;border-radius:8px;border:2px solid #3ef0ff;background:#0e0c28;color:#fff;width:100%;box-sizing:border-box}

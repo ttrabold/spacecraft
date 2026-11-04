@@ -186,11 +186,13 @@ SC.Spiel.startpunkt = function(planet){
         var kp = this.kampf, ich = this; this.eingabe.gebeMausFrei();
         ui.zeigeBlockauswahl(function(id){ sp.schnellleiste[sp.auswahl] = id; ui.hinweis(SC.BLOECKE[id].name, 1200); }, {
           ausruestung: true,
+          beiTier: function(art){ var t = SC.Tier.neu(art); ui.hinweis(kp.kaefig.lege(t) ? SC.T.neuGefangen.replace("{name}", t.name + " (" + SC.TIERE[art].name + ")") : SC.T.kaefigVoll, 2000); },
           beiMaterial: function(id){ var rest = kp.rucksack.lege({ block: id, anzahl: SC.Rucksack.STAPEL }); ui.hinweis(rest === SC.Rucksack.STAPEL ? SC.T.rucksackVoll : SC.BLOECKE[id].name + " × " + (SC.Rucksack.STAPEL - rest) + " → " + SC.T.rucksackTitel, 1500); },
           beiFahrzeug: function(art){ var f = ich.fahrzeugHinstellen(art); if(f) ui.hinweis(SC.FAHRZEUGE[art].name, 1500); },
           beiGegenstand: function(art, selt){ var g = SC.Beute.erzeuge(SC.zufall((Math.random() * 4294967296) >>> 0), { stufe: kp.werte.stufe, art: art, mindest: selt }); g.seltenheit = selt; if(kp.rucksack.lege({ gegenstand: g })) ui.hinweis(SC.T.rucksackVoll); else ui.hinweis(g.name + " → " + SC.T.rucksackTitel, 1500); }
         });
       }
+      if(e.kaefig && sp.modus !== "zuschauer" && !this.all && !this._imFahrzeug()){ this.eingabe.gebeMausFrei(); this.zeigeKaefig(); }
       if(e.ansicht) sp.ansicht = sp.ansicht === "ich" ? "aussen" : "ich";
       if(e.benutzen) this.benutzen();
       if(e.platz) this.platzWechseln();
@@ -250,9 +252,20 @@ SC.Spiel.startpunkt = function(planet){
     });
   };
 
+  // Käfig-Panel: Aktionen gehen an die Begleiter-Verwaltung (js/haustiere.js)
+  SC.Spiel.prototype._kaefigOptionen = function(){
+    var s = this, k = this.kampf;
+    return { beiRaus: function(id){ return s._tierRaus(id); }, beiRein: function(id){ s._tierRein(id); }, beiUmbenennen: function(id, n){ k.kaefig.umbenennen(id, n); },
+      beiFreilassen: function(id){ s._tierRein(id); k.kaefig.freilassen(id); } };
+  };
+  SC.Spiel.prototype.zeigeKaefig = function(){
+    var s = this, o = this._kaefigOptionen(); o.beiFertig = function(){ s._weiter(); };
+    this.ui.zeigeKaefig(this.kampf.kaefig, o);
+  };
   SC.Spiel.prototype.zeigeRucksack = function(){
     var s = this;
     this.ui.zeigeRucksack(this.kampf, {
+      kaefig: this._kaefigOptionen(),
       beiWegwerfen: function(sache){ if(sache) s.beuteAuswerfen([s.spieler.pos[0] - Math.sin(s.spieler.blick[0]) * 1.5, s.spieler.pos[1], s.spieler.pos[2] - Math.cos(s.spieler.blick[0]) * 1.5], [sache], { sperre: 4, weit: true, richtung: Math.atan2(-Math.cos(s.spieler.blick[0]), -Math.sin(s.spieler.blick[0])) }); },
       beiFertig: function(){ s._weiter(); }
     });

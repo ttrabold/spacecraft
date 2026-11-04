@@ -58,7 +58,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
 };
 
 (function(){
-  var EINMAL = { KeyE: "blockauswahl", Escape: "menue", F5: "ansicht", KeyV: "ansicht", F3: "entwickler", KeyQ: "ausweichen", KeyF: "benutzen", KeyT: "ziel", KeyJ: "sprung", KeyG: "platz" };
+  var EINMAL = { KeyE: "blockauswahl", Escape: "menue", F5: "ansicht", KeyV: "ansicht", F3: "entwickler", KeyQ: "ausweichen", KeyF: "benutzen", KeyT: "ziel", KeyJ: "sprung", KeyG: "platz", KeyK: "kaefig" };
   SC.Eingabe.prototype._druecke = function(code){
     if(!this.tasten.has(code)){
       if(EINMAL[code]) this._einmal[EINMAL[code]] = true;
@@ -113,7 +113,7 @@ SC.Eingabe = function(leinwand, uiWurzel){
     b.setzen = !!e1.setzen || wiederhole(this._maus, "setzen", "tSetzen", jetzt) || wiederhole(this._gpHalten, "setzen", "tSetzen", jetzt) || !!(t && t.wiederhole("setzen", jetzt));
     b.auswahl = e1.auswahl === undefined ? null : e1.auswahl;
     b.auswahlRad = this._rad; this._rad = 0;
-    b.menue = !!e1.menue; b.blockauswahl = !!e1.blockauswahl; b.ansicht = !!e1.ansicht; b.entwickler = !!e1.entwickler; b.ausweichen = !!e1.ausweichen; b.benutzen = !!e1.benutzen; b.ziel = !!e1.ziel; b.sprung = !!e1.sprung; b.platz = !!e1.platz;
+    b.menue = !!e1.menue; b.blockauswahl = !!e1.blockauswahl; b.ansicht = !!e1.ansicht; b.entwickler = !!e1.entwickler; b.ausweichen = !!e1.ausweichen; b.benutzen = !!e1.benutzen; b.ziel = !!e1.ziel; b.sprung = !!e1.sprung; b.platz = !!e1.platz; b.kaefig = !!e1.kaefig;
     b.abbauenGehalten = this._maus.abbauen || this._gpHalten.abbauen || !!(t && t._knopf.abbauen);
     b.setzenGehalten = this._maus.setzen || this._gpHalten.setzen || !!(t && t._knopf.setzen);
     if(!this.aktiv){ b.abbauen = b.setzen = b.abbauenGehalten = b.setzenGehalten = b.ausweichen = false; b.blickDx = b.blickDy = 0; b.auswahlRad = 0; b.benutzen = b.ziel = b.sprung = b.platz = false; }

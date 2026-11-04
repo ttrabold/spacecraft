@@ -451,14 +451,18 @@ SC.UI = function(wurzel, o){
     var mat = opt.beiMaterial ? '<div class="raster mat" hidden>' + SC.CRAFTING_MATERIALIEN.map(function(id){
       return '<button class="block" data-aktion="material" data-block="' + id + '" title="' + esc(SC.BLOECKE[id].name) + '"><img src="' + SC.UI.blockBild(id) + '" alt=""><span>' + esc(SC.BLOECKE[id].name) + "</span></button>";
     }).join("") + "</div>" : "";
+    // Kreativ: Reiter Tiere – jede Art direkt in den Käfig
+    if(opt.beiTier) reiter = reiter.replace("</div>", '<button class="modus" data-aktion="reiter" data-id="tiere">' + esc(SC.T.tiereTitel) + "</button></div>");
+    var tr = opt.beiTier ? '<div class="raster tiere" hidden>' + Object.keys(SC.TIERE).map(function(a){ return '<button class="block" data-aktion="tier" data-art="' + a + '" title="' + esc(SC.TIERE[a].name) + '"><span class="kf-emoji">' + SC.TIERE[a].emoji + "</span><span>" + esc(SC.TIERE[a].name) + "</span></button>"; }).join("") + "</div>" : "";
     var fz = opt.beiFahrzeug ? '<div class="raster fz" hidden>' + Object.keys(SC.FAHRZEUGE).map(function(a){ return '<button class="block" data-aktion="fahrzeug" data-art="' + a + '"><span>' + esc(SC.FAHRZEUGE[a].name) + "</span></button>"; }).join("") + "</div>" : "";
-    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl" data-zone="raster">' + kacheln + "</div>" + ausr + mat + fz + '<div class="reihe" data-zone="aktionen"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl" data-zone="raster">' + kacheln + "</div>" + ausr + mat + tr + fz + '<div class="reihe" data-zone="aktionen"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
       {
         block: function(el){ beiWahl(+el.getAttribute("data-block")); },
         fahrzeug: function(el){ opt.beiFahrzeug(el.getAttribute("data-art")); },
         material: function(el){ opt.beiMaterial(+el.getAttribute("data-block")); },
+        tier: function(el){ opt.beiTier && opt.beiTier(el.getAttribute("data-art")); },
         gegenstand: function(el){ opt.beiGegenstand && opt.beiGegenstand(el.getAttribute("data-art"), +el.getAttribute("data-selt")); },
-        reiter: function(el){ var id = el.getAttribute("data-id"), a = id === "ausruestung", fzr = ui.ebene.querySelector(".raster.fz"), matr = ui.ebene.querySelector(".raster.mat"); ui.ebene.querySelector(".raster.bl").hidden = id !== "bloecke"; ui.ebene.querySelector(".raster.ausr").hidden = !a; if(fzr) fzr.hidden = id !== "fahrzeuge"; if(matr) matr.hidden = id !== "material"; Array.prototype.forEach.call(ui.ebene.querySelectorAll(".reiter button"), function(b){ b.classList.toggle("an", b === el); }); },
+        reiter: function(el){ var id = el.getAttribute("data-id"), a = id === "ausruestung", fzr = ui.ebene.querySelector(".raster.fz"), matr = ui.ebene.querySelector(".raster.mat"), tir = ui.ebene.querySelector(".raster.tiere"); ui.ebene.querySelector(".raster.bl").hidden = id !== "bloecke"; ui.ebene.querySelector(".raster.ausr").hidden = !a; if(fzr) fzr.hidden = id !== "fahrzeuge"; if(matr) matr.hidden = id !== "material"; if(tir) tir.hidden = id !== "tiere"; Array.prototype.forEach.call(ui.ebene.querySelectorAll(".reiter button"), function(b){ b.classList.toggle("an", b === el); }); },
         fertig: function(){ ui.schliesse(); ui.o.beiWeiter && ui.o.beiWeiter(); }
       }, { seite: true, startZone: "raster" });
   };

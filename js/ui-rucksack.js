@@ -154,7 +154,7 @@
         '<div class="rs-werte">' + esc(SC.T.stufe) + " " + w.stufe + " · " + esc(SC.T.werteName.lp) + " " + w.lpMax + " · " + esc(SC.T.werteName.schutz) + " " + w.schutz + (w.schildMax ? " · " + esc(SC.T.werteName.schild) + " " + w.schildMax : "") + "</div>" +
         '<div class="rs-info"></div></div>' +
         '<div class="rs-raster" data-zone="raster">' + rs.plaetze.map(platzHtml).join("") + "</div></div>" +
-        '<div class="reihe" data-zone="aktionen"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+        '<div class="reihe" data-zone="aktionen"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button data-aktion="kaefig">' + esc(SC.T.kfKnopf) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
         aktionen, { seite: true, startZone: "raster" });
       // Offenes Menü: Cursor auf die erste Aktion; sonst zurück auf den Platz, an dem man war
       var f = menue ? ui.ebene.querySelector(".rs-menue button") : cursor && ui.ebene.querySelector(cursor.platz ? '.rs-aplatz[data-platz="' + cursor.platz + '"]' : '.rs-platz[data-i="' + cursor.i + '"]');
@@ -197,6 +197,7 @@
       verschieben: function(){ verschieben = menue.i; cursor = { i: menue.i }; menue = null; zeichne(); },
       abbrechen: function(){ menue = null; zeichne(); },
       handwerk: function(){ ui.zeigeWerkbank(kampf, { station: "hand", beiAenderung: o.beiAenderung, beiFertig: function(){ ui.zeigeRucksack(kampf, o); } }); },
+      kaefig: function(){ ui.zeigeKaefig(kampf.kaefig, Object.assign({}, o.kaefig || {}, { beiFertig: function(){ ui.zeigeRucksack(kampf, o); } })); },
       fertig: function(){ ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); }
     };
     // Controller: der Fokus zieht die Info-Zeile nach; Y legt sofort an bzw. legt in die Schnellleiste (ohne Menü); B schließt zuerst das Menü

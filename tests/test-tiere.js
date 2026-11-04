@@ -285,3 +285,28 @@ test("Gegnerhieb und Gegnerschuss treffen den Begleiter; bei 0 Leben K.o. im Kä
   wahr(s._hinweise.some(function(h){ return h.indexOf(k.t.name) >= 0; }), "Hinweis mit Namen");
   SC.Tier.zeit(k.t, 60); gleich(s.kampf.kaefig.rauslassen(k.t.id), "ok", "nach 1 Minute wieder fit");
 });
+// Streicheln und Füttern (Aufgabe 9)
+test("Streicheln überschreibt keine stärkere Fütterung", function(){
+  var t = tierNeu(); gleich(SC.Tier.staerken(t, "fuettern"), true); gleich(SC.Tier.staerken(t, "streicheln"), false, "Fütterung bleibt"); gleich(t.staerke.art, "fuettern"); gleich(t.staerke.rest, 300);
+  var u = tierNeu(); gleich(SC.Tier.staerken(u, "streicheln"), true); gleich(SC.Tier.staerken(u, "fuettern"), true); gleich(u.staerke.art, "fuettern");
+});
+test("Streicheln stärkt 120 s, Füttern verbraucht Futter und stärkt 300 s", function(){
+  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5];
+  gleich(s._tierBenutzen(), true); gleich(k.t.staerke.art, "streicheln"); gleich(k.t.staerke.rest, 120);
+  s.kampf.rucksack.plaetze[0] = { block: SC.B.TIERFUTTER, anzahl: 2 }; s.spieler.auswahl = 0; k.t.lp = 1; k.e.lp = 1;
+  gleich(s._tierBenutzen(), true); gleich(k.t.staerke.art, "fuettern"); gleich(k.t.staerke.rest, 300); gleich(s.kampf.rucksack.plaetze[0].anzahl, 1, "ein Futter verbraucht"); gleich(k.e.lp, SC.Tier.werte(k.t).lpMax, "geheilt (Wesen)");
+  gleich(s._tierBenutzen(), true); gleich(s.kampf.rucksack.plaetze[0].anzahl, 1, "frisch gefüttert: kein Futter verschwenden");
+  k.t.staerke.rest = 100; gleich(s._tierBenutzen(), true); gleich(s.kampf.rucksack.plaetze[0], null, "letztes Futter weg"); gleich(k.t.staerke.rest, 300, "verlängert");
+  gleich(s._tierBenutzen(), true); gleich(k.t.staerke.art, "fuettern", "ohne Futter nur Streicheln, Fütterung bleibt");
+});
+test("Fremdes Tier, Wildtier oder weit entferntes: Benutzen tut nichts", function(){
+  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, -30.5]; gleich(s._tierBenutzen(), false, "weit weg");
+  k.e.pos = [4.5, 90, 2.5]; k.e.besitzer = "andere"; gleich(s._tierBenutzen(), false, "fremd"); gleich(k.t.staerke, null);
+  k.e.besitzer = s.daten.spieler.figurId; k.e.pos = [4.5, 90, 20.5]; wild(s.welt, "hase", [4.5, 90, 2.5]); gleich(s._tierBenutzen(), false, "Wildtier"); gleich(k.t.staerke, null);
+});
+test("Rechtsklick auf das eigene Tier streichelt es, Blöcke setzt man dann nicht", function(){
+  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5]; s.render.markiere = function(){}; s.render.wesen.risse = function(){}; s.render.blocke = function(){}; s.render.ausruestung = function(){}; s.render.hieb = function(){}; s.render.fps = 60; s.eingabe = { touchAktiv: false, gamepadAktiv: false };
+  s.einstellungen = { fpsAnzeigen: false }; s.ui.hud = function(){}; s.ui.kampfHud = function(){}; s.ui.zeigeBesiegt = function(){}; s.kampf.rucksack.plaetze[0] = { block: SC.B.STEIN, anzahl: 5 }; s.spieler.auswahl = 0;
+  var e = { ausweichen: false, setzenGehalten: false, abbauen: false, abbauenGehalten: false, setzen: true, vor: false, zurueck: false, links: false, rechts: false };
+  s._survival(e, 0.05, false, 1000); gleich(k.t.staerke && k.t.staerke.art, "streicheln"); gleich(s.kampf.rucksack.plaetze[0].anzahl, 5, "kein Block gesetzt");
+});

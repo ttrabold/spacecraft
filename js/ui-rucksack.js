@@ -61,6 +61,25 @@
     if(frisch){ var sp = kampf.spieler, w0 = Math.atan2(-t.richtung[0], -t.richtung[2]) - sp.blick[0]; pf.style.transform = "translate(-50%,-50%) rotate(" + (-w0) + "rad) translateY(-90px)"; }
   };
 
+  // Fang-Minispiel „Zielring“: z = { ring (1→0), zone: [von, bis], treffer, noetig } oder null (aus). Der Überzug nimmt Tipps an (Touch: irgendwo antippen).
+  // Es wird nur geschrieben, was sich ändert (HUD-Regel).
+  SC.UI.prototype.fangRing = function(z, beiTipp){
+    var el = this._fangEl;
+    if(!z){ if(el){ el.remove(); this._fangEl = null; } return; }
+    if(!el){
+      el = this._fangEl = document.createElement("div"); el.className = "fang";
+      el.innerHTML = '<div class="fang-zone"></div><div class="fang-ring"></div><div class="fang-text"></div>';
+      el.addEventListener("pointerdown", function(ev){ ev.preventDefault(); if(el._beiTipp) el._beiTipp(); });
+      this.hudEl.appendChild(el);
+    }
+    el._beiTipp = beiTipp;
+    var D = 90, B = 300, br = (z.zone[1] - z.zone[0]) * B / 2;
+    var zs = el.firstChild, rs = zs.nextSibling, ts = rs.nextSibling, zk = D + B * z.zone[1] + "|" + br, rk = D + B * z.ring;
+    if(zs._k !== zk){ zs._k = zk; zs.style.width = zs.style.height = (D + B * z.zone[1]) + "px"; zs.style.borderWidth = br + "px"; }
+    if(rs._k !== rk){ rs._k = rk; rs.style.width = rs.style.height = rk + "px"; }
+    var t = z.noetig > 1 ? z.treffer + " / " + z.noetig : ""; if(ts.textContent !== t) ts.textContent = t;
+  };
+
   SC.UI.prototype.zeigeBesiegt = function(beiWeiter){
     this._zeige('<div class="besiegt"><h1>' + esc(SC.T.besiegt) + "</h1><p>" + esc(SC.T.besiegtText) + '</p><button class="haupt" data-aktion="weiter">' + esc(SC.T.weiter) + "</button></div>",
       { weiter: function(){ this.schliesse(); beiWeiter(); } });

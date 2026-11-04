@@ -152,3 +152,50 @@ test("Jede Tierart lässt sich zeichnen, laufen und Chamäleon wechselt die Farb
   var ch = rw.objekte.get(Object.keys(SC.TIERE).indexOf("chamaeleon") + 1), r = ch.teile.filter(function(t){ return t.teil === "rumpf"; })[0], c1 = r.mesh.material.color.getHex();
   rw.bild(welt, [10, 60, 10], 0.016, 1, 3000); wahr(r.mesh.material.color.getHex() !== c1, "Farbe wechselt");
 });
+// Fangen mit dem Zielring (Aufgabe 6)
+function fangBisZone(f){ var n = 0; while(f.ring > (f.zone[0] + f.zone[1]) / 2 && n++ < 10000) f.schritt(0.01); }
+test("Zielring: Druck in der grünen Zone trifft, sonst daneben", function(){
+  var f = new SC.Fang(0); gleich(f.druecken(), "daneben", "sofort gedrückt"); gleich(f.fertig, "daneben");
+  f = new SC.Fang(0); fangBisZone(f); gleich(f.druecken(), "gefangen"); gleich(f.fertig, "gefangen");
+});
+test("Zielring: selten braucht zwei, sehr selten drei Treffer, jede Runde schneller", function(){
+  var f = new SC.Fang(1), v0 = f.tempo; gleich(f.noetig, 2); fangBisZone(f); gleich(f.druecken(), "treffer"); wahr(f.tempo > v0, "schneller"); gleich(f.ring, 1, "neue Runde"); fangBisZone(f); gleich(f.druecken(), "gefangen");
+  f = new SC.Fang(2); gleich(f.noetig, 3); fangBisZone(f); f.druecken(); fangBisZone(f); gleich(f.druecken(), "treffer"); fangBisZone(f); gleich(f.druecken(), "gefangen");
+});
+test("Zielring: verpasst = daneben, danach läuft nichts mehr", function(){
+  var f = new SC.Fang(0), r = "laeuft", n = 0; while(r === "laeuft" && n++ < 10000) r = f.schritt(0.01); gleich(r, "daneben"); gleich(f.druecken(), "daneben"); gleich(f.schritt(0.01), "daneben");
+});
+function fangSpiel(artId){
+  var s = survSpiel(), w = s.welt; s.kampf.rucksack.plaetze[0] = { block: SC.B.NETZ, anzahl: 1 }; s.spieler.auswahl = 0; s.spieler.blick = [0, 0];
+  s.render = { wesen: { funken: function(){}, zahl: function(){} } }; s._zf = SC.zufall(1); s.ui.fangRing = function(z){ s._ring = z; }; s._hinweise = []; s.ui.hinweis = function(t){ s._hinweise.push(t); };
+  var d = SC.TIERE[artId || "hase"], e = SC.Wesen.neu(w, "tier", { tierArt: artId || "hase", wild: true, pos: [4.5, 90, 2.5], heim: [4.5, 90, 2.5], breite: d.breite, hoehe: d.hoehe }); return { s: s, e: e, w: w };
+}
+test("Fang legt das Tier in den Käfig, das Netz bleibt", function(){
+  var t = fangSpiel("hase"), s = t.s; s._fangVersuch(); wahr(s._fang, "Fang läuft"); wahr(t.e.haeltStill, "Tier hält still"); wahr(t.e.fangVon, "gesperrt");
+  fangBisZone(s._fang.fang); s._fangDruck = true; s._fangBild(0.01, false);
+  gleich(s.kampf.kaefig.plaetze.filter(Boolean).length, 1, "im Käfig"); gleich(s.kampf.kaefig.plaetze[0].art, "hase"); wahr(!t.w.wesen.has(t.e.id), "Wesen weg"); gleich(s.kampf.rucksack.hat(SC.B.NETZ), 1, "Netz bleibt"); gleich(s._fang, null);
+  wahr(s._hinweise.some(function(h){ return h.indexOf(s.kampf.kaefig.plaetze[0].name) >= 0 || h.indexOf("gefangen") >= 0; }), "Hinweis: " + s._hinweise.join("|"));
+});
+test("Daneben: Tier hoppelt weg, nichts geht verloren, neuer Versuch geht", function(){
+  var t = fangSpiel("hase"), s = t.s; s._fangVersuch(); s._fangDruck = true; s._fangBild(0.01, false);
+  gleich(s._fang, null, "Fang vorbei"); gleich(t.e.haeltStill, false); gleich(t.e.fangVon, null); wahr(t.w.wesen.has(t.e.id), "Tier noch da"); gleich(s.kampf.rucksack.hat(SC.B.NETZ), 1);
+  t.e.pos = [4.5, 90, 2.5]; t.e.geschw = [0, 0, 0]; s._fangVersuch(); wahr(s._fang, "zweiter Versuch");
+});
+test("Käfig voll: kein Fang, Hinweis", function(){
+  var t = fangSpiel(), s = t.s; for(var i = 0; i < 18; i++) s.kampf.kaefig.lege(tierNeu());
+  s._fangVersuch(); gleich(s._fang || null, null); wahr(s._hinweise.indexOf(SC.T.kaefigVoll) >= 0, "Hinweis"); gleich(t.e.fangVon || null, null);
+});
+test("Gesperrtes Tier kann kein zweiter fangen; zu weit weg geht nicht", function(){
+  var t = fangSpiel(), s = t.s; t.e.fangVon = "andere"; s._fangVersuch(); gleich(s._fang || null, null, "gesperrt");
+  t.e.fangVon = null; t.e.pos = [4.5, 90, -20.5]; s._fangVersuch(); gleich(s._fang || null, null, "zu weit");
+});
+test("Fang bricht ab, wenn das Netz weg ist oder ein Menü aufgeht", function(){
+  var t = fangSpiel(), s = t.s; s._fangVersuch(); s.spieler.auswahl = 1; s._fangBild(0.01, false); gleich(s._fang, null, "Netz nicht mehr in der Hand"); gleich(t.e.haeltStill, false); gleich(t.e.fangVon, null);
+  s.spieler.auswahl = 0; s._fangVersuch(); wahr(s._fang); s._fangBild(0.01, true); gleich(s._fang, null, "Menü offen");
+});
+test("Eingaben beim Fangen: Bewegung gesperrt, Klick, Leertaste und A zählen als Druck", function(){
+  var t = fangSpiel(), s = t.s; s._fangVersuch();
+  ["abbauen", "springenNeu", "setzen"].forEach(function(k){ s._fangDruck = false; var e = { vor: true, links: true, springen: true, blickDx: 5, blickDy: 5, abbauen: false, springenNeu: false, setzen: false }; e[k] = true; s._fangEingabe(e); wahr(s._fangDruck, k + " zählt"); gleich(e.vor, false); gleich(e.springen, false); gleich(e.blickDx, 0); });
+  s._fangDruck = false; var e2 = { vor: true }; s._fangEingabe(e2); gleich(s._fangDruck, false, "ohne Druck kein Druck");
+  s._fang = null; var e3 = { vor: true }; s._fangEingabe(e3); gleich(e3.vor, true, "ohne Fang bleibt alles");
+});

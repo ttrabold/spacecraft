@@ -203,3 +203,9 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
 .wb-fz{font-size:26px;line-height:1.1}
 .wb-farbe{width:28px;height:28px;min-height:0;padding:0;border:3px solid #3a3a5a;border-radius:6px}.wb-farbe.an{border-color:#eef2fa}
 .wb-fzwerte{margin:8px 0;color:#aab3d6}
+/* Fang-Minispiel: Zielring um das Tier (Bildmitte), der Überzug nimmt Tipps an */
+.fang{position:fixed;inset:0;z-index:30;pointer-events:auto;display:flex;align-items:center;justify-content:center;touch-action:none}
+.fang-zone,.fang-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;box-sizing:content-box}
+.fang-zone{border-style:solid;border-color:rgba(80,240,120,.75);box-sizing:border-box}
+.fang-ring{border:4px solid #fff;box-sizing:border-box;box-shadow:0 0 12px #3ef0ff}
+.fang-text{position:absolute;left:50%;top:calc(50% + 190px);transform:translateX(-50%);font-size:22px;font-weight:bold;color:#fff;text-shadow:0 0 6px #000}

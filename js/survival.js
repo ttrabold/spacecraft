@@ -163,6 +163,7 @@
         }
         if(k.ueberhitztBis <= t) this._heiss = false;
         this._abbau = null;   // mit Waffe läuft nie ein Abbau → kein Riss am Block (#127)
+      } else if(k.netz() && e.abbauen){ if(!gast) this._fangVersuch(); this._abbau = null;   // Fangnetz: Angriffstaste fängt ein Tier (Gast: Aufgabe Mehrspieler)
       } else if(ziel && e.abbauenGehalten) this.abbauFortschritt(ziel, dt);
       else this._abbau = null;
       // Setzen, Kiste öffnen

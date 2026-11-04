@@ -99,6 +99,7 @@ SC.T = {
   aus: "aus",
   rucksackTitel: "Rucksack und Ausrüstung",
   rucksackVoll: "Der Rucksack ist voll.",
+  kaefigVoll: "Der Käfig ist voll. Lass ein Tier frei, um Platz zu schaffen.", neuGefangen: "Neu gefangen: {name}!", fangDaneben: "Daneben! Gleich nochmal.", fangTreffer: "Treffer! Noch mal!",
   truheTitel: "Truhe", truheTipp: "Tippe einen Gegenstand an, um ihn zu verschieben.", truheVoll: "Die Truhe ist voll.", truheWeg: "Hier ist keine Truhe mehr.",
   bettGesetzt: "Wiedereinstieg am Bett gesetzt.", nurNachts: "Du kannst nur nachts schlafen.", monsterNah: "Du kannst jetzt nicht schlafen, es sind Gegner in der Nähe!", schlafZzz: "Zzz …", schlafWarte: "Warte auf die anderen …", guterMorgen: "Guten Morgen!", bettFehlte: "Dein Bett fehlte, du startest am Startpunkt.", bettBlockiert: "Dein Bett ist blockiert, du startest am Startpunkt.",
   fzMotor: "Motor", fzPanzerung: "Panzerung", fzWaffe: "Bordwaffe", fzKeine: "keine", fzFarbe: "Farbe", fzTempo: "Tempo", fzPanzerungWert: "Panzerung", fzSchaden: "Schaden", fzOhneWaffe: "ohne Bordwaffe",

@@ -177,6 +177,7 @@ SC.Spiel.startpunkt = function(planet){
       if(ew.offen()){ ew.verberge(); this.beiEntwicklerZu(); } else this._entwicklerAuf();
       return;
     }
+    this._fangEingabe(e);   // Fang-Minispiel sperrt Bewegung und Blick
     if(!offen){
       sp.blick[0] += e.blickDx; sp.blick[1] = Math.max(-1.55, Math.min(1.55, sp.blick[1] + e.blickDy));
       if(e.menue){ this.pause(); return; }

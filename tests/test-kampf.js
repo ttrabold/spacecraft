@@ -25,4 +25,6 @@ test("Automatisch anlegen tauscht bessere Rüstung aus dem Rucksack, Waffen nie"
   var gleichgut = { id: "g", art: "helm", seltenheit: 0, werte: { schutz: 9 }, name: "G" }; k.rucksack.plaetze[14] = { gegenstand: gleichgut };
   gleich(k.automatischAnlegen(gleichgut), null, "gleich gut: nichts");
   gleich(k.automatischAnlegen({ id: "fehlt", art: "helm", werte: { schutz: 50 } }), null, "nicht im Rucksack: nichts");
+  var echt = { id: "d", art: "stiefel", seltenheit: 2, werte: { schutz: 20 }, name: "D" }; k.rucksack.plaetze[15] = { gegenstand: echt };
+  gleich(k.automatischAnlegen({ id: "d", art: "stiefel", seltenheit: 2, werte: { schutz: 20 }, name: "Kopie" }), null, "gleiche id, anderes Objekt: nichts");
 });

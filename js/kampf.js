@@ -26,7 +26,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
   K.automatischAnlegen = function(g){
     var platz = SC.GEGENSTAENDE[g.art] && SC.GEGENSTAENDE[g.art].platz, pl = this.rucksack.plaetze, i = -1;
     if(!AUTO[platz]) return null;
-    for(var j = 0; j < pl.length; j++) if(pl[j] && pl[j].gegenstand && pl[j].gegenstand.id === g.id){ i = j; break; }
+    for(var j = 0; j < pl.length; j++) if(pl[j] && pl[j].gegenstand && pl[j].gegenstand === g){ i = j; break; }
     var alt = this.ausruestung[platz] || null;
     if(i < 0 || !SC.Beute.eindeutigBesser(g, alt)) return null;
     this.ausruestung[platz] = g; pl[i] = alt ? { gegenstand: alt } : null;

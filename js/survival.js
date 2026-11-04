@@ -258,6 +258,7 @@
   S._beuteAnlegen = function(g){
     if(this.einstellungen && this.einstellungen.autoAnlegen === false) return false;
     var r = this.kampf.automatischAnlegen(g); if(!r) return false;
+    if(this.ui.rucksackNeu) this.ui.rucksackNeu();   // Mehrspieler: das Spiel läuft bei offenem Rucksack weiter
     var haupt = Object.keys(SC.GEGENSTAENDE[g.art].haupt)[0], wert = function(x){ return x && x.werte ? (x.werte[haupt] || 0) : 0; };
     this.ui.hinweis(SC.T.autoAngelegt.replace("{name}", g.name).replace("{wert}", SC.T.werteName[haupt] || haupt).replace("{alt}", wert(r.alt)).replace("{neu}", wert(g)), 2500);
     return true;

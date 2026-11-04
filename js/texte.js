@@ -98,7 +98,6 @@ SC.T = {
   an: "an",
   aus: "aus",
   rucksackTitel: "Rucksack und Ausrüstung",
-  rucksackTipp: "Tippe einen Gegenstand an, um ihn anzusehen, anzulegen oder in die Schnellleiste zu legen.",
   rucksackVoll: "Der Rucksack ist voll.",
   truheTitel: "Truhe", truheTipp: "Tippe einen Gegenstand an, um ihn zu verschieben.", truheVoll: "Die Truhe ist voll.", truheWeg: "Hier ist keine Truhe mehr.",
   bettGesetzt: "Wiedereinstieg am Bett gesetzt.", nurNachts: "Du kannst nur nachts schlafen.", monsterNah: "Du kannst jetzt nicht schlafen, es sind Gegner in der Nähe!", schlafZzz: "Zzz …", schlafWarte: "Warte auf die anderen …", guterMorgen: "Guten Morgen!", bettFehlte: "Dein Bett fehlte, du startest am Startpunkt.", bettBlockiert: "Dein Bett ist blockiert, du startest am Startpunkt.",

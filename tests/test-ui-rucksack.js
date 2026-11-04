@@ -180,3 +180,41 @@ test("Rucksack-Raster: die Schnellleisten-Reihe sitzt im Raster wie die anderen 
     wahr(Math.abs((p9 - p0) - (p18 - p9)) < 1, "gleiche Reihenabstände: " + (p9 - p0) + " / " + (p18 - p9));
   });
 });
+// Issue #151: Kleinpunkte aus dem Review
+test("Waffenplatz mit Block in der Hand öffnet kein Menü, Info nennt den Platz", function(){ rsAuf(function(w,ui,k){
+  k.rucksack.plaetze[0]={block:SC.B.STEIN,anzahl:3}; k.spieler.auswahl=0; ui.zeigeRucksack(k,{});
+  var p=w.querySelector('.rs-aplatz[data-platz="waffe"]'); p.click();
+  wahr(!w.querySelector(".rs-menue"),"kein Menü"); gleich(document.activeElement.getAttribute("data-platz"),"waffe","Cursor auf dem Waffenplatz");
+  ui.beiFokus(p); wahr(w.querySelector(".rs-info").textContent.indexOf(SC.T.platzName.waffe)>=0,"Info nennt den Platz");
+}); });
+test("Waffenplatz: Menü bei der Ausrüstung, zweiter Tipp startet Verschieben", function(){ rsAuf(function(w,ui,k){
+  k.spieler.auswahl=0; wahr(k.waffe(),"Startwaffe"); ui.zeigeRucksack(k,{});
+  w.querySelector('.rs-aplatz[data-platz="waffe"]').click();
+  var m=w.querySelector(".rs-menue"); wahr(m&&m.closest(".rs-ausruestung"),"Menü bei der Ausrüstung");
+  gleich(rsKnoepfe(w),"verschieben,wegwerfen,abbrechen");
+  w.querySelector('.rs-aplatz[data-platz="waffe"]').click();
+  wahr(rsPlatz(w,0).classList.contains("verschiebt"),"Verschieben gestartet"); wahr(!w.querySelector(".rs-menue"),"Menü zu");
+}); });
+test("Menü unter der eigenen Reihe, in der letzten Rasterreihe darüber", function(){ rsAuf(function(w,ui,k){
+  var pl=k.rucksack.plaetze; pl[30]={block:SC.B.STEIN,anzahl:2};
+  k.ausruestung.helm={id:"a",art:"helm",seltenheit:0,werte:{schutz:5},name:"Helm"}; k.ausruestung.stiefel={id:"s",art:"stiefel",seltenheit:0,werte:{schutz:3},name:"Stiefel"};
+  ui.zeigeRucksack(k,{});
+  rsPlatz(w,12).click(); gleich(w.querySelector(".rs-menue").previousElementSibling.getAttribute("data-i"),"17","unter der Reihe 9–17");
+  rsPlatz(w,30).click(); gleich(w.querySelector(".rs-menue").nextElementSibling.getAttribute("data-i"),"27","über der letzten Reihe");
+  w.querySelector('.rs-aplatz[data-platz="helm"]').click(); gleich(w.querySelector(".rs-menue").previousElementSibling.getAttribute("data-platz"),"brust","unter der ersten Ausrüstungsreihe");
+  w.querySelector('.rs-aplatz[data-platz="stiefel"]').click(); gleich(w.querySelector(".rs-menue").previousElementSibling.getAttribute("data-platz"),"schild","unter der zweiten Ausrüstungsreihe");
+}); });
+test("Esc ohne offenes Menü geht an das Spiel weiter", function(){ rsAuf(function(w,ui,k){
+  ui.zeigeRucksack(k,{}); var ev=new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}), weiter=false;
+  var l=function(){ weiter=true; }; document.body.addEventListener("keydown",l);
+  rsPlatz(w,12).focus(); document.activeElement.dispatchEvent(ev); document.body.removeEventListener("keydown",l);
+  wahr(weiter,"Ereignis läuft weiter (das Spiel schließt den Rucksack)"); wahr(!ev.defaultPrevented,"nicht abgefangen");
+}); });
+test("Automatisch angelegt bei offenem Rucksack: Panel zeichnet neu, Cursor bleibt", function(){ rsAuf(function(w,ui,k){
+  k.ausruestung.helm={id:"a",art:"helm",seltenheit:0,werte:{schutz:5},name:"Alt"}; var neu=k.rucksack.plaetze[12].gegenstand;
+  ui.zeigeRucksack(k,{}); var p=rsPlatz(w,20); p.focus(); ui.beiFokus(p);
+  wahr(k.automatischAnlegen(neu),"angelegt"); ui.rucksackNeu();
+  wahr(w.querySelector(".rs-werte").textContent.indexOf(SC.T.werteName.schutz+" "+k.werte.schutz)>=0,"Werte neu"); wahr(k.werte.schutz>=9);
+  wahr(rsPlatz(w,12).getAttribute("style").indexOf(SC.SELTENHEIT[0].farbe)>=0,"alter Helm im Rucksack gezeigt"); gleich(document.activeElement.getAttribute("data-i"),"20","Cursor bleibt");
+  var w2=document.createElement("div"),ui2b=ui2(w2); ui2b.rucksackNeu();   // ohne Rucksack: nichts
+}); });

@@ -108,6 +108,18 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 - Die Zauberkugel ist ein Tisch mit einer Kristallkugel. Du baust sie an der Werkbank aus Brettern, Kristallen und Titan. Wer sie antippt, wird zu seinem Bett gebracht, auch von einem anderen Planeten aus.
 - Spielt ihr zusammen, holt der Gastgeber mit der Zauberkugel alle Mitspieler mit zu seinem Bett. Ein Gast fragt damit den Gastgeber, und der entscheidet, ob alle zurück zum Bett gehen.
 
+## Haustiere
+
+- Auf jedem Planeten laufen eigene Tiere frei herum: zum Beispiel Hasen, Frösche, Katzen und Hunde auf dem Startplaneten, Pinguine auf Glutfrost und Chamäleons auf Rankenmoor.
+- Das Fangnetz baust du an der Werkbank aus Wolle und Brettern. Nimm es in die Hand, geh nah ans Tier und drück die Angriffstaste (Klick, ⚔ oder RT).
+- Dann zieht sich ein Ring um das Tier zusammen: Drück Klick, Leertaste, tippe auf den Bildschirm oder drück A, wenn der Ring im grünen Bereich ist. Seltene Tiere brauchen zwei oder drei Treffer hintereinander.
+- Daneben? Das Tier hüpft weg, und du kannst es gleich nochmal versuchen. Das Netz geht nie kaputt.
+- Gefangene Tiere wohnen im Käfig (Taste K oder Knopf Käfig im Rucksack). Dort gibst du ihnen Namen und holst sie heraus: bis zu drei gleichzeitig. Sie folgen dir und kämpfen von selbst mit.
+- Wird ein Tier zu stark getroffen, geht es zurück in den Käfig und ruht sich eine Minute aus. Es verschwindet nie für immer.
+- Streicheln (Rechtsklick, Setzen-Knopf oder LT, wenn du das Tier ansiehst) macht es 2 Minuten stärker. Mit Tierfutter in der Hand macht Füttern es 5 Minuten stärker und heilt es. Tierfutter baust du an der Werkbank aus Blättern und Leuchtpilzen.
+- Wenn du mit deinem Tier Gegner besiegst, wird es stärker. Es kann aber nie eine höhere Stufe haben als du.
+- Spielt ihr zusammen, hat jeder seine eigenen Tiere.
+
 ## Fahrzeuge
 
 - Den Schwebeflitzer findest du am Startpunkt. Kraterkäfer stehen bei Lagern, Kometenjäger bei Stationen, Schwebeflitzer auch bei Herrenhäusern.

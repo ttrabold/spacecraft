@@ -310,3 +310,13 @@ test("Rechtsklick auf das eigene Tier streichelt es, Blöcke setzt man dann nich
   var e = { ausweichen: false, setzenGehalten: false, abbauen: false, abbauenGehalten: false, setzen: true, vor: false, zurueck: false, links: false, rechts: false };
   s._survival(e, 0.05, false, 1000); gleich(k.t.staerke && k.t.staerke.art, "streicheln"); gleich(s.kampf.rucksack.plaetze[0].anzahl, 5, "kein Block gesetzt");
 });
+// Abschluss (Aufgabe 11)
+test("Anleitung erklärt Haustiere, ANLEITUNG.md enthält denselben Abschnitt", function(){
+  var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Haustiere"; })[0]; wahr(a && a[1].length >= 7, "Abschnitt"); wahr(a[1].join(" ").indexOf("Fangnetz") >= 0 && a[1].join(" ").indexOf("Käfig") >= 0);
+});
+test("Entwicklerwerkzeuge: Tiere geben füllt Käfig, Netz und Futter", function(){
+  var w = document.createElement("div"), sp = new SC.Spieler({ id: "a", pos: [1, 70, 1], modus: "survival" }), k = k2(),
+    spiel = { tageszeit: 0.25, zeitTempo: 1, spieler: sp, kampf: k, welt: new SC.Welt(new SC.Planet({ id: "start", seed: 3 })), render: { fps: 60, chunks: new Map(), chunkGrenzen: false, sichtweite: 6 }, daten: { seed: "x" } },
+    pn = new SC.Entwickler.Panel(w, spiel); pn.zeige(); var kn = w.querySelector('[data-ew="tiere"]'); wahr(kn, "Knopf"); kn.click();
+  gleich(k.kaefig.plaetze.filter(Boolean).length, SC.Tier.arten("start").length); gleich(k.rucksack.hat(SC.B.NETZ), 1); gleich(k.rucksack.hat(SC.B.TIERFUTTER), 16);
+});

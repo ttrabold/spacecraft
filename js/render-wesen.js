@@ -54,7 +54,7 @@ SC.RenderWesen = function(szene, planet){
       hb.scale.set(kopf.w * 1.08, 0.07, kopf.d * 1.08); hb.position.set(kopf.x, kopf.y - kopf.h * 0.5, kopf.z); g.add(hb);
     }
     var sp = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false }));
-    sp.scale.set(2.2, 0.55, 1); sp.position.y = def.hoehe + 0.45; sp.visible = false; g.add(sp);
+    sp.scale.set(1.5, 0.375, 1); sp.position.y = def.hoehe + 0.35; sp.visible = false; g.add(sp);
     this.gruppe.add(g);
     return { g: g, teile: teile, schild: sp, lp: -1, schluessel: "" };
   };

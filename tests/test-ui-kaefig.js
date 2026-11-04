@@ -7,9 +7,9 @@ function kfAuf(fn, optionen){
 }
 function kfPlatz(w, i){ return w.querySelector('.rs-platz[data-i="' + i + '"]'); }
 function kfKnoepfe(w){ return [].map.call(w.querySelectorAll(".rs-menue button"), function(b){ return b.getAttribute("data-aktion"); }).join(); }
-test("Käfig-Panel zeigt 18 Plätze mit Tieren, Stufe und Zustand", function(){ kfAuf(function(w, ui, k, kf, ts, o){
+test("Käfig-Panel zeigt 54 Plätze mit Tieren, Stufe und Zustand", function(){ kfAuf(function(w, ui, k, kf, ts, o){
   ts[1].draussen = true; ts[2].koRest = 30; ui.zeigeKaefig(kf, o);
-  gleich(w.querySelectorAll(".rs-platz").length, 18); wahr(kfPlatz(w, 0).textContent.indexOf(SC.TIERE.hund.emoji) >= 0, "Emoji"); wahr(kfPlatz(w, 1).classList.contains("draussen"), "draußen markiert"); wahr(kfPlatz(w, 2).classList.contains("ko"), "K.o. markiert"); wahr(!kfPlatz(w, 5).textContent.trim(), "leerer Platz");
+  gleich(w.querySelectorAll(".rs-platz").length, SC.Kaefig.GROESSE); wahr(kfPlatz(w, 0).textContent.indexOf(SC.TIERE.hund.emoji) >= 0, "Emoji"); wahr(kfPlatz(w, 1).classList.contains("draussen"), "draußen markiert"); wahr(kfPlatz(w, 2).classList.contains("ko"), "K.o. markiert"); wahr(!kfPlatz(w, 5).textContent.trim(), "leerer Platz");
   gleich(document.activeElement.closest("[data-zone]").getAttribute("data-zone"), "raster", "Start im Raster");
 }); });
 test("Käfig-Panel: Menü je Zustand, Freilassen nie zuerst", function(){ kfAuf(function(w, ui, k, kf, ts, o){
@@ -44,11 +44,11 @@ test("Käfig-Panel: B schließt zuerst Rückfrage und Menü, dann das Panel; Zur
   w.querySelector('[data-aktion="fertig"]').click(); wahr(log.indexOf("fertig") >= 0, "Fertig"); wahr(ui.ebene.hidden, "Panel zu");
 }); });
 test("Rucksack hat einen Knopf zum Käfig, Fertig führt zurück", function(){ kfAuf(function(w, ui, k, kf, ts, o){
-  ui.zeigeRucksack(k, { kaefig: o }); w.querySelector('[data-aktion="kaefig"]').click(); wahr(w.querySelector(".rs-platz") && !w.querySelector('.rs-platz[data-i="30"]'), "Käfig-Panel (18 Plätze)"); gleich(w.querySelectorAll(".rs-platz").length, 18);
-  w.querySelector('[data-aktion="fertig"]').click(); wahr(w.querySelector('.rs-platz[data-i="30"]'), "zurück im Rucksack"); wahr(!w.querySelector('.rs-platz[data-i="30"]').closest(".kf-raster"), "Rucksack-Raster");
+  ui.zeigeRucksack(k, { kaefig: o }); w.querySelector('[data-aktion="kaefig"]').click(); wahr(w.querySelector(".kf-raster"), "Käfig-Panel (54 Plätze)"); gleich(w.querySelectorAll(".rs-platz").length, SC.Kaefig.GROESSE);
+  w.querySelector('[data-aktion="fertig"]').click(); wahr(w.querySelector(".rs-raster") && !w.querySelector(".kf-raster"), "zurück im Rucksack");
 }); });
 test("Kreativ-Blockauswahl hat den Reiter Tiere", function(){ kfAuf(function(w, ui){
   var art = null; ui.zeigeBlockauswahl(function(){}, { ausruestung: true, beiTier: function(a){ art = a; } });
   w.querySelector('[data-aktion="reiter"][data-id="tiere"]').click(); wahr(!w.querySelector(".raster.tiere").hidden, "Tiere sichtbar"); wahr(w.querySelector(".raster.bl").hidden, "Blöcke weg");
-  gleich(w.querySelectorAll('.raster.tiere [data-aktion="tier"]').length, 15); w.querySelector('[data-aktion="tier"][data-art="fuchs"]').click(); gleich(art, "fuchs");
+  gleich(w.querySelectorAll('.raster.tiere [data-aktion="tier"]').length, 30); w.querySelector('[data-aktion="tier"][data-art="fuchs"]').click(); gleich(art, "fuchs");
 }); });

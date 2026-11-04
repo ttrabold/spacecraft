@@ -3,9 +3,9 @@ function tierNeu(art){ return SC.Tier.neu(art || "hund", SC.zufall(3)); }
 test("Tiertabelle: jede Art hat Planet, Stil, Modell und Namen", function(){
   var n = 0;
   for(var a in SC.TIERE){ var d = SC.TIERE[a]; n++; wahr(d.modell.length && d.namen.length && d.name && ["start","glutfrost","rankenmoor"].indexOf(d.planet) >= 0, a); wahr(d.seltenheit >= 0 && d.seltenheit <= 2, a + " Seltenheit"); wahr(d.lp(1) > 0 && d.schaden(1) > 0, a + " Werte"); }
-  gleich(n, 15);
-  gleich(SC.Tier.arten("glutfrost").sort().join(), "eisbaer,glutsalamander,pinguin,schneefuchs");
-  gleich(SC.Tier.arten("start").length, 7); gleich(SC.Tier.arten("rankenmoor").length, 4);
+  gleich(n, 30);
+  gleich(SC.Tier.arten("glutfrost").sort().join(), "eisbaer,glutsalamander,lavakrabbe,pinguin,rentier,robbe,schneeeule,schneefuchs,schneehase");
+  gleich(SC.Tier.arten("start").length, 12); gleich(SC.Tier.arten("rankenmoor").length, 9);
 });
 test("Stärkung: Streicheln 120 s, Füttern 300 s, ersetzt statt zu stapeln", function(){
   var t = tierNeu(), s0 = SC.Tier.werte(t).schaden;
@@ -30,9 +30,9 @@ test("Neues Tier: Name aus der Liste, volles Leben, nicht draußen", function(){
   wahr(tierNeu().id !== tierNeu().id, "Ids verschieden");
 });
 // Käfig (Haustier-Inventar)
-test("Käfig: 18 Plätze, voll lehnt ab", function(){
-  var k = new SC.Kaefig(); gleich(k.alsDaten().length, 18);
-  for(var i = 0; i < 18; i++) wahr(k.lege(tierNeu()), "Platz " + i);
+test("Käfig: 54 Plätze, voll lehnt ab", function(){
+  var k = new SC.Kaefig(); gleich(k.alsDaten().length, SC.Kaefig.GROESSE);
+  for(var i = 0; i < SC.Kaefig.GROESSE; i++) wahr(k.lege(tierNeu()), "Platz " + i);
   gleich(k.lege(tierNeu()), false, "voll");
 });
 test("Käfig: höchstens 3 draußen, K.o. nicht", function(){
@@ -50,19 +50,19 @@ test("Käfig: freilassen macht den Platz frei, umbenennen prüft den Namen", fun
   k.freilassen(t.id); gleich(k.tier(t.id), null); gleich(k.lege(tierNeu()), true);
 });
 test("Käfig aus Daten: null, kurze und fremde Listen werden aufgefüllt", function(){
-  gleich(new SC.Kaefig(null).alsDaten().length, 18); gleich(new SC.Kaefig([tierNeu()]).alsDaten().length, 18);
+  gleich(new SC.Kaefig(null).alsDaten().length, SC.Kaefig.GROESSE); gleich(new SC.Kaefig([tierNeu()]).alsDaten().length, SC.Kaefig.GROESSE);
   var t = tierNeu(); var k = new SC.Kaefig(JSON.parse(JSON.stringify(new SC.Kaefig([t]).alsDaten()))); gleich(k.tier(t.id).name, t.name);
 });
 test("Alter Spielstand ohne Käfig lädt, Kampf hat einen leeren Käfig", function(){
   var d = SC.Spielstand.neu({ name: "A" }); delete d.spieler.kaefig;
-  var m = SC.Spielstand.migriere(d).daten; wahr(Array.isArray(m.spieler.kaefig), "Array"); gleich(m.spieler.kaefig.length, 18);
+  var m = SC.Spielstand.migriere(d).daten; wahr(Array.isArray(m.spieler.kaefig), "Array"); gleich(m.spieler.kaefig.length, SC.Kaefig.GROESSE);
   var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), k = new SC.Kampf(w, new SC.Spieler({ id: "a", pos: [4.5, 61, 4.5], modus: "survival" }), m, SC.zufall(9));
-  gleich(k.kaefig.alsDaten().length, 18); gleich(k.kaefig.draussen().length, 0);
+  gleich(k.kaefig.alsDaten().length, SC.Kaefig.GROESSE); gleich(k.kaefig.draussen().length, 0);
 });
 test("Käfig wird mit der Figur gespeichert und reist mit", function(){
   var d = SC.Spielstand.neu({ name: "A", modus: "survival" }), w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), sp = new SC.Spieler({ id: "a", pos: [4.5, 61, 4.5], modus: "survival" });
   var k = new SC.Kampf(w, sp, d, SC.zufall(9)), t = tierNeu("fuchs"); k.kaefig.lege(t); k.kaefig.rauslassen(t.id);
-  SC.Spielstand.ausSpieler(d, sp, k); gleich(d.spieler.kaefig.length, 18); var f = SC.Spielstand.figur(d);
+  SC.Spielstand.ausSpieler(d, sp, k); gleich(d.spieler.kaefig.length, SC.Kaefig.GROESSE); var f = SC.Spielstand.figur(d);
   var eigen = SC.Spielstand.figurUebernehmen(SC.Spielstand.neu({ name: "E" }), f);
   var k2 = new SC.Kampf(w, sp, eigen, SC.zufall(9)); gleich(k2.kaefig.tier(t.id).name, t.name); gleich(k2.kaefig.tier(t.id).draussen, true);
   wahr(SC.Spielstand.FIGUR_FELDER.indexOf("kaefig") >= 0, "Figurfeld");
@@ -148,7 +148,7 @@ test("Tiermodell wird gebaut, beschriftet und entfernt", function(){
 test("Jede Tierart lässt sich zeichnen, laufen und Chamäleon wechselt die Farbe", function(){
   var rw = new SC.RenderWesen(new THREE.Scene(), { groesse: 2048 }), welt = { wesen: new Map() }, i = 0;
   Object.keys(SC.TIERE).forEach(function(a){ i++; welt.wesen.set(i, tierEnt(i, a, { geschw: [2, 0, 0], besitzer: "a", name: "X", stufe: 1, lp: 10, lpMax: 10 })); });
-  rw.bild(welt, [10, 60, 10], 0.016, 1, 1000); gleich(rw.objekte.size, 15);
+  rw.bild(welt, [10, 60, 10], 0.016, 1, 1000); gleich(rw.objekte.size, 30);
   var ch = rw.objekte.get(Object.keys(SC.TIERE).indexOf("chamaeleon") + 1), r = ch.teile.filter(function(t){ return t.teil === "rumpf"; })[0], c1 = r.mesh.material.color.getHex();
   rw.bild(welt, [10, 60, 10], 0.016, 1, 3000); wahr(r.mesh.material.color.getHex() !== c1, "Farbe wechselt");
 });
@@ -182,7 +182,7 @@ test("Daneben: Tier hoppelt weg, nichts geht verloren, neuer Versuch geht", func
   t.e.pos = [4.5, 90, 2.5]; t.e.geschw = [0, 0, 0]; s._fangVersuch(); wahr(s._fang, "zweiter Versuch");
 });
 test("Käfig voll: kein Fang, Hinweis", function(){
-  var t = fangSpiel(), s = t.s; for(var i = 0; i < 18; i++) s.kampf.kaefig.lege(tierNeu());
+  var t = fangSpiel(), s = t.s; for(var i = 0; i < SC.Kaefig.GROESSE; i++) s.kampf.kaefig.lege(tierNeu());
   s._fangVersuch(); gleich(s._fang || null, null); wahr(s._hinweise.indexOf(SC.T.kaefigVoll) >= 0, "Hinweis"); gleich(t.e.fangVon || null, null);
 });
 test("Gesperrtes Tier kann kein zweiter fangen; zu weit weg geht nicht", function(){
@@ -414,9 +414,20 @@ test("Stärkung und K.o.-Pause laufen auch im All weiter", function(){
 });
 test("Spielstand: Käfig mit falscher Länge oder unbekannter Art verliert keine Tiere", function(){
   var d = SC.Spielstand.neu({ name: "A" }), t = SC.Tier.neu("hund", SC.zufall(1)); d.spieler.kaefig = [t, { id: "x", art: "drache", name: "?", stufe: 1, erfahrung: 0, lp: 1 }, null]; var m = SC.Spielstand.migriere(d).daten.spieler.kaefig;
-  gleich(m.length, 18); gleich(m[0].id, t.id, "Hund bleibt"); wahr(m.every(function(x){ return !x || SC.TIERE[x.art]; }), "unbekannte Art verworfen");
-  d.spieler.kaefig = new Array(30).fill(null); d.spieler.kaefig[2] = t; m = SC.Spielstand.migriere(d).daten.spieler.kaefig; gleich(m.length, 18); gleich(m[2].id, t.id);
+  gleich(m.length, SC.Kaefig.GROESSE); gleich(m[0].id, t.id, "Hund bleibt"); wahr(m.every(function(x){ return !x || SC.TIERE[x.art]; }), "unbekannte Art verworfen");
+  d.spieler.kaefig = new Array(30).fill(null); d.spieler.kaefig[2] = t; m = SC.Spielstand.migriere(d).daten.spieler.kaefig; gleich(m.length, SC.Kaefig.GROESSE); gleich(m[2].id, t.id);
 });
 test("Gefangenes Tier wird sofort gespeichert", function(){
   var t = fangSpiel(), s = t.s, grund = []; s.speichere = function(g){ grund.push(g); }; s._fangVersuch(); fangBisZone(s._fang.fang); s._fangDruck = true; s._fangBild(0.01, false); wahr(grund.indexOf("fund") >= 0, "gespeichert: " + grund.join());
+});
+
+test("Zweite Runde: je Planet fünf neue Arten, Flieger und Gangarten stimmen", function(){
+  gleich(SC.Tier.arten("start").length, 12); gleich(SC.Tier.arten("glutfrost").length, 9); gleich(SC.Tier.arten("rankenmoor").length, 9);
+  ["eichhoernchen", "reh", "schmetterling", "ente", "schaf", "schneehase", "robbe", "rentier", "schneeeule", "lavakrabbe", "papagei", "faultier", "libelle", "laubfrosch", "jaguar"].forEach(function(a){ wahr(SC.TIERE[a] && SC.TIERE[a].emoji, a); });
+  ["schmetterling", "schneeeule", "papagei", "libelle"].forEach(function(a){ gleich(SC.TIERE[a].fliegt, true, a + " fliegt"); });
+  ["eichhoernchen", "schneehase", "laubfrosch"].forEach(function(a){ gleich(SC.TIERE[a].gang, "huepfen", a); }); gleich(SC.TIERE.ente.gang, "watscheln"); gleich(SC.TIERE.robbe.gang, "schlaengeln"); gleich(SC.TIERE.lavakrabbe.gang, "trippeln"); gleich(SC.TIERE.faultier.gang, "kriechen");
+});
+test("Ein alter Käfig mit 18 Plätzen wird aufgefüllt und behält alle Tiere an ihrem Platz", function(){
+  var d = SC.Spielstand.neu({ name: "A" }), a = SC.Tier.neu("hund", SC.zufall(1)), b = SC.Tier.neu("hase", SC.zufall(2)); d.spieler.kaefig = [a]; for(var i = 1; i < 17; i++) d.spieler.kaefig.push(null); d.spieler.kaefig.push(b);
+  var m = SC.Spielstand.migriere(d).daten.spieler.kaefig; gleich(m.length, 54); gleich(m[0].id, a.id); gleich(m[17].id, b.id); gleich(m.filter(Boolean).length, 2);
 });

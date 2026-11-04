@@ -13,7 +13,7 @@ SC.Spielstand = {};
 
   // Neue Survival-Rucksäcke enthalten ein einfaches Laserschwert, damit man von Anfang an kämpfen kann
   function leererRucksack(){ var r = []; for(var i = 0; i < 36; i++) r.push(null); r[0] = { gegenstand: { id: "startschwert", art: "laserschwert", stufe: 1, seltenheit: 0, werte: { schaden: 14 }, sonder: null, name: "Einfaches Laserschwert" } }; return r; }
-  function leererKaefig(){ var k = []; for(var i = 0; i < 18; i++) k.push(null); return k; }
+  function leererKaefig(){ var k = []; for(var i = 0; i < SC.Kaefig.GROESSE; i++) k.push(null); return k; }
   function leereAusruestung(){ return { helm: null, brust: null, handschuhe: null, stiefel: null, schild: null }; }
   function neueId(){ var a = new Uint32Array(2); crypto.getRandomValues(a); return a[0].toString(36) + a[1].toString(36); }
   function zufallsSeed(){ var a = new Uint32Array(1); crypto.getRandomValues(a); return String(a[0] % 1000000000); }
@@ -115,8 +115,8 @@ SC.Spielstand = {};
     if(s.schild === undefined) s.schild = null;
     if(!s.rucksack || s.rucksack.length !== 36) s.rucksack = leererRucksack();
     if(!s.ausruestung) s.ausruestung = leereAusruestung();
-    // Haustiere (0.24.0): Käfig immer 18 Plätze; Einträge mit unbekannter Art verwerfen, Tiere nie ersatzlos löschen
-    var kf = leererKaefig(); if(Array.isArray(s.kaefig)) s.kaefig.slice(0, 18).forEach(function(t, i){ if(t && SC.TIERE && SC.TIERE[t.art]) kf[i] = t; }); s.kaefig = kf;
+    // Haustiere (0.24.0): Käfig immer volle Größe (seit 0.25.0 54 Plätze, ältere mit 18 werden aufgefüllt); Einträge mit unbekannter Art verwerfen, Tiere nie ersatzlos löschen
+    var kf = leererKaefig(); if(Array.isArray(s.kaefig)) s.kaefig.slice(0, SC.Kaefig.GROESSE).forEach(function(t, i){ if(t && SC.TIERE && SC.TIERE[t.art]) kf[i] = t; }); s.kaefig = kf;
     // Stufe 3: Figurname, Figur-ID, Mitspieler
     if(typeof s.name !== "string") s.name = "";
     if(!s.figurId) s.figurId = neueId();

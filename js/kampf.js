@@ -4,6 +4,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
   this.welt = welt; this.spieler = spieler; this.daten = daten; this.zf = zf;
   var s = daten.spieler;
   this.rucksack = new SC.Rucksack(s.rucksack);
+  this.kaefig = new SC.Kaefig(s.kaefig);
   this.ausruestung = JSON.parse(JSON.stringify(s.ausruestung || { helm: null, brust: null, handschuhe: null, stiefel: null, schild: null }));
   this.werte = { stufe: s.stufe || 1, erfahrung: s.erfahrung || 0, lp: 0, lpMax: 0, schild: 0, schildMax: 0, schutz: 0, schadenBonus: 0, tempoBonus: 0, erholungBonus: 0 };
   this.ruestungAnwenden();

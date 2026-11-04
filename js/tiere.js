@@ -99,3 +99,30 @@ SC.Tier = {};
     return auf;
   };
 })();
+
+// Käfig: das Haustier-Inventar der Figur, 18 Plätze; höchstens 3 Tiere gleichzeitig draußen
+SC.Kaefig = function(plaetze){
+  this.plaetze = [];
+  for(var i = 0; i < SC.Kaefig.GROESSE; i++) this.plaetze.push(plaetze && plaetze[i] ? plaetze[i] : null);
+};
+SC.Kaefig.GROESSE = 18;
+SC.Kaefig.DRAUSSEN = 3;
+(function(){
+  var C = SC.Kaefig.prototype;
+  C.lege = function(t){ for(var i = 0; i < this.plaetze.length; i++) if(!this.plaetze[i]){ this.plaetze[i] = t; return true; } return false; };
+  C.tier = function(id){ for(var i = 0; i < this.plaetze.length; i++) if(this.plaetze[i] && this.plaetze[i].id === id) return this.plaetze[i]; return null; };
+  C.draussen = function(){ return this.plaetze.filter(function(t){ return t && t.draussen; }); };
+  // "ok", "voll" (schon 3 draußen), "ko" (erholt sich noch) oder "fehlt"
+  C.rauslassen = function(id){
+    var t = this.tier(id); if(!t) return "fehlt";
+    if(t.koRest > 0) return "ko";
+    if(t.draussen) return "ok";
+    if(this.draussen().length >= SC.Kaefig.DRAUSSEN) return "voll";
+    t.draussen = true; return "ok";
+  };
+  C.zurueck = function(id){ var t = this.tier(id); if(t) t.draussen = false; };
+  C.freilassen = function(id){ for(var i = 0; i < this.plaetze.length; i++) if(this.plaetze[i] && this.plaetze[i].id === id){ this.plaetze[i] = null; return true; } return false; };
+  // Name getrimmt, 1–16 Zeichen, sonst bleibt der alte
+  C.umbenennen = function(id, name){ var t = this.tier(id), n = String(name == null ? "" : name).trim(); if(t && n.length >= 1 && n.length <= 16){ t.name = n; return true; } return false; };
+  C.alsDaten = function(){ return this.plaetze.map(function(t){ return t ? JSON.parse(JSON.stringify(t)) : null; }); };
+})();

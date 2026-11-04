@@ -13,6 +13,7 @@ SC.Spielstand = {};
 
   // Neue Survival-Rucksäcke enthalten ein einfaches Laserschwert, damit man von Anfang an kämpfen kann
   function leererRucksack(){ var r = []; for(var i = 0; i < 36; i++) r.push(null); r[0] = { gegenstand: { id: "startschwert", art: "laserschwert", stufe: 1, seltenheit: 0, werte: { schaden: 14 }, sonder: null, name: "Einfaches Laserschwert" } }; return r; }
+  function leererKaefig(){ var k = []; for(var i = 0; i < 18; i++) k.push(null); return k; }
   function leereAusruestung(){ return { helm: null, brust: null, handschuhe: null, stiefel: null, schild: null }; }
   function neueId(){ var a = new Uint32Array(2); crypto.getRandomValues(a); return a[0].toString(36) + a[1].toString(36); }
   function zufallsSeed(){ var a = new Uint32Array(1); crypto.getRandomValues(a); return String(a[0] % 1000000000); }
@@ -29,7 +30,7 @@ SC.Spielstand = {};
       planeten: { start: { id: "start", seed: SC.hashText(seed + ":start"), groesse: 2048, palette: "start", generatorVersion: SC.GENERATOR_VERSION, chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {} } },
       mitspieler: {},
       spieler: { name: o.figurName || "", figurId: neueId(), pos: null, blick: [0, 0], schnellleiste: LEISTE.slice(), schnellleisteKreativ: LEISTE.slice(), ansicht: "ich",
-        stufe: 1, erfahrung: 0, lebenspunkte: null, schild: null, rucksack: leererRucksack(), ausruestung: leereAusruestung() }
+        stufe: 1, erfahrung: 0, lebenspunkte: null, schild: null, rucksack: leererRucksack(), ausruestung: leereAusruestung(), kaefig: leererKaefig() }
     };
   };
 
@@ -53,12 +54,13 @@ SC.Spielstand = {};
       var s = daten.spieler, w = kampf.werte;
       s.stufe = w.stufe; s.erfahrung = w.erfahrung; s.lebenspunkte = w.lp; s.schild = w.schild;
       s.rucksack = kampf.rucksack.alsDaten(); s.ausruestung = JSON.parse(JSON.stringify(kampf.ausruestung));
+      if(kampf.kaefig) s.kaefig = kampf.kaefig.alsDaten();
     }
     return daten;
   };
 
   // Figur = alles, was ein Spieler zwischen Welten mitnimmt
-  SC.Spielstand.FIGUR_FELDER = ["name", "figurId", "stufe", "erfahrung", "lebenspunkte", "schild", "rucksack", "ausruestung", "schnellleiste", "schnellleisteKreativ"];
+  SC.Spielstand.FIGUR_FELDER = ["name", "figurId", "stufe", "erfahrung", "lebenspunkte", "schild", "rucksack", "ausruestung", "kaefig", "schnellleiste", "schnellleisteKreativ"];
   SC.Spielstand.figur = function(daten){
     var f = {}; SC.Spielstand.FIGUR_FELDER.forEach(function(k){ f[k] = JSON.parse(JSON.stringify(daten.spieler[k] === undefined ? null : daten.spieler[k])); });
     return f;
@@ -113,6 +115,7 @@ SC.Spielstand = {};
     if(s.schild === undefined) s.schild = null;
     if(!s.rucksack || s.rucksack.length !== 36) s.rucksack = leererRucksack();
     if(!s.ausruestung) s.ausruestung = leereAusruestung();
+    if(!Array.isArray(s.kaefig) || s.kaefig.length !== 18) s.kaefig = leererKaefig();   // Haustiere (0.24.0)
     // Stufe 3: Figurname, Figur-ID, Mitspieler
     if(typeof s.name !== "string") s.name = "";
     if(!s.figurId) s.figurId = neueId();

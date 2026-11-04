@@ -146,4 +146,39 @@ SC.KI = {};
     bewege(welt, g, vx, vz, dt);
     return akt;
   };
+
+  // --- Tiere (Haustiere, Spec 2026-11-04) ---
+  // Wildtiere streifen friedlich umher und weichen Spielern aus; Begleiter folgen ihrem Besitzer und kämpfen von selbst (js/haustiere.js).
+  // ctx: { spieler: [{ pos }] } für Wildtiere. Liefert Aktionen wie SC.KI.schritt (hier zunächst keine).
+  function tierGefahr(welt, x, y, z){
+    var ix = Math.floor(x), iz = Math.floor(z), id = welt.holeBlock(ix, Math.floor(y + 0.1), iz), u = welt.holeBlock(ix, Math.floor(y - 0.5), iz);
+    return id === SC.B.LAVA || id === SC.B.WASSER || u === SC.B.LAVA || u === SC.B.WASSER;
+  }
+  SC.KI.tierGefahr = tierGefahr;
+  SC.KI.tier = function(welt, g, ctx, dt, zf){
+    var def = SC.TIERE[g.tierArt], akt = [];
+    if(!def){ g.entfernen = true; return akt; }
+    var drin = SC.BLOECKE[welt.holeBlock(g.pos[0], g.pos[1] + 0.3, g.pos[2])];
+    if(drin && drin.fest){ aufgeben(g); if(g.entfernen) return akt; }
+    g.fliegt = false; g.zeit = (g.zeit || 0) + dt;
+    var vx = 0, vz = 0;
+    if(!g.haeltStill && g.wild){
+      var sd = 3.5, weg = null;
+      (ctx.spieler || []).forEach(function(s){ var d = ring(welt, g.pos, s.pos), l = Math.hypot(d[0], d[2]); if(l < sd){ sd = l; weg = d; } });
+      if(weg){ var f = richtungZu(weg); g.richtung = [-f[0], -f[1]]; g.modus = "flieht"; g.bis = g.zeit + 0.8; }
+      else if(!g.modus || g.zeit > g.bis){
+        if(g.modus === "steht" || !g.modus){ var win = zf() * Math.PI * 2; g.richtung = [Math.sin(win), Math.cos(win)]; g.modus = "geht"; g.bis = g.zeit + 1.5 + zf() * 2.5; }
+        else { g.modus = "steht"; g.bis = g.zeit + 1 + zf() * 3; }
+      }
+      if(g.modus !== "steht" && g.richtung){
+        var t = def.tempo * (g.modus === "flieht" ? 1 : 0.35); vx = g.richtung[0] * t; vz = g.richtung[1] * t; g.blick = Math.atan2(-vx, -vz);
+        // Gefahr voraus (Lava, Wasser): stehen bleiben und neu überlegen
+        if(tierGefahr(welt, g.pos[0] + g.richtung[0] * 0.7, g.pos[1], g.pos[2] + g.richtung[1] * 0.7)){ vx = 0; vz = 0; g.modus = "steht"; g.bis = g.zeit + 0.3; }
+      }
+    }
+    g.geschw[0] = vx; g.geschw[2] = vz;
+    bewege(welt, g, vx, vz, dt);
+    if(g.wild && tierGefahr(welt, g.pos[0], g.pos[1], g.pos[2])) g.entfernen = true;
+    return akt;
+  };
 })();

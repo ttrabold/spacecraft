@@ -98,4 +98,29 @@ SC.Auftauchen = function(welt, daten, zf){
     bes[g.platzIndex] = true;
     if(Object.keys(bes).length >= (this.plaetze[b] || 1)){ planet(this).geraeumt[b] = spielzeit; delete this.besiegt[b]; }
   };
+
+  // Wildtiere (Haustiere): einmal pro Sekunde; tagsüber bis zur Obergrenze, nachts halb so viele; spawnen auf trockenem Boden 20–40 Blöcke um einen Spieler,
+  // verschwinden in der Ferne (ein Planet lässt sich nicht leerfangen). Zuschauer bekommen keine.
+  var TIER_GEWICHT = [6, 2, 1];
+  A.tiere = function(spieler, tageslicht){
+    var w = this.welt, zf = this.zf, alle = Array.isArray(spieler) ? spieler : [spieler], arten = SC.Tier.arten(w.planet.id);
+    w.wesen.forEach(function(e){
+      if(e.art !== "tier" || !e.wild) return;
+      var weit = alle.every(function(sp){ var d = ring(w, sp.pos, e.pos[0], e.pos[2]); return Math.hypot(d[0], d[1]) > WEG; });
+      if(weit || e.entfernen) SC.Wesen.entferne(w, e.id);
+    });
+    var sicht = alle.filter(function(sp){ return sp.modus !== "zuschauer"; });
+    if(!arten.length || !sicht.length) return;
+    var max = tageslicht >= NACHT ? SC.Wesen.GRENZE.tier : Math.floor(SC.Wesen.GRENZE.tier / 2);
+    if(SC.Wesen.anzahl(w, "tier") >= max || zf() > 0.5) return;
+    var sp = sicht[Math.floor(zf() * sicht.length)], win = zf() * Math.PI * 2, ab = 20 + zf() * 20;
+    var x = Math.floor(SC.mod(sp.pos[0] + Math.sin(win) * ab, w.planet.groesse)), z = Math.floor(SC.mod(sp.pos[2] + Math.cos(win) * ab, w.planet.groesse));
+    var y = w.generator.hoehe(x, z) + 1;
+    if(y <= SC.MEER + 1 || SC.BLOECKE[w.holeBlock(x, y, z)].fest || SC.BLOECKE[w.holeBlock(x, y + 1, z)].fest || !SC.BLOECKE[w.holeBlock(x, y - 1, z)].fest) return;
+    if(SC.KI.tierGefahr(w, x + 0.5, y, z + 0.5)) return;
+    var summe = 0, gew = arten.map(function(art){ var g = TIER_GEWICHT[SC.TIERE[art].seltenheit]; summe += g; return g; }), r = zf() * summe, k = 0;
+    while(k < arten.length - 1 && r >= gew[k]){ r -= gew[k]; k++; }
+    var d = SC.TIERE[arten[k]];
+    SC.Wesen.neu(w, "tier", { tierArt: arten[k], wild: true, pos: [x + 0.5, y, z + 0.5], heim: [x + 0.5, y, z + 0.5], breite: d.breite, hoehe: d.hoehe });
+  };
 })();

@@ -91,3 +91,46 @@ test("Mit dem Netz in der Hand wird nicht abgebaut", function(){
   for(var j = 0; j < 40; j++) s.abbauFortschritt(z, 0.05); gleich(w.holeBlock(4, 89, 4), SC.B.STEIN); gleich(s.abbauAnteil(z), 0);
   gleich(s.setzeAusRucksack(4, 90, 4, { x: 4, y: 89, z: 4, nx: 0, ny: 1, nz: 0 }), false, "Netz wird nicht gesetzt"); gleich(s.kampf.rucksack.hat(SC.B.NETZ), 1);
 });
+// Wildtiere (Aufgabe 4)
+function tierWelt(){ var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), d = SC.Spielstand.neu({ name: "W", seedText: "w", modus: "survival" }); return { w: w, d: d, a: new SC.Auftauchen(w, d, SC.zufall(7)) }; }
+function wild(w, artId, pos){ var d = SC.TIERE[artId]; return SC.Wesen.neu(w, "tier", { tierArt: artId, wild: true, pos: pos, heim: pos.slice(), breite: d.breite, hoehe: d.hoehe }); }
+test("Wildtiere tauchen auf dem eigenen Planeten auf", function(){
+  var t = tierWelt(), sp = { id: "a", pos: [100.5, 70, 100.5], blick: [0, 0], modus: "survival" };
+  for(var i = 0; i < 60; i++) t.a.tiere(sp, 1);
+  var n = 0, arten = SC.Tier.arten("start"); t.w.wesen.forEach(function(e){ if(e.art === "tier"){ n++; wahr(e.wild, "wild"); wahr(arten.indexOf(e.tierArt) >= 0, e.tierArt); } });
+  wahr(n > 0, "mindestens ein Tier"); wahr(n <= SC.Wesen.GRENZE.tier, "Obergrenze");
+});
+test("Zuschauer bekommen keine Wildtiere", function(){ var t = tierWelt(); for(var i = 0; i < 60; i++) t.a.tiere({ id: "a", pos: [100.5, 70, 100.5], blick: [0, 0], modus: "zuschauer" }, 1); gleich(SC.Wesen.anzahl(t.w, "tier"), 0); });
+test("Wildtiere verschwinden in der Ferne", function(){
+  var t = tierWelt(), e = wild(t.w, "hase", [200.5, 90, 200.5]), nah = wild(t.w, "hund", [105.5, 90, 100.5]);
+  t.a.tiere({ id: "a", pos: [100.5, 70, 100.5], blick: [0, 0], modus: "survival" }, 1);
+  wahr(!t.w.wesen.has(e.id), "100 Blöcke weg: entfernt"); wahr(t.w.wesen.has(nah.id), "nah: bleibt");
+});
+test("Begleiter zählen nicht zur Obergrenze der Wildtiere", function(){
+  var t = tierWelt(), n = 0; for(var i = 0; i < SC.Wesen.GRENZE.tier + 3; i++) if(wild(t.w, "hase", [10.5, 90, 10.5 + i])) n++;
+  gleich(n, SC.Wesen.GRENZE.tier, "Wildtiere begrenzt"); wahr(SC.Wesen.neu(t.w, "tier", { tierArt: "hund", tierId: "x", besitzer: "a", pos: [1, 90, 1] }), "Begleiter geht immer");
+});
+test("Wildtier läuft nicht in Lava oder Wasser", function(){
+  var t = tierWelt(), w = t.w;
+  for(var x = 0; x < 20; x++) for(var z = 0; z < 20; z++){ w.setzeBlock(x, 89, z, SC.B.STEIN, "system"); for(var y = 90; y < 93; y++) w.setzeBlock(x, y, z, SC.B.LUFT, "system"); if(x >= 8) w.setzeBlock(x, 90, z, x < 14 ? SC.B.LAVA : SC.B.WASSER, "system"); }
+  var e = wild(w, "katze", [6.5, 90, 10.5]), zf = SC.zufall(4);
+  for(var i = 0; i < 600; i++){ SC.KI.tier(w, e, { spieler: [] }, 0.1, zf); var b = w.holeBlock(Math.floor(e.pos[0]), Math.floor(e.pos[1] + 0.1), Math.floor(e.pos[2])); wahr(b !== SC.B.LAVA && b !== SC.B.WASSER, "Schritt " + i + " in " + b); }
+});
+test("Wildtier streift umher und bleibt stehen, wenn es gefangen wird", function(){
+  var t = tierWelt(), w = t.w; for(var x = 0; x < 20; x++) for(var z = 0; z < 20; z++){ w.setzeBlock(x, 89, z, SC.B.STEIN, "system"); for(var y = 90; y < 93; y++) w.setzeBlock(x, y, z, SC.B.LUFT, "system"); }
+  var e = wild(w, "hase", [10.5, 90, 10.5]), zf = SC.zufall(2), start = e.pos.slice(), weg = 0;
+  for(var i = 0; i < 300; i++){ SC.KI.tier(w, e, { spieler: [] }, 0.1, zf); weg = Math.max(weg, Math.hypot(e.pos[0] - start[0], e.pos[2] - start[2])); } wahr(weg > 1, "bewegt sich: " + weg);
+  e.haeltStill = true; var p = e.pos.slice(); for(var j = 0; j < 50; j++) SC.KI.tier(w, e, { spieler: [] }, 0.1, zf); gleich(Math.hypot(e.pos[0] - p[0], e.pos[2] - p[2]) < 0.05, true, "steht still");
+});
+test("Wildtiere weichen einem nahen Spieler aus", function(){
+  var t = tierWelt(), w = t.w; for(var x = 0; x < 20; x++) for(var z = 0; z < 20; z++){ w.setzeBlock(x, 89, z, SC.B.STEIN, "system"); for(var y = 90; y < 93; y++) w.setzeBlock(x, y, z, SC.B.LUFT, "system"); }
+  var e = wild(w, "hase", [10.5, 90, 10.5]), zf = SC.zufall(2), sp = { pos: [9.5, 90, 10.5] }, d0 = 1;
+  for(var i = 0; i < 10; i++) SC.KI.tier(w, e, { spieler: [sp] }, 0.1, zf);
+  wahr(Math.hypot(e.pos[0] - sp.pos[0], e.pos[2] - sp.pos[2]) > 2, "Abstand wächst");
+});
+test("Hieb und Schuss des Spielers gehen durch Tiere", function(){
+  var k = kampf(), w = k.welt; SC.Wesen.neu(w, "tier", { tierArt: "hund", tierId: "x", besitzer: "a", wild: false, pos: [4.5, 61, 2.5], breite: 0.5, hoehe: 0.7 }); wild(w, "hase", [4.5, 61, 2.4]);
+  k.spieler.blick = [0, 0]; gleich(k.hiebZiele({ reichweite: 3 }).length, 0, "Hieb");
+  var g = { pos: [4.5, 61.3, 8], richtung: [0, 0, -1], tempo: 30, team: "spieler", lebensdauer: 5 }, r = SC.Geschoss.schritt(w, g, 0.2, null);
+  wahr(!r || r.treffer !== "wesen", "Schuss"); wahr(g.pos[2] < 2.4, "Schuss flog hindurch: " + g.pos[2]);
+});

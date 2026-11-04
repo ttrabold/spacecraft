@@ -20,10 +20,10 @@ SC.bewegeKoerper = function(welt, pos, achse, d, breite, hoehe, durch){
   return false;
 };
 
-SC.Wesen = { GRENZE: { gegner: 20, geschoss: 60, kugel: 40 } };
-SC.Wesen.anzahl = function(welt, art){ var n = 0; welt.wesen.forEach(function(e){ if(e.art === art) n++; }); return n; };
+SC.Wesen = { GRENZE: { gegner: 20, geschoss: 60, kugel: 40, tier: 12 } };   // tier: nur Wildtiere (Begleiter haben besitzer und zählen nicht)
+SC.Wesen.anzahl = function(welt, art){ var n = 0; welt.wesen.forEach(function(e){ if(e.art === art && (art !== "tier" || e.wild)) n++; }); return n; };
 SC.Wesen.neu = function(welt, art, daten){
-  if(SC.Wesen.anzahl(welt, art) >= (SC.Wesen.GRENZE[art] || Infinity)){
+  if((art !== "tier" || (daten && daten.wild)) && SC.Wesen.anzahl(welt, art) >= (SC.Wesen.GRENZE[art] || Infinity)){
     if(art !== "kugel") return null;
     // Beutekugeln: die älteste verdrängen, damit neue Beute nie verloren geht
     var alt = null; welt.wesen.forEach(function(e){ if(!alt && e.art === "kugel") alt = e; });

@@ -205,6 +205,7 @@ SC.Spiel.startpunkt = function(planet){
       else if(!sp.schlaeft){ sp.schritt(w, e, dt); this._geraeusche(e, vorBoden, vy, dt); }
       this._fahrzeugeBild(dt);
       this._survival(e, dt, offen, t);
+      this._tiere(dt, offen);
       this._fahrzeugTakt(dt);
     }
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);

@@ -134,3 +134,21 @@ test("Hieb und Schuss des Spielers gehen durch Tiere", function(){
   var g = { pos: [4.5, 61.3, 8], richtung: [0, 0, -1], tempo: 30, team: "spieler", lebensdauer: 5 }, r = SC.Geschoss.schritt(w, g, 0.2, null);
   wahr(!r || r.treffer !== "wesen", "Schuss"); wahr(g.pos[2] < 2.4, "Schuss flog hindurch: " + g.pos[2]);
 });
+// Darstellung (Aufgabe 5)
+function tierEnt(id, art, extra){ var e = { id: id, art: "tier", tierArt: art, pos: [10, 60, 10], geschw: [0, 0, 0], blick: 0, breite: 0.5, hoehe: 0.7 }; for(var k in extra) e[k] = extra[k]; return e; }
+test("Tiermodell wird gebaut, beschriftet und entfernt", function(){
+  var rw = new SC.RenderWesen(new THREE.Scene(), { groesse: 2048 }), welt = { wesen: new Map() };
+  welt.wesen.set(1, tierEnt(1, "hund", { besitzer: "a", name: "Bello", stufe: 3, lp: 40, lpMax: 50, halsband: "#ff0000" })); welt.wesen.set(2, tierEnt(2, "hase", { wild: true }));
+  rw.bild(welt, [10, 60, 10], 0.016, 1, 1000);
+  var o = rw.objekte.get(1), w2 = rw.objekte.get(2); wahr(o && w2, "Objekte");
+  wahr(o.schild.visible, "Haustier hat Schild"); wahr(!w2.schild.visible, "Wildtier ohne Schild");
+  gleich(o.g.children.length, SC.TIERE.hund.modell.length + 2, "Teile + Halsband + Schild"); gleich(w2.g.children.length, SC.TIERE.hase.modell.length + 1, "Teile + Schild");
+  welt.wesen.delete(1); rw.bild(welt, [10, 60, 10], 0.016, 1, 1100); wahr(!rw.objekte.has(1), "entfernt"); wahr(rw.objekte.has(2));
+});
+test("Jede Tierart lässt sich zeichnen, laufen und Chamäleon wechselt die Farbe", function(){
+  var rw = new SC.RenderWesen(new THREE.Scene(), { groesse: 2048 }), welt = { wesen: new Map() }, i = 0;
+  Object.keys(SC.TIERE).forEach(function(a){ i++; welt.wesen.set(i, tierEnt(i, a, { geschw: [2, 0, 0], besitzer: "a", name: "X", stufe: 1, lp: 10, lpMax: 10 })); });
+  rw.bild(welt, [10, 60, 10], 0.016, 1, 1000); gleich(rw.objekte.size, 15);
+  var ch = rw.objekte.get(Object.keys(SC.TIERE).indexOf("chamaeleon") + 1), r = ch.teile.filter(function(t){ return t.teil === "rumpf"; })[0], c1 = r.mesh.material.color.getHex();
+  rw.bild(welt, [10, 60, 10], 0.016, 1, 3000); wahr(r.mesh.material.color.getHex() !== c1, "Farbe wechselt");
+});

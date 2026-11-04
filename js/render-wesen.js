@@ -40,6 +40,25 @@ SC.RenderWesen = function(szene, planet){
     return { g: g, teile: teile, schild: sp, lp: -1 };
   };
 
+  // Tier (Haustiere): Blockfigur aus SC.TIERE; Begleiter tragen ein Halsband in der Farbe des Besitzers und ein Namensschild
+  RW.prototype._tierModell = function(e){
+    var g = new THREE.Group(), teile = [], box = this.box, def = SC.TIERE[e.tierArt], kopf = null;
+    def.modell.forEach(function(t){
+      var m = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: t.farbe }));
+      m.scale.set(t.w, t.h, t.d); m.position.set(t.x, t.y, t.z); g.add(m);
+      teile.push({ mesh: m, farbe: new THREE.Color(t.farbe), leuchtet: !!t.leuchtet, teil: t.teil });
+      if(t.teil === "kopf") kopf = t;
+    });
+    if(e.besitzer && kopf){
+      var hb = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: e.halsband || "#ffd95c" }));
+      hb.scale.set(kopf.w * 1.08, 0.07, kopf.d * 1.08); hb.position.set(kopf.x, kopf.y - kopf.h * 0.5, kopf.z); g.add(hb);
+    }
+    var sp = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false }));
+    sp.scale.set(2.2, 0.55, 1); sp.position.y = def.hoehe + 0.45; sp.visible = false; g.add(sp);
+    this.gruppe.add(g);
+    return { g: g, teile: teile, schild: sp, lp: -1, schluessel: "" };
+  };
+
   RW.prototype._geschoss = function(e){
     var spucke = e.typ === "spucke" || e.typ === "glut", m = new THREE.Mesh(this.box, new THREE.MeshBasicMaterial({ color: e.farbe || "#ff4f4f" }));
     if(spucke) m.scale.set(e.typ === "glut" ? 0.42 : 0.28, e.typ === "glut" ? 0.42 : 0.28, e.typ === "glut" ? 0.42 : 0.28); else m.scale.set(0.07, 0.07, 0.9);
@@ -58,7 +77,7 @@ SC.RenderWesen = function(szene, planet){
     welt.wesen.forEach(function(e){
       gesehen.add(e.id);
       var o = r.objekte.get(e.id);
-      if(!o){ o = e.art === "gegner" ? r._modell(e) : e.art === "geschoss" ? r._geschoss(e) : r._kugel(e); r.objekte.set(e.id, o); }
+      if(!o){ o = e.art === "gegner" ? r._modell(e) : e.art === "tier" ? r._tierModell(e) : e.art === "geschoss" ? r._geschoss(e) : r._kugel(e); r.objekte.set(e.id, o); }
       var x = RW.nah(e.pos[0], spielerPos[0], P), z = RW.nah(e.pos[2], spielerPos[2], P);
       o.g.position.set(x, e.pos[1], z);
       if(e.art === "gegner"){
@@ -73,6 +92,23 @@ SC.RenderWesen = function(szene, planet){
           o.lp = Math.round(e.lp);
           if(o.schild.material.map) o.schild.material.map.dispose();
           o.schild.material.map = new THREE.CanvasTexture(schild(SC.T.gegner[e.gegnerArt], e.stufe, e.lp / (e.lpMax || e.lp), e.boss)); o.schild.material.needsUpdate = true;
+        }
+      } else if(e.art === "tier"){
+        o.g.rotation.y = e.blick || 0;
+        var lt = Math.max(0.35, licht), gehen2 = Math.hypot(e.geschw[0], e.geschw[2]) > 0.3, sw2 = gehen2 ? Math.sin(uhr / 90 + e.id) * 0.55 : 0, cham = e.tierArt === "chamaeleon";
+        o.teile.forEach(function(t){
+          if(cham && (t.teil === "rumpf" || t.teil === "kopf" || t.teil === "schwanz")) t.mesh.material.color.setHSL(((uhr / 5000) + e.id * 0.13) % 1, 0.55, 0.5).multiplyScalar(lt);
+          else if(t.leuchtet) t.mesh.material.color.copy(t.farbe); else t.mesh.material.color.copy(t.farbe).multiplyScalar(lt);
+          if(/^bein/.test(t.teil)) t.mesh.rotation.x = (/VL$|HR$/.test(t.teil) ? 1 : -1) * sw2;
+        });
+        // Namensschild nur an Begleitern; neu zeichnen, wenn sich Name, Stufe oder Leben ändern
+        o.schild.visible = !!e.besitzer;
+        if(e.besitzer){
+          var sk = e.name + "|" + e.stufe + "|" + Math.round(20 * e.lp / (e.lpMax || 1));
+          if(sk !== o.schluessel){
+            o.schluessel = sk; if(o.schild.material.map) o.schild.material.map.dispose();
+            o.schild.material.map = new THREE.CanvasTexture(schild(e.name, e.stufe, e.lp / (e.lpMax || e.lp || 1), false)); o.schild.material.needsUpdate = true;
+          }
         }
       } else if(e.art === "geschoss"){
         var gs = e.geschw || [e.richtung[0], e.richtung[1], e.richtung[2]];

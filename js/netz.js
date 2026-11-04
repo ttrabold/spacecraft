@@ -1,7 +1,7 @@
 // Netzschicht: Raumcode und zwei austauschbare Adapter (Speicher für Tests, PeerJS für echte Verbindungen).
 // Adapter: oeffne(peerId)→Promise<Raum>, verbinde(peerId)→Promise<Verbindung>; Raum: an("verbindung",fn), schliesse();
 // Verbindung: sende(n), an("daten"|"zu",fn), schliesse(), id (Peer-ID der Gegenseite).
-SC.NETZ_PROTOKOLL = 7; // 2: Fahrzeuge (Stufe 4), 3: Planetenwechsel (Stufe 5a), 4: Raumflug (Stufe 5b), 5: neue Blöcke und Truhen (Stufe 6a), 6: Betten und Schlafzustand, 7: Zauberkugel (zauber, zauberAntwort, teleport)
+SC.NETZ_PROTOKOLL = 8; // 2: Fahrzeuge (Stufe 4), 3: Planetenwechsel (Stufe 5a), 4: Raumflug (Stufe 5b), 5: neue Blöcke und Truhen (Stufe 6a), 6: Betten und Schlafzustand, 7: Zauberkugel (zauber, zauberAntwort, teleport), 8: Haustiere (tiere im zustand, tierStand, fangStart, fangEnde, fangNein)
 SC.Netz = {};
 SC.Netz.Fehler = function(art, text){ this.art = art; this.message = text || art; this.name = "NetzFehler"; };
 SC.Netz.Fehler.prototype = Object.create(Error.prototype);

@@ -216,6 +216,7 @@ SC.Gastgeber = function(o){
     zustand: function(c, n){
       var e = this._eintrag(c.id), m = this.daten.mitspieler[c.id];
       if(e) ["pos", "blick", "modus", "stufe", "ausr", "menue", "lebt", "schlaeft", "hieb", "blockt", "sitzt", "lp", "lpMax", "schild", "schildMax"].forEach(function(k){ if(n[k] !== undefined) e[k] = n[k]; });
+      if(e && n.tiere !== undefined) e.tiere = SC.Raum.tiereBereinigen(n.tiere);
       // Fahrer: Lage seines Fahrzeugs übernehmen (nur vom Fahrer selbst)
       var fz = n.fz, f = fz && this.welt && this.welt.fahrzeuge.get(fz.id);
       if(f && f.sitze[0] === c.id){ if(fz.all) this.gastAll = { von: c.id, all: fz.all }; else if(this.gastAll && this.gastAll.von === c.id) this.gastAll = null; }
@@ -327,6 +328,7 @@ SC.Gast = function(o){
     var n = { t: "zustand", id: s.figur.figurId, pos: ich.pos, blick: ich.blick, modus: ich.modus, stufe: ich.stufe, menue: !!ich.menue, lebt: ich.lebt !== false, schlaeft: !!ich.schlaeft, hieb: ich.hieb, blockt: !!ich.blockt, lp: ich.lp, lpMax: ich.lpMax, schild: ich.schild, schildMax: ich.schildMax, sitzt: typeof ich.sitzt === "number" ? ich.sitzt : null },
       j = JSON.stringify(ich.ausr === undefined ? null : ich.ausr);
     if(j !== s._ausr){ s._ausr = j; n.ausr = ich.ausr; }
+    if(ich.tiere){ var tj = JSON.stringify(ich.tiere.map(function(t){ return [t.id, t.name, t.stufe, t.lpMax, t.schaden, t.fn]; })); if(tj !== s._tiereJ){ s._tiereJ = tj; n.tiere = ich.tiere; } }   // Haustiere: nur bei Änderung
     if(ich.fz){ n.fz = ich.fz; if(s.latenz !== null) n.latenz = s.latenz; } // als Fahrer: Lage des Fahrzeugs und Laufzeit
     s.verb.sende(n);
   };
@@ -396,7 +398,12 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
   SC.Raum.wesenListe = function(welt, uhr){
     var l = [];
     welt.wesen.forEach(function(e){
-      if(e.art === "gegner"){
+      if(e.art === "tier"){
+        var tn = { id: e.id, art: "tier", tierArt: e.tierArt, pos: r3(e.pos), blick: r2(e.blick || 0) };
+        if(e.wild){ tn.wild = true; if(e.fangVon) tn.fangVon = e.fangVon; }
+        else { tn.tierId = e.tierId; tn.besitzer = e.besitzer; tn.name = e.name; tn.stufe = e.stufe; tn.lp = Math.ceil(e.lp); tn.lpMax = e.lpMax; tn.halsband = e.halsband; }
+        l.push(tn);
+      } else if(e.art === "gegner"){
         var n = { id: e.id, art: "gegner", gegnerArt: e.gegnerArt, stufe: e.stufe, pos: r3(e.pos), blick: r2(e.blick || 0), lp: e.lp, lpMax: e.lpMax, boss: !!e.boss, bemerkt: !!e.bemerkt, blockt: !!e.blockt, zuendet: !!e.zuendet };
         var g = e.getroffenBis && typeof uhr === "number" ? e.getroffenBis - uhr : 0;
         if(g > 0) n.getroffen = Math.round(g);
@@ -411,7 +418,7 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
     });
     return l;
   };
-  var FELDER = ["typ", "gegnerArt", "stufe", "lp", "lpMax", "boss", "bemerkt", "blockt", "zuendet", "farbe", "team", "schuetze"];
+  var FELDER = ["typ", "gegnerArt", "stufe", "lp", "lpMax", "boss", "bemerkt", "blockt", "zuendet", "farbe", "team", "schuetze", "tierArt", "tierId", "besitzer", "name", "wild", "halsband", "fangVon"];
   // Gast, pro Bild: Gegner und Geschosse unter den IDs des Gastgebers setzen und aktualisieren, fehlende entfernen, eigene (≥ SC.RAUM_GAST_ID)
   // in Ruhe lassen. Felder werden nur bei einer neuen Liste übernommen; die Position läuft jedes Bild zum Ziel (Sprung bei > 8 Blöcken).
   // uhr (optional): Spieluhr des Gastes für getroffenBis.
@@ -424,7 +431,7 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
       da[n.id] = true;
       var e = welt.wesen.get(n.id), frisch = !e || e.art !== n.art;
       if(frisch){
-        var def = n.art === "gegner" && SC.GEGNER[n.gegnerArt];
+        var def = n.art === "gegner" ? SC.GEGNER[n.gegnerArt] : n.art === "tier" ? SC.TIERE[n.tierArt] : null;
         e = { id: n.id, art: n.art, pos: n.pos.slice(), geschw: [0, 0, 0], breite: def ? def.breite : 0.3, hoehe: def ? def.hoehe : 0.3, alter: 0, gespiegelt: true };
         welt.wesen.set(n.id, e);
       }
@@ -437,7 +444,7 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
       var z = e._ziel, p = e.pos, alt = p.slice(), f = Math.min(1, dt * 12);
       if(Math.hypot(z[0] - p[0], z[1] - p[1], z[2] - p[2]) > 8) e.pos = z.slice();
       else e.pos = [p[0] + (z[0] - p[0]) * f, p[1] + (z[1] - p[1]) * f, p[2] + (z[2] - p[2]) * f];
-      if(e.art === "gegner") e.geschw = dt > 0 ? [(e.pos[0] - alt[0]) / dt, (e.pos[1] - alt[1]) / dt, (e.pos[2] - alt[2]) / dt] : [0, 0, 0];
+      if(e.art === "gegner" || e.art === "tier") e.geschw = dt > 0 ? [(e.pos[0] - alt[0]) / dt, (e.pos[1] - alt[1]) / dt, (e.pos[2] - alt[2]) / dt] : [0, 0, 0];
     });
     welt.wesen.forEach(function(e, id){ if(id < SC.RAUM_GAST_ID && !da[id]) welt.wesen.delete(id); });
   };
@@ -793,4 +800,53 @@ SC.RAUM_FZ_NAH = 96;
     });
     welt.fahrzeuge.forEach(function(f, id){ if(!da[id]) welt.fahrzeuge.delete(id); });
   };
+})();
+
+// --- Haustiere im Raum (Protokoll 8) ---
+// Der Käfig gehört zur Figur des Gastes; der Gastgeber rechnet die draußen laufenden Tiere aller Spieler (Wesen "tier" mit besitzer, tierId).
+// Gast → Gastgeber: zustand.tiere (nur bei Änderung: [{id, art, name, stufe, lp, lpMax, schaden, fn}]), fangStart {id}, fangEnde {id, gefangen}.
+// Gastgeber → Gast: tierStand {liste: [{id, lp}], ko: [id]} (Leben ein Mal je Sekunde, K.o. sofort), fangNein {id}; die Wesen selbst stehen in der wesen-Liste.
+// Geht ein Gast oder die Verbindung verloren, verschwinden die Wesen; der Käfig des Gastes bleibt unberührt (es geht nie ein Tier verloren).
+(function(){
+  var H = SC.Gastgeber.prototype, G = SC.Gast.prototype, HN = SC.Gastgeber.NACHRICHTEN, GN = SC.Gast.NACHRICHTEN;
+  function ruf(f){ if(typeof f === "function") return f.apply(null, Array.prototype.slice.call(arguments, 1)); }
+  function zahl(v){ return typeof v === "number" && isFinite(v); }
+  function klemm(v, lo, hi, ersatz){ return zahl(v) ? Math.max(lo, Math.min(hi, v)) : ersatz; }
+  // Gast → Gastgeber: Liste prüfen (höchstens 3, bekannte Arten, Namen und Zahlen begrenzt)
+  SC.Raum.tiereBereinigen = function(l){
+    var aus = [];
+    if(!Array.isArray(l)) return aus;
+    for(var i = 0; i < l.length && aus.length < SC.Kaefig.DRAUSSEN; i++){
+      var t = l[i]; if(!t || typeof t !== "object" || typeof t.id !== "string" || !t.id || t.id.length > 40 || !SC.TIERE[t.art]) continue;
+      var lpMax = klemm(t.lpMax, 1, 100000, 1);
+      aus.push({ id: t.id, art: t.art, name: typeof t.name === "string" ? t.name.slice(0, 16) : "", stufe: Math.round(klemm(t.stufe, 1, SC.Werte.MAX_STUFE, 1)), lp: klemm(t.lp, 0, lpMax, lpMax), lpMax: lpMax, schaden: klemm(t.schaden, 0, 100000, 1), fn: Math.round(klemm(t.fn, 0, 1e6, 0)) });
+    }
+    return aus;
+  };
+  // Gast: Käfigtiere, die draußen laufen sollen (nicht im K.o.) → Liste für den zustand
+  SC.Raum.tiereListe = function(ts){
+    return (ts || []).filter(function(t){ return t && t.draussen && !(t.koRest > 0); }).map(function(t){ var w = SC.Tier.werte(t); return { id: t.id, art: t.art, name: t.name, stufe: t.stufe, lp: Math.ceil(t.lp), lpMax: w.lpMax, schaden: w.schaden, fn: t.futterNr || 0 }; });
+  };
+  function abstand2(welt, a, b){ var P = welt.planet.groesse; return Math.hypot(SC.mod(b[0] - a[0] + P / 2, P) - P / 2, SC.mod(b[2] - a[2] + P / 2, P) - P / 2); }
+
+  // Gastgeber → Gast: Leben der Tiere (liste) und K.o. (ko: Tier-IDs)
+  H.tierStand = function(id, liste, ko){ if(this._zu) return; this.sende(id, { t: "tierStand", liste: liste || [], ko: ko || [] }); };
+  HN.fangStart = function(c, n){
+    var w = this.welt, e = w && w.wesen.get(n.id), g = this._eintrag(c.id);
+    if(!e || e.art !== "tier" || !e.wild || !g || !g.pos || abstand2(w, e.pos, g.pos) > 10 || (e.fangVon && e.fangVon !== c.id)){ c.verb.sende({ t: "fangNein", id: n.id }); return; }
+    e.fangVon = c.id; e.haeltStill = true; e.fangZeit = 0;
+  };
+  HN.fangEnde = function(c, n){
+    var w = this.welt, e = w && w.wesen.get(n.id);
+    if(!e || e.art !== "tier" || !e.wild || e.fangVon !== c.id) return;
+    e.fangVon = null; e.haeltStill = false;
+    if(n.gefangen){ SC.Wesen.entferne(w, e.id); return; }
+    var g = this._eintrag(c.id), P = w.planet.groesse;
+    if(g && g.pos){ var dx = SC.mod(e.pos[0] - g.pos[0] + P / 2, P) - P / 2, dz = SC.mod(e.pos[2] - g.pos[2] + P / 2, P) - P / 2, l = Math.hypot(dx, dz) || 1; e.richtung = [dx / l, dz / l]; }
+    e.modus = "flieht"; e.bis = (e.zeit || 0) + 1; if(e.geschw) e.geschw[1] = 6;
+  };
+  G.fangStart = function(id){ this.sende({ t: "fangStart", id: id }); };
+  G.fangEnde = function(id, gefangen){ this.sende({ t: "fangEnde", id: id, gefangen: !!gefangen }); };
+  GN.fangNein = function(n){ ruf(this.o.beiFangNein, n.id); };
+  GN.tierStand = function(n){ ruf(this.o.beiTierStand, { liste: Array.isArray(n.liste) ? n.liste.filter(function(x){ return x && typeof x.id === "string" && zahl(x.lp); }) : [], ko: Array.isArray(n.ko) ? n.ko.filter(function(x){ return typeof x === "string"; }) : [] }); };
 })();

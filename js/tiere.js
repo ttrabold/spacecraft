@@ -89,7 +89,7 @@ SC.Tier = {};
   T.staerken = function(t, wie){
     if(wie === "streicheln" && t.staerke && t.staerke.art === "fuettern") return false;
     t.staerke = { art: wie, rest: DAUER[wie] };
-    if(wie === "fuettern") t.lp = T.werte(t).lpMax;
+    if(wie === "fuettern"){ t.lp = T.werte(t).lpMax; t.futterNr = (t.futterNr || 0) + 1; }   // futterNr: der Gastgeber heilt das Wesen, wenn sich die Zahl ändert
     return true;
   };
   // Spielzeit vergeht: Stärkung und K.o.-Pause laufen ab

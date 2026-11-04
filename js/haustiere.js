@@ -19,7 +19,8 @@
     });
     if(!best) return false;
     if(k.kaefig.plaetze.every(Boolean)){ this.ui.hinweis(SC.T.kaefigVoll, 2500); return false; }
-    best.haeltStill = true; best.fangVon = this.daten.spieler.figurId || "ich";
+    if(this.raum instanceof SC.Gast) this.raum.fangStart(best.id);   // der Gastgeber sperrt das Tier; ist es schon vergeben, kommt fangNein
+    else { best.haeltStill = true; best.fangVon = this.daten.spieler.figurId || "ich"; best.fangZeit = 0; }
     this._fang = { fang: new SC.Fang(SC.TIERE[best.tierArt].seltenheit), id: best.id };
     return true;
   };
@@ -30,8 +31,9 @@
     e.vor = e.zurueck = e.links = e.rechts = e.springen = e.springenNeu = e.sinken = e.sprint = false;
     e.blickDx = e.blickDy = 0; e.abbauen = e.abbauenGehalten = e.setzen = e.setzenGehalten = e.ausweichen = e.benutzen = false;
   };
-  S._fangEnde = function(tier){
+  S._fangEnde = function(tier, gefangen){
     if(tier){ tier.haeltStill = false; tier.fangVon = null; }
+    if(this._fang && this.raum instanceof SC.Gast) this.raum.fangEnde(this._fang.id, !!gefangen);
     this._fang = null; this._fangDruck = false; if(this.ui.fangRing) this.ui.fangRing(null);
   };
   // Jedes Bild: Ring weiterlaufen lassen; Ergebnis umsetzen
@@ -45,15 +47,15 @@
     var r = druck ? f.fang.druecken() : f.fang.schritt(dt);
     if(r === "laeuft"){ this.ui.fangRing({ ring: f.fang.ring, zone: f.fang.zone, treffer: f.fang.treffer, noetig: f.fang.noetig }, function(){ s._fangDruck = true; }); return; }
     if(r === "treffer"){ this.audio.spiele("treffer"); this.render.wesen.funken(tier.pos, "#7dff9a", 10, sp.pos); this.ui.hinweis(SC.T.fangTreffer, 900); this.ui.fangRing({ ring: f.fang.ring, zone: f.fang.zone, treffer: f.fang.treffer, noetig: f.fang.noetig }, function(){ s._fangDruck = true; }); return; }
-    this._fangEnde(tier);
     if(r === "daneben"){
-      // Das Tier hoppelt ein Stück weg; man kann es gleich nochmal versuchen (nichts geht verloren)
-      var l = Math.hypot(d[0], d[2]) || 1; tier.richtung = [d[0] / l, d[2] / l]; tier.modus = "flieht"; tier.bis = (tier.zeit || 0) + 1; tier.geschw[1] = 6;
+      // Das Tier hoppelt ein Stück weg; man kann es gleich nochmal versuchen (nichts geht verloren; beim Gast macht das der Gastgeber)
+      this._fangEnde(tier, false);
+      if(!(this.raum instanceof SC.Gast)){ var l = Math.hypot(d[0], d[2]) || 1; tier.richtung = [d[0] / l, d[2] / l]; tier.modus = "flieht"; tier.bis = (tier.zeit || 0) + 1; tier.geschw[1] = 6; }
       this.ui.hinweis(SC.T.fangDaneben, 1500);
     } else {
       var t = SC.Tier.neu(tier.tierArt, this._zf);
-      if(!k.kaefig.lege(t)){ this.ui.hinweis(SC.T.kaefigVoll, 2500); return; }
-      SC.Wesen.entferne(w, tier.id); this.render.wesen.funken(tier.pos, "#ffe36b", 28, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 4 });
+      if(!k.kaefig.lege(t)){ this._fangEnde(tier, false); this.ui.hinweis(SC.T.kaefigVoll, 2500); return; }
+      this._fangEnde(tier, true); SC.Wesen.entferne(w, tier.id); this.render.wesen.funken(tier.pos, "#ffe36b", 28, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 4 });
       this.ui.hinweis(SC.T.neuGefangen.replace("{name}", t.name + " (" + SC.TIERE[t.art].name + ")"), 3000);
     }
   };
@@ -64,7 +66,7 @@
   S._tierWesen = function(t, pos, nr){
     var d = SC.TIERE[t.art], wt = SC.Tier.werte(t);
     return SC.Wesen.neu(this.welt, "tier", { tierArt: t.art, tierId: t.id, besitzer: this.daten.spieler.figurId, nr: nr, name: t.name, stufe: t.stufe, lp: Math.min(t.lp, wt.lpMax), lpMax: wt.lpMax,
-      schaden: wt.schaden, halsband: "#ffd95c", pos: pos, heim: pos.slice(), breite: d.breite, hoehe: d.hoehe });
+      schaden: wt.schaden, halsband: (this.raum && this.raum.farbe) || "#ffd95c", pos: pos, heim: pos.slice(), breite: d.breite, hoehe: d.hoehe });
   };
   S._tiereAbgleichen = function(){
     var w = this.welt, sp = this.spieler, k = this.kampf, s = this, fid = this.daten.spieler.figurId, n = 0;
@@ -106,7 +108,12 @@
   };
   // K.o.: freundlich verpuffen, zurück in den Käfig, nach 1 Minute wieder fit (Erfahrung bleibt)
   S._tierKo = function(e){
-    var t = this.kampf.kaefig.tier(e.tierId); e.ko = true;
+    var t = e.besitzer === this.daten.spieler.figurId ? this.kampf.kaefig.tier(e.tierId) : null; e.ko = true;
+    if(!t && e.besitzer !== this.daten.spieler.figurId && this.raum instanceof SC.Gastgeber){
+      // Tier eines Gastes: der Gast bekommt das K.o. gemeldet; die veraltete Liste darf es nicht neu anlegen
+      var en = this.raum._eintrag(e.besitzer); if(en) (en.ko || (en.ko = {}))[e.tierId] = true;
+      this.raum.tierStand(e.besitzer, [], [e.tierId]);
+    }
     if(t){ t.lp = 0; t.koRest = 60; t.draussen = false; t.staerke = null; this.ui.hinweis(SC.T.tierKo.replace("{name}", t.name), 3000); }
     this.render.wesen.funken(e.pos, "#ffe36b", 18, this.spieler.pos); this.audio.spiele("zerfall");
     SC.Wesen.entferne(this.welt, e.id);
@@ -139,6 +146,43 @@
     this.render.wesen.funken([best.pos[0], best.pos[1] + best.hoehe + 0.2, best.pos[2]], "#ff7fb0", 10, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 1 });
     return true;
   };
+  // --- Mehrspieler (Gastgeber): Tiere der Gäste, Stand zurück an den Gast, Fang-Sperren ---
+  // Aus den Listen der Gäste (entry.tiere, vom Gast gemeldet) die Wesen anlegen, aktualisieren und entfernen; Gast-Tiere im K.o. (entry.ko) bleiben draußen vor
+  S._tiereGaeste = function(){
+    var gg = this.raum, w = this.welt;
+    if(!gg || !gg.spieler || !w) return;
+    gg.spieler.forEach(function(g){
+      if(!g.verbunden || !g.pos) return;
+      var roh = g.tiere || [], liste = roh.filter(function(t){ return !(g.ko && g.ko[t.id]); }), da = {};
+      if(g.ko) for(var kid in g.ko){ var noch = false; roh.forEach(function(t){ if(t.id === kid) noch = true; }); if(!noch) delete g.ko[kid]; }
+      w.wesen.forEach(function(e){ if(e.art === "tier" && e.besitzer === g.id) da[e.tierId] = e; });
+      liste.forEach(function(t, n){
+        var d = SC.TIERE[t.art], e = da[t.id]; delete da[t.id];
+        if(!e){
+          e = SC.Wesen.neu(w, "tier", { tierArt: t.art, tierId: t.id, besitzer: g.id, nr: n, name: t.name, stufe: t.stufe, lp: t.lp, lpMax: t.lpMax, schaden: t.schaden, fn: t.fn, halsband: g.farbe || "#ffd95c", pos: g.pos.slice(), heim: g.pos.slice(), breite: d.breite, hoehe: d.hoehe });
+          if(e) SC.KI.tierZuBesitzer(w, e, g.pos, n);
+          return;
+        }
+        e.name = t.name; e.stufe = t.stufe; e.lpMax = t.lpMax; e.schaden = t.schaden; if(e.lp > e.lpMax) e.lp = e.lpMax;
+        if(t.fn !== e.fn){ e.fn = t.fn; e.lp = t.lpMax; }   // der Gast hat gefüttert
+      });
+      for(var id in da) SC.Wesen.entferne(w, da[id].id);
+    });
+  };
+  // Gast: Leben und K.o. seiner Tiere vom Gastgeber übernehmen
+  S._tierStand = function(n){
+    var k = this.kampf, s = this; if(!k) return;
+    (n.liste || []).forEach(function(t){ var x = k.kaefig.tier(t.id); if(x && x.draussen) x.lp = Math.max(0, Math.min(t.lp, SC.Tier.werte(x).lpMax)); });
+    (n.ko || []).forEach(function(id){ var x = k.kaefig.tier(id); if(x){ x.lp = 0; x.koRest = 60; x.draussen = false; x.staerke = null; s.ui.hinweis(SC.T.tierKo.replace("{name}", x.name), 3000); } });
+  };
+  // Wildtiere, die ein getrennter Gast (oder zu lange) fängt, wieder freigeben
+  SC.Spiel.tierFangFreigeben = function(welt, eigeneId, alle, dt){
+    welt.wesen.forEach(function(e){
+      if(e.art !== "tier" || !e.wild || !e.fangVon || e.fangVon === eigeneId) return;
+      e.fangZeit = (e.fangZeit || 0) + (dt || 0);
+      if(e.fangZeit > 30 || !alle.some(function(z){ return z.id === e.fangVon; })){ e.fangVon = null; e.haeltStill = false; e.fangZeit = 0; }
+    });
+  };
   S._tierRaus = function(id){ var r = this.kampf.kaefig.rauslassen(id); if(r === "ok") this._tiereAbgleichen(); return r; };
   S._tierRein = function(id){ if(!this.kampf.kaefig.tier(id)) return; this.kampf.kaefig.zurueck(id); this._tiereAbgleichen(); };
 
@@ -146,7 +190,13 @@
   S._tiere = function(dt, offen){
     var w = this.welt, sp = this.spieler, raum = this.raum, s = this;
     this._fangBild(dt, offen);
-    if(raum instanceof SC.Gast || !this.auftauchen) return;
+    if(!this.auftauchen) return;
+    // Gast: die Tiere rechnet der Gastgeber; hier laufen nur die Zeiten der Käfigtiere, und die Liste der Tiere draußen geht mit dem zustand hinaus
+    if(raum instanceof SC.Gast){
+      this.kampf.kaefig.plaetze.forEach(function(t){ if(t) SC.Tier.zeit(t, dt); });
+      this._tiereListe = sp.modus !== "zuschauer" && !this.all && !this._imFahrzeug() ? SC.Raum.tiereListe(this.kampf.kaefig.plaetze) : [];
+      return;
+    }
     if(this.all){ this._tiereAbgleichen(); return; }
     if(offen && !raum) return;
     var gastgeber = raum instanceof SC.Gastgeber ? raum : null, ziele = gastgeber ? SC.Raum.mitspielerZiele(gastgeber, this.raumIch(offen)) : null, alle = ziele || [{ id: this.daten.spieler.figurId, pos: sp.pos, modus: sp.modus }];
@@ -156,6 +206,14 @@
     }
     this.kampf.kaefig.plaetze.forEach(function(t){ if(t) SC.Tier.zeit(t, dt); });
     this._tiereAbgleichen();
+    if(gastgeber){
+      this._tiereGaeste();
+      SC.Spiel.tierFangFreigeben(w, this.daten.spieler.figurId, alle, dt);
+      if((this._tierStandZeit = (this._tierStandZeit || 0) + dt) >= 1){   // Leben der Gast-Tiere zurück an die Gäste
+        this._tierStandZeit = 0;
+        gastgeber.spieler.forEach(function(g){ if(!g.verbunden) return; var l = []; w.wesen.forEach(function(e){ if(e.art === "tier" && e.besitzer === g.id) l.push({ id: e.tierId, lp: Math.ceil(e.lp) }); }); if(l.length) gastgeber.tierStand(g.id, l, []); });
+      }
+    }
     var zf = this._zf || Math.random, ctx = { spieler: alle }, fid = this.daten.spieler.figurId;
     w.wesen.forEach(function(e){
       if(e.art !== "tier") return;
@@ -165,10 +223,8 @@
         if(!b) alle.forEach(function(z){ if(z.id === e.besitzer) b = z; });
         if(!b){ SC.Wesen.entferne(w, e.id); return; }   // Besitzer weg (Gast getrennt)
         c = { spieler: alle, besitzer: { pos: b.pos } };
-      }
-      if(e.besitzer){
         // Ziel: der nächste Gegner, der den Besitzer bemerkt hat (oder von ihm getroffen wurde), nahe beim Besitzer
-        var bz = c.besitzer.pos, zg = null, zd = 16;
+        var bz = b.pos, zg = null, zd = 16;
         w.wesen.forEach(function(x){ if(x.art !== "gegner" || !x.bemerkt) return; var d = ring(w, bz, x.pos), l = Math.hypot(d[0], d[2]); if(l < zd && Math.abs(d[1]) < 6){ zd = l; zg = x; } });
         c = { spieler: c.spieler, besitzer: c.besitzer, ziel: zg, werte: { schaden: e.schaden || 1 } };
       }

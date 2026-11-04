@@ -99,7 +99,7 @@ SC.T = {
   aus: "aus",
   rucksackTitel: "Rucksack und Ausrüstung",
   rucksackVoll: "Der Rucksack ist voll.",
-  kaefigVoll: "Der Käfig ist voll. Lass ein Tier frei, um Platz zu schaffen.", neuGefangen: "Neu gefangen: {name}!", fangDaneben: "Daneben! Gleich nochmal.", fangTreffer: "Treffer! Noch mal!", tierKo: "{name} ruht sich im Käfig aus.",
+  kaefigVoll: "Der Käfig ist voll. Lass ein Tier frei, um Platz zu schaffen.", neuGefangen: "Neu gefangen: {name}!", fangDaneben: "Daneben! Gleich nochmal.", fangTreffer: "Treffer! Noch mal!", tierKo: "{name} ruht sich im Käfig aus.", fangBelegt: "Dieses Tier fängt gerade jemand anderes.",
   kfTitel: "Käfig", kfRaus: "Rauslassen", kfRein: "Zurückholen", kfName: "Umbenennen", kfFrei: "Freilassen", kfFreiFrage: "{name} wirklich freilassen?", kfFreiJa: "Ja, freilassen", kfFreiNein: "Nein, behalten",
   kfNameOk: "Fertig", kfLeer: "Fang Tiere mit dem Fangnetz!", kfDraussenVoll: "Es können höchstens 3 Tiere gleichzeitig draußen sein.", kfKo: "{name} ruht sich noch aus.", kfKnopf: "🐾 Käfig",
   gestreichelt: "{name} freut sich! Stärker für 2 Minuten.", gefuettert: "{name} schmeckt es! Stärker für 5 Minuten.", tiereTitel: "Tiere", kfInfoDraussen: "draußen", kfInfoDrin: "im Käfig", kfInfoKo: "ruht sich aus", tierStufe: "{name} ist jetzt Stufe {stufe}!",

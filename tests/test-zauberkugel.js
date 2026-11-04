@@ -55,7 +55,7 @@ test("Teleport kommt beim Mitspieler an: Fahrzeug, Schlaf und Raumflug (#125)", 
   s._teleportiert([12.5, 64, 12.5]); gleich(JSON.stringify(s.spieler.pos), JSON.stringify([12.5, 64, 12.5])); gleich(JSON.stringify(s.spieler.geschw), "[0,0,0]"); gleich(s.aussteigenAufrufe, 1); gleich(s.spieler.schlaeft, null); gleich(s.hinweise[s.hinweise.length - 1], SC.T.zauberAngekommen);
   var all = zSpiel(); all.all = { phase: "all" }; all._teleportiert([12.5, 64, 12.5]); gleich(JSON.stringify(all.spieler.pos), JSON.stringify([4.5, 64, 4.5]), "im All keine Teleportation");
 });
-test("Netzprotokoll 7 wegen der Zauberkugel (#125)", function(){ gleich(SC.NETZ_PROTOKOLL, 7); });
+test("Netzprotokoll mindestens 7 wegen der Zauberkugel (#125)", function(){ wahr(SC.NETZ_PROTOKOLL >= 7); });
 // --- Gast fragt den Gastgeber (#126) ---
 test("Gast benutzt die Zauberkugel: fragt den Gastgeber, mit Pause gegen Dauerklicken (#126)", function(){
   var fragen = 0, g = Object.create(SC.Gast.prototype); g.zauber = function(){ fragen++; }; var s = zSpiel({ rolle: "gast", raum: g }), jetzt = 1000; s._jetzt = function(){ return jetzt; };

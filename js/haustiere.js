@@ -58,20 +58,57 @@
     }
   };
 
+  // --- Begleiter: Käfigtiere mit draussen = true laufen als Wesen "tier" (besitzer = figurId, tierId) neben dem Besitzer ---
+  // Der Käfig bleibt die Wahrheit (Name, Stufe, Stärkung); das Leben wird aus dem Wesen zurückgeschrieben. Nicht erlaubt (Zuschauer, Fahrzeug, All):
+  // Wesen weg, Käfigtier bleibt „draußen“ und kommt danach wieder heraus.
+  S._tierWesen = function(t, pos, nr){
+    var d = SC.TIERE[t.art], wt = SC.Tier.werte(t);
+    return SC.Wesen.neu(this.welt, "tier", { tierArt: t.art, tierId: t.id, besitzer: this.daten.spieler.figurId, nr: nr, name: t.name, stufe: t.stufe, lp: Math.min(t.lp, wt.lpMax), lpMax: wt.lpMax,
+      halsband: "#ffd95c", pos: pos, heim: pos.slice(), breite: d.breite, hoehe: d.hoehe });
+  };
+  S._tiereAbgleichen = function(){
+    var w = this.welt, sp = this.spieler, k = this.kampf, s = this, fid = this.daten.spieler.figurId, n = 0;
+    var erlaubt = sp.modus !== "zuschauer" && !this.all && !this._imFahrzeug(), da = {};
+    w.wesen.forEach(function(e){ if(e.art === "tier" && e.besitzer === fid) da[e.tierId] = e; });
+    k.kaefig.plaetze.forEach(function(t){
+      if(!t || !t.draussen || !erlaubt || t.koRest > 0) return;
+      var e = da[t.id], wt = SC.Tier.werte(t);
+      if(!e){ e = s._tierWesen(t, sp.pos.slice(), n); if(e) SC.KI.tierZuBesitzer(w, e, sp.pos, n); }
+      else {
+        delete da[t.id]; t.lp = Math.max(0, Math.min(e.lp, wt.lpMax)); e.lp = t.lp; e.lpMax = wt.lpMax; e.name = t.name; e.stufe = t.stufe;
+      }
+      n++;
+    });
+    for(var id in da){ var e2 = da[id], t2 = k.kaefig.tier(id); if(t2 && !e2.ko) t2.lp = Math.max(0, Math.min(e2.lp, SC.Tier.werte(t2).lpMax)); SC.Wesen.entferne(w, e2.id); }
+  };
+  S._tierRaus = function(id){ var r = this.kampf.kaefig.rauslassen(id); if(r === "ok") this._tiereAbgleichen(); return r; };
+  S._tierRein = function(id){ if(!this.kampf.kaefig.tier(id)) return; this.kampf.kaefig.zurueck(id); this._tiereAbgleichen(); };
+
   // Jedes Bild: Wildtiere einmal pro Sekunde auftauchen lassen, alle Tiere bewegen. Ein offenes Menü hält die Welt an (im Raum läuft sie weiter).
   S._tiere = function(dt, offen){
     var w = this.welt, sp = this.spieler, raum = this.raum, s = this;
     this._fangBild(dt, offen);
-    if(raum instanceof SC.Gast || (offen && !raum) || this.all || !this.auftauchen) return;
+    if(raum instanceof SC.Gast || !this.auftauchen) return;
+    if(this.all){ this._tiereAbgleichen(); return; }
+    if(offen && !raum) return;
     var gastgeber = raum instanceof SC.Gastgeber ? raum : null, ziele = gastgeber ? SC.Raum.mitspielerZiele(gastgeber, this.raumIch(offen)) : null, alle = ziele || [{ id: this.daten.spieler.figurId, pos: sp.pos, modus: sp.modus }];
     if((this._tierZeit = (this._tierZeit || 0) + dt) >= 1){
       this._tierZeit = 0;
       this.auftauchen.tiere(alle, SC.himmelsFarben(SC.PALETTEN[w.planet.palette] || SC.PALETTEN.start, this.tageszeit).tageslicht);
     }
-    var zf = this._zf || Math.random, ctx = { spieler: alle };
+    this.kampf.kaefig.plaetze.forEach(function(t){ if(t) SC.Tier.zeit(t, dt); });
+    this._tiereAbgleichen();
+    var zf = this._zf || Math.random, ctx = { spieler: alle }, fid = this.daten.spieler.figurId;
     w.wesen.forEach(function(e){
       if(e.art !== "tier") return;
-      SC.KI.tier(w, e, ctx, dt, zf);
+      var c = ctx;
+      if(e.besitzer){
+        var b = e.besitzer === fid ? sp : null;
+        if(!b) alle.forEach(function(z){ if(z.id === e.besitzer) b = z; });
+        if(!b){ SC.Wesen.entferne(w, e.id); return; }   // Besitzer weg (Gast getrennt)
+        c = { spieler: alle, besitzer: { pos: b.pos } };
+      }
+      SC.KI.tier(w, e, c, dt, zf);
     });
   };
 })();

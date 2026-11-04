@@ -199,3 +199,49 @@ test("Eingaben beim Fangen: Bewegung gesperrt, Klick, Leertaste und A zählen al
   s._fangDruck = false; var e2 = { vor: true }; s._fangEingabe(e2); gleich(s._fangDruck, false, "ohne Druck kein Druck");
   s._fang = null; var e3 = { vor: true }; s._fangEingabe(e3); gleich(e3.vor, true, "ohne Fang bleibt alles");
 });
+// Begleiter: rauslassen, folgen, Zustände (Aufgabe 7)
+function boden(w){ for(var x = -10; x < 40; x++) for(var z = -10; z < 40; z++){ w.setzeBlock(x, 89, z, SC.B.STEIN, "system"); for(var y = 90; y < 93; y++) w.setzeBlock(x, y, z, SC.B.LUFT, "system"); } }
+function tierSpiel(){
+  var s = survSpiel(); boden(s.welt); s.spieler.pos = [4.5, 90, 4.5]; s.render = { wesen: { funken: function(){}, zahl: function(){}, risse: function(){} } }; s._zf = SC.zufall(1); s.tageszeit = 0.5; s.eingabe = {}; s.raum = null; s.all = null;
+  s.auftauchen = { tiere: function(){}, schritt: function(){}, zerfallen: [] }; s._imFzOrig = s._imFahrzeug; s._fz = null; s._imFahrzeug = function(){ return s._fz; }; s._hinweise = []; s.ui.hinweis = function(t){ s._hinweise.push(t); };
+  s.begleiter = function(){ var l = []; s.welt.wesen.forEach(function(e){ if(e.art === "tier" && e.besitzer) l.push(e); }); return l; };
+  s.laufe = function(n, dt){ for(var i = 0; i < n; i++) s._tiere(dt || 0.1, false); };
+  return s;
+}
+function tierDrin(s, art){ var t = tierNeu(art); s.kampf.kaefig.lege(t); return t; }
+test("Rauslassen erzeugt ein folgendes Wesen, Zurückholen entfernt es", function(){
+  var s = tierSpiel(), t = tierDrin(s, "hund"); gleich(s._tierRaus(t.id), "ok"); gleich(s.begleiter().length, 1); gleich(s.begleiter()[0].tierId, t.id); gleich(t.draussen, true);
+  s.spieler.pos = [24.5, 90, 4.5]; s.laufe(80);
+  var e = s.begleiter()[0]; wahr(Math.hypot(e.pos[0] - 24.5, e.pos[2] - 4.5) < 6, "folgt: " + e.pos);
+  s._tierRein(t.id); gleich(s.begleiter().length, 0); gleich(t.draussen, false);
+});
+test("Draußen gewesene Tiere kommen nach dem Laden wieder heraus", function(){
+  var s = tierSpiel(), t = tierDrin(s, "katze"); t.draussen = true; gleich(s.begleiter().length, 0); s.laufe(1); gleich(s.begleiter().length, 1); gleich(s.begleiter()[0].tierId, t.id);
+  s.laufe(5); gleich(s.begleiter().length, 1, "nicht doppelt");
+});
+test("Im Fahrzeug warten die Tiere im Käfig, nach dem Aussteigen sind sie wieder da", function(){
+  var s = tierSpiel(), t = tierDrin(s, "fuchs"); s._tierRaus(t.id); s.laufe(1); gleich(s.begleiter().length, 1);
+  s._fz = { f: {}, sitz: 0 }; s.laufe(1); gleich(s.begleiter().length, 0, "im Fahrzeug"); gleich(t.draussen, true, "bleibt draußen-markiert");
+  s._fz = null; s.laufe(1); gleich(s.begleiter().length, 1, "wieder da");
+});
+test("Zuschauer: Tiere warten im Käfig und kommen zurück", function(){
+  var s = tierSpiel(), t = tierDrin(s, "hase"); s._tierRaus(t.id); s.laufe(1); s.spieler.modus = "zuschauer"; s.laufe(1); gleich(s.begleiter().length, 0); gleich(t.draussen, true);
+  s.spieler.modus = "survival"; s.laufe(1); gleich(s.begleiter().length, 1);
+});
+test("Zu weit weg oder in Lava: neben den Besitzer, Leben unverändert", function(){
+  var s = tierSpiel(), t = tierDrin(s, "hund"); s._tierRaus(t.id); s.laufe(1); var e = s.begleiter()[0], lp = e.lp;
+  e.pos = [38.5, 90, 38.5]; s.laufe(2); wahr(Math.hypot(e.pos[0] - 4.5, e.pos[2] - 4.5) < 6, "von weit: " + e.pos);
+  s.welt.setzeBlock(8, 90, 4, SC.B.LAVA, "system"); e.pos = [8.5, 90, 4.5]; s.laufe(2); wahr(s.welt.holeBlock(Math.floor(e.pos[0]), Math.floor(e.pos[1] + 0.1), Math.floor(e.pos[2])) !== SC.B.LAVA, "aus der Lava"); gleich(e.lp, lp, "kein Schaden");
+});
+test("Besiegt: die Tiere kommen zum Wiedereinstieg mit", function(){
+  var s = tierSpiel(), t = tierDrin(s, "hund"); s._tierRaus(t.id); s.laufe(1); s.kampf.trifftSpieler(1e6, [0, 0, 1]); wahr(s.kampf.besiegt()); s.kampf.wiederbeleben([30.5, 90, 30.5]); s.spieler.pos = [30.5, 90, 30.5]; s.laufe(3);
+  var e = s.begleiter()[0]; wahr(e && Math.hypot(e.pos[0] - 30.5, e.pos[2] - 30.5) < 6, "beim Wiedereinstieg");
+});
+test("Name, Stufe und Leben im Wesen folgen dem Käfigtier, Leben zurück in den Käfig", function(){
+  var s = tierSpiel(), t = tierDrin(s, "hund"); s._tierRaus(t.id); s.laufe(1); var e = s.begleiter()[0];
+  s.kampf.kaefig.umbenennen(t.id, "Max"); t.stufe = 4; s.laufe(1); gleich(e.name, "Max"); gleich(e.stufe, 4); gleich(e.lpMax, SC.Tier.werte(t).lpMax);
+  e.lp = 7; s.laufe(1); gleich(t.lp, 7, "Käfigtier übernimmt das Leben");
+});
+test("Zeit vergeht für Stärkung der Käfigtiere, nicht bei offenem Menü", function(){
+  var s = tierSpiel(), t = tierDrin(s, "hund"); SC.Tier.staerken(t, "streicheln"); s._tiere(10, true); gleich(t.staerke.rest, 120, "Menü offen: steht"); s._tiere(10, false); gleich(Math.round(t.staerke.rest), 110);
+});

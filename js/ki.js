@@ -155,11 +155,21 @@ SC.KI = {};
     return id === SC.B.LAVA || id === SC.B.WASSER || u === SC.B.LAVA || u === SC.B.WASSER;
   }
   SC.KI.tierGefahr = tierGefahr;
+  // Begleiter neben den Besitzer setzen (n = laufende Nummer, damit mehrere Tiere nicht aufeinander stehen)
+  SC.KI.tierZuBesitzer = function(welt, g, pos, n){
+    var P = welt.planet.groesse, w = (n || 0) * 2.1 + 0.7, x = pos[0] + Math.sin(w) * 1.8, z = pos[2] + Math.cos(w) * 1.8;
+    var frei = !SC.BLOECKE[welt.holeBlock(x, pos[1] + 0.3, z)].fest && !SC.BLOECKE[welt.holeBlock(x, pos[1] + 1.3, z)].fest && !tierGefahr(welt, x, pos[1], z);
+    if(!frei){ x = pos[0]; z = pos[2]; }
+    g.pos = [SC.mod(x, P), pos[1], SC.mod(z, P)]; g.geschw = [0, 0, 0]; g.entfernen = false; g.fest = 0; g.aufBoden = false;
+  };
   SC.KI.tier = function(welt, g, ctx, dt, zf){
     var def = SC.TIERE[g.tierArt], akt = [];
     if(!def){ g.entfernen = true; return akt; }
     var drin = SC.BLOECKE[welt.holeBlock(g.pos[0], g.pos[1] + 0.3, g.pos[2])];
-    if(drin && drin.fest){ aufgeben(g); if(g.entfernen) return akt; }
+    if(drin && drin.fest){
+      if(g.besitzer && ctx.besitzer){ SC.KI.tierZuBesitzer(welt, g, ctx.besitzer.pos, g.nr); return akt; }
+      aufgeben(g); if(g.entfernen) return akt;
+    }
     g.fliegt = false; g.zeit = (g.zeit || 0) + dt;
     var vx = 0, vz = 0;
     if(!g.haeltStill && g.wild){
@@ -175,9 +185,18 @@ SC.KI = {};
         // Gefahr voraus (Lava, Wasser): stehen bleiben und neu überlegen
         if(tierGefahr(welt, g.pos[0] + g.richtung[0] * 0.7, g.pos[1], g.pos[2] + g.richtung[1] * 0.7)){ vx = 0; vz = 0; g.modus = "steht"; g.bis = g.zeit + 0.3; }
       }
+    } else if(!g.haeltStill && g.besitzer && ctx.besitzer){
+      // Begleiter: dem Besitzer folgen (schneller, wenn er weit weg ist); zu weit, in Lava/Wasser oder feststeckend → neben den Besitzer
+      var o = ring(welt, g.pos, ctx.besitzer.pos), dist = Math.hypot(o[0], o[2]);
+      if(dist > 24 || Math.abs(o[1]) > 12 || tierGefahr(welt, g.pos[0], g.pos[1], g.pos[2])){ SC.KI.tierZuBesitzer(welt, g, ctx.besitzer.pos, g.nr); return akt; }
+      if(dist > 3.5){
+        var fo = richtungZu(o), tb = def.tempo * (dist > 9 ? 1.6 : dist > 6 ? 1.2 : 0.9); vx = fo[0] * tb; vz = fo[1] * tb; g.blick = Math.atan2(-vx, -vz);
+        if(tierGefahr(welt, g.pos[0] + fo[0] * 0.7, g.pos[1], g.pos[2] + fo[1] * 0.7)){ vx = 0; vz = 0; }
+      } else g.blick = Math.atan2(-o[0], -o[2]);
     }
     g.geschw[0] = vx; g.geschw[2] = vz;
     bewege(welt, g, vx, vz, dt);
+    if(g.entfernen && g.besitzer && ctx.besitzer){ SC.KI.tierZuBesitzer(welt, g, ctx.besitzer.pos, g.nr); return akt; }   // festgesteckt
     if(g.wild && tierGefahr(welt, g.pos[0], g.pos[1], g.pos[2])) g.entfernen = true;
     return akt;
   };

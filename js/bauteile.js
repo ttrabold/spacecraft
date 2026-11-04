@@ -6,6 +6,7 @@ SC.Bauteile = {};
   // Welche Block-ID kommt in die Zelle vor dem getroffenen Block (ziel mit Normale nx, ny, nz)? 0 = hier nicht aufstellbar.
   // blick: Blickrichtung des Spielers [x, y, z]
   SC.Bauteile.aufstellId = function(welt, id, ziel, blick){
+    if(SC.BLOECKE[id] && SC.BLOECKE[id].nichtAufstellbar) return 0;   // Netz und Tierfutter bleiben in der Hand
     if(id === B.LEITER_N){
       var treffer = welt.holeBlock(ziel.x, ziel.y, ziel.z);
       if(ziel.ny !== 0) return LEITERN.indexOf(treffer) >= 0 && ziel.ny > 0 ? treffer : 0;    // nur nach oben verlängern

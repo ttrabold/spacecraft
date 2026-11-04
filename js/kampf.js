@@ -58,6 +58,9 @@ SC.Kampf = function(welt, spieler, daten, zf){
     return g && SC.GEGENSTAENDE[g.art] && SC.GEGENSTAENDE[g.art].platz === "waffe" ? g : null;
   };
 
+  // Das Fangnetz in der gehaltenen Schnellleistenzelle (Block, kein Waffenplatz; Spec Haustiere) – oder null
+  K.netz = function(){ var s = this.rucksack.plaetze[this.spieler.auswahl]; return s && s.block === SC.B.NETZ ? s : null; };
+
   K.angriff = function(jetzt, richtung){
     this.uhr = jetzt;
     var w = this.waffe();

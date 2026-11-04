@@ -67,3 +67,27 @@ test("Käfig wird mit der Figur gespeichert und reist mit", function(){
   var k2 = new SC.Kampf(w, sp, eigen, SC.zufall(9)); gleich(k2.kaefig.tier(t.id).name, t.name); gleich(k2.kaefig.tier(t.id).draussen, true);
   wahr(SC.Spielstand.FIGUR_FELDER.indexOf("kaefig") >= 0, "Figurfeld");
 });
+// Netz und Tierfutter (Aufgabe 3)
+test("Netz und Tierfutter an der Werkbank", function(){
+  var rs = new SC.Rucksack(), B = SC.B;
+  wahr(SC.Crafting.rezept("netz") && SC.Crafting.rezept("tierfutter"), "Rezepte");
+  gleich(SC.Crafting.herstelle(rs, SC.Crafting.rezept("netz"), {}, SC.zufall(1), 1).ok, false, "ohne Material");
+  rs.lege({ block: B.WOLLE_ROT, anzahl: 4 }); rs.lege({ block: B.BRETTER, anzahl: 4 }); rs.lege({ block: B.BLAETTER, anzahl: 2 }); rs.lege({ block: B.LEUCHTPILZ, anzahl: 1 });
+  gleich(SC.Crafting.herstelle(rs, SC.Crafting.rezept("netz"), {}, SC.zufall(1), 1).ok, true); gleich(rs.hat(B.NETZ), 1);
+  gleich(SC.Crafting.herstelle(rs, SC.Crafting.rezept("tierfutter"), {}, SC.zufall(1), 1).ok, true); gleich(rs.hat(B.TIERFUTTER), 4);
+  wahr(SC.BLOECKE[B.NETZ].name && SC.BLOECKE[B.TIERFUTTER].name, "Namen"); wahr(SC.T.rezeptName.netz && SC.T.rezeptName.tierfutter, "Rezeptnamen");
+});
+test("Netz und Tierfutter lassen sich nicht aufstellen", function(){
+  var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), z = { x: 4, y: 89, z: 4, nx: 0, ny: 1, nz: 0 };
+  gleich(SC.Bauteile.aufstellId(w, SC.B.NETZ, z, [0, 0, -1]), 0); gleich(SC.Bauteile.aufstellId(w, SC.B.TIERFUTTER, z, [0, 0, -1]), 0);
+  gleich(SC.Bauteile.aufstellId(w, SC.B.STEIN, z, [0, 0, -1]), SC.B.STEIN, "andere Blöcke wie bisher");
+});
+test("Netz ist keine Waffe: k.netz() findet es, k.waffe() nicht", function(){
+  var s = survSpiel(), k = s.kampf; gleich(k.netz(), null, "leer"); k.rucksack.plaetze[0] = { block: SC.B.NETZ, anzahl: 1 }; s.spieler.auswahl = 0;
+  gleich(k.waffe(), null); wahr(k.netz(), "Netz in der Hand"); s.spieler.auswahl = 1; gleich(k.netz(), null, "Netz nicht in der Hand");
+});
+test("Mit dem Netz in der Hand wird nicht abgebaut", function(){
+  var s = survSpiel(), w = s.welt; s.kampf.rucksack.plaetze[0] = { block: SC.B.NETZ, anzahl: 1 }; s.spieler.auswahl = 0; w.setzeBlock(4, 89, 4, SC.B.STEIN, "system"); var z = { x: 4, y: 89, z: 4 };
+  for(var j = 0; j < 40; j++) s.abbauFortschritt(z, 0.05); gleich(w.holeBlock(4, 89, 4), SC.B.STEIN); gleich(s.abbauAnteil(z), 0);
+  gleich(s.setzeAusRucksack(4, 90, 4, { x: 4, y: 89, z: 4, nx: 0, ny: 1, nz: 0 }), false, "Netz wird nicht gesetzt"); gleich(s.kampf.rucksack.hat(SC.B.NETZ), 1);
+});

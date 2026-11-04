@@ -49,6 +49,8 @@ SC.Texturen = {};
         case "erz": r = zf(); c = r < 0.18 ? d : g; if((x * 3 + y * 5) % 9 === 0 || (x * 7 + y * 2) % 13 === 0) c = h; break;
         case "schaltkreis": c = x % 4 === 0 || y % 5 === 0 ? d : g; if((x * y) % 7 === 0 && x % 4 !== 0) c = h; break;
         case "chitin": c = y % 5 === 0 ? d : (x + y) % 6 === 0 ? h : zf() < 0.15 ? d : g; break;
+        case "netz": c = x % 4 === 0 || y % 4 === 0 ? h : g; if((x + y) % 8 === 0) c = d; a = (x % 4 === 0 || y % 4 === 0) ? 255 : 90; break;
+        case "tierfutter": c = zf() < 0.2 ? d : g; if((x * 5 + y * 3) % 11 === 0) c = h; break;
         case "werkbankoben": c = x === 0 || x === 15 || y === 0 || y === 15 ? d : y % 4 === 3 ? d : g; if(x >= 4 && x <= 11 && y >= 6 && y <= 9) c = h; break;
         case "werkbankseite": c = y < 3 || x < 2 || x > 13 ? d : g; if(y >= 6 && y <= 9 && x % 4 === 1) c = h; break;
         case "fackel": a = 0; if(x >= 7 && x <= 8 && y >= 6) { c = g; a = 255; } else if(x >= 6 && x <= 9 && y >= 1 && y <= 5){ c = (x === 7 || x === 8) && y >= 3 ? h : d; a = 255; } break;

@@ -7,7 +7,7 @@
 
   // Abbauen: Fortschritt je Ziel; fertig → Block in den Rucksack (voll → bleibt stehen)
   S.abbauFortschritt = function(ziel, dt){
-    if(this.kampf.waffe()) return false;   // Mit ausgerüsteter Waffe wird nicht abgebaut – die Angriffstaste kämpft nur, abbauen geht nur mit leerer Hand (#127)
+    if(this.kampf.waffe() || this.kampf.netz()) return false;   // Mit ausgerüsteter Waffe (oder dem Netz) wird nicht abgebaut – die Angriffstaste kämpft nur, abbauen geht nur mit leerer Hand (#127)
     var w = this.welt, k = this.kampf, id = w.holeBlock(ziel.x, ziel.y, ziel.z);
     var schl = ziel.x + "," + ziel.y + "," + ziel.z;
     if(!this._abbau || this._abbau.schl !== schl) this._abbau = { schl: schl, t: 0 };
@@ -22,7 +22,7 @@
     return true;
   };
   S.abbauAnteil = function(ziel){
-    if(!ziel || this.kampf.waffe()) return 0;   // dieselbe Regel wie oben: mit Waffe kein Riss am Block (#127)
+    if(!ziel || this.kampf.waffe() || this.kampf.netz()) return 0;   // dieselbe Regel wie oben: mit Waffe kein Riss am Block (#127)
     if(!this._abbau || this._abbau.schl !== ziel.x + "," + ziel.y + "," + ziel.z) return 0;
     var d = SC.Abbau.zeit(this.welt.holeBlock(ziel.x, ziel.y, ziel.z));
     return isFinite(d) ? Math.min(1, this._abbau.t / d) : 0;

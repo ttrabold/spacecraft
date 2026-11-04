@@ -12,7 +12,7 @@ SC.B = {
   LEITER_N: 49, LEITER_S: 50, LEITER_O: 51, LEITER_W: 52, TUER_X: 53, TUER_Z: 54, TUER_X_OFFEN: 55, TUER_Z_OFFEN: 56, TRUHE: 57,
   TUER_X_OBEN: 58, TUER_Z_OBEN: 59, TUER_X_OFFEN_OBEN: 60, TUER_Z_OFFEN_OBEN: 61,   // obere Türhälften (die Tür ist zwei Blöcke hoch)
   // Betten: Fuß und Kopf je Richtung; N/S/O/W sagt, auf welcher Seite des Fußes der Kopf liegt (Norden = z−1)
-  ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
+  NETZ: 71, TIERFUTTER: 72, ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
 // Muster je Textur (Farben kommen aus der Palette des Planeten)
@@ -27,7 +27,7 @@ SC.TEXTUREN = {
   lava: "lava", eis: "eis", schlamm: "schlamm", basalt: "basalt",
   eisenerz: "erz", titan: "erz", glutstahl: "erz", moorsilber: "erz", sternenmetall: "erz",
   kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
-  schaltkreis: "schaltkreis", chitin: "chitin", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
+  schaltkreis: "schaltkreis", chitin: "chitin", netz: "netz", tierfutter: "tierfutter", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
   fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste"
 };
 
@@ -96,6 +96,8 @@ SC.BLOECKE = {};
     [SC.B.KRISTALL_WEISS, "kristallWeiss", alle("kristall_weiss"), true, false, 12, [0.96, 0.96, 1.0], true, true],
     [SC.B.SCHALTKREIS, "schaltkreis", alle("schaltkreis"), true, false, 0, null, true, true],
     [SC.B.CHITIN, "chitin", alle("chitin"), true, false, 0, null, true, true],
+    [SC.B.NETZ, "netz", alle("netz"), true, false, 0, null, true, false, { nichtAufstellbar: true }],
+    [SC.B.TIERFUTTER, "tierfutter", alle("tierfutter"), true, false, 0, null, true, false, { nichtAufstellbar: true }],
     [SC.B.WERKBANK, "werkbank", { oben: "werkbank_oben", seite: "werkbank_seite", unten: "werkbank_seite" }, true, false, 0, null, true, true],
     [SC.B.FACKEL, "fackel", alle("fackel"), false, true, 14, [1.0, 0.7, 0.3], true, true, { form: "kreuz" }],
     [SC.B.ZAUN, "zaun", alle("zaun"), true, true, 0, null, true, true, { form: "pfosten" }],

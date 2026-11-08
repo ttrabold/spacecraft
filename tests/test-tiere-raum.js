@@ -2,7 +2,7 @@
 function mpTiere(fn){ return raumOffen({ antwort: true }).then(function(u){ var r = raumGast(u, "Ben"); return raumBeitritt(u, r).then(function(){ return fn(u, r); }); }); }
 function gastTier(art, o){ var t = SC.Tier.neu(art, SC.zufall(5)); t.draussen = true; for(var k in o) t[k] = o[k]; return t; }
 function zustandMitTieren(ts){ return { pos: [3, 80, 1], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, tiere: SC.Raum.tiereListe(ts) }; }
-test("Netzprotokoll 8", function(){ gleich(SC.NETZ_PROTOKOLL, 8); });
+test("Netzprotokoll mindestens 8 (Haustiere)", function(){ wahr(SC.NETZ_PROTOKOLL >= 8); });
 test("tiereBereinigen: höchstens 3, bekannte Arten, Namen und Zahlen begrenzt", function(){
   var l = SC.Raum.tiereBereinigen([{ id: "a", art: "hund", name: "Bello", stufe: 3, lp: 10, lpMax: 30, schaden: 4, fn: 2 }, { id: "b", art: "drache", name: "x", stufe: 1, lp: 1, lpMax: 1, schaden: 1 }, { id: "c", art: "hase", name: "y".repeat(40), stufe: 999, lp: -5, lpMax: 1e9, schaden: -1 },
     { id: "d", art: "katze", name: "K", stufe: 1, lp: 1, lpMax: 1, schaden: 1 }, { id: "e", art: "fuchs", name: "F", stufe: 1, lp: 1, lpMax: 1, schaden: 1 }, null, "x", { art: "hund" }]);

@@ -140,3 +140,24 @@ test("Eimer im Spiel: ausgießen tauscht voll gegen leer, Kreativ verbraucht nic
   gleich(rs.plaetze[0].block, SC.B.EIMER, "leerer Eimer wieder in der Hand"); rs.plaetze[0] = null; gleich(s._eimer(z), false, "ohne Eimer in der Hand");
   var k = flSurv(); k.spieler.modus = "kreativ"; k.spieler.schnellleiste[0] = SC.B.EIMER_WASSER; wahr(k._eimerKreativ({ x: 6, y: 88, z: 6, nx: 0, ny: 1, nz: 0 })); gleich(k.welt.holeBlock(6, 89, 6), SC.B.WASSER);
 });
+test("Fluss im Raum: Gastgeber bündelt, Gast setzt", function(){
+  var u, a, gesendet = [];
+  return mspRaum(1).then(function(x){ u = x; a = u.gs[0]; var echt = u.h.sendeAlle; u.h.sendeAlle = function(n, aus){ gesendet.push(n); return echt.call(u.h, n, aus); };
+    var nr = a.g._nr; a.nrVorher = nr;
+    u.welt.setzeBlock(5, 62, 5, SC.B.WASSER_3, "fluss"); u.welt.setzeBlock(6, 62, 5, SC.B.WASSER_2, "fluss"); u.welt.setzeBlock(7, 62, 5, SC.B.WASSER_1, "fluss");
+    gleich(gesendet.filter(function(n){ return n.t === "block"; }).length, 0, "nicht einzeln");
+    u.h.takt(0.016, mspIch()); return raumLauf(u.netz);
+  }).then(function(){
+    var b = gesendet.filter(function(n){ return n.t === "bloecke"; }); gleich(b.length, 1, "eine Nachricht"); gleich(b[0].l.length, 12);
+    gleich(a.welt.holeBlock(5, 62, 5), SC.B.WASSER_3); gleich(a.welt.holeBlock(7, 62, 5), SC.B.WASSER_1); gleich(a.g._nr, a.nrVorher, "kein Wunsch zurück an den Gastgeber");
+  });
+});
+test("Fluss: im Spiel nur für Einzelspieler und Gastgeber", function(){
+  var s = survSpiel(); s.fluss = new SC.Fluss(s.welt); s.rolle = "gast"; s.welt.setzeBlock(4, 90, 4, SC.B.WASSER, "system"); s._flussTakt(1); gleich(s.welt.holeBlock(5, 90, 4), SC.B.LUFT, "Gast rechnet nicht");
+  gleich(s.fluss, null, "Gast meldet das Fließen ab"); s = survSpiel(); s.fluss = new SC.Fluss(s.welt); s.welt.setzeBlock(4, 90, 4, SC.B.WASSER, "system"); s._flussTakt(1); wahr(SC.Fluessig.istWasser(s.welt.holeBlock(5, 90, 4)) || SC.Fluessig.istWasser(s.welt.holeBlock(4, 89, 4)), "allein fließt es");
+});
+test("Netzprotokoll 9", function(){ gleich(SC.NETZ_PROTOKOLL, 9); });
+test("Anleitung erklärt Wasser, Lava und Eimer", function(){
+  var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Wasser und Lava"; })[0]; wahr(a && a[1].length >= 4, "Abschnitt"); var t = a[1].join(" "); wahr(t.indexOf("Eimer") >= 0 && t.indexOf("Basalt") >= 0 && t.indexOf("Eisenerz") >= 0);
+  wahr(SC.T.ewFluss, "Text für den Schalter im Entwicklerpanel");
+});

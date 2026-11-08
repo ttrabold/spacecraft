@@ -153,6 +153,7 @@ SC.T = {
   ewBauwerk: { dungeon: "Dungeon", herrenhaus: "Herrenhaus", station: "Station", lager: "Lager" },
   ewFlug: "Fluggeschwindigkeit",
   ewGrenzen: "Chunk-Grenzen anzeigen",
+  ewFluss: "Wasser und Lava fließen",
   ewErscheinen: "Erscheinen", ewGegnerWeg: "Alle Gegner weg", ewErzeugen: "In den Rucksack", ewStufeSetzen: "Stufe setzen", ewBauwerkeReset: "Bauwerke zurücksetzen", ewRohstoffe: "Rohstoffe geben", ewTiere: "Tiere geben", ewUnverwundbar: "Unverwundbar",
   brauchtNeuereVersion: "Diese Welt braucht eine neuere Spielversion.",
   importKaputt: "Diese Datei ist keine Spacecraft-Welt oder sie ist beschädigt.",
@@ -280,6 +281,15 @@ SC.T = {
         "Streicheln (Rechtsklick, Setzen-Knopf oder LT, wenn du das Tier ansiehst) macht es 2 Minuten stärker. Mit Tierfutter in der Hand macht Füttern es 5 Minuten stärker und heilt es. Tierfutter baust du an der Werkbank aus Blättern und Leuchtpilzen.",
         "Wenn du mit deinem Tier Gegner besiegst, wird es stärker. Es kann aber nie eine höhere Stufe haben als du.",
         "Spielt ihr zusammen, hat jeder seine eigenen Tiere."
+      ]],
+      ["Wasser und Lava", [
+        "Wasser fließt wie in Minecraft: Gräbst du neben einem See, läuft das Wasser in das Loch. Ein Wasserblock läuft den Hang hinunter, zur Seite aber nur ein paar Blöcke weit.",
+        "Mit einem Block baust du einen Damm: Setz ihn ins fließende Wasser, dann läuft der Strom dahinter aus. Seen und Meere laufen nie leer.",
+        "Fließendes Wasser schiebt dich ein wenig mit. Schwimmen ist aber stärker, du kommst immer wieder heraus.",
+        "Lava fließt langsamer und nicht so weit. Wo Lava auf Wasser trifft, wird sie zu Basalt. So kannst du einen Lavastrom mit Wasser stoppen.",
+        "Den Eimer baust du an der Werkbank aus 3 Eisenerz. Nimm ihn in die Hand und schau auf Wasser oder Lava, die still steht: Mit Rechtsklick, dem Setzen-Knopf oder LT schöpfst du sie in den Eimer.",
+        "Mit dem vollen Eimer gießt du genauso wieder aus: Dort entsteht ein neuer Block Wasser oder Lava, der losfließt. Gieß zwei Eimer Wasser mit einer Lücke dazwischen aus, dann füllt sich die Lücke von selbst – ein Brunnen, der nie leer wird.",
+        "Im Kreativmodus gibt es Wassereimer und Lavaeimer in der Blockauswahl. Sie werden nie leer."
       ]],
       ["Fahrzeuge", [
         "Den Schwebeflitzer findest du am Startpunkt. Kraterkäfer stehen bei Lagern, Kometenjäger bei Stationen, Schwebeflitzer auch bei Herrenhäusern.",

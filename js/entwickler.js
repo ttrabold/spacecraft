@@ -68,7 +68,8 @@ SC.Entwickler = {};
       '<div class="ew-gruppe"><b>' + esc(T.modus) + '</b><div class="ew-reihe"><button data-ew="m-kreativ">' + esc(T.kreativ) + '</button><button data-ew="m-survival">' + esc(T.survival) + '</button><button data-ew="m-zuschauer">' + esc(T.zuschauer) + "</button></div></div>" +
       '<div class="ew-gruppe"><label>' + esc(T.sichtweite) + ' <b id="ew-sicht-w">' + s.render.sichtweite + '</b><input type="range" id="ew-sicht" min="2" max="16" step="1" value="' + s.render.sichtweite + '"></label>' +
       '<label>' + esc(T.ewFlug) + ' <b id="ew-flug-w">' + (s.spieler.flugFaktor || 1) + '</b><input type="range" id="ew-flug" min="0.5" max="5" step="0.5" value="' + (s.spieler.flugFaktor || 1) + '"></label>' +
-      '<label class="ew-zeile"><input type="checkbox" id="ew-grenzen"' + (s.render.chunkGrenzen ? " checked" : "") + "> " + esc(T.ewGrenzen) + "</label></div>" +
+      '<label class="ew-zeile"><input type="checkbox" id="ew-grenzen"' + (s.render.chunkGrenzen ? " checked" : "") + "> " + esc(T.ewGrenzen) + "</label>" +
+      '<label class="ew-zeile"><input type="checkbox" id="ew-fluss"' + (!s.fluss || s.fluss.an ? " checked" : "") + "> " + esc(T.ewFluss) + "</label></div>" +
       // Survival
       '<div class="ew-gruppe"><b>' + esc(T.survival) + "</b>" +
       '<div class="ew-reihe"><select id="ew-art">' + Object.keys(SC.GEGNER).map(function(a){ return '<option value="' + a + '">' + esc(T.gegner[a]) + "</option>"; }).join("") + '</select><input id="ew-gstufe" type="number" min="1" max="30" value="3"><button data-ew="gegner">' + esc(T.ewErscheinen) + '</button><button data-ew="gegner-weg">' + esc(T.ewGegnerWeg) + "</button></div>" +
@@ -85,6 +86,7 @@ SC.Entwickler = {};
     q("#ew-sicht").addEventListener("input", function(){ s.render.sichtweite = +this.value; q("#ew-sicht-w").textContent = this.value; });
     q("#ew-flug").addEventListener("input", function(){ s.spieler.flugFaktor = +this.value; q("#ew-flug-w").textContent = this.value; });
     q("#ew-grenzen").addEventListener("change", function(){ s.render.chunkGrenzen = this.checked; });
+    q("#ew-fluss").addEventListener("change", function(){ if(s.fluss) s.fluss.an = this.checked; });   // Wasser und Lava fließen an/aus
     q("#ew-unverwundbar").addEventListener("change", function(){ if(s.kampf) s.kampf.unverwundbar = this.checked; });
     var pos = s.spieler.pos; q("#ew-x").value = Math.floor(pos[0]); q("#ew-y").value = Math.floor(pos[1]); q("#ew-z").value = Math.floor(pos[2]);
     this.aktualisiere();

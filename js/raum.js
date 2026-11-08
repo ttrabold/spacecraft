@@ -136,6 +136,7 @@ SC.Gastgeber = function(o){
   // Jede Blockänderung in der Welt des Gastgebers geht an alle Gäste, außer an den, von dem sie kam (Quelle "netz:<id>")
   G._blockGeaendert = function(b){
     if(this._zu) return;
+    if(b.quelle === "fluss"){ (this._fluss || (this._fluss = [])).push(b.x, b.y, b.z, b.id); return; }   // Fließen: gebündelt je Bild (takt)
     var q = String(b.quelle || ""), urheber = q.indexOf("netz:") === 0 ? q.slice(5) : undefined;
     this.sendeAlle({ t: "block", x: b.x, y: b.y, z: b.z, id: b.id }, urheber);
   };
@@ -151,6 +152,7 @@ SC.Gastgeber = function(o){
   // 15 Hz: jedem Gast den Zustand der anderen Spieler (ausr nur, wenn sie sich für diesen Empfänger geändert hat) und die Wesen-Liste;
   // 1 Hz: zeit {tageszeit (aus ich.tageszeit, sonst daten.tageszeit), modus, schwierigkeit}
   G.takt = function(dt, ich){
+    if(this._fluss && this._fluss.length){ if(!this._zu) this.sendeAlle({ t: "bloecke", l: this._fluss }); this._fluss = []; }   // Fließen: alle Zellen dieses Bildes als [x, y, z, id, …]
     var s = this, d = s.daten; if(s._zu) return;
     s._takt += dt; s._zeitTakt += dt;
     var zust = s._takt >= SC.RAUM_TAKT, zeit = s._zeitTakt >= SC.RAUM_ZEIT_TAKT;
@@ -369,6 +371,8 @@ SC.Gast = function(o){
     },
     wesen: function(n){ this.wesen = n.liste || []; },
     zeit: function(n){ this._bestaetige(n.wunschNr); if(typeof n.tageszeit === "number") this.tageszeit = n.tageszeit; ruf(this.o.beiNachricht, n); },
+    // Fließen beim Gastgeber: viele Zellen auf einmal [x, y, z, id, …]
+    bloecke: function(n){ var w = this.welt, l = n.l; if(!w || !Array.isArray(l)) return; for(var i = 0; i + 3 < l.length; i += 4) if(SC.BLOECKE[l[i + 3]]) w.setzeBlock(l[i], l[i + 1], l[i + 2], l[i + 3], "netz"); },
     // Tatsache vom Gastgeber; mit zurueck:true wurde ein eigener Wunsch abgelehnt → beiBlockZurueck(x, y, z, id, wunsch {id, alt} | null)
     block: function(n){
       var w = this.welt; if(!w) return;

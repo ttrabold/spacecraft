@@ -118,6 +118,7 @@ SC.Spiel.startpunkt = function(planet){
     this.daten = daten; this.audio.thema = SC.hashText(String(daten.seed || "")); // Hauptthema der Musik hängt an der Welt
     var pd = daten.planeten[daten.aktuellerPlanet], planet = new SC.Planet(pd);
     this.welt = new SC.Welt(planet, chunks || SC.Spielstand.chunksLaden(pd));
+    this.fluss = new SC.Fluss(this.welt);   // Wasser und Lava fließen (rechnet nicht als Gast, siehe _flussTakt)
     this.welt.ereignisse.an("block", function(b){
       s._truheWeg(b); s._tuerWeg(b); s._bettWeg(b);
       if(b.quelle !== "spieler") return;
@@ -210,6 +211,7 @@ SC.Spiel.startpunkt = function(planet){
       this._survival(e, dt, offen, t);
       this._tiere(dt, offen);
       this._fahrzeugTakt(dt);
+      if(!offen || this.raum) this._flussTakt(dt);   // wie die Gegner: bei offenem Menü steht die Welt still, im Raum nicht
     }
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
     if(this.raum) this._raumBild(dt, offen);
@@ -217,6 +219,12 @@ SC.Spiel.startpunkt = function(planet){
     this.render.bild(sp, this.tageszeit, dt);
   };
 
+  // Fließen rechnen nur Einzelspieler und Gastgeber; ein Gast bekommt die Blöcke vom Gastgeber und meldet die Warteschlange ab
+  SC.Spiel.prototype._flussTakt = function(dt){
+    if(!this.fluss) return;
+    if(this.rolle === "gast"){ this.fluss.abbauen(); this.fluss = null; return; }
+    this.fluss.schritt(dt);
+  };
   // Einmal pro Sekunde (nicht als Gast): Fundort-Fahrzeuge in der Nähe aller Spieler anlegen, verpuffte zurückholen
   SC.Spiel.prototype._fahrzeugTakt = function(dt){
     if(this.rolle === "gast" || (this._fzTakt = (this._fzTakt || 0) + dt) < 1) return;

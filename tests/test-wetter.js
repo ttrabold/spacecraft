@@ -98,3 +98,20 @@ test("Boden: höchstens JE_TAKT Änderungen je Takt, lädt keine Chunks", functi
   var w = flWelt(), pd = { wetterSpuren: [] }, b = new SC.WetterBoden(w, pd, SC.zufall(6)), n = 0; b.radius = 32; w.ereignisse.an("block", function(e){ if(e.quelle === "wetter") n++; });
   b.schritt(1, wbEff({ niederschlag: "schnee", schneeRate: 60000 }), [[14.5, 64, 8.5]], []); wahr(n > 0 && n <= SC.WetterBoden.JE_TAKT, "Änderungen: " + n); gleich(w.istGeladen(1, 0), false);
 });
+function rwEff(art){ var w = new SC.Wetter("start", null, SC.zufall(1)); w.setze(art, 200); return w.effekte(); }
+test("Render-Wetter: Teilchenzahl je Einstellung, unter Dach keine", function(){
+  var r = new SC.RenderWetter(new THREE.Scene()), e = rwEff("gewitter");
+  r.bild(e, 0.05, [0, 70, 0], false, false); var an = r.anzahl; r.bild(e, 0.05, [0, 70, 0], false, true); var wenig = r.anzahl;
+  wahr(an > wenig && wenig > 0 && wenig <= 300, "an " + an + ", weniger " + wenig); wahr(r.sichtbar, "sichtbar");
+  r.bild(e, 0.05, [0, 70, 0], true, false); gleich(r.sichtbar, false, "unter Dach"); r.bild(rwEff(null), 0.05, [0, 70, 0], false, false); gleich(r.sichtbar, false, "klar");
+  r.bild(rwEff("schnee"), 0.05, [0, 70, 0], false, false); wahr(r.sichtbar && r.art === "schnee", "Flocken");
+});
+test("Render: Sicht und Dunkelheit aus den Effekten", function(){
+  var klar = SC.Render.wetterNebel(10, rwEff(null), false), sturm = SC.Render.wetterNebel(10, rwEff("gewitter"), false), dach = SC.Render.wetterNebel(10, rwEff("gewitter"), true);
+  gleich(klar.join(), [88, 152].join()); wahr(sturm[1] < klar[1] && dach[1] > sturm[1] && dach[1] < klar[1], "Sturm < Dach < klar: " + [sturm[1], dach[1], klar[1]]);
+  gleich(SC.Render.wetterLicht(1, rwEff(null)), 1); wahr(Math.abs(SC.Render.wetterLicht(1, rwEff("gewitter")) - SC.WETTER.ARTEN.gewitter.dunkel) < 1e-6);
+});
+test("Einstellungen: wetterEffekte Standard an, alte Einstellungen ohne Feld", function(){
+  gleich(SC.Einstellungen.standard().wetterEffekte, "an"); localStorage.setItem("sc-wtest:einstellungen", JSON.stringify({ musik: 0.2 })); gleich(SC.Einstellungen.lade("wtest").wetterEffekte, "an"); localStorage.removeItem("sc-wtest:einstellungen");
+  wahr(SC.T.wetterEffekte && SC.T.wetterEffekteWeniger, "Texte");
+});

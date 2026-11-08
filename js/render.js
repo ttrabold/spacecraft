@@ -174,6 +174,13 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
   };
   // Form eines Blocks in der Hand (Fackel, Pflanze, Zaun, Leiter, Tür): ein Geometrie-Puffer mit der Kachel des Blocks; null = normaler Würfel
   SC.Render.VS = VS; SC.Render.FS = FS;   // für Tests
+  // Wetter: Nebelweite [nah, fern] (unter einem Dach nur halb so stark verkürzt) und Tageslicht (eff aus SC.Wetter#effekte)
+  SC.Render.wetterNebel = function(sichtweite, eff, unterDach){ var f = eff ? (unterDach ? 1 - (1 - eff.sicht) * 0.5 : eff.sicht) : 1; return [sichtweite * 16 * 0.55 * f, sichtweite * 16 * 0.95 * f]; };
+  SC.Render.wetterLicht = function(tageslicht, eff){ return tageslicht * (eff ? eff.dunkel : 1); };
+  // Wetter für das nächste Bild merken (weniger: Einstellung „Wetter-Effekte: weniger“)
+  SC.Render.prototype.wetter = function(eff, unterDach, weniger){ this._wetter = eff; this._unterDach = !!unterDach; this._weniger = !!weniger; };
+  // Blitz: Strahl und (außer bei „weniger“) ein heller Schein über die Welt
+  SC.Render.prototype.blitz = function(pos){ if(!this.wetterBild) return; this.wetterBild.blitz(pos); if(!this._weniger) this._blitzHell = 1; };
   SC.Render.handForm = function(b){
     if(!b || !b.seiten || !b.form || b.form === "wuerfel") return null;
     var q = SC.Mesher.uvFuer(b.seiten.seite), pos = [], uv = [], idx = [];
@@ -329,6 +336,10 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var h = SC.himmelsFarben(SC.PALETTEN[this.planet.palette] || SC.PALETTEN.start, zeit);
     var hf = SC.Render.hoehenFaktor(spieler.pos[1]);
     if(hf > 0){ var schwarz = new THREE.Color(0x02030a); h.oben.lerp(schwarz, hf); h.unten.lerp(schwarz, hf * 0.85); h.tageslicht = h.tageslicht * (1 - hf * 0.3); }
+    var we = this._wetter;   // Wetter: Himmel grau (Regen) bzw. weiß (Schnee, Nebel), dunkler, Blitzschein
+    if(we && we.staerke > 0){ var wf = new THREE.Color(we.niederschlag === "schnee" || we.art === "nebel" ? 0xdfe6ee : 0x7a8088); h.oben.lerp(wf, we.staerke * 0.7); h.unten.lerp(wf, we.staerke * 0.6); h.oben.multiplyScalar(we.dunkel); h.unten.multiplyScalar(we.dunkel); }
+    h.tageslicht = SC.Render.wetterLicht(h.tageslicht, we);
+    if(this._blitzHell > 0){ var bh = this._blitzHell; h.tageslicht = Math.min(1, h.tageslicht + bh * 0.6); h.oben.lerp(new THREE.Color(0xeef2ff), bh * 0.6); this._blitzHell = Math.max(0, bh - (dt || 0) * 4); }
     this.himmelMat.uniforms.oben.value.copy(h.oben); this.himmelMat.uniforms.unten.value.copy(h.unten);
     this.himmel.position.copy(k.position);
     var sx = Math.cos(h.winkel), sy = Math.sin(h.winkel);
@@ -339,7 +350,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this._leuchtBild(px, spieler.pos[1], pz);
     this.uniforms.zeit.value = (this.uniforms.zeit.value + (dt || 0)) % 64;   // Fließ-Animation (Rest 64: Muster wiederholt sich je Kachel, Genauigkeit bleibt)
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);
-    this.uniforms.nebelNah.value = this.sichtweite * 16 * 0.55; this.uniforms.nebelFern.value = this.sichtweite * 16 * 0.95;
+    var nb = SC.Render.wetterNebel(this.sichtweite, we, this._unterDach); this.uniforms.nebelNah.value = nb[0]; this.uniforms.nebelFern.value = nb[1];
+    if(we){ if(!this.wetterBild) this.wetterBild = new SC.RenderWetter(this.szene); this.wetterBild.bild(we, dt || 0, [k.position.x, k.position.y, k.position.z], this._unterDach, this._weniger); }
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());
     this.mitspieler.aktualisiere(this._mitspieler || [], spieler.pos, dt, k.position);
     if(this._welt) this.fahrzeuge.bild(this._welt, spieler.pos, h.tageslicht, this.sichtweite * 16);

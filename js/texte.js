@@ -76,6 +76,7 @@ SC.T = {
   sichtweite: "Sichtweite",
   empfindlichkeit: "Maus-/Wischempfindlichkeit",
   touchGroesse: "Größe der Touch-Knöpfe",
+  wetterEffekte: "Wetter-Effekte", wetterEffekteAn: "An", wetterEffekteWeniger: "Weniger (für ältere Tablets)",
   fpsAnzeigen: "FPS anzeigen", autoAnlegen: "Bessere Ausrüstung automatisch anlegen", autoAngelegt: "Neu angelegt: {name} ({wert} {alt} → {neu})", bildrate: "Höchste Bildrate (Bilder pro Sekunde)", bildrateFrei: "Unbegrenzt", aufloesung: "Auflösung", aufloesungNormal: "Normal (sparsam)", aufloesungHoch: "Hoch (scharf, braucht mehr Leistung)",
   fertig: "Fertig",
   bloeckeTitel: "Blöcke",

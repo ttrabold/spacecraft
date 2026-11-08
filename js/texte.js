@@ -168,7 +168,7 @@ SC.T = {
     lava: "Lava", eis: "Eis", schlamm: "Schlamm", basalt: "Basalt",
     eisenerz: "Eisenerz", titan: "Titan", glutstahl: "Glutstahl", moorsilber: "Moorsilber", sternenmetall: "Sternenmetall",
     kristallBlau: "Blauer Kristall", kristallGruen: "Grüner Kristall", kristallRot: "Roter Kristall", kristallGelb: "Gelber Kristall", kristallViolett: "Violetter Kristall", kristallWeiss: "Weißer Kristall",
-    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", eimer: "Eimer", eimerWasser: "Wassereimer", eimerLava: "Lavaeimer", netz: "Fangnetz", tierfutter: "Tierfutter", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe", bett: "Bett", zauberkugel: "Zauberkugel"
+    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", schneeschicht: "Schneeschicht", eimer: "Eimer", eimerWasser: "Wassereimer", eimerLava: "Lavaeimer", netz: "Fangnetz", tierfutter: "Tierfutter", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe", bett: "Bett", zauberkugel: "Zauberkugel"
   },
   // Spielanleitung (Menü und docs/ANLEITUNG.md): Abschnitte [Titel, Punkte]; „Taste – Bedeutung“ zeigt die Taste fett
   anleitung: {

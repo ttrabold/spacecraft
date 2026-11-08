@@ -14,7 +14,8 @@ SC.B = {
   // Betten: Fuß und Kopf je Richtung; N/S/O/W sagt, auf welcher Seite des Fußes der Kopf liegt (Norden = z−1)
   // Wasser und Lava fließen (Spec 2026-11-08): Fließstufen und fallendes Wasser/Lava; WASSER (8) und LAVA (29) bleiben die Quellen
   WASSER_1: 73, WASSER_2: 74, WASSER_3: 75, WASSER_4: 76, WASSER_5: 77, WASSER_6: 78, WASSER_7: 79, WASSER_FALL: 80, LAVA_1: 81, LAVA_2: 82, LAVA_3: 83, LAVA_FALL: 84,
-  EIMER: 85, EIMER_WASSER: 86, EIMER_LAVA: 87,   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
+  EIMER: 85, EIMER_WASSER: 86, EIMER_LAVA: 87,
+  SCHNEESCHICHT: 88,   // Wetter: dünne Schneedecke, taut wieder   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
   NETZ: 71, TIERFUTTER: 72, ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
@@ -129,6 +130,7 @@ SC.BLOECKE = {};
     [SC.B.BETT_KOPF_O, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.O }],
     [SC.B.BETT_KOPF_W, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.W }],
     [SC.B.ZAUBERKUGEL, "zauberkugel", { oben: "zauber_tisch_oben", seite: "zauber_tisch", unten: "zauber_tisch", kugel: "zauber_kugel" }, true, true, 9, [0.7, 0.5, 1.0], true, true, { form: ZAUBER }],
+    [SC.B.SCHNEESCHICHT, "schneeschicht", alle("schnee_oben"), false, true, 0, null, true, true, { form: { typ: "kasten", a: [0, 0, 0], b: [1, 0.125, 1] } }],
     [SC.B.TRUHE, "truhe", { oben: "truhe_oben", seite: "truhe_seite", unten: "truhe_seite" }, true, false, 0, null, true, true]
   ];
   // Fließstufen: wie die Quelle, aber nicht in der Auswahl; stufe 1 (fast leer) … MAX − 1, fallend = voller Strahl nach unten

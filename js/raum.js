@@ -455,7 +455,7 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
   // Gast, Survival: ein abgelehnter Block-Wunsch {id, alt} wird im Rucksack rückgängig gemacht – gesetzter Block (nur in Luft oder Wasser) kommt zurück,
   // ein abgebauter (was er ergibt) wird wieder herausgenommen, soweit noch vorhanden. Liefert {zurueck, heraus} (Anzahl).
   // Wurde der Block in Luft, Wasser oder fließende Lava gesetzt (dort darf man bauen)?
-  SC.Raum.inFreiGesetzt = function(alt){ return alt === SC.B.LUFT || SC.Fluessig.istWasser(alt) || (SC.Fluessig.istLava(alt) && !SC.Fluessig.quelle(alt)); };
+  SC.Raum.inFreiGesetzt = function(alt){ return alt === SC.B.LUFT || alt === SC.B.SCHNEESCHICHT || SC.Fluessig.istWasser(alt) || (SC.Fluessig.istLava(alt) && !SC.Fluessig.quelle(alt)); };
   SC.Raum.blockZurueck = function(rucksack, wunsch, tatsaechlicheId){
     var r = { zurueck: 0, heraus: 0 }, B = SC.B;
     if(!rucksack || !wunsch) return r;

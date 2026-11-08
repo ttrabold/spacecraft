@@ -36,3 +36,11 @@ test("Spielstand: alte Planeten bekommen wetter null und wetterSpuren []", funct
   var m = SC.Spielstand.migriere(d).daten; gleich(m.planeten.start.wetter, null); gleich(JSON.stringify(m.planeten.start.wetterSpuren), "[]");
   gleich(JSON.stringify(SC.Spielstand.neu({ name: "N", seedText: "n" }).planeten.start.wetterSpuren), "[]");
 });
+test("Schneeschicht: flach, durchgehbar, Block setzen ersetzt sie", function(){
+  var w = flWelt(); w.setzeBlock(5, 64, 5, SC.B.SCHNEESCHICHT, "system"); var g = flMesh(w).form; wahr(g.positionen.length > 0 && flMaxY(g) <= 64.13, "flach: " + flMaxY(g));
+  gleich(SC.bewegeKoerper(w, [4.5, 64, 5.5], 0, 0.9, 0.6, 1.8), false, "man läuft hindurch");
+  var s = new SC.Spieler({ id: "a", pos: [1.5, 64, 1.5], blick: [0, 0], modus: "survival" }); wahr(SC.kannSetzen(w, s, 5, 64, 5), "Block darauf setzen");
+  var t = SC.zielen(w, [5.5, 66.5, 5.5], [0, -1, 0], 6); gleich([t.x, t.y, t.z].join(), "5,64,5", "anvisierbar"); gleich(SC.BLOECKE[SC.B.SCHNEESCHICHT].inAuswahl, true);
+});
+test("Schneeschicht: ein Schlag, ergibt nichts", function(){ wahr(SC.Abbau.zeit(SC.B.SCHNEESCHICHT) <= 0.2); gleich(SC.Abbau.ergibt(SC.B.SCHNEESCHICHT), null); });
+test("Schneeschicht: abgelehnter Gast-Block kommt zurück", function(){ var rs = new SC.Rucksack(); SC.Raum.blockZurueck(rs, { id: SC.B.STEIN, alt: SC.B.SCHNEESCHICHT }, SC.B.SCHNEESCHICHT); gleich(rs.hat(SC.B.STEIN), 1); });

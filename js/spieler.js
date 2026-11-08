@@ -104,7 +104,7 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     if(spieler.modus === "zuschauer") return false;
     if(y < 1 || y >= SC.CHUNK.H) return false;
     var vorhanden = welt.holeBlock(x, y, z);
-    if(vorhanden !== SC.B.LUFT && !SC.Fluessig.istWasser(vorhanden) && !(SC.Fluessig.istLava(vorhanden) && !SC.Fluessig.quelle(vorhanden))) return false;   // auch in fließende Lava (Dämme)
+    if(vorhanden !== SC.B.LUFT && vorhanden !== SC.B.SCHNEESCHICHT && !SC.Fluessig.istWasser(vorhanden) && !(SC.Fluessig.istLava(vorhanden) && !SC.Fluessig.quelle(vorhanden))) return false;   // auch in fließende Lava (Dämme)
     if(id !== undefined && !SC.BLOECKE[id].fest) return true;
     var P = welt.planet.groesse, p = spieler.pos;
     // Abstand auf dem Ring, damit es auch am Rand stimmt

@@ -58,7 +58,7 @@ SC.Abbau = {};
   [B.STAMM, B.BRETTER].forEach(function(id){ ZEIT[id] = 0.9; });
   [B.STEIN, B.STEINZIEGEL, B.KRISTALL].forEach(function(id){ ZEIT[id] = 1.4; });
   [B.METALL, B.METALLGITTER, B.TECHNIK, B.BETON, B.LEUCHT_CYAN, B.LEUCHT_PINK, B.LEUCHT_GRUEN].forEach(function(id){ ZEIT[id] = 2; });
-  ZEIT[B.GLAS] = 0.3;
+  ZEIT[B.GLAS] = 0.3; ZEIT[B.SCHNEESCHICHT] = 0.2;   // Schneeschicht: ein Schlag
   // Stufe 6a: Erze nach Seltenheit, Kristalle, Teile, Werkbank und Bauteile
   ZEIT[B.EISENERZ] = 1.6; ZEIT[B.TITAN] = 2.2; ZEIT[B.GLUTSTAHL] = 3; ZEIT[B.MOORSILBER] = 3; ZEIT[B.STERNENMETALL] = 4;
   [B.KRISTALL_BLAU, B.KRISTALL_GRUEN, B.KRISTALL_ROT, B.KRISTALL_GELB, B.KRISTALL_VIOLETT, B.KRISTALL_WEISS].forEach(function(id){ ZEIT[id] = 1.4; });
@@ -72,5 +72,5 @@ SC.Abbau = {};
     var t = ZEIT[id] !== undefined ? ZEIT[id] : 1;
     return t / 2;   // Hand: schnelle Abbauart (war bisher das Laserschwert)
   };
-  SC.Abbau.ergibt = function(id){ return id === B.GRAS ? B.ERDE : id === B.GLAS ? null : GRUND[id] || id; };
+  SC.Abbau.ergibt = function(id){ return id === B.GRAS ? B.ERDE : id === B.GLAS || id === B.SCHNEESCHICHT ? null : GRUND[id] || id; };
 })();

@@ -22,7 +22,7 @@ SC.PALETTEN = {};
       moorsilber: ["#6a7062", "#545a4e", "#7fffc0"], sternenmetall: ["#4a4560", "#332f46", "#d9a0ff"],
       kristall_blau: ["#3fa0ff", "#1f6fd0", "#c8e4ff"], kristall_gruen: ["#3fe06a", "#1fb04a", "#c8ffd8"], kristall_rot: ["#ff4a4a", "#c22a2a", "#ffc8c8"],
       kristall_gelb: ["#ffe14a", "#d0b21f", "#fff4b8"], kristall_violett: ["#b46bff", "#8a3fd0", "#e6ccff"], kristall_weiss: ["#f4f4ff", "#c8c8e0", "#ffffff"],
-      schaltkreis: ["#2f8a5a", "#1f5c3c", "#ffd24a"], chitin: ["#8a6a3a", "#5c4423", "#c9a468"], netz: ["#7a8a4c", "#4a5a2c", "#e0e8b0"], tierfutter: ["#c8884a", "#8a5a2a", "#6fbf4f"],
+      schaltkreis: ["#2f8a5a", "#1f5c3c", "#ffd24a"], chitin: ["#8a6a3a", "#5c4423", "#c9a468"], netz: ["#7a8a4c", "#4a5a2c", "#e0e8b0"], tierfutter: ["#c8884a", "#8a5a2a", "#6fbf4f"], eimer: ["#a9b4bf", "#5f6a75", "#3a4048"], eimer_wasser: ["#a9b4bf", "#5f6a75", "#3f8fe0"], eimer_lava: ["#a9b4bf", "#5f6a75", "#ff7a1f"],
       werkbank_oben: ["#b88a52", "#6b4a2b", "#d9d9d9"], werkbank_seite: ["#946c3c", "#5c3f20", "#b9c2cc"],
       fackel: ["#8a5a2b", "#ff8a1a", "#ffe27a"], zaun: ["#a87a44", "#6b4a2b", "#c9a060"], leiter: ["#a07a4c", "#6b4a2b", "#b88f5d"],
       tuer: ["#a87a44", "#5c3f20", "#ffd95c"], tuer_oben: ["#a87a44", "#5c3f20", "#9fd6f5"], zauber_tisch_oben: ["#3a2a6a", "#241848", "#7a5ad8"], zauber_tisch: ["#3a2a6a", "#241848", "#9a7af0"], zauber_kugel: ["#7a5ad8", "#4a2ab0", "#e6d8ff"], bett_fuss_oben: ["#d8443c", "#b5342e", "#ea5d55"], bett_kopf_oben: ["#d8443c", "#b5342e", "#f4f4ff"], bett_seite: ["#8a5a33", "#5c3f20", "#d8443c"], truhe_oben: ["#9a6a35", "#5a3a1b", "#c9a060"], truhe_seite: ["#9a6a35", "#5a3a1b", "#c9a060"]

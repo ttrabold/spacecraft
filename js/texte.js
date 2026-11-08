@@ -112,7 +112,7 @@ SC.T = {
   zauberFrage: "{name} möchte mit der Zauberkugel alle zu deinem Bett zurückholen. Einverstanden?",
   werkbankTitel: "Werkbank", handwerkTitel: "Handwerk", handwerk: "🛠 Handwerk", herstellen: "Herstellen", hergestellt: "Hergestellt",
   metallWahl: "Metall", kristallWahl: "Kristall", wahlTipp: "Wähle ein Rezept.", wahlMetallKristall: "Wähle Metall und Kristall.", fehltMaterial: "Dir fehlen noch Rohstoffe.",
-  rezeptName: { netz: "Fangnetz", tierfutter: "Tierfutter", zauberkugel: "Zauberkugel", wolle: "Rote Wolle", bett: "Bett", bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
+  rezeptName: { eimer: "Eimer", netz: "Fangnetz", tierfutter: "Tierfutter", zauberkugel: "Zauberkugel", wolle: "Rote Wolle", bett: "Bett", bretter: "Holzbretter", werkbank: "Werkbank", fenster: "Fenster", fackel: "Fackeln", zaun: "Zaun", leiter: "Leitern", tuer: "Tür", truhe: "Truhe" },
   kristallName: { blau: "Blau", gruen: "Grün", rot: "Rot", gelb: "Gelb", violett: "Violett", weiss: "Weiß" },
   ausruestungTitel: "Ausrüstung", materialienTitel: "Materialien",
   anlegen: "Anlegen", ablegen: "Ablegen", verschieben: "Verschieben", wohin: "Wohin? Tippe einen Platz an.", rucksackInfoLeer: "Leerer Platz", inSchnellleiste: "In die Schnellleiste", wegwerfen: "Wegwerfen",
@@ -167,7 +167,7 @@ SC.T = {
     lava: "Lava", eis: "Eis", schlamm: "Schlamm", basalt: "Basalt",
     eisenerz: "Eisenerz", titan: "Titan", glutstahl: "Glutstahl", moorsilber: "Moorsilber", sternenmetall: "Sternenmetall",
     kristallBlau: "Blauer Kristall", kristallGruen: "Grüner Kristall", kristallRot: "Roter Kristall", kristallGelb: "Gelber Kristall", kristallViolett: "Violetter Kristall", kristallWeiss: "Weißer Kristall",
-    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", netz: "Fangnetz", tierfutter: "Tierfutter", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe", bett: "Bett", zauberkugel: "Zauberkugel"
+    schaltkreis: "Schaltkreis", chitin: "Chitinplatte", eimer: "Eimer", eimerWasser: "Wassereimer", eimerLava: "Lavaeimer", netz: "Fangnetz", tierfutter: "Tierfutter", werkbank: "Werkbank", fackel: "Fackel", zaun: "Zaun", leiter: "Leiter", tuer: "Tür", truhe: "Truhe", bett: "Bett", zauberkugel: "Zauberkugel"
   },
   // Spielanleitung (Menü und docs/ANLEITUNG.md): Abschnitte [Titel, Punkte]; „Taste – Bedeutung“ zeigt die Taste fett
   anleitung: {

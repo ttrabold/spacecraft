@@ -14,6 +14,7 @@ SC.B = {
   // Betten: Fuß und Kopf je Richtung; N/S/O/W sagt, auf welcher Seite des Fußes der Kopf liegt (Norden = z−1)
   // Wasser und Lava fließen (Spec 2026-11-08): Fließstufen und fallendes Wasser/Lava; WASSER (8) und LAVA (29) bleiben die Quellen
   WASSER_1: 73, WASSER_2: 74, WASSER_3: 75, WASSER_4: 76, WASSER_5: 77, WASSER_6: 78, WASSER_7: 79, WASSER_FALL: 80, LAVA_1: 81, LAVA_2: 82, LAVA_3: 83, LAVA_FALL: 84,
+  EIMER: 85, EIMER_WASSER: 86, EIMER_LAVA: 87,   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
   NETZ: 71, TIERFUTTER: 72, ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
@@ -29,7 +30,7 @@ SC.TEXTUREN = {
   lava: "lava", eis: "eis", schlamm: "schlamm", basalt: "basalt",
   eisenerz: "erz", titan: "erz", glutstahl: "erz", moorsilber: "erz", sternenmetall: "erz",
   kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
-  schaltkreis: "schaltkreis", chitin: "chitin", netz: "netz", tierfutter: "tierfutter", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
+  schaltkreis: "schaltkreis", chitin: "chitin", netz: "netz", tierfutter: "tierfutter", eimer: "eimer", eimer_wasser: "eimer", eimer_lava: "eimer", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
   fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste"
 };
 
@@ -100,6 +101,9 @@ SC.BLOECKE = {};
     [SC.B.CHITIN, "chitin", alle("chitin"), true, false, 0, null, true, true],
     [SC.B.NETZ, "netz", alle("netz"), true, false, 0, null, true, false, { nichtAufstellbar: true }],
     [SC.B.TIERFUTTER, "tierfutter", alle("tierfutter"), true, false, 0, null, true, false, { nichtAufstellbar: true }],
+    [SC.B.EIMER, "eimer", alle("eimer"), true, true, 0, null, true, false, { nichtAufstellbar: true, ausschnitt: true }],
+    [SC.B.EIMER_WASSER, "eimerWasser", alle("eimer_wasser"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true }],
+    [SC.B.EIMER_LAVA, "eimerLava", alle("eimer_lava"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true }],
     [SC.B.WERKBANK, "werkbank", { oben: "werkbank_oben", seite: "werkbank_seite", unten: "werkbank_seite" }, true, false, 0, null, true, true],
     [SC.B.FACKEL, "fackel", alle("fackel"), false, true, 14, [1.0, 0.7, 0.3], true, true, { form: "kreuz" }],
     [SC.B.ZAUN, "zaun", alle("zaun"), true, true, 0, null, true, true, { form: "pfosten" }],

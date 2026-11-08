@@ -455,6 +455,14 @@ SC.Raum.gastWelt = function(welt){ if(welt.naechsteId < SC.RAUM_GAST_ID) welt.na
   SC.Raum.blockZurueck = function(rucksack, wunsch, tatsaechlicheId){
     var r = { zurueck: 0, heraus: 0 }, B = SC.B;
     if(!rucksack || !wunsch) return r;
+    // Eimer: ausgegossene Quelle → voller Eimer zurück, leerer heraus; geschöpfte Quelle → leerer zurück, voller heraus (sache: was zurück soll)
+    var quelleGesetzt = SC.Fluessig.quelle(wunsch.id), geschoepft = wunsch.id === B.LUFT && SC.Fluessig.quelle(wunsch.alt);
+    if(quelleGesetzt || geschoepft){
+      var voll = SC.Eimer.voll(SC.Fluessig.art(quelleGesetzt ? wunsch.id : wunsch.alt)), zu = quelleGesetzt ? voll : B.EIMER, weg = quelleGesetzt ? B.EIMER : voll;
+      if(rucksack.entferne(weg, 1) === 0) r.heraus = 1;
+      r.sache = { block: zu, anzahl: 1 }; if(rucksack.lege(r.sache) === 0) r.zurueck = 1;
+      return r;
+    }
     if(wunsch.id !== B.LUFT){ if(!SC.Raum.inFreiGesetzt(wunsch.alt)) return r; if(rucksack.lege({ block: wunsch.id, anzahl: 1 }) === 0) r.zurueck = 1; return r; }
     var g = wunsch.alt === undefined || wunsch.alt === B.LUFT ? null : SC.Abbau.ergibt(wunsch.alt);
     if(g === null) return r;

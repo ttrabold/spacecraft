@@ -121,7 +121,7 @@ SC.Entwickler = {};
     }
     if(a === "rohstoffe" && s.kampf){   // Crafting testen: je 16 Erze, Kristalle und Teile, dazu Holz, Stein, Sand und Leuchtpilze
       for(var rid = SC.B.EISENERZ; rid <= SC.B.CHITIN; rid++) s.kampf.rucksack.lege({ block: rid, anzahl: 16 });
-      [[SC.B.STAMM, 32], [SC.B.STEIN, 32], [SC.B.SAND, 16], [SC.B.LEUCHTPILZ, 8], [SC.B.BRETTER, 32]].forEach(function(p){ s.kampf.rucksack.lege({ block: p[0], anzahl: p[1] }); });
+      [[SC.B.STAMM, 32], [SC.B.STEIN, 32], [SC.B.SAND, 16], [SC.B.LEUCHTPILZ, 8], [SC.B.BRETTER, 32], [SC.B.EIMER, 2]].forEach(function(p){ s.kampf.rucksack.lege({ block: p[0], anzahl: p[1] }); });
     }
     if(a === "tiere" && s.kampf){   // Haustiere testen: ein Tier je Art dieses Planeten in den Käfig, dazu Fangnetz und Tierfutter
       SC.Tier.arten(s.welt.planet.id).forEach(function(art){ s.kampf.kaefig.lege(SC.Tier.neu(art)); });

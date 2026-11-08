@@ -99,3 +99,44 @@ test("Strömung: Tiere treiben mit", function(){
   var w = flStrom(), d = SC.TIERE.hase, e = SC.Wesen.neu(w, "tier", { tierArt: "hase", wild: true, pos: [4.5, 64, 5.5], heim: [4.5, 64, 5.5], breite: d.breite, hoehe: d.hoehe }); e.haeltStill = true;
   for(var i = 0; i < 20; i++) SC.KI.tier(w, e, { spieler: [] }, 0.05, SC.zufall(3)); wahr(e.pos[0] > 4.8, "treibt: " + e.pos[0]);
 });
+test("Eimer: Rezept 3 Eisenerz an der Werkbank", function(){
+  var r = SC.Crafting.rezept("eimer"); wahr(r, "Rezept da"); gleich(JSON.stringify(r.kosten), JSON.stringify([{ block: SC.B.EISENERZ, anzahl: 3 }]));
+  var rs = new SC.Rucksack(); rs.lege({ block: SC.B.EISENERZ, anzahl: 3 }); gleich(SC.Crafting.herstelle(rs, r, {}, SC.zufall(1), 1).ok, true); gleich(rs.hat(SC.B.EIMER), 1);
+  wahr(SC.BLOECKE[SC.B.EIMER].nichtAufstellbar && SC.BLOECKE[SC.B.EIMER_WASSER].nichtAufstellbar, "nicht aufstellbar"); wahr(SC.BLOECKE[SC.B.EIMER_LAVA].inAuswahl && !SC.BLOECKE[SC.B.EIMER].inAuswahl, "volle Eimer im Kreativ");
+});
+test("Eimer: schöpfen nur an Quellen", function(){
+  var w = flWelt(); w.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); w.setzeBlock(6, 64, 5, SC.B.WASSER_3, "system"); w.setzeBlock(7, 64, 5, SC.B.LAVA, "system");
+  gleich(SC.Eimer.schoepfen(w, 5, 64, 5), "wasser"); gleich(w.holeBlock(5, 64, 5), SC.B.LUFT); gleich(SC.Eimer.schoepfen(w, 6, 64, 5), null); gleich(w.holeBlock(6, 64, 5), SC.B.WASSER_3);
+  gleich(SC.Eimer.schoepfen(w, 7, 64, 5), "lava"); gleich(SC.Eimer.voll("lava"), SC.B.EIMER_LAVA); gleich(SC.Eimer.art(SC.B.EIMER_WASSER), "wasser"); gleich(SC.Eimer.art(SC.B.EIMER), null);
+});
+test("Eimer: zielen mit quellen trifft die Quelle", function(){
+  var w = flWelt(); w.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); var t = SC.zielen(w, [5.5, 66.5, 5.5], [0, -1, 0], 6, { quellen: true }); gleich([t.x, t.y, t.z].join(), "5,64,5");
+  gleich([SC.zielen(w, [5.5, 66.5, 5.5], [0, -1, 0], 6).y].join(), "63", "ohne quellen wie bisher");
+});
+test("Eimer: ausgießen nicht in den Spieler oder ein Tier", function(){
+  var w = flWelt(), s = new SC.Spieler({ id: "a", pos: [5.5, 64, 5.5], blick: [0, 0], modus: "survival" }), d = SC.TIERE.hase;
+  gleich(SC.Eimer.ausgiessen(w, s, 5, 64, 5, "lava"), false, "nicht in den Spieler"); SC.Wesen.neu(w, "tier", { tierArt: "hase", wild: true, pos: [9.5, 64, 9.5], heim: [9.5, 64, 9.5], breite: d.breite, hoehe: d.hoehe });
+  gleich(SC.Eimer.ausgiessen(w, s, 9, 64, 9, "lava"), false, "nicht in ein Tier"); gleich(SC.Eimer.ausgiessen(w, s, 2, 64, 2, "wasser"), true); gleich(w.holeBlock(2, 64, 2), SC.B.WASSER);
+});
+test("Eimer: abgelehnter Gast-Wunsch tauscht den Eimer zurück", function(){
+  var rs = new SC.Rucksack(); rs.lege({ block: SC.B.EIMER, anzahl: 1 }); SC.Raum.blockZurueck(rs, { id: SC.B.WASSER, alt: SC.B.LUFT }, SC.B.STEIN);
+  gleich(rs.hat(SC.B.EIMER_WASSER), 1, "voller Eimer zurück"); gleich(rs.hat(SC.B.EIMER), 0); gleich(rs.hat(SC.B.WASSER), 0, "kein Wasserblock");
+  SC.Raum.blockZurueck(rs, { id: SC.B.LUFT, alt: SC.B.LAVA }, SC.B.LUFT); gleich(rs.hat(SC.B.EIMER), 1, "Schöpfen zurück: leerer Eimer"); gleich(rs.hat(SC.B.EIMER_WASSER), 1); gleich(rs.hat(SC.B.EIMER_LAVA), 0);
+});
+test("Eimer: Brunnen aus zwei Eimern", function(){
+  var w = flWelt(), f = new SC.Fluss(w), s = new SC.Spieler({ id: "a", pos: [1.5, 64, 1.5], blick: [0, 0], modus: "survival" });
+  SC.Eimer.ausgiessen(w, s, 6, 64, 8, "wasser"); SC.Eimer.ausgiessen(w, s, 8, 64, 8, "wasser"); f.bisRuhe(500); gleich(w.holeBlock(7, 64, 8), SC.B.WASSER);
+  gleich(SC.Eimer.schoepfen(w, 7, 64, 8), "wasser"); f.bisRuhe(500); gleich(w.holeBlock(7, 64, 8), SC.B.WASSER, "füllt sich wieder");
+});
+function flSurv(){ var s = survSpiel(), w = s.welt; for(var x = 0; x < 9; x++) for(var z = 0; z < 9; z++){ w.setzeBlock(x, 88, z, SC.B.STEIN, "system"); for(var y = 89; y < 94; y++) w.setzeBlock(x, y, z, SC.B.LUFT, "system"); } s.spieler.pos = [4.5, 89, 4.5]; s.spieler.blick = [0, -Math.PI / 2]; s.spieler.auswahl = 0; s.beuteAuswerfen = function(){ s._raus = true; }; return s; }
+test("Eimer im Spiel: schöpfen tauscht leer gegen voll", function(){
+  var s = flSurv(), w = s.welt, rs = s.kampf.rucksack; w.setzeBlock(4, 88, 4, SC.B.WASSER, "system"); rs.plaetze[0] = { block: SC.B.EIMER, anzahl: 2 };
+  wahr(s._eimer(null), "Eimer benutzt"); gleich(w.holeBlock(4, 88, 4), SC.B.LUFT); gleich(rs.hat(SC.B.EIMER), 1); gleich(rs.hat(SC.B.EIMER_WASSER), 1);
+  wahr(s._eimer(null), "Eimer in der Hand verbraucht den Tipp, auch ohne Quelle"); gleich(rs.hat(SC.B.EIMER), 1);
+});
+test("Eimer im Spiel: ausgießen tauscht voll gegen leer, Kreativ verbraucht nichts", function(){
+  var s = flSurv(), w = s.welt, rs = s.kampf.rucksack, z = { x: 2, y: 88, z: 2, nx: 0, ny: 1, nz: 0 }; rs.plaetze[0] = { block: SC.B.EIMER_LAVA, anzahl: 1 };
+  wahr(s._eimer(z)); gleich(w.holeBlock(2, 89, 2), SC.B.LAVA); gleich(rs.hat(SC.B.EIMER_LAVA), 0); gleich(rs.hat(SC.B.EIMER), 1);
+  gleich(rs.plaetze[0].block, SC.B.EIMER, "leerer Eimer wieder in der Hand"); rs.plaetze[0] = null; gleich(s._eimer(z), false, "ohne Eimer in der Hand");
+  var k = flSurv(); k.spieler.modus = "kreativ"; k.spieler.schnellleiste[0] = SC.B.EIMER_WASSER; wahr(k._eimerKreativ({ x: 6, y: 88, z: 6, nx: 0, ny: 1, nz: 0 })); gleich(k.welt.holeBlock(6, 89, 6), SC.B.WASSER);
+});

@@ -563,7 +563,7 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype._blockZurueck = function(id, wunsch){
     if(!this.kampf || this.spieler.modus !== "survival") return;
     var B = SC.B, r = SC.Raum.blockZurueck(this.kampf.rucksack, wunsch, id);
-    if(wunsch && wunsch.id !== B.LUFT && SC.Raum.inFreiGesetzt(wunsch.alt) && !r.zurueck) this.beuteAuswerfen(this.spieler.pos.slice(), [{ block: wunsch.id, anzahl: 1 }]);
+    if(wunsch && (r.sache || (wunsch.id !== B.LUFT && SC.Raum.inFreiGesetzt(wunsch.alt))) && !r.zurueck) this.beuteAuswerfen(this.spieler.pos.slice(), [r.sache || { block: wunsch.id, anzahl: 1 }]);
   };
   SC.Spiel.prototype._figurSpeichern = function(){
     var e = this._eigen; if(!e || !this.kampf) return;

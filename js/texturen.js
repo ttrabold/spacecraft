@@ -50,6 +50,8 @@ SC.Texturen = {};
         case "schaltkreis": c = x % 4 === 0 || y % 5 === 0 ? d : g; if((x * y) % 7 === 0 && x % 4 !== 0) c = h; break;
         case "chitin": c = y % 5 === 0 ? d : (x + y) % 6 === 0 ? h : zf() < 0.15 ? d : g; break;
         case "netz": c = x % 4 === 0 || y % 4 === 0 ? h : g; if((x + y) % 8 === 0) c = d; a = (x % 4 === 0 || y % 4 === 0) ? 255 : 90; break;
+        // Eimer: Kübel aus Blech mit Henkel, die dritte Farbe ist der Inhalt (leer: dunkel, Wasser, Lava)
+        case "eimer": a = 0; if(y >= 5 && y <= 14 && x >= 3 + (y < 10 ? 0 : 1) && x <= 12 - (y < 10 ? 0 : 1)){ a = 255; c = x === 3 || x === 12 || y === 14 || y === 9 ? d : g; if(y >= 6 && y <= 7 && x > 3 && x < 12) c = h; } else if((y === 2 && x >= 5 && x <= 10) || ((x === 4 || x === 11) && y >= 3 && y <= 4)){ a = 255; c = d; } break;
         case "tierfutter": c = zf() < 0.2 ? d : g; if((x * 5 + y * 3) % 11 === 0) c = h; break;
         case "werkbankoben": c = x === 0 || x === 15 || y === 0 || y === 15 ? d : y % 4 === 3 ? d : g; if(x >= 4 && x <= 11 && y >= 6 && y <= 9) c = h; break;
         case "werkbankseite": c = y < 3 || x < 2 || x > 13 ? d : g; if(y >= 6 && y <= 9 && x % 4 === 1) c = h; break;

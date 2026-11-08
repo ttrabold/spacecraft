@@ -114,6 +114,29 @@
   S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf, surv = sp.modus === "survival";
     return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), schlaeft: !!sp.schlaeft, hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, tiere: this.all ? [] : (this._tiereListe || []), schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
   // Gast: Blöcke nur ändern, solange die Verbindung steht (sonst ginge der Wunsch verloren)
+  // Eimer in der Hand (Survival): leer → aus der angeschauten Quelle schöpfen, voll → vor dem Ziel ausgießen; tauscht den Eimer im Rucksack.
+  // true = der Tipp gehört dem Eimer (auch wenn nichts passiert), false = kein Eimer in der Hand
+  S._eimer = function(ziel){
+    var sp = this.spieler, rs = this.kampf.rucksack, hand = rs.plaetze[sp.auswahl], w = this.welt, B = SC.B, neu;
+    if(!hand || !SC.Eimer.istEimer(hand.block)) return false;
+    if(hand.block === B.EIMER){
+      var q = this._blockErlaubt() ? SC.zielen(w, sp.augen(), sp.richtung(), 6, { quellen: true }) : null, art = q && q.quelle ? SC.Eimer.schoepfen(w, q.x, q.y, q.z) : null;
+      if(!art) return true;
+      neu = { block: SC.Eimer.voll(art), anzahl: 1 };
+    } else {
+      if(!ziel || !SC.Eimer.ausgiessen(w, sp, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, SC.Eimer.art(hand.block))) return true;
+      neu = { block: B.EIMER, anzahl: 1 };
+    }
+    rs.nimm(sp.auswahl, 1); if(rs.lege(neu)) this.beuteAuswerfen(sp.pos.slice(), [neu]);   // passt er nicht mehr hinein, fliegt er als Kugel heraus
+    this.audio.spiele("platsch"); return true;
+  };
+  // Kreativ: voller Eimer aus der Leiste gießt aus und bleibt voll
+  S._eimerKreativ = function(ziel){
+    var art = SC.Eimer.art(this.spieler.schnellleiste[this.spieler.auswahl]);
+    if(!art) return false;
+    if(ziel && SC.Eimer.ausgiessen(this.welt, this.spieler, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, art)) this.audio.spiele("platsch");
+    return true;
+  };
   S._blockErlaubt = function(){ return !(this.raum instanceof SC.Gast) || this.raum.status === "verbunden"; };
 
   // Eigenes Spieler-Geschoss: als Gast nur optisch (der Schuss geht an den Gastgeber), als Gastgeber mit Schütze
@@ -169,6 +192,7 @@
       else this._abbau = null;
       // Setzen, Kiste öffnen
       if(e.setzen && this._tierBenutzen()){ /* Tier gestreichelt oder gefüttert */ }
+      else if(e.setzen && !imFz && this._eimer(ziel)){ /* Eimer geschöpft oder ausgegossen */ }
       else if(e.setzen && ziel){
         if(this.benutzeBlock(ziel)){ /* Werkbank geöffnet */ }
         else if(w.holeBlock(ziel.x, ziel.y, ziel.z) === SC.B.KISTE && gast) gast.kiste(ziel.x, ziel.y, ziel.z);
@@ -184,6 +208,7 @@
       // Kreativ: sofort abbauen, Blöcke aus der Leiste setzen
       if(e.abbauen && SC.BLOECKE[w.holeBlock(ziel.x, ziel.y, ziel.z)].zerstoerbar) w.setzeBlock(ziel.x, ziel.y, ziel.z, SC.B.LUFT, "spieler");
       else if(e.setzen && this.benutzeBlock(ziel)){ /* Kreativ: Türen, Werkbank und Truhe benutzen */ }
+      else if(e.setzen && this._eimerKreativ(ziel)){ /* Kreativ: Eimer gießt aus, ohne leer zu werden */ }
       else if(e.setzen){ var x = ziel.x + ziel.nx, y = ziel.y + ziel.ny, z = ziel.z + ziel.nz; var bid = SC.Bauteile.aufstellId(w, sp.schnellleiste[sp.auswahl], ziel, sp.richtung()); if(bid) SC.Bauteile.setze(w, sp, x, y, z, bid); }
     }
     if(!(survival && !offen && lebt)){ k.blocken(false); this.render.blocke(false); } // Blockhaltung löst sich bei Menü oder Niederlage

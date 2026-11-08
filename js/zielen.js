@@ -1,5 +1,7 @@
 // Anvisierten Block finden: Voxel-Strahl nach Amanatides/Woo. Luft, Wasser und fließende Lava zählen nicht.
-SC.zielen = function(welt, start, r, reichweite){
+// o.quellen: hält auch an Wasser- und Lava-Quellen und liefert deren Zelle (Eimer)
+SC.zielen = function(welt, start, r, reichweite, o){
+  var quellen = !!(o && o.quellen);
   reichweite = reichweite || 6;
   var x = Math.floor(start[0]), y = Math.floor(start[1]), z = Math.floor(start[2]);
   var sx = r[0] > 0 ? 1 : -1, sy = r[1] > 0 ? 1 : -1, sz = r[2] > 0 ? 1 : -1;
@@ -9,6 +11,7 @@ SC.zielen = function(welt, start, r, reichweite){
   var nx = 0, ny = 0, nz = 0, t = 0;
   while(t <= reichweite){
     var id = welt.holeBlock(x, y, z);
+    if(quellen && SC.Fluessig.quelle(id) && (nx || ny || nz)) return { x: welt.planet.wickel(x), y: y, z: welt.planet.wickel(z), nx: nx, ny: ny, nz: nz, quelle: true };
     if(id !== SC.B.LUFT && !SC.Fluessig.istWasser(id) && !(SC.Fluessig.istLava(id) && !SC.Fluessig.quelle(id)) && (nx || ny || nz))
       return { x: welt.planet.wickel(x), y: y, z: welt.planet.wickel(z), nx: nx, ny: ny, nz: nz };
     if(tx < ty && tx < tz){ x += sx; t = tx; tx += dx; nx = -sx; ny = 0; nz = 0; }

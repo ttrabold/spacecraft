@@ -13,6 +13,7 @@ Heute sind `WASSER` (ID 8) und `LAVA` (ID 29) feste Blöcke, die sich nie bewege
 - Wasser und Lava fließen wie in Minecraft: Gräbt man neben einem See, strömt Wasser ins Loch; ein gesetzter Wasserblock läuft den Hang hinunter.
 - Strömung schiebt Spieler, Tiere und Gegner mit (abgestimmt).
 - Lava fließt langsamer und weniger weit; trifft sie auf Wasser, entsteht Basalt.
+- Eimer: Wasser und Lava schöpfen und ausgießen (abgestimmt).
 - Läuft flüssig auf dem iPad, funktioniert im Mehrspieler, bricht keine Spielstände.
 
 ## Nicht-Ziele
@@ -20,7 +21,6 @@ Heute sind `WASSER` (ID 8) und `LAVA` (ID 29) feste Blöcke, die sich nie bewege
 - Kein Wetter in diesem Projekt (kommt danach).
 - Keine physikalische Wassersimulation (Druck, Volumen, Wellen). Es gilt das einfache Minecraft-Modell.
 - Wasser zerstört keine Blöcke (auch keine Fackeln, Pflanzen o. Ä.) – fließt nur in Luft. (Annahme: Minecraft spült Fackeln weg; das wäre ein späterer Wunsch.)
-- Keine Eimer/kein Wasser-Aufheben im Survival (kann später kommen).
 
 ## Anti-Ziele (wäre ein Fehlschlag, selbst wenn es technisch läuft)
 
@@ -66,6 +66,17 @@ Alle Stellen, die heute `=== SC.B.WASSER` oder `=== SC.B.LAVA` prüfen (Schwimme
 - Die Strömung schiebt mit etwa **halber Gehgeschwindigkeit**. Schwimmen und Auftauchen sind stärker, sodass man jederzeit gegen die Strömung und aus jedem Loch herauskommt. Ein Test sichert das ab.
 - Lava schiebt genauso, damit niemand weiter hineingezogen wird als heute.
 
+### Eimer (abgestimmt)
+
+- **Herstellen:** an der Werkbank aus 3 Eisenerz (Kosten als Vorschlag, in `js/crafting.js` anpassbar).
+- **Drei Zustände:** leerer Eimer, Wassereimer, Lavaeimer. Das sind Gegenstände im Rucksack und in der Schnellleiste, so wie Netz und Tierfutter (Material-Blöcke, die man nicht aufstellen kann). Ob leere Eimer gestapelt werden, entscheidet der Builder (Vorschlag: leere stapeln, volle einzeln).
+- **Schöpfen:** Mit dem leeren Eimer in der Hand auf eine **Quelle** (Wasser oder Lava) tippen. Die Quelle verschwindet, der Eimer ist voll. Fließende Blöcke lassen sich nicht schöpfen, so kommt kein Wasser aus dem Nichts. Dafür muss der Eimer Quellen anvisieren können, obwohl man Flüssigkeit sonst nicht anvisiert.
+- **Ausgießen:** Mit dem vollen Eimer auf einen Block tippen. Davor entsteht eine Quelle, wie beim Setzen eines Blocks, und der Eimer wird leer. Es gelten dieselben Regeln wie beim Bauen, also nicht in einen Spieler, ein Tier oder ein Fahrzeug hinein (Entscheidung des Agenten, damit niemand direkt mit Lava übergossen wird).
+- **Brunnen:** Aus zwei Wassereimern entsteht durch die Regel „neue Quelle zwischen zwei Quellen“ ein Brunnen, der nie leer wird. Das ist gewollt.
+- **Kreativ:** Wassereimer und Lavaeimer stehen in der Blockauswahl und werden beim Ausgießen nicht leer.
+- **Mehrspieler:** Schöpfen und Ausgießen eines Gastes laufen über den Gastgeber, wie das Bauen heute (Gastgeber prüft, ob dort wirklich eine Quelle ist).
+- **Anleitung:** Abschnitt zu Eimern und zum Fließen in `SC.T.anleitung`.
+
 ## Technik
 
 - **Nur nahe den Spielern:** Fließen wird nur in geladenen Chunks gerechnet. Eine Warteschlange „aktive Flüssigkeitsblöcke“ wird gefüllt, wenn neben Flüssigkeit ein Block geändert wird (Ereignis `block` der Welt) und wenn eine Flüssigkeit neu entsteht. Ruhende Seen kosten nichts. Pro Schritt ist die Zahl bearbeiteter Blöcke begrenzt (Wert vom Builder, am iPad messen), der Rest wartet.
@@ -74,7 +85,7 @@ Alle Stellen, die heute `=== SC.B.WASSER` oder `=== SC.B.LAVA` prüfen (Schwimme
 - **Speichern:** Änderungen durch Fließen gehen über `setzeBlock` (Quelle z. B. `"fluss"`) und landen damit in `geaenderte`. Generierte Seen bleiben unverändert, solange niemand daneben eingreift; alte Spielstände laden ohne Umwandlung.
 - **Generator:** unverändert; er setzt weiter nur Quellen. Startplanet-Prüfsumme muss gleich bleiben.
 - **Entwicklerwerkzeug:** „Fließen an/aus“ (zum Testen und falls es irgendwo Ärger macht).
-- **Tests:** Ausbreitung, Reichweite, Nachlaufen, neue Quelle zwischen zwei Quellen, Lava+Wasser → Basalt, Tempo-Verhältnis, Grenze pro Schritt, Strömungsrichtung, alte Spielstände laden, „ist Wasser“-Prüfungen.
+- **Tests:** Eimer schöpfen/ausgießen (Survival und Kreativ, nur Quellen), Ausbreitung, Reichweite, Nachlaufen, neue Quelle zwischen zwei Quellen, Lava+Wasser → Basalt, Tempo-Verhältnis, Grenze pro Schritt, Strömungsrichtung, alte Spielstände laden, „ist Wasser“-Prüfungen.
 
 ## Offen / dem Builder überlassen
 

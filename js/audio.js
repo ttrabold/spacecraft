@@ -73,6 +73,12 @@ SC.Klang = {};
     } else if(name === "landen"){
       osz(ctx, "sine", 90, huelle(ctx, z, t, 0.003, 0, 0.15, v * 0.5), t, t + 0.2);
       rausch(ctx, filter(ctx, "lowpass", 500, 0.7, huelle(ctx, z, t, 0.003, 0, 0.1, v * 0.3)), t, 0.15);
+    } else if(name === "donner"){
+      // Donner (Wetter): nah ein Knall, dann Grollen; je weiter weg (o.entfernung in Blöcken), desto leiser und dumpfer
+      var e = (o && o.entfernung) || 0, lt = v * Math.max(0.12, 1 - e / 150), tief = Math.max(180, 1400 - e * 6);
+      if(e < 40) rausch(ctx, filter(ctx, "highpass", 1500, 0.7, huelle(ctx, z, t, 0.002, 0, 0.15, lt * 0.6)), t, 0.2);
+      rausch(ctx, filter(ctx, "lowpass", tief, 0.8, huelle(ctx, z, t + 0.03, 0.08, 0.2, 0.7, lt * 0.9)), t + 0.03, 0.95);
+      osz(ctx, "sine", 45, huelle(ctx, z, t, 0.05, 0.3, 1.2, lt * 0.5), t, t + 1.7);
     } else if(name === "platsch"){
       var g = huelle(ctx, z, t, 0.01, 0.05, 0.5, v * 0.5), bp = filter(ctx, "bandpass", 1200, 0.8, g);
       bp.frequency.setValueAtTime(2500, t); bp.frequency.exponentialRampToValueAtTime(400, t + 0.5); rausch(ctx, bp, t, 0.6);
@@ -163,6 +169,19 @@ SC.Klang = {};
   SC.Audio.prototype.lautstaerke = function(m, s){
     this.musikLaut = m; this.sfxLaut = s;
     if(this.ctx){ this.musik.gain.value = m * 0.6; this.sfx.gain.value = s; }
+  };
+  // Wetter: Dauerklang aus Rauschen – Regen (hell, prasselnd) und Wind (Bandpass mit langsamer Schwankung); regen, wind 0..1 (unter Dach schon gedämpft)
+  SC.Audio.prototype.wetter = function(regen, wind){
+    var c = this.ctx; if(!c || c.state !== "running") return;
+    if(!this._wetter){
+      var s = this;
+      function schleife(typ, f, q){ var g = c.createGain(), b = c.createBiquadFilter(), q0 = c.createBufferSource(); g.gain.value = 0; b.type = typ; b.frequency.value = f; b.Q.value = q; q0.buffer = rauschen(c); q0.loop = true; q0.connect(b); b.connect(g); g.connect(s.sfx); if(q0.start) q0.start(); return { g: g, b: b }; }
+      this._wetter = { regen: schleife("highpass", 2200, 0.5), wind: schleife("bandpass", 420, 0.9) };
+    }
+    var w = this._wetter, t = c.currentTime, an = this.sfxLaut > 0 ? 1 : 0;
+    w.regen.g.gain.setTargetAtTime(an * 0.12 * regen, t, 0.5);
+    w.wind.g.gain.setTargetAtTime(an * 0.1 * wind, t, 0.8);
+    w.wind.b.frequency.setTargetAtTime(300 + 250 * wind + Math.sin(t * 0.7) * 80, t, 0.6);
   };
   // Motor im Fahrzeug: ein Dauerton, Höhe folgt dem Tempo (anteil 0..1); art null blendet aus
   SC.Audio.prototype.motor = function(art, anteil){

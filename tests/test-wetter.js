@@ -115,3 +115,13 @@ test("Einstellungen: wetterEffekte Standard an, alte Einstellungen ohne Feld", f
   gleich(SC.Einstellungen.standard().wetterEffekte, "an"); localStorage.setItem("sc-wtest:einstellungen", JSON.stringify({ musik: 0.2 })); gleich(SC.Einstellungen.lade("wtest").wetterEffekte, "an"); localStorage.removeItem("sc-wtest:einstellungen");
   wahr(SC.T.wetterEffekte && SC.T.wetterEffekteWeniger, "Texte");
 });
+test("Klang: Donner ist hörbar, fern leiser", function(){
+  function laut(o){ var ctx = new OfflineAudioContext(1, 44100 * 2, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.erzeuge(ctx, z, "donner", o, 0.8);
+    return ctx.startRendering().then(function(b){ var d = b.getChannelData(0), s = 0; for(var i = 0; i < d.length; i++) s += d[i] * d[i]; return Math.sqrt(s / d.length); }); }
+  return Promise.all([laut({ entfernung: 10 }), laut({ entfernung: 200 })]).then(function(r){ wahr(r[0] > 0.005, "hörbar: " + r[0]); wahr(r[1] < r[0], "fern leiser"); });
+});
+test("Audio: wetter und donner ohne AudioContext werfen nicht", function(){ var a = Object.create(SC.Audio.prototype); a.ctx = null; a.wetter(1, 1); a.spiele("donner", { entfernung: 5 }); wahr(true); });
+test("Audio: wetter regelt einen Dauerklang", function(){
+  var ctx = new OfflineAudioContext(1, 44100, 44100), a = Object.create(SC.Audio.prototype); a.ctx = { state: "running", currentTime: 0, createGain: ctx.createGain.bind(ctx), createBiquadFilter: ctx.createBiquadFilter.bind(ctx), createBufferSource: ctx.createBufferSource.bind(ctx), createBuffer: ctx.createBuffer.bind(ctx), createOscillator: ctx.createOscillator.bind(ctx), sampleRate: 44100 };
+  a.sfx = ctx.createGain(); a.sfxLaut = 1; a.wetter(1, 0.5); wahr(a._wetter && a._wetter.regen && a._wetter.wind, "Regen und Wind angelegt"); a.wetter(0, 0); wahr(a._wetter, "bleibt, blendet nur aus");
+});

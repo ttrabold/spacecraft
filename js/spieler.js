@@ -62,6 +62,7 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     if(this.klettert) tempo *= 0.5;
     if(unter === SC.B.EIS){ var k = Math.min(1, 3 * dt); this.geschw[0] += (vx * tempo - this.geschw[0]) * k; this.geschw[2] += (vz * tempo - this.geschw[2]) * k; }
     else { this.geschw[0] = vx * tempo; this.geschw[2] = vz * tempo; }
+    if(this.imWasser && !this.fliegt && !zus){ var st = SC.Fluss.stroemung(welt, this.pos[0], this.pos[1] + 0.4, this.pos[2]); this.geschw[0] += st[0]; this.geschw[2] += st[1]; }   // Strömung schiebt mit
     // Ausweichen: kurzer Schub zusätzlich zur Laufrichtung
     if(this.schub && this.schub.t > 0){ this.geschw[0] += this.schub.v[0]; this.geschw[2] += this.schub.v[1]; this.schub.t -= dt; }
 

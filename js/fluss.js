@@ -10,6 +10,7 @@ SC.Fluss = function(welt){
 };
 SC.Fluss.JE_SCHRITT = 64;   // Zellen je Takt und Art (Grenze gegen Ruckeln, Rest wartet)
 SC.Fluss.SUCHE = 4;         // so weit sucht fließendes Wasser einen Abhang
+SC.Fluss.STROEMUNG = 0.4 * SC.PHYSIK.laufen;   // Schub der Strömung; Schwimmen (0,6 × laufen) ist stärker, man kommt immer dagegen an
 
 (function(){
   var B = SC.B, F = SC.Fluessig, H = SC.CHUNK.H, SEITE = [[1, 0], [-1, 0], [0, 1], [0, -1]], ALLE = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
@@ -47,6 +48,18 @@ SC.Fluss.SUCHE = 4;         // so weit sucht fließendes Wasser einen Abhang
   P.bisRuhe = function(max){
     for(var i = 0; i < max && this.wartend(); i++){ this._takte("wasser"); if(i % 4 === 3) this._takte("lava"); }
     return i;
+  };
+  // Strömung an einem Punkt [vx, vz]: fließende Blöcke schieben zu flacheren Nachbarn, zu fallenden und an den Rand (Luft); Quellen und fallende ruhen
+  SC.Fluss.stroemung = function(welt, x, y, z){
+    var f = { hole: function(x, y, z){ return welt.istGeladen && !welt.istGeladen(SC.mod(x, welt.planet.groesse) >> 4, SC.mod(z, welt.planet.groesse) >> 4) ? B.GRUNDGESTEIN : welt.holeBlock(x, y, z); } }, ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z), id = f.hole(ix, iy, iz), art = F.art(id);
+    if(!art || F.quelle(id) || F.fallend(id)) return [0, 0];
+    var vx = 0, vz = 0;
+    for(var j = 0; j < 4; j++){
+      var n = f.hole(ix + SEITE[j][0], iy, iz + SEITE[j][1]);
+      if(n === B.LUFT || (F.art(n) === art && !F.quelle(n) && (F.fallend(n) || F.stufe(n) < F.stufe(id)))){ vx += SEITE[j][0]; vz += SEITE[j][1]; }
+    }
+    var l = Math.hypot(vx, vz);
+    return l ? [vx / l * SC.Fluss.STROEMUNG, vz / l * SC.Fluss.STROEMUNG] : [0, 0];
   };
   P.abbauen = function(){ this.welt.ereignisse.aus("block", this._beiBlock); };
 

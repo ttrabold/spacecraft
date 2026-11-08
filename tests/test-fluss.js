@@ -78,3 +78,24 @@ test("Fluss: Grenze je Takt, Rest wartet", function(){
   wahr(f.wartend() > SC.Fluss.JE_SCHRITT, "viel zu tun: " + f.wartend()); f.schritt(0.25); wahr(f.zuletzt <= SC.Fluss.JE_SCHRITT && f.zuletzt > 0, "bearbeitet: " + f.zuletzt); wahr(f.wartend() > 0);
 });
 test("Fluss: aus heißt aus", function(){ var w = flWelt(), f = new SC.Fluss(w); f.an = false; w.setzeBlock(4, 64, 8, SC.B.WASSER, "system"); f.schritt(5); gleich(flB(w, 5, 64, 8), SC.B.LUFT); f.abbauen(); });
+// Strömungs-Welt: Wasserbecken bei y = 64, nach Osten (x+) immer flacher, Wände rundum
+function flStrom(){
+  var w = flWelt(); for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++) for(var y = 64; y < 67; y++) w.setzeBlock(x, y, z, z < 4 || z > 6 ? SC.B.STEIN : SC.B.LUFT, "system");
+  for(var x2 = 2; x2 <= 8; x2++) for(var z2 = 4; z2 <= 6; z2++) w.setzeBlock(x2, 64, z2, SC.Fluessig.id("wasser", 9 - x2, false), "system");
+  return w;
+}
+test("Strömung: Quelle schiebt nicht, Fließstufe schiebt zur niedrigeren", function(){
+  var w = flStrom(), s = SC.Fluss.stroemung(w, 4.5, 64.4, 5.5); wahr(Math.abs(s[0] - SC.Fluss.STROEMUNG) < 1e-6 && Math.abs(s[1]) < 1e-6, "nach Osten: " + s);
+  gleich(SC.Fluss.STROEMUNG, 0.4 * SC.PHYSIK.laufen); w.setzeBlock(4, 64, 5, SC.B.WASSER, "system"); gleich(SC.Fluss.stroemung(w, 4.5, 64.4, 5.5).join(), "0,0", "Quelle ruht");
+  gleich(SC.Fluss.stroemung(w, 12.5, 64.4, 5.5).join(), "0,0", "Luft schiebt nicht");
+});
+test("Strömung: Spieler treibt mit, kommt aber dagegen an", function(){
+  var w = flStrom(), s = new SC.Spieler({ id: "a", pos: [4.5, 64, 5.5], blick: [0, 0], modus: "survival" });
+  for(var i = 0; i < 20; i++) s.schritt(w, flRuhe, 0.05); wahr(s.pos[0] > 4.8, "treibt nach Osten: " + s.pos[0]);
+  var g = new SC.Spieler({ id: "b", pos: [6.5, 64, 5.5], blick: [Math.PI / 2, 0], modus: "survival" }), e = Object.assign({}, flRuhe, { vor: true });   // Blick nach Westen
+  for(var j = 0; j < 20; j++) g.schritt(w, e, 0.05); wahr(g.pos[0] < 6.3, "schwimmt dagegen an: " + g.pos[0]);
+});
+test("Strömung: Tiere treiben mit", function(){
+  var w = flStrom(), d = SC.TIERE.hase, e = SC.Wesen.neu(w, "tier", { tierArt: "hase", wild: true, pos: [4.5, 64, 5.5], heim: [4.5, 64, 5.5], breite: d.breite, hoehe: d.hoehe }); e.haeltStill = true;
+  for(var i = 0; i < 20; i++) SC.KI.tier(w, e, { spieler: [] }, 0.05, SC.zufall(3)); wahr(e.pos[0] > 4.8, "treibt: " + e.pos[0]);
+});

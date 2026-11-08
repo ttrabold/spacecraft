@@ -22,6 +22,7 @@ SC.KI = {};
   function bewege(welt, g, vx, vz, dt){
     if(!g.fliegt){ g.geschw[1] -= SCHWERE * dt; if(g.geschw[1] < -40) g.geschw[1] = -40; }   // Flieger (def.fliegt) kennen keine Schwerkraft
     var vorher = [g.pos[0], g.pos[2]];
+    if(!g.fliegt){ var st = SC.Fluss.stroemung(welt, g.pos[0], g.pos[1] + 0.3, g.pos[2]); vx += st[0]; vz += st[1]; }   // Strömung schiebt mit
     // Keine Stürze über 3 Blöcke
     var nx = g.pos[0] + vx * dt * 3, nz = g.pos[2] + vz * dt * 3;
     if(!g.fliegt && g.aufBoden && !bodenNah(welt, nx, g.pos[1] + 0.5, nz)){ vx = 0; vz = 0; }

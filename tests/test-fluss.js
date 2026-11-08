@@ -103,9 +103,9 @@ test("Strömung: Spieler treibt mit, kommt aber dagegen an", function(){
   var g = new SC.Spieler({ id: "b", pos: [6.5, 64, 5.5], blick: [Math.PI / 2, 0], modus: "survival" }), e = Object.assign({}, flRuhe, { vor: true });   // Blick nach Westen
   for(var j = 0; j < 20; j++) g.schritt(w, e, 0.05); wahr(g.pos[0] < 6.3, "schwimmt dagegen an: " + g.pos[0]);
 });
-test("Strömung: Tiere treiben mit", function(){
-  var w = flStrom(), d = SC.TIERE.hase, e = SC.Wesen.neu(w, "tier", { tierArt: "hase", wild: true, pos: [4.5, 64, 5.5], heim: [4.5, 64, 5.5], breite: d.breite, hoehe: d.hoehe }); e.haeltStill = true;
-  for(var i = 0; i < 20; i++) SC.KI.tier(w, e, { spieler: [] }, 0.05, SC.zufall(3)); wahr(e.pos[0] > 4.8, "treibt: " + e.pos[0]);
+test("Strömung: Gegner treiben mit", function(){   // Wildtiere hüpfen im Wasser gleich ans Ufer, Gegner bleiben drin und treiben
+  var w = flStrom(), d = SC.GEGNER.krabbler, e = SC.Wesen.neu(w, "gegner", { gegnerArt: "krabbler", stufe: 1, pos: [4.5, 64, 5.5], heim: [4.5, 64, 5.5], lp: 10, lpMax: 10, breite: d.breite, hoehe: d.hoehe });
+  for(var i = 0; i < 20; i++) SC.KI.schritt(w, e, null, 0.05, SC.zufall(3), "normal"); wahr(e.pos[0] > 4.8, "treibt: " + e.pos[0]);
 });
 test("Eimer: Rezept 3 Eisenerz an der Werkbank", function(){
   var r = SC.Crafting.rezept("eimer"); wahr(r, "Rezept da"); gleich(JSON.stringify(r.kosten), JSON.stringify([{ block: SC.B.EISENERZ, anzahl: 3 }]));
@@ -213,4 +213,16 @@ test("Nachtgegner tauchen nicht in Wasser oder Lava auf", function(){
     w.holeBlock = function(x, y, z){ return Math.floor(y) === w.generator.hoehe(Math.floor(x), Math.floor(z)) + 1 ? fl : echt(x, y, z); };   // überall auf dem Boden fließt es
     for(var i = 0; i < 30; i++) u.a.schritt(s, 0.28, i); var n = 0; w.wesen.forEach(function(e){ if(e.nacht) n++; }); gleich(n, 0, "keine Gegner in " + SC.BLOECKE[fl].name);
   });
+});
+test("Wildtier unter Wasser oder Lava verpufft nicht, sondern hüpft aufs Trockene", function(){
+  [SC.B.WASSER, SC.B.WASSER_3, SC.B.LAVA_2].forEach(function(fl){
+    var w = flWelt(), d = SC.TIERE.hase; for(var x = 3; x <= 7; x++) for(var z = 3; z <= 7; z++) w.setzeBlock(x, 64, z, fl, "system");   // Pfütze 5 × 5
+    var e = SC.Wesen.neu(w, "tier", { tierArt: "hase", wild: true, pos: [5.5, 64, 5.5], heim: [5.5, 64, 5.5], breite: d.breite, hoehe: d.hoehe });
+    SC.KI.tier(w, e, { spieler: [] }, 0.05, SC.zufall(2)); gleich(!!e.entfernen, false, "bleibt: " + SC.BLOECKE[fl].name);
+    wahr(!SC.KI.tierGefahr(w, e.pos[0], e.pos[1], e.pos[2]), "steht im Trockenen: " + e.pos.map(function(v){ return v.toFixed(1); }));
+    wahr(Math.hypot(e.pos[0] - 5.5, e.pos[2] - 5.5) <= 6, "in der Nähe");
+  });
+  var w2 = flWelt(), d2 = SC.TIERE.hase; for(var x2 = 0; x2 < 16; x2++) for(var z2 = 0; z2 < 16; z2++) w2.setzeBlock(x2, 64, z2, SC.B.WASSER, "system");
+  var e2 = SC.Wesen.neu(w2, "tier", { tierArt: "hase", wild: true, pos: [8.5, 64, 8.5], heim: [8.5, 64, 8.5], breite: d2.breite, hoehe: d2.hoehe });
+  for(var i = 0; i < 20; i++) SC.KI.tier(w2, e2, { spieler: [] }, 0.05, SC.zufall(2)); gleich(!!e2.entfernen, false, "großer See ohne Ufer: bleibt trotzdem");
 });

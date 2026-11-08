@@ -207,3 +207,10 @@ test("Fließ-Animation: fallendes Wasser läuft an den Seiten nach unten, Lava l
   wahr(Array.prototype.every.call(m.fest.stroemung, function(v){ return v === 0; }), "Stein ruht");
 });
 test("Fließ-Animation: Shader kennt Zeit und Strömung", function(){ wahr(SC.Render.VS.indexOf("stroemung") >= 0 && SC.Render.FS.indexOf("zeit") >= 0); });
+test("Nachtgegner tauchen nicht in Wasser oder Lava auf", function(){
+  [SC.B.WASSER_3, SC.B.LAVA_2].forEach(function(fl){
+    var u = umgebung("leicht"), w = u.w, echt = w.holeBlock.bind(w), s = new SC.Spieler({ id: "s", pos: [1024.5, 90, 1024.5], modus: "survival" });
+    w.holeBlock = function(x, y, z){ return Math.floor(y) === w.generator.hoehe(Math.floor(x), Math.floor(z)) + 1 ? fl : echt(x, y, z); };   // überall auf dem Boden fließt es
+    for(var i = 0; i < 30; i++) u.a.schritt(s, 0.28, i); var n = 0; w.wesen.forEach(function(e){ if(e.nacht) n++; }); gleich(n, 0, "keine Gegner in " + SC.BLOECKE[fl].name);
+  });
+});

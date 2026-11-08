@@ -85,5 +85,20 @@ SC.Wetter = function(planetId, daten, zf){
   // Gastgeber → Gäste: kurzer Zustand; Gäste rechnen nicht selbst
   P.netz = function(){ return { art: this.art, staerke: +this.staerke.toFixed(3), unwetter: this.unwetter, wind: this.wind.slice(), seitEnde: Math.min(this.seitEnde, 1e6) }; };
   P.uebernimm = function(n){ this.art = n.art || null; this.staerke = n.staerke || 0; this.unwetter = !!n.unwetter; this.wind = n.wind || [0, 0]; this.seitEnde = n.seitEnde || 0; };
+  // Blitz: in ein paar Spalten 12–40 Blöcke um einen Spieler die höchste Stelle; nie näher als 6 an Spielern oder Tieren → [x, y, z] oder null
+  SC.Wetter.blitzZiel = function(welt, orte, zf){
+    var P = welt.planet.groesse, o = orte[Math.floor(zf() * orte.length)], best = null, H = SC.CHUNK.H;
+    var nah = orte.slice(); welt.wesen.forEach(function(e){ if(e.art === "tier") nah.push(e.pos); });
+    for(var i = 0; i < 12; i++){
+      var win = zf() * Math.PI * 2, ab = 12 + zf() * 28, x = Math.floor(o[0] + Math.sin(win) * ab), z = Math.floor(o[2] + Math.cos(win) * ab);
+      if(welt.istGeladen && !welt.istGeladen(SC.mod(x, P) >> 4, SC.mod(z, P) >> 4)) continue;
+      if(nah.some(function(p){ return Math.hypot(SC.mod(x + 0.5 - p[0] + P / 2, P) - P / 2, SC.mod(z + 0.5 - p[2] + P / 2, P) - P / 2) < 6; })) continue;
+      var y = H - 1; while(y > 0 && !SC.BLOECKE[welt.holeBlock(x, y, z)].fest) y--;
+      if(y > 0 && (!best || y > best[1])) best = [SC.mod(x, P), y, SC.mod(z, P)];
+    }
+    return best;
+  };
+  // Was ein Einschlag liegen lässt: manchmal einen weißen Kristall; zerstört wird nichts
+  SC.Wetter.blitzBeute = function(zf){ return zf() < W.KRISTALL ? [{ block: SC.B.KRISTALL_WEISS, anzahl: 1 }] : []; };
   SC.Wetter.vonNetz = function(n, planetId){ var w = new SC.Wetter(planetId || "start", null); w.gast = true; w.uebernimm(n); return w; };
 })();

@@ -31,7 +31,8 @@ SC.Auftauchen = function(welt, daten, zf){
   };
 
   // spieler: eine Figur oder (im Raum) ein Array [{id, pos, blick, modus, stufe}] aller Spieler
-  A.schritt = function(spieler, tageslicht, spielzeit){
+  // eff (optional): SC.Wetter#effekte() – Gewitter bringt auch tagsüber Nachtgegner (e.wetter), Gegnerarten je Wetter häufiger
+  A.schritt = function(spieler, tageslicht, spielzeit, eff){
     var a = this, w = this.welt, schw = SC.SCHWIERIGKEIT[this.daten.schwierigkeit] || SC.SCHWIERIGKEIT.normal, zf = this.zf;
     var mehr = Array.isArray(spieler), alle = mehr ? spieler : [spieler];
     // Friedlich: alle weg
@@ -41,16 +42,17 @@ SC.Auftauchen = function(welt, daten, zf){
       if(e.art !== "gegner") return;
       var weit = alle.every(function(sp){ var d = ring(w, sp.pos, e.pos[0], e.pos[2]); return Math.hypot(d[0], d[1]) > WEG; });
       if(weit) a._entferne(e, false);
-      else if(e.nacht && tageslicht >= NACHT) a._entferne(e, true);
+      else if(e.nacht && tageslicht >= NACHT && !(e.wetter && eff && eff.gegnerTag > 0)) a._entferne(e, true);   // Wetter-Gegner bleiben, bis das Wetter vorbei ist
       else if(e.entfernen){ a._entferne(e, false); a.gegnerBesiegt(e, spielzeit); }
     });
     // Bauwerke wachen bei jedem Spieler auf (außer Zuschauern)
     alle.forEach(function(sp){ if(sp.modus !== "zuschauer") a._bauwerke(sp, spielzeit, schw); });
     // Nachts an der Oberfläche (nur Survival), um zufällig gewählte Survival-Spieler, gemeinsame Obergrenze
     var surv = alle.filter(function(sp){ return sp.modus === "survival"; });
-    if(!surv.length || tageslicht >= NACHT) return;
+    var istNacht = tageslicht < NACHT, max = istNacht ? Math.ceil(schw.nachtMax * (eff ? eff.gegnerNacht : 1)) : Math.ceil(schw.nachtMax * (eff ? eff.gegnerTag : 0));
+    if(!surv.length || max <= 0) return;
     var nacht = 0; w.wesen.forEach(function(e){ if(e.nacht) nacht++; });
-    for(var v = 0; v < 5 && nacht < schw.nachtMax; v++){
+    for(var v = 0; v < 5 && nacht < max; v++){
       var sp = surv.length === 1 ? surv[0] : surv[Math.floor(zf() * surv.length)];
       var blick = [-Math.sin(sp.blick[0]), -Math.cos(sp.blick[0])], ss = (mehr ? sp.stufe : this.daten.spieler.stufe) || 1;
       var win = zf() * Math.PI * 2, ab = 24 + zf() * 24, dx = Math.sin(win), dz = Math.cos(win);
@@ -59,8 +61,8 @@ SC.Auftauchen = function(welt, daten, zf){
       var y = w.generator.hoehe(x, z) + 1;
       if(y <= SC.MEER + 1 || SC.BLOECKE[w.holeBlock(x, y, z)].fest || SC.BLOECKE[w.holeBlock(x, y + 1, z)].fest || !SC.BLOECKE[w.holeBlock(x, y - 1, z)].fest) continue;
       if(SC.KI.tierGefahr(w, x + 0.5, y, z + 0.5)) continue;   // nicht in Wasser oder Lava (auch fließend), wie bei den Tieren
-      var na = arten(w, "nacht"), art2 = na[Math.floor(zf() * na.length)], st = Math.max(1, Math.min(12, ss + Math.floor(zf() * 3) - 1));
-      if(this._neu(art2, st, [x + 0.5, y, z + 0.5], { nacht: true, ort: "dungeon" })) nacht++;
+      var art2 = SC.Auftauchen.waehleArt(arten(w, "nacht"), eff ? eff.gegnerArten : {}, zf), st = Math.max(1, Math.min(12, ss + Math.floor(zf() * 3) - 1));
+      if(this._neu(art2, st, [x + 0.5, y, z + 0.5], { nacht: true, wetter: !istNacht, ort: "dungeon" })) nacht++;
     }
   };
 
@@ -103,7 +105,16 @@ SC.Auftauchen = function(welt, daten, zf){
   // Wildtiere (Haustiere): einmal pro Sekunde; tagsüber bis zur Obergrenze, nachts halb so viele; spawnen auf trockenem Boden 20–40 Blöcke um einen Spieler,
   // verschwinden in der Ferne (ein Planet lässt sich nicht leerfangen). Zuschauer bekommen keine.
   var TIER_GEWICHT = [6, 2, 1];
-  A.tiere = function(spieler, tageslicht){
+  // Gewichtete Wahl: gewichte {art: Faktor} (Wetter), sonst 1
+  SC.Auftauchen.waehleArt = function(liste, gewichte, zf){
+    var g = liste.map(function(a){ return (gewichte && gewichte[a]) || 1; }), s = g.reduce(function(x, y){ return x + y; }, 0), r = zf() * s, k = 0;
+    while(k < liste.length - 1 && r >= g[k]){ r -= g[k]; k++; }
+    return liste[k];
+  };
+  // Gewichte der Wildtiere nach Seltenheit, bei Regen Frösche häufiger; Obergrenze nach Tageszeit und Wetter
+  SC.Auftauchen.tierGewichte = function(arten, eff){ return arten.map(function(art){ return TIER_GEWICHT[SC.TIERE[art].seltenheit] * (eff && (art === "frosch" || art === "laubfrosch") ? eff.froesche : 1); }); };
+  SC.Auftauchen.tierGrenze = function(tageslicht, eff){ return Math.floor((tageslicht >= NACHT ? SC.Wesen.GRENZE.tier : Math.floor(SC.Wesen.GRENZE.tier / 2)) * (eff ? eff.tiere : 1)); };
+  A.tiere = function(spieler, tageslicht, eff){
     var w = this.welt, zf = this.zf, alle = Array.isArray(spieler) ? spieler : [spieler], arten = SC.Tier.arten(w.planet.id);
     w.wesen.forEach(function(e){
       if(e.art !== "tier" || !e.wild) return;
@@ -112,14 +123,14 @@ SC.Auftauchen = function(welt, daten, zf){
     });
     var sicht = alle.filter(function(sp){ return sp.modus !== "zuschauer"; });
     if(!arten.length || !sicht.length) return;
-    var max = tageslicht >= NACHT ? SC.Wesen.GRENZE.tier : Math.floor(SC.Wesen.GRENZE.tier / 2);
+    var max = SC.Auftauchen.tierGrenze(tageslicht, eff);
     if(SC.Wesen.anzahl(w, "tier") >= max || zf() > 0.5) return;
     var sp = sicht[Math.floor(zf() * sicht.length)], win = zf() * Math.PI * 2, ab = 20 + zf() * 20;
     var x = Math.floor(SC.mod(sp.pos[0] + Math.sin(win) * ab, w.planet.groesse)), z = Math.floor(SC.mod(sp.pos[2] + Math.cos(win) * ab, w.planet.groesse));
     var y = w.generator.hoehe(x, z) + 1;
     if(y <= SC.MEER + 1 || SC.BLOECKE[w.holeBlock(x, y, z)].fest || SC.BLOECKE[w.holeBlock(x, y + 1, z)].fest || !SC.BLOECKE[w.holeBlock(x, y - 1, z)].fest) return;
     if(SC.KI.tierGefahr(w, x + 0.5, y, z + 0.5)) return;
-    var summe = 0, gew = arten.map(function(art){ var g = TIER_GEWICHT[SC.TIERE[art].seltenheit]; summe += g; return g; }), r = zf() * summe, k = 0;
+    var summe = 0, gew = SC.Auftauchen.tierGewichte(arten, eff), r; gew.forEach(function(g){ summe += g; }); r = zf() * summe; var k = 0;
     while(k < arten.length - 1 && r >= gew[k]){ r -= gew[k]; k++; }
     var d = SC.TIERE[arten[k]];
     SC.Wesen.neu(w, "tier", { tierArt: arten[k], wild: true, pos: [x + 0.5, y, z + 0.5], heim: [x + 0.5, y, z + 0.5], breite: d.breite, hoehe: d.hoehe });

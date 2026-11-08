@@ -125,3 +125,40 @@ test("Audio: wetter regelt einen Dauerklang", function(){
   var ctx = new OfflineAudioContext(1, 44100, 44100), a = Object.create(SC.Audio.prototype); a.ctx = { state: "running", currentTime: 0, createGain: ctx.createGain.bind(ctx), createBiquadFilter: ctx.createBiquadFilter.bind(ctx), createBufferSource: ctx.createBufferSource.bind(ctx), createBuffer: ctx.createBuffer.bind(ctx), createOscillator: ctx.createOscillator.bind(ctx), sampleRate: 44100 };
   a.sfx = ctx.createGain(); a.sfxLaut = 1; a.wetter(1, 0.5); wahr(a._wetter && a._wetter.regen && a._wetter.wind, "Regen und Wind angelegt"); a.wetter(0, 0); wahr(a._wetter, "bleibt, blendet nur aus");
 });
+function auEff(art, planet){ var w = new SC.Wetter(planet || "start", null, SC.zufall(1)); w.setze(art, 200); return w.effekte(); }
+test("Auftauchen: Gewitter tagsüber halb so viele Nachtgegner, bleiben bis Wetterende", function(){
+  var u = umgebung("leicht"), s = new SC.Spieler({ id: "s", pos: [1024.5, 90, 1024.5], modus: "survival" }), eff = auEff("gewitter"), n = 0;
+  for(var i = 0; i < 40; i++) u.a.schritt(s, 1, i, eff); u.w.wesen.forEach(function(e){ if(e.art === "gegner" && e.wetter) n++; });
+  wahr(n > 0 && n <= Math.ceil(SC.SCHWIERIGKEIT.leicht.nachtMax * eff.gegnerTag), "Wetter-Gegner: " + n);
+  for(var j = 0; j < 3; j++) u.a.schritt(s, 1, 50 + j, eff); var m = 0; u.w.wesen.forEach(function(e){ if(e.wetter) m++; }); gleich(m, n, "bleiben tagsüber, solange es gewittert");
+  u.a.schritt(s, 1, 60, auEff(null)); var r = 0; u.w.wesen.forEach(function(e){ if(e.wetter) r++; }); gleich(r, 0, "nach dem Gewitter weg");
+  var k = umgebung("leicht"), kr = new SC.Spieler({ id: "k", pos: [1024.5, 90, 1024.5], modus: "kreativ" }); for(var q = 0; q < 20; q++) k.a.schritt(kr, 1, q, eff); var kn = 0; k.w.wesen.forEach(function(e){ if(e.wetter) kn++; }); gleich(kn, 0, "Kreativ: keine");
+  var f = umgebung("friedlich"); for(var q2 = 0; q2 < 20; q2++) f.a.schritt(s, 1, q2, eff); var fn = 0; f.w.wesen.forEach(function(e){ if(e.art === "gegner") fn++; }); gleich(fn, 0, "friedlich: keine");
+});
+test("Auftauchen: Schneesturm bevorzugt Frostgegner", function(){
+  var liste = ["lavagolem", "frostkrabbler", "frostgolem", "eisrutscher", "glutflatterer"], zf = SC.zufall(8), ohne = 0, mit = 0, g = auEff("schneesturm", "glutfrost").gegnerArten;
+  for(var i = 0; i < 2000; i++){ if(/frost|eis/.test(SC.Auftauchen.waehleArt(liste, {}, zf))) ohne++; if(/frost|eis/.test(SC.Auftauchen.waehleArt(liste, g, zf))) mit++; }
+  wahr(mit > ohne * 1.3, "mit " + mit + ", ohne " + ohne);
+});
+test("Auftauchen: Regen weniger Wildtiere, mehr Frösche", function(){
+  var arten = SC.Tier.arten("start"), klar = SC.Auftauchen.tierGewichte(arten, auEff(null)), regen = SC.Auftauchen.tierGewichte(arten, auEff("regen")), i = arten.indexOf("frosch"), h = arten.indexOf("hase");
+  wahr(regen[i] / regen[h] > klar[i] / klar[h] * 2, "Frosch relativ häufiger"); gleich(SC.Auftauchen.tierGrenze(1, auEff("regen")), Math.floor(SC.Wesen.GRENZE.tier * SC.WETTER.ARTEN.regen.tiere));
+});
+test("Wind: schiebt, man kommt dagegen an, auf Eis begrenzt", function(){
+  var w = flWelt(), s = new SC.Spieler({ id: "a", pos: [8.5, 64, 8.5], blick: [0, 0], modus: "survival" }); s.wind = [1.5, 0];
+  for(var i = 0; i < 10; i++) s.schritt(w, flRuhe, 0.05); wahr(s.pos[0] > 8.8, "treibt: " + s.pos[0]);
+  var g = new SC.Spieler({ id: "b", pos: [12.5, 64, 4.5], blick: [Math.PI / 2, 0], modus: "survival" }); g.wind = [5, 0]; for(var j = 0; j < 10; j++) g.schritt(w, Object.assign({}, flRuhe, { vor: true }), 0.05); wahr(g.pos[0] < 12.3, "gegen den Sturm: " + g.pos[0]);
+  for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++) w.setzeBlock(x, 63, z, SC.B.EIS, "system"); var e = new SC.Spieler({ id: "c", pos: [8.5, 64, 12.5], blick: [0, 0], modus: "survival" }), max = 0; e.wind = [5, 0];
+  for(var k = 0; k < 40; k++){ e.schritt(w, flRuhe, 0.05); max = Math.max(max, Math.abs(e.geschw[0])); } wahr(max <= 0.5 * SC.PHYSIK.laufen + 0.01, "begrenzt: " + max);
+});
+test("Blitz: trifft hohe Stelle, nie näher als 6 an Spieler oder Tier", function(){
+  var w = fzWelt(), ort = [100.5, 60, 100.5], P = w.planet.groesse;
+  for(var x = 101; x < 145; x++) for(var z = 55; z < 146; z++) w.setze(x, 70, z, SC.B.STEIN);   // östliche Hälfte hoch
+  var z1 = SC.Wetter.blitzZiel(w, [ort], SC.zufall(3)); wahr(z1 && z1[1] === 70, "hohe Stelle: " + z1);
+  for(var a = 0; a < 40; a++) w.wesen.set(a, { id: a, art: "tier", pos: [80 + (a % 8) * 8 + 0.5, 60, 70 + Math.floor(a / 8) * 12 + 0.5] });
+  for(var s = 0; s < 60; s++){ var z2 = SC.Wetter.blitzZiel(w, [ort], SC.zufall(s)); if(!z2) continue; [ort].concat(Array.from(w.wesen.values()).map(function(e){ return e.pos; })).forEach(function(p){ wahr(Math.hypot(z2[0] + 0.5 - p[0], z2[2] + 0.5 - p[2]) >= 6, "Abstand"); }); }
+});
+test("Blitz: manchmal weißer Kristall, nichts zerstört", function(){
+  var zf = SC.zufall(4), n = 0; for(var i = 0; i < 1000; i++){ var b = SC.Wetter.blitzBeute(zf); if(b.length){ n++; gleich(b[0].block, SC.B.KRISTALL_WEISS); } }
+  wahr(n > 120 && n < 280, "Anteil " + n);
+});

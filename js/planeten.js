@@ -22,6 +22,6 @@ SC.Planeten = {
     var p = daten.planeten[id];
     if(p) return p;
     return daten.planeten[id] = { id: id, seed: SC.hashText(daten.seed + ":" + id), groesse: 2048, palette: SC.PLANETEN[id].palette, generatorVersion: SC.GENERATOR_VERSION,
-      chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {}, landepunkt: null };
+      chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {}, landepunkt: null, wetter: null, wetterSpuren: [] };
   }
 };

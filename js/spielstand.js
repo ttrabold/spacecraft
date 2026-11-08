@@ -27,7 +27,7 @@ SC.Spielstand = {};
       format: SC.FORMAT, spielVersion: window.V || "", id: neueId(), name: o.name || SC.T.neueWelt, seed: seed,
       erstellt: jetzt, zuletzt: jetzt, zuletztExport: null, modus: o.modus || "kreativ", tageszeit: 0.3, aktuellerPlanet: "start",
       schwierigkeit: o.schwierigkeit || "leicht", startpunkt: null, spielzeit: 0,
-      planeten: { start: { id: "start", seed: SC.hashText(seed + ":start"), groesse: 2048, palette: "start", generatorVersion: SC.GENERATOR_VERSION, chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {} } },
+      planeten: { start: { id: "start", seed: SC.hashText(seed + ":start"), groesse: 2048, palette: "start", generatorVersion: SC.GENERATOR_VERSION, chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {}, wetter: null, wetterSpuren: [] } },
       mitspieler: {},
       spieler: { name: o.figurName || "", figurId: neueId(), pos: null, blick: [0, 0], schnellleiste: LEISTE.slice(), schnellleisteKreativ: LEISTE.slice(), ansicht: "ich",
         stufe: 1, erfahrung: 0, lebenspunkte: null, schild: null, rucksack: leererRucksack(), ausruestung: leereAusruestung(), kaefig: leererKaefig() }
@@ -78,7 +78,7 @@ SC.Spielstand = {};
       planeten: {},
       spieler: { pos: willkommen.pos.slice(), blick: willkommen.blick.slice(), ansicht: "ich" }
     };
-    d.planeten[p.id] = { id: p.id, seed: p.seed, groesse: p.groesse, palette: p.palette, generatorVersion: p.generatorVersion, chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {} };
+    d.planeten[p.id] = { id: p.id, seed: p.seed, groesse: p.groesse, palette: p.palette, generatorVersion: p.generatorVersion, chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {}, wetter: null, wetterSpuren: [] };
     SC.Spielstand.figurUebernehmen(d, figur);
     return SC.Spielstand.migriere(d).daten;
   };
@@ -122,7 +122,7 @@ SC.Spielstand = {};
     if(!s.figurId) s.figurId = neueId();
     if(!d.mitspieler || typeof d.mitspieler !== "object") d.mitspieler = {};
     delete s.inventar;
-    for(var id in d.planeten){ var p = d.planeten[id]; if(!p.chunks) p.chunks = {}; if(!p.generatorVersion) p.generatorVersion = 1; if(!p.palette) p.palette = "start"; if(!p.groesse) p.groesse = 2048; if(!p.kisten) p.kisten = {}; if(!p.geraeumt) p.geraeumt = {}; if(!p.fahrzeuge || typeof p.fahrzeuge !== "object") p.fahrzeuge = {}; }
+    for(var id in d.planeten){ var p = d.planeten[id]; if(!p.chunks) p.chunks = {}; if(!p.generatorVersion) p.generatorVersion = 1; if(!p.palette) p.palette = "start"; if(!p.groesse) p.groesse = 2048; if(!p.kisten) p.kisten = {}; if(!p.geraeumt) p.geraeumt = {}; if(!p.fahrzeuge || typeof p.fahrzeuge !== "object") p.fahrzeuge = {}; if(p.wetter === undefined) p.wetter = null; if(!Array.isArray(p.wetterSpuren)) p.wetterSpuren = []; }
     d.format = SC.FORMAT;
     return { daten: d, migriert: vorher !== SC.FORMAT };
   };

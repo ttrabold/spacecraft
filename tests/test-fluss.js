@@ -188,3 +188,22 @@ test("Eimer: nicht auf Mitspieler ausgießen", function(){
   var g = flSurv(), ziel = { x: 2, y: 88, z: 2, nx: 0, ny: 1, nz: 0 }; g.kampf.rucksack.plaetze[0] = { block: SC.B.EIMER_LAVA, anzahl: 1 }; g._mitspielerListe = function(){ return [{ pos: [2.5, 89, 2.5] }]; };
   g._eimer(ziel); gleich(g.welt.holeBlock(2, 89, 2), SC.B.LUFT, "Spiel gibt die Mitspieler weiter");
 });
+// Fließ-Animation: je Ecke eine Richtung (in Kachel-Koordinaten je Sekunde), 0 für alles, was nicht fließt
+function flStroemFl(g, filter){ var r = [], p = g.positionen, s = g.stroemung; for(var i = 0; i < p.length / 3; i += 4){ var y = [p[i * 3 + 1], p[i * 3 + 4], p[i * 3 + 7], p[i * 3 + 10]]; if(filter(y)) r.push([s[i * 2], s[i * 2 + 1]]); } return r; }
+test("Fließ-Animation: Oberfläche läuft zum flacheren Nachbarn, Quelle ruht", function(){
+  var w = leereWelt(); for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++) w.setzeBlock(x, 63, z, SC.B.STEIN, "system");
+  for(var z2 = 1; z2 <= 14; z2++) for(var x2 = 4; x2 <= 6; x2++) w.setzeBlock(x2, 64, z2, z2 === 1 || z2 === 14 ? SC.B.STEIN : x2 === 4 ? SC.B.WASSER : x2 === 5 ? SC.B.WASSER_7 : SC.B.WASSER_6, "system");   // Rinne mit Wänden an den Enden
+  var g = flMesh(w).durchsichtig; gleich(g.stroemung.length, g.positionen.length / 3 * 2, "je Ecke zwei Werte");
+  var oben7 = flStroemFl(g, function(y){ return y.every(function(v){ return Math.abs(v - 64.875) < 1e-3; }); });
+  wahr(oben7.length > 0 && oben7.every(function(s){ return s[0] > 0 && Math.abs(s[1]) < 1e-6; }), "Stufe 7 läuft nach Osten (+u): " + JSON.stringify(oben7[0]));
+  var obenQ = flStroemFl(g, function(y){ return y.every(function(v){ return Math.abs(v - 65) < 1e-3; }); });
+  wahr(obenQ.length > 0 && obenQ.every(function(s){ return s[0] === 0 && s[1] === 0; }), "Quelle ruht");
+});
+test("Fließ-Animation: fallendes Wasser läuft an den Seiten nach unten, Lava langsamer, Stein nie", function(){
+  var w = leereWelt(); w.setzeBlock(5, 70, 5, SC.B.WASSER_FALL, "system"); w.setzeBlock(9, 70, 9, SC.B.LAVA_FALL, "system"); w.setzeBlock(2, 70, 2, SC.B.STEIN, "system");
+  var m = flMesh(w), seiten = flStroemFl(m.durchsichtig, function(y){ return Math.min.apply(null, y) < 70.01 && Math.max.apply(null, y) > 70.99; });
+  wahr(seiten.length >= 4 && seiten.every(function(s){ return s[0] === 0 && s[1] < 0; }), "Wasser fällt (Muster nach unten, −v): " + JSON.stringify(seiten[0]));
+  var lava = flStroemFl(m.form, function(y){ return Math.min.apply(null, y) < 70.01 && Math.max.apply(null, y) > 70.99; }); wahr(lava.length && lava[0][1] < 0 && lava[0][1] > seiten[0][1], "Lava langsamer");
+  wahr(Array.prototype.every.call(m.fest.stroemung, function(v){ return v === 0; }), "Stein ruht");
+});
+test("Fließ-Animation: Shader kennt Zeit und Strömung", function(){ wahr(SC.Render.VS.indexOf("stroemung") >= 0 && SC.Render.FS.indexOf("zeit") >= 0); });

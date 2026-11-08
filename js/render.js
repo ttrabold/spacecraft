@@ -16,18 +16,20 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
   };
 
   var VS = [
-    "attribute vec2 licht; attribute vec3 farbe;",
-    "varying vec2 vUv; varying vec2 vLicht; varying vec3 vFarbe; varying float vTiefe; varying vec3 vWelt;",
-    "void main(){ vUv = uv; vLicht = licht; vFarbe = farbe; vWelt = (modelMatrix * vec4(position, 1.0)).xyz;",
+    "attribute vec2 licht; attribute vec3 farbe; attribute vec2 stroemung;",
+    "varying vec2 vUv; varying vec2 vLicht; varying vec3 vFarbe; varying float vTiefe; varying vec3 vWelt; varying vec2 vStroem;",
+    "void main(){ vUv = uv; vStroem = stroemung; vLicht = licht; vFarbe = farbe; vWelt = (modelMatrix * vec4(position, 1.0)).xyz;",
     "  vec4 mv = modelViewMatrix * vec4(position, 1.0); vTiefe = -mv.z; gl_Position = projectionMatrix * mv; }"
   ].join("\n");
   // leuchtPos/leuchtStaerke: Sonderkraft Leuchten, Punktlicht um die eigene Figur (linear bis SC.LEUCHT_RADIUS, ohne Schatten)
   SC.LEUCHT_RADIUS = 8; SC.LEUCHT_STAERKE = 0.75;
   var FS = [
     "uniform sampler2D atlas; uniform float tageslicht; uniform vec3 nebelFarbe; uniform float nebelNah; uniform float nebelFern; uniform float alphaMin;",
-    "uniform vec3 leuchtPos; uniform float leuchtStaerke;",
-    "varying vec2 vUv; varying vec2 vLicht; varying vec3 vFarbe; varying float vTiefe; varying vec3 vWelt;",
-    "void main(){ vec4 t = texture2D(atlas, vUv); if(t.a < alphaMin) discard;",
+    "uniform vec3 leuchtPos; uniform float leuchtStaerke; uniform float zeit;",
+    "varying vec2 vUv; varying vec2 vLicht; varying vec3 vFarbe; varying float vTiefe; varying vec3 vWelt; varying vec2 vStroem;",
+    // Fließ-Animation: das Muster wandert innerhalb seiner Kachel (16 × 16 im Atlas) um vStroem × zeit
+    "void main(){ vec2 u = vUv; if(vStroem.x != 0.0 || vStroem.y != 0.0){ vec2 k = floor(vUv * 16.0) / 16.0; vec2 l = fract((vUv - k) * 16.0 - vStroem * zeit); u = k + clamp(l, 0.02, 0.98) / 16.0; }",
+    "  vec4 t = texture2D(atlas, u); if(t.a < alphaMin) discard;",
     "  vec3 hell = max(vec3(vLicht.x * tageslicht), vLicht.y * vFarbe * 1.15); hell = max(hell, vec3(0.06));",
     "  hell = max(hell, leuchtStaerke * clamp(1.0 - distance(vWelt, leuchtPos) / " + SC.LEUCHT_RADIUS.toFixed(1) + ", 0.0, 1.0) * vec3(0.85, 0.95, 1.0));",
     "  vec3 c = t.rgb * hell; float n = smoothstep(nebelNah, nebelFern, vTiefe);",
@@ -50,7 +52,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var atlas = new THREE.CanvasTexture(SC.Texturen.atlas(SC.PALETTEN[planet.palette] || SC.PALETTEN.start));
     atlas.magFilter = THREE.NearestFilter; atlas.minFilter = THREE.NearestFilter; atlas.generateMipmaps = false; atlas.colorSpace = THREE.NoColorSpace;
     this.atlas = atlas;
-    var uni = { atlas: { value: atlas }, tageslicht: { value: 1 }, nebelFarbe: { value: new THREE.Color() }, nebelNah: { value: 100 }, nebelFern: { value: 150 }, alphaMin: { value: 0.5 }, leuchtPos: { value: new THREE.Vector3() }, leuchtStaerke: { value: 0 } };
+    var uni = { atlas: { value: atlas }, tageslicht: { value: 1 }, nebelFarbe: { value: new THREE.Color() }, nebelNah: { value: 100 }, nebelFern: { value: 150 }, alphaMin: { value: 0.5 }, leuchtPos: { value: new THREE.Vector3() }, leuchtStaerke: { value: 0 }, zeit: { value: 0 } };
     this.uniforms = uni;
     this.matFest = new THREE.ShaderMaterial({ uniforms: uni, vertexShader: VS, fragmentShader: FS });
     var uniD = Object.assign({}, uni, { alphaMin: { value: 0.02 } });
@@ -171,6 +173,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.kamera.add(this.hand); this._handId = -1;
   };
   // Form eines Blocks in der Hand (Fackel, Pflanze, Zaun, Leiter, Tür): ein Geometrie-Puffer mit der Kachel des Blocks; null = normaler Würfel
+  SC.Render.VS = VS; SC.Render.FS = FS;   // für Tests
   SC.Render.handForm = function(b){
     if(!b || !b.seiten || !b.form || b.form === "wuerfel") return null;
     var q = SC.Mesher.uvFuer(b.seiten.seite), pos = [], uv = [], idx = [];
@@ -228,6 +231,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     b.setAttribute("uv", new THREE.BufferAttribute(g.uv, 2));
     b.setAttribute("licht", new THREE.BufferAttribute(g.licht, 2));
     b.setAttribute("farbe", new THREE.BufferAttribute(g.farbe, 3));
+    if(g.stroemung) b.setAttribute("stroemung", new THREE.BufferAttribute(g.stroemung, 2));
     b.setIndex(new THREE.BufferAttribute(g.indizes, 1));
     b.computeBoundingSphere();
     return b;
@@ -333,6 +337,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.sterne.position.copy(k.position); this.sterneMat.opacity = Math.max(hf, Math.max(0, 1 - h.tageslicht * 1.6));
     this.hand.material.color.setScalar(Math.max(0.35, h.tageslicht));
     this._leuchtBild(px, spieler.pos[1], pz);
+    this.uniforms.zeit.value = (this.uniforms.zeit.value + (dt || 0)) % 64;   // Fließ-Animation (Rest 64: Muster wiederholt sich je Kachel, Genauigkeit bleibt)
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);
     this.uniforms.nebelNah.value = this.sichtweite * 16 * 0.55; this.uniforms.nebelFern.value = this.sichtweite * 16 * 0.95;
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());

@@ -23,14 +23,16 @@ SC.Mesher = {};
     { n: [0, 0, -1], e: [[1,0,0],[0,0,0],[0,1,0],[1,1,0]], s: "seite", h: 0.9 }
   ];
   var AO = [1, 0.78, 0.62, 0.5];
+  // Fließ-Animation: Tempo des Musters (Kacheln je Sekunde) oben und an den Seiten; Lava fließt langsamer
+  var FLIESS = { 1: { oben: 0.5, seite: 0.75 }, 2: { oben: 0.25, seite: 0.35 } };
 
   var fest = new Uint8Array(256), durch = new Uint8Array(256), fart = new Uint8Array(256), fhoehe = new Float32Array(256);   // fart: 1 Wasser, 2 Lava (Fließstufen gehören zusammen), fhoehe: Oberfläche
   for(var id in SC.BLOECKE){ var b = SC.BLOECKE[id]; fest[id] = b.fest ? 1 : 0; durch[id] = b.durchsichtig ? 1 : 0; fart[id] = b.fluessig === "wasser" ? 1 : b.fluessig === "lava" ? 2 : 0; fhoehe[id] = fart[id] ? SC.Fluessig.hoehe(+id) : 1; }
   var opak = SC.Licht.opak;
 
-  function Puffer(){ this.p = []; this.uv = []; this.l = []; this.f = []; this.i = []; this.n = 0; }
+  function Puffer(){ this.p = []; this.uv = []; this.l = []; this.f = []; this.s = []; this.i = []; this.n = 0; }   // s: Fließ-Animation je Ecke (Richtung des Musters in Kacheln je Sekunde)
   Puffer.prototype.fertig = function(){
-    return { positionen: new Float32Array(this.p), uv: new Float32Array(this.uv), licht: new Float32Array(this.l), farbe: new Float32Array(this.f), indizes: new Uint32Array(this.i) };
+    return { positionen: new Float32Array(this.p), uv: new Float32Array(this.uv), licht: new Float32Array(this.l), farbe: new Float32Array(this.f), stroemung: new Float32Array(this.s), indizes: new Uint32Array(this.i) };
   };
 
   SC.Mesher.chunk = function(welt, cx, cz, licht){
@@ -51,7 +53,7 @@ SC.Mesher = {};
         puf.p.push(x + c[0], y + c[1], z + c[2]);
         puf.uv.push(k === 0 || k === 3 ? uv[0] : uv[2], k < 2 ? uv[1] : uv[3]);
         puf.l.push(L.h * fak, L.b * (glueht ? 1 : fak));
-        puf.f.push(L.f[0], L.f[1], L.f[2]);
+        puf.f.push(L.f[0], L.f[1], L.f[2]); puf.s.push(0, 0);
       }
       puf.i.push(basis, basis + 1, basis + 2, basis, basis + 2, basis + 3);
       puf.n += 4;
@@ -109,6 +111,13 @@ SC.Mesher = {};
       if(id === SC.B.LUFT) continue;
       var def = SC.BLOECKE[id], dt = durch[id], puf = dt ? (def.ausschnitt ? aus.form : aus.durchsichtig) : aus.fest;
       if(def.form !== "wuerfel"){ formBlock(aus.form, x, y, z, rx, rz, id, def); continue; }
+      // Fließende Blöcke: oben läuft das Muster zu flacheren Nachbarn, Luft oder Wasserfall (+u = +x, +v = −z), an den Seiten nach unten; Quellen ruhen
+      var fo = null, fsd = null;
+      if(fart[id] && !def.quelle){
+        var T = FLIESS[fart[id]], sx = 0, sz = 0;
+        if(!def.fallend) [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ var n = blockAn(rx + d[0], y, rz + d[1]); if(n === SC.B.LUFT || (fart[n] === fart[id] && !SC.BLOECKE[n].quelle && (SC.BLOECKE[n].fallend || fhoehe[n] < fhoehe[id]))){ sx += d[0]; sz += d[1]; } });
+        var fl = Math.hypot(sx, sz); fo = fl ? [sx / fl * T.oben, -sz / fl * T.oben] : null; fsd = [0, -T.seite];
+      }
       for(var f = 0; f < 6; f++){
         var F = FL[f], nx = rx + F.n[0], ny = y + F.n[1], nz = rz + F.n[2];
         if(ny < 0) continue;
@@ -149,6 +158,7 @@ SC.Mesher = {};
           puf.l.push(lh * fak, lb * (def.leuchten ? 1 : fak));
           var lf = q && SC.BLOECKE[q].lichtFarbe || [1, 0.9, 0.75];
           puf.f.push(lf[0], lf[1], lf[2]);
+          var fv = F.n[1] > 0 ? fo : F.n[1] === 0 ? fsd : null; puf.s.push(fv ? fv[0] : 0, fv ? fv[1] : 0);
         }
         puf.i.push(basis, basis + 1, basis + 2, basis, basis + 2, basis + 3);
         puf.n += 4;

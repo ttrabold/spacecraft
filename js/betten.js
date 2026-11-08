@@ -50,7 +50,7 @@
     var id = w.holeBlock(b.x, b.y, b.z);
     if(!SC.Bauteile.istBettKopf(id)){ this.daten.spieler.bett = null; this.ui.hinweis(T.bettFehlte, 4000); return null; }
     var fuss = SC.Bauteile.bettPartner(id, b.x, b.z);
-    function frei(x, y, z){ var f = SC.BLOECKE[w.holeBlock(x, y, z)], k = SC.BLOECKE[w.holeBlock(x, y + 1, z)], u = w.holeBlock(x, y - 1, z); return !f.fest && !k.fest && w.holeBlock(x, y, z) !== SC.B.LAVA && w.holeBlock(x, y, z) !== SC.B.WASSER && SC.BLOECKE[u].fest && u !== SC.B.LAVA; }
+    function frei(x, y, z){ var f = SC.BLOECKE[w.holeBlock(x, y, z)], k = SC.BLOECKE[w.holeBlock(x, y + 1, z)], u = w.holeBlock(x, y - 1, z); return !f.fest && !k.fest && !SC.Fluessig.art(w.holeBlock(x, y, z)) && SC.BLOECKE[u].fest && !SC.Fluessig.istLava(u); }
     var zellen = [[b.x, b.z], [fuss.x, fuss.z]];
     for(var i = 0; i < zellen.length; i++) for(var dx = -1; dx <= 1; dx++) for(var dz = -1; dz <= 1; dz++){
       if(!dx && !dz) continue;

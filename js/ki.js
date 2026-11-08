@@ -152,7 +152,7 @@ SC.KI = {};
   // ctx: { spieler: [{ pos }] } für Wildtiere. Liefert Aktionen wie SC.KI.schritt (hier zunächst keine).
   function tierGefahr(welt, x, y, z){
     var ix = Math.floor(x), iz = Math.floor(z), id = welt.holeBlock(ix, Math.floor(y + 0.1), iz), u = welt.holeBlock(ix, Math.floor(y - 0.5), iz);
-    return id === SC.B.LAVA || id === SC.B.WASSER || u === SC.B.LAVA || u === SC.B.WASSER;
+    return !!SC.Fluessig.art(id) || !!SC.Fluessig.art(u);
   }
   SC.KI.tierGefahr = tierGefahr;
   // Begleiter neben den Besitzer setzen (n = laufende Nummer, damit mehrere Tiere nicht aufeinander stehen)

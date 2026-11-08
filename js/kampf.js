@@ -177,12 +177,12 @@ SC.Kampf = function(welt, spieler, daten, zf){
   // Erfahrung und Beute für einen besiegten Gegner würfeln (ohne sie zu verbuchen); im Raum einmal für alle
   // Nächstes Ufer um pos (Ringe bis r): fester Block, der keine Lava ist, darüber zwei freie Blöcke ohne Lava → Standposition oder null
   SC.Kampf.ufer = function(welt, pos, r){
-    var P = welt.planet.groesse, L = SC.B.LAVA;
+    var P = welt.planet.groesse, L = SC.Fluessig.istLava;
     for(var d = 1; d <= r; d++) for(var k = 0, n = Math.max(8, d * 6); k < n; k++){
       var a = k / n * Math.PI * 2, x = Math.floor(SC.mod(pos[0] + Math.sin(a) * d, P)), z = Math.floor(SC.mod(pos[2] + Math.cos(a) * d, P));
       for(var y = Math.floor(pos[1]) + 4; y >= Math.floor(pos[1]) - 6; y--){
         var b = welt.holeBlock(x, y, z), o1 = welt.holeBlock(x, y + 1, z), o2 = welt.holeBlock(x, y + 2, z);
-        if(SC.BLOECKE[b].fest && b !== L && !SC.BLOECKE[o1].fest && !SC.BLOECKE[o2].fest && o1 !== L && o2 !== L) return [x + 0.5, y + 1, z + 0.5];
+        if(SC.BLOECKE[b].fest && !L(b) && !SC.BLOECKE[o1].fest && !SC.BLOECKE[o2].fest && !L(o1) && !L(o2)) return [x + 0.5, y + 1, z + 0.5];
       }
     }
     return null;

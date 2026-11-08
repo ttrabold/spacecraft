@@ -42,7 +42,7 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     if(this.modus !== "kreativ" && !zus) this.fliegt = false;
 
     var fb = SC.BLOECKE[welt.holeBlock(this.pos[0], this.pos[1] + 0.4, this.pos[2])];
-    this.imWasser = !!fb && (fb.id === SC.B.WASSER || fb.id === SC.B.LAVA); this.imLava = !!fb && fb.id === SC.B.LAVA; // in Lava schwimmt man wie in Wasser
+    this.imWasser = !!fb && !!SC.Fluessig.art(fb.id); this.imLava = !!fb && SC.Fluessig.istLava(fb.id); // in Lava schwimmt man wie in Wasser
     // Leiter: wer in einem Kletterblock steht (Füße oder Brust), hängt dort statt zu fallen
     var kb1 = SC.BLOECKE[welt.holeBlock(this.pos[0], this.pos[1] + 0.4, this.pos[2])], kb2 = SC.BLOECKE[welt.holeBlock(this.pos[0], this.pos[1] + 1.2, this.pos[2])];
     this.klettert = !this.fliegt && !!((kb1 && kb1.klettern) || (kb2 && kb2.klettern));
@@ -102,7 +102,7 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     if(spieler.modus === "zuschauer") return false;
     if(y < 1 || y >= SC.CHUNK.H) return false;
     var vorhanden = welt.holeBlock(x, y, z);
-    if(vorhanden !== SC.B.LUFT && vorhanden !== SC.B.WASSER) return false;
+    if(vorhanden !== SC.B.LUFT && !SC.Fluessig.istWasser(vorhanden) && !(SC.Fluessig.istLava(vorhanden) && !SC.Fluessig.quelle(vorhanden))) return false;   // auch in fließende Lava (Dämme)
     if(id !== undefined && !SC.BLOECKE[id].fest) return true;
     var P = welt.planet.groesse, p = spieler.pos;
     // Abstand auf dem Ring, damit es auch am Rand stimmt

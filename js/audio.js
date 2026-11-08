@@ -53,7 +53,7 @@ SC.Klang = {};
     if([B.GLAS, B.LEUCHT_CYAN, B.LEUCHT_PINK, B.LEUCHT_GRUEN].indexOf(id) >= 0) return "glas";
     if([B.METALL, B.METALLGITTER, B.TECHNIK].indexOf(id) >= 0) return "metall";
     if([B.SAND, B.SCHNEE].indexOf(id) >= 0) return "sand";
-    if(id === B.WASSER) return "wasser";
+    if(SC.Fluessig.istWasser(id)) return "wasser";
     return "erde";
   };
 

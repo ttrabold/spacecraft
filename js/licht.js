@@ -4,7 +4,7 @@ SC.Licht = {};
 (function(){
   var M = 14, R = 16 + 2 * M, H = SC.CHUNK.H, RR = R * R;
   var opak = new Uint8Array(256), leuchten = new Uint8Array(256), daempf = new Uint8Array(256);
-  for(var id in SC.BLOECKE){ var b = SC.BLOECKE[id]; opak[id] = b.fest && !b.durchsichtig ? 1 : 0; leuchten[id] = b.leuchten; daempf[id] = id == SC.B.WASSER ? 2 : id == SC.B.BLAETTER ? 1 : 0; }
+  for(var id in SC.BLOECKE){ var b = SC.BLOECKE[id]; opak[id] = b.fest && !b.durchsichtig ? 1 : 0; leuchten[id] = b.leuchten; daempf[id] = SC.Fluessig.istWasser(+id) ? 2 : id == SC.B.BLAETTER ? 1 : 0; }
   SC.Licht.opak = opak;
 
   function ri(x, y, z){ return (y * R + z) * R + x; }

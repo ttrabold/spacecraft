@@ -161,7 +161,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   function boden(welt, pos){
     for(var y = Math.floor(pos[1] + 0.5); y > pos[1] - 24 && y > 0; y--){
       var b = SC.BLOECKE[welt.holeBlock(pos[0], y - 1, pos[2])];
-      if(b && (b.fest || b.id === SC.B.WASSER || b.id === SC.B.LAVA)) return y; // der Gleiter schwebt auch über Lava
+      if(b && (b.fest || SC.Fluessig.art(b.id))) return y; // der Gleiter schwebt auch über Lava
     }
     return -Infinity;
   }
@@ -271,8 +271,8 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
     var d = SC.FAHRZEUGE[art], P = welt.planet.groesse;
     for(var r = rMin; r <= rMax; r++) for(var k = 0, n = r ? 16 : 1; k < n; k++){
       var a = k / n * Math.PI * 2, px = SC.mod(Math.floor(x + Math.sin(a) * r), P) + 0.5, pz = SC.mod(Math.floor(z + Math.cos(a) * r), P) + 0.5, y = SC.CHUNK.H - 2;
-      while(y > 1 && !SC.BLOECKE[welt.holeBlock(px, y - 1, pz)].fest && welt.holeBlock(px, y - 1, pz) !== SC.B.WASSER) y--;
-      if(welt.holeBlock(px, y - 1, pz) === SC.B.WASSER) continue;
+      while(y > 1 && !SC.BLOECKE[welt.holeBlock(px, y - 1, pz)].fest && !SC.Fluessig.istWasser(welt.holeBlock(px, y - 1, pz))) y--;
+      if(SC.Fluessig.istWasser(welt.holeBlock(px, y - 1, pz))) continue;
       var p = [px, y + (d.schwebt || 0), pz];
       if(frei(welt, p, d.breite, d.hoehe)) return p;
     }
@@ -311,7 +311,7 @@ SC.Fahrzeug = { SCHWERKRAFT: 32 };
   // Nur im geladenen Bereich: holeBlock würde den Chunk eines fernen Fahrzeugs erzeugen, die Darstellung ihn wieder entladen – jedes Bild von vorn (auf dem iPad über 100 ms)
   F.inLava = function(welt, f){
     if(welt.istGeladen && !welt.istGeladen(welt.planet.wickel(Math.floor(f.pos[0])) >> 4, welt.planet.wickel(Math.floor(f.pos[2])) >> 4)) return false;
-    return welt.holeBlock(f.pos[0], f.pos[1] + 0.3, f.pos[2]) === SC.B.LAVA;
+    return SC.Fluessig.istLava(welt.holeBlock(f.pos[0], f.pos[1] + 0.3, f.pos[2]));
   };
   F.sichereStart = function(welt, startpunkt){
     if(welt.fahrzeuge.has("start") || !startpunkt) return;

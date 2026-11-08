@@ -12,6 +12,8 @@ SC.B = {
   LEITER_N: 49, LEITER_S: 50, LEITER_O: 51, LEITER_W: 52, TUER_X: 53, TUER_Z: 54, TUER_X_OFFEN: 55, TUER_Z_OFFEN: 56, TRUHE: 57,
   TUER_X_OBEN: 58, TUER_Z_OBEN: 59, TUER_X_OFFEN_OBEN: 60, TUER_Z_OFFEN_OBEN: 61,   // obere Türhälften (die Tür ist zwei Blöcke hoch)
   // Betten: Fuß und Kopf je Richtung; N/S/O/W sagt, auf welcher Seite des Fußes der Kopf liegt (Norden = z−1)
+  // Wasser und Lava fließen (Spec 2026-11-08): Fließstufen und fallendes Wasser/Lava; WASSER (8) und LAVA (29) bleiben die Quellen
+  WASSER_1: 73, WASSER_2: 74, WASSER_3: 75, WASSER_4: 76, WASSER_5: 77, WASSER_6: 78, WASSER_7: 79, WASSER_FALL: 80, LAVA_1: 81, LAVA_2: 82, LAVA_3: 83, LAVA_FALL: 84,
   NETZ: 71, TIERFUTTER: 72, ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
@@ -125,10 +127,36 @@ SC.BLOECKE = {};
     [SC.B.ZAUBERKUGEL, "zauberkugel", { oben: "zauber_tisch_oben", seite: "zauber_tisch", unten: "zauber_tisch", kugel: "zauber_kugel" }, true, true, 9, [0.7, 0.5, 1.0], true, true, { form: ZAUBER }],
     [SC.B.TRUHE, "truhe", { oben: "truhe_oben", seite: "truhe_seite", unten: "truhe_seite" }, true, false, 0, null, true, true]
   ];
+  // Fließstufen: wie die Quelle, aber nicht in der Auswahl; stufe 1 (fast leer) … MAX − 1, fallend = voller Strahl nach unten
+  [["wasser", SC.B.WASSER, 7, "WASSER_"], ["lava", SC.B.LAVA, 3, "LAVA_"]].forEach(function(f){
+    var q = D.filter(function(d){ return d[0] === f[1]; })[0], zusatz = q[9] || {};
+    function eintrag(id, stufe, fallend){ var z = {}; for(var k in zusatz) z[k] = zusatz[k]; z.fluessig = f[0]; z.stufe = stufe; z.fallend = fallend; return [id, q[1], q[2], q[3], q[4], q[5], q[6], false, false, z]; }
+    q[9] = Object.assign({}, zusatz, { fluessig: f[0], stufe: f[2] + 1, quelle: true });
+    for(var s = 1; s <= f[2]; s++) D.push(eintrag(SC.B[f[3] + s], s, false));
+    D.push(eintrag(SC.B[f[3] + "FALL"], f[2] + 1, true));
+  });
   D.forEach(function(d){
     var b = SC.BLOECKE[d[0]] = { id: d[0], name: SC.T.bloecke[d[1]], seiten: d[2], fest: d[3], durchsichtig: d[4], leuchten: d[5], lichtFarbe: d[6], zerstoerbar: d[7], inAuswahl: d[8], form: "wuerfel", klettern: false, ausschnitt: false };   // ausschnitt: durchsichtig für Licht und Flächen, Kachel nur mit Löchern oder deckend – gezeichnet mit Tiefenpuffer
     if(d[9]) for(var k in d[9]) b[k] = d[9][k];
   });
+})();
+
+// Flüssigkeiten: Art, Stufe, Quelle, Höhe der Oberfläche; MAX = Stufe der Quelle (Weite zur Seite = MAX − 1)
+SC.Fluessig = (function(){
+  var MAX = { wasser: 8, lava: 4 }, ID = { wasser: {}, lava: {} };
+  for(var id in SC.BLOECKE){ var b = SC.BLOECKE[id]; if(b.fluessig) ID[b.fluessig][b.fallend ? "f" : b.stufe] = +id; }
+  function def(id){ return SC.BLOECKE[id]; }
+  return {
+    MAX: MAX,
+    art: function(id){ var b = def(id); return b && b.fluessig || null; },
+    istWasser: function(id){ var b = def(id); return !!b && b.fluessig === "wasser"; },
+    istLava: function(id){ var b = def(id); return !!b && b.fluessig === "lava"; },
+    quelle: function(id){ var b = def(id); return !!b && !!b.quelle; },
+    fallend: function(id){ var b = def(id); return !!b && !!b.fallend; },
+    stufe: function(id){ var b = def(id); return b && b.fluessig ? b.stufe : 0; },
+    id: function(art, stufe, fallend){ return ID[art][fallend ? "f" : stufe]; },
+    hoehe: function(id){ var b = def(id); return !b || !b.fluessig ? 0 : b.quelle || b.fallend ? 1 : b.stufe / MAX[b.fluessig]; }
+  };
 })();
 
 // Kristallfarben für Laserschwerter und Blaster (Stufe 6a): Schlüssel → Block und Farbe der Klinge/des Strahls

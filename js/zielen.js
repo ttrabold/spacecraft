@@ -1,4 +1,4 @@
-// Anvisierten Block finden: Voxel-Strahl nach Amanatides/Woo. Luft und Wasser zählen nicht.
+// Anvisierten Block finden: Voxel-Strahl nach Amanatides/Woo. Luft, Wasser und fließende Lava zählen nicht.
 SC.zielen = function(welt, start, r, reichweite){
   reichweite = reichweite || 6;
   var x = Math.floor(start[0]), y = Math.floor(start[1]), z = Math.floor(start[2]);
@@ -9,7 +9,7 @@ SC.zielen = function(welt, start, r, reichweite){
   var nx = 0, ny = 0, nz = 0, t = 0;
   while(t <= reichweite){
     var id = welt.holeBlock(x, y, z);
-    if(id !== SC.B.LUFT && id !== SC.B.WASSER && (nx || ny || nz))
+    if(id !== SC.B.LUFT && !SC.Fluessig.istWasser(id) && !(SC.Fluessig.istLava(id) && !SC.Fluessig.quelle(id)) && (nx || ny || nz))
       return { x: welt.planet.wickel(x), y: y, z: welt.planet.wickel(z), nx: nx, ny: ny, nz: nz };
     if(tx < ty && tx < tz){ x += sx; t = tx; tx += dx; nx = -sx; ny = 0; nz = 0; }
     else if(ty < tz){ y += sy; t = ty; ty += dy; nx = 0; ny = -sy; nz = 0; }

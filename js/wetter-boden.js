@@ -30,7 +30,8 @@ SC.WetterBoden.VERSUCHE = 20;       // so viele Stellen prüft das Wetter je gew
   // Über (x, y, z) bis zum Himmel nur Luft? (Blätter und alles andere sind ein Dach)
   SC.WetterBoden.freierHimmel = function(welt, x, y, z){ for(var yy = y; yy < H; yy++) if(hole(welt, x, yy, z) !== B.LUFT) return false; return true; };
   // Mulde: Boden auf der Höhe, die der Generator erzeugt, natürlicher Bodenblock, darüber freier Himmel; kein Nachbar tiefer (sonst liefe es ab), mindestens einer höher → Bodenhöhe oder null
-  function nachbarn(welt, x, y, z){ var hoch = 0, tief = false; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ if(SC.BLOECKE[hole(welt, x + d[0], y + 1, z + d[1])].fest) hoch++; else if(!SC.BLOECKE[hole(welt, x + d[0], y, z + d[1])].fest) tief = true; }); return { hoch: hoch, tief: tief }; }
+  // höher zählt nur natürliches Gelände (Generatorhöhe des Nachbarn über y), nicht eine gebaute Wand
+  function nachbarn(welt, x, y, z){ var hoch = 0, tief = false; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ if(SC.BLOECKE[hole(welt, x + d[0], y + 1, z + d[1])].fest){ if(welt.generator.hoehe(welt.planet.wickel(x + d[0]), welt.planet.wickel(z + d[1])) > y) hoch++; } else if(!SC.BLOECKE[hole(welt, x + d[0], y, z + d[1])].fest) tief = true; }); return { hoch: hoch, tief: tief }; }
   function naturBoden(welt, x, z){ if(!geladen(welt, x, z)) return null; var y = welt.generator.hoehe(welt.planet.wickel(x), welt.planet.wickel(z)); return BODEN[hole(welt, x, y, z)] && SC.WetterBoden.freierHimmel(welt, x, y + 1, z) ? y : null; }
   // Flacher natürlicher Boden (kein Nachbar höher oder tiefer): sinkt bei Unwetter zur Pfütze ein → Bodenhöhe oder null
   SC.WetterBoden.flach = function(welt, x, z){ var y = naturBoden(welt, x, z); if(y === null) return null; var n = nachbarn(welt, x, y, z); return !n.tief && n.hoch === 0 ? y : null; };
@@ -84,7 +85,7 @@ SC.WetterBoden.VERSUCHE = 20;       // so viele Stellen prüft das Wetter je gew
     this._trocknet = !eff.niederschlag && eff.seitEnde >= SC.WETTER.TROCKNEN;
     if(eff.niederschlag === "regen" && eff.pfuetzen > 0){
       this._regen = Math.min(this._regen + eff.pfuetzen / 60, n);
-      var regenQ = this.spuren.filter(function(sp){ return sp[4] === B.WASSER; }).length;
+      var regenQ = this.spuren.filter(function(sp){ return sp[4] === B.WASSER && geladen(w, sp[0], sp[2]); }).length;   // nur hier geladene zählen (ferne trocknen erst, wenn man zurückkommt)
       for(; this._regen >= 1 && n > 0 && regenQ < SC.WetterBoden.MAX_PFUETZEN; this._regen--){
         for(var v = 0; v < SC.WetterBoden.VERSUCHE; v++){   // mehrere Stellen prüfen, bis eine Mulde passt
           var c = this._spalte(orte), y = SC.WetterBoden.mulde(w, c[0], c[1]);

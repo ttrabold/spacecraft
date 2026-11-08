@@ -62,7 +62,8 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
     if(this.klettert) tempo *= 0.5;
     // Strömung schiebt mit: zum Ziel addiert, damit sie sich auf Eis nicht Bild für Bild aufsummiert
     var st = this.imWasser && !this.fliegt && !zus ? SC.Fluss.stroemung(welt, this.pos[0], this.pos[1] + 0.4, this.pos[2]) : [0, 0];
-    if(this.wind && !this.imWasser && !this.fliegt && !zus){ var wl = Math.hypot(this.wind[0], this.wind[1]), wm = 0.5 * F.laufen, wk = wl > wm ? wm / wl : 1; st = [st[0] + this.wind[0] * wk, st[1] + this.wind[1] * wk]; }   // Wind (vom Spiel gesetzt, nur unter freiem Himmel), höchstens halbes Gehtempo
+    if(this.wind && l > 0 && !this.imWasser && !this.fliegt && !zus){   // Wind nur beim Laufen: wer stehen bleibt (z. B. am Lavaufer), wird nicht geschoben
+      var wl = Math.hypot(this.wind[0], this.wind[1]), wm = 0.5 * F.laufen, wk = wl > wm ? wm / wl : 1; st = [st[0] + this.wind[0] * wk, st[1] + this.wind[1] * wk]; }   // Wind (vom Spiel gesetzt, nur unter freiem Himmel), höchstens halbes Gehtempo
     if(unter === SC.B.EIS){ var k = Math.min(1, 3 * dt); this.geschw[0] += (vx * tempo + st[0] - this.geschw[0]) * k; this.geschw[2] += (vz * tempo + st[1] - this.geschw[2]) * k; }
     else { this.geschw[0] = vx * tempo + st[0]; this.geschw[2] = vz * tempo + st[1]; }
     // Ausweichen: kurzer Schub zusätzlich zur Laufrichtung

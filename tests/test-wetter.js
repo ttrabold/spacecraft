@@ -48,7 +48,8 @@ test("Schneeschicht: abgelehnter Gast-Block kommt zurück", function(){ var rs =
 function wbWelt(){
   var w = leereWelt(), g = w.generator, h = {};
   for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++){ var y = g.hoehe(x, z); h[x + "," + z] = y; w.setzeBlock(x, y, z, SC.B.GRAS, "system"); w.setzeBlock(x, y - 1, z, SC.B.ERDE, "system"); w.setzeBlock(x, y - 2, z, SC.B.ERDE, "system"); w.setzeBlock(x, y - 3, z, SC.B.STEIN, "system"); }
-  var m = h["8,8"]; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ w.setzeBlock(8 + d[0], m + 1, 8 + d[1], SC.B.GRAS, "system"); });
+  var m = h["8,8"], echt = g.hoehe.bind(g), hoch = {}; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ w.setzeBlock(8 + d[0], m + 1, 8 + d[1], SC.B.GRAS, "system"); hoch[(8 + d[0]) + "," + (8 + d[1])] = 1; });
+  g.hoehe = function(x, z){ return hoch[x + "," + z] ? m + 1 : echt(x, z); };   // die Grube ist natürliches Gelände: Generator kennt die höheren Ränder
   return { w: w, m: m, pd: { wetterSpuren: [] } };
 }
 function wbEff(o){ var e = { niederschlag: null, pfuetzen: 0, einsinken: false, schneeRate: 0, seitEnde: 0 }; for(var k in o) e[k] = o[k]; return e; }
@@ -145,11 +146,12 @@ test("Auftauchen: Regen weniger Wildtiere, mehr Frösche", function(){
   wahr(regen[i] / regen[h] > klar[i] / klar[h] * 2, "Frosch relativ häufiger"); gleich(SC.Auftauchen.tierGrenze(1, auEff("regen")), Math.floor(SC.Wesen.GRENZE.tier * SC.WETTER.ARTEN.regen.tiere));
 });
 test("Wind: schiebt, man kommt dagegen an, auf Eis begrenzt", function(){
-  var w = flWelt(), s = new SC.Spieler({ id: "a", pos: [8.5, 64, 8.5], blick: [0, 0], modus: "survival" }); s.wind = [1.5, 0];
-  for(var i = 0; i < 10; i++) s.schritt(w, flRuhe, 0.05); wahr(s.pos[0] > 8.8, "treibt: " + s.pos[0]);
+  var w = flWelt(), s = new SC.Spieler({ id: "a", pos: [8.5, 64, 12.5], blick: [0, 0], modus: "survival" }); s.wind = [1.5, 0];
+  for(var i = 0; i < 10; i++) s.schritt(w, Object.assign({}, flRuhe, { vor: true }), 0.05); wahr(s.pos[0] > 8.8, "wer läuft, wird vom Wind versetzt: " + s.pos[0]);
+  var st = new SC.Spieler({ id: "d", pos: [4.5, 64, 4.5], blick: [0, 0], modus: "survival" }); st.wind = [2, 0]; for(var i2 = 0; i2 < 20; i2++) st.schritt(w, flRuhe, 0.05); gleich(st.pos[0], 4.5, "wer stehen bleibt, wird nicht geschoben (z. B. am Lavaufer)");
   var g = new SC.Spieler({ id: "b", pos: [12.5, 64, 4.5], blick: [Math.PI / 2, 0], modus: "survival" }); g.wind = [5, 0]; for(var j = 0; j < 10; j++) g.schritt(w, Object.assign({}, flRuhe, { vor: true }), 0.05); wahr(g.pos[0] < 12.3, "gegen den Sturm: " + g.pos[0]);
   for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++) w.setzeBlock(x, 63, z, SC.B.EIS, "system"); var e = new SC.Spieler({ id: "c", pos: [8.5, 64, 12.5], blick: [0, 0], modus: "survival" }), max = 0; e.wind = [5, 0];
-  for(var k = 0; k < 40; k++){ e.schritt(w, flRuhe, 0.05); max = Math.max(max, Math.abs(e.geschw[0])); } wahr(max <= 0.5 * SC.PHYSIK.laufen + 0.01, "begrenzt: " + max);
+  for(var k = 0; k < 40; k++){ e.schritt(w, Object.assign({}, flRuhe, { vor: true }), 0.05); max = Math.max(max, Math.abs(e.geschw[0])); } wahr(max <= 0.5 * SC.PHYSIK.laufen + 0.01, "begrenzt: " + max);
 });
 test("Blitz: trifft hohe Stelle, nie näher als 6 an Spieler oder Tier", function(){
   var w = fzWelt(), ort = [100.5, 60, 100.5], P = w.planet.groesse;
@@ -216,4 +218,14 @@ test("Boden: eine höhere Seite reicht; bei Unwetter sinkt auch flacher Boden zu
   gleich(SC.WetterBoden.mulde(f.w, 8, 8), null, "flach ist keine Mulde"); gleich(SC.WetterBoden.flach(f.w, 8, 8), f.m, "aber flach");
   var b = new SC.WetterBoden(f.w, f.pd, SC.zufall(1)); b.radius = 0; wbTakte(b, 3, wbEff({ niederschlag: "regen", pfuetzen: 60 })); gleich(f.w.holeBlock(8, f.m, 8), SC.B.GRAS, "normaler Regen: flach bleibt");
   wbTakte(b, 3, wbEff({ niederschlag: "regen", pfuetzen: 60, einsinken: true })); gleich(f.w.holeBlock(8, f.m, 8), SC.B.WASSER, "Unwetter: Boden sinkt zur Pfütze ein");
+});
+test("Boden: Gras neben gebauten Wänden ist keine Mulde", function(){
+  var t = wbWelt(), g = t.w.generator; g.hoehe = (function(){ var echt = g.hoehe; return function(x, z){ return x === 3 && z === 3 ? t.m : echt(x, z); }; })();
+  [[2, 3], [4, 3], [3, 2], [3, 4]].forEach(function(p){ t.w.setzeBlock(p[0], t.m, p[1], SC.B.GRAS, "system"); t.w.setzeBlock(p[0], t.m + 1, p[1], SC.B.STEIN, "spieler"); }); t.w.setzeBlock(3, t.m, 3, SC.B.GRAS, "system"); t.w.setzeBlock(3, t.m + 1, 3, SC.B.LUFT, "system");
+  var h0 = g.hoehe; g.hoehe = function(x, z){ return [[2, 3], [4, 3], [3, 2], [3, 4]].some(function(p){ return p[0] === x && p[1] === z; }) ? t.m : h0(x, z); };   // Nachbarn natürlich gleich hoch, die Wände gebaut
+  gleich(SC.WetterBoden.mulde(t.w, 3, 3), null, "ummauertes Gras");
+});
+test("Boden: Pfützen in ungeladenen Gegenden zählen nicht zur Obergrenze", function(){
+  var t = wbWelt(); for(var i = 0; i < SC.WetterBoden.MAX_PFUETZEN + 5; i++) t.pd.wetterSpuren.push([100 + i, 70, 100, SC.B.LUFT, SC.B.WASSER]);   // weit weg, nicht geladen
+  var b = new SC.WetterBoden(t.w, t.pd, SC.zufall(1)); b.radius = 0; wbTakte(b, 5, wbEff({ niederschlag: "regen", pfuetzen: 60 })); gleich(t.w.holeBlock(8, t.m + 1, 8), SC.B.WASSER, "hier regnet es trotzdem");
 });

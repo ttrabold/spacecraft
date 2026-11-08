@@ -24,3 +24,14 @@ test("Licht: fließendes Wasser dämpft wie Wasser", function(){
   function unter(id){ var w = flWelt(); for(var y = 64; y < 70; y++) w.setzeBlock(5, y, 5, id, "system"); return SC.Licht.chunk(w, 0, 0).himmel[SC.idx(5, 64, 5)]; }
   gleich(unter(SC.B.WASSER_6), unter(SC.B.WASSER));
 });
+function flMesh(w){ return SC.Mesher.chunk(w, 0, 0, SC.Licht.chunk(w, 0, 0)); }
+function flMaxY(g){ var m = -1e9; for(var i = 1; i < g.positionen.length; i += 3) m = Math.max(m, g.positionen[i]); return m; }
+test("Mesher: fließendes Wasser ist niedriger", function(){
+  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.WASSER_4, "system"); wahr(flMaxY(flMesh(w).durchsichtig) <= 64.51, "Stufe 4 halb hoch: " + flMaxY(flMesh(w).durchsichtig));
+  var q = leereWelt(); q.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); gleich(flMaxY(flMesh(q).durchsichtig), 65, "Quelle wie bisher");
+});
+test("Mesher: keine Fläche zwischen Wasserstufen", function(){
+  var a = leereWelt(); a.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); a.setzeBlock(6, 64, 5, SC.B.WASSER_7, "system");
+  var b = leereWelt(); b.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); b.setzeBlock(6, 64, 5, SC.B.WASSER, "system");
+  gleich(flMesh(a).durchsichtig.indizes.length, flMesh(b).durchsichtig.indizes.length);
+});

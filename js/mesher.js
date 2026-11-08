@@ -24,8 +24,8 @@ SC.Mesher = {};
   ];
   var AO = [1, 0.78, 0.62, 0.5];
 
-  var fest = new Uint8Array(256), durch = new Uint8Array(256);
-  for(var id in SC.BLOECKE){ var b = SC.BLOECKE[id]; fest[id] = b.fest ? 1 : 0; durch[id] = b.durchsichtig ? 1 : 0; }
+  var fest = new Uint8Array(256), durch = new Uint8Array(256), fart = new Uint8Array(256), fhoehe = new Float32Array(256);   // fart: 1 Wasser, 2 Lava (Fließstufen gehören zusammen), fhoehe: Oberfläche
+  for(var id in SC.BLOECKE){ var b = SC.BLOECKE[id]; fest[id] = b.fest ? 1 : 0; durch[id] = b.durchsichtig ? 1 : 0; fart[id] = b.fluessig === "wasser" ? 1 : b.fluessig === "lava" ? 2 : 0; fhoehe[id] = fart[id] ? SC.Fluessig.hoehe(+id) : 1; }
   var opak = SC.Licht.opak;
 
   function Puffer(){ this.p = []; this.uv = []; this.l = []; this.f = []; this.i = []; this.n = 0; }
@@ -116,13 +116,13 @@ SC.Mesher = {};
         // Fläche nur zeichnen, wenn der Nachbar sie nicht verdeckt
         if(nb !== SC.B.LUFT){
           if(opak[nb]) continue;
-          if(nb === id) continue;
+          if(nb === id || (fart[id] && fart[nb] === fart[id])) continue;   // Wasserstufen untereinander: keine Fläche
           if(dt && fest[nb] && !durch[nb]) continue;
         }
-        var uv = SC.Mesher.uvFuer(def.seiten[F.s]), basis = puf.n;
+        var uv = SC.Mesher.uvFuer(def.seiten[F.s]), basis = puf.n, oh = fhoehe[id];
         for(var e = 0; e < 4; e++){
           var c = F.e[e];
-          puf.p.push(x + c[0], y + c[1], z + c[2]);
+          puf.p.push(x + c[0], y + (c[1] ? oh : 0), z + c[2]);   // Fließstufen: Oberfläche niedriger
           puf.uv.push(e === 0 || e === 3 ? uv[0] : uv[2], e < 2 ? uv[1] : uv[3]);
           // Nachbarzellen in der Ebene vor der Fläche, zur Ecke hin
           var t = [], s = [0, 0, 0];

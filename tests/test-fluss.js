@@ -35,3 +35,46 @@ test("Mesher: keine Fläche zwischen Wasserstufen", function(){
   var b = leereWelt(); b.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); b.setzeBlock(6, 64, 5, SC.B.WASSER, "system");
   gleich(flMesh(a).durchsichtig.indizes.length, flMesh(b).durchsichtig.indizes.length);
 });
+function flB(w, x, y, z){ return w.holeBlock(x, y, z); }
+test("Fluss: Wasser breitet sich 7 Blöcke weit aus", function(){
+  var w = flWelt(), f = new SC.Fluss(w); w.setzeBlock(4, 64, 8, SC.B.WASSER, "system"); f.bisRuhe(500);
+  gleich(flB(w, 5, 64, 8), SC.B.WASSER_7); gleich(flB(w, 11, 64, 8), SC.B.WASSER_1); gleich(flB(w, 12, 64, 8), SC.B.LUFT); gleich(flB(w, 4, 64, 15), SC.B.WASSER_1); gleich(flB(w, 4, 65, 8), SC.B.LUFT);
+});
+test("Fluss: Lava nur 3 weit, Wasser 4-mal so schnell", function(){
+  var w = flWelt(), f = new SC.Fluss(w); w.setzeBlock(8, 64, 8, SC.B.LAVA, "system"); w.setzeBlock(2, 64, 2, SC.B.WASSER, "system");
+  f.schritt(0.25); gleich(flB(w, 9, 64, 8), SC.B.LUFT, "Lava nach 0,25 s noch nicht"); gleich(flB(w, 3, 64, 2), SC.B.WASSER_7, "Wasser nach 0,25 s");
+  f.schritt(0.75); gleich(flB(w, 9, 64, 8), SC.B.LAVA_3, "Lava nach 1 s"); gleich(flB(w, 10, 64, 8), SC.B.LUFT, "genau einen Block");
+  f.bisRuhe(500); gleich(flB(w, 11, 64, 8), SC.B.LAVA_1); gleich(flB(w, 12, 64, 8), SC.B.LUFT);
+});
+test("Fluss: Wasser fällt die Stufe hinunter und läuft dorthin", function(){
+  var w = flWelt(), f = new SC.Fluss(w);
+  for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++){ if(x >= 8) w.setzeBlock(x, 63, z, SC.B.LUFT, "system"); w.setzeBlock(x, 60, z, SC.B.STEIN, "system"); }   // Stufe bei x = 8, Boden unten durchgehend
+  w.setzeBlock(6, 64, 8, SC.B.WASSER, "system"); f.bisRuhe(2000);
+  gleich(flB(w, 8, 64, 8), SC.B.WASSER_6); gleich(flB(w, 8, 62, 8), SC.B.WASSER_FALL); gleich(flB(w, 8, 61, 8), SC.B.WASSER_FALL); gleich(flB(w, 9, 61, 8), SC.B.WASSER_7);
+  gleich(flB(w, 5, 64, 8), SC.B.LUFT, "läuft zum Abhang, nicht zurück");
+});
+test("Fluss: Quelle weg, Strom läuft aus; Damm stoppt ihn", function(){
+  var w = flWelt(), f = new SC.Fluss(w); w.setzeBlock(4, 64, 8, SC.B.WASSER, "system"); f.bisRuhe(500);
+  w.setzeBlock(6, 64, 8, SC.B.STEIN, "spieler"); f.bisRuhe(500); gleich(flB(w, 7, 64, 8), SC.B.WASSER_3, "um den Damm herum (5 Blöcke Weg)"); gleich(flB(w, 11, 64, 8), SC.B.LUFT, "hinter dem Damm leer");
+  w.setzeBlock(4, 64, 8, SC.B.LUFT, "spieler"); f.bisRuhe(500);
+  var rest = 0; for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++) if(SC.Fluessig.art(flB(w, x, 64, z))) rest++; gleich(rest, 0, "kein Wasser mehr");
+});
+test("Fluss: neue Quelle zwischen zwei Quellen, See läuft nicht leer", function(){
+  var w = flWelt(), f = new SC.Fluss(w); w.setzeBlock(6, 64, 8, SC.B.WASSER, "system"); w.setzeBlock(8, 64, 8, SC.B.WASSER, "system"); f.bisRuhe(500);
+  gleich(flB(w, 7, 64, 8), SC.B.WASSER, "Lücke wird Quelle");
+  var s = flWelt(), g = new SC.Fluss(s); for(var x = 4; x < 8; x++) for(var z = 4; z < 8; z++) s.setzeBlock(x, 64, z, SC.B.WASSER, "system");
+  g.bisRuhe(1000); s.setzeBlock(9, 62, 5, SC.B.STEIN, "system"); s.setzeBlock(9, 63, 5, SC.B.LUFT, "spieler"); g.bisRuhe(1000);
+  var q = 0; for(x = 4; x < 8; x++) for(z = 4; z < 8; z++) if(flB(s, x, 64, z) === SC.B.WASSER) q++; gleich(q, 16, "alle Quellen bleiben");
+  wahr(SC.Fluessig.istWasser(flB(s, 9, 63, 5)), "Loch füllt sich");
+});
+test("Fluss: Lava trifft Wasser, Basalt entsteht", function(){
+  var w = flWelt(), f = new SC.Fluss(w); w.setzeBlock(5, 64, 5, SC.B.LAVA, "system"); w.setzeBlock(7, 64, 5, SC.B.WASSER, "system"); f.bisRuhe(500);
+  gleich(flB(w, 5, 64, 5), SC.B.BASALT); gleich(flB(w, 7, 64, 5), SC.B.WASSER, "Wasser bleibt");
+  var r = 0; for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++) if(SC.Fluessig.istLava(flB(w, x, 64, z))) r++; gleich(r, 0, "keine Lava neben Wasser übrig");
+});
+test("Fluss: lädt keine Chunks", function(){ var w = flWelt(), f = new SC.Fluss(w); w.setzeBlock(15, 64, 8, SC.B.WASSER, "system"); f.bisRuhe(500); gleich(w.istGeladen(1, 0), false); gleich(flB(w, 14, 64, 8), SC.B.WASSER_7); });
+test("Fluss: Grenze je Takt, Rest wartet", function(){
+  var w = flWelt(), f = new SC.Fluss(w); for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z += 2) w.setzeBlock(x, 64, z, SC.B.WASSER, "system");
+  wahr(f.wartend() > SC.Fluss.JE_SCHRITT, "viel zu tun: " + f.wartend()); f.schritt(0.25); wahr(f.zuletzt <= SC.Fluss.JE_SCHRITT && f.zuletzt > 0, "bearbeitet: " + f.zuletzt); wahr(f.wartend() > 0);
+});
+test("Fluss: aus heißt aus", function(){ var w = flWelt(), f = new SC.Fluss(w); f.an = false; w.setzeBlock(4, 64, 8, SC.B.WASSER, "system"); f.schritt(5); gleich(flB(w, 5, 64, 8), SC.B.LUFT); f.abbauen(); });

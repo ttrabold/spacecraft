@@ -44,3 +44,57 @@ test("Schneeschicht: flach, durchgehbar, Block setzen ersetzt sie", function(){
 });
 test("Schneeschicht: ein Schlag, ergibt nichts", function(){ wahr(SC.Abbau.zeit(SC.B.SCHNEESCHICHT) <= 0.2); gleich(SC.Abbau.ergibt(SC.B.SCHNEESCHICHT), null); });
 test("Schneeschicht: abgelehnter Gast-Block kommt zurück", function(){ var rs = new SC.Rucksack(); SC.Raum.blockZurueck(rs, { id: SC.B.STEIN, alt: SC.B.SCHNEESCHICHT }, SC.B.SCHNEESCHICHT); gleich(rs.hat(SC.B.STEIN), 1); });
+// Boden: Welt mit Gelände auf Generatorhöhe in Chunk 0, eine Grube bei (8, 8)
+function wbWelt(){
+  var w = leereWelt(), g = w.generator, h = {};
+  for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++){ var y = g.hoehe(x, z); h[x + "," + z] = y; w.setzeBlock(x, y, z, SC.B.GRAS, "system"); w.setzeBlock(x, y - 1, z, SC.B.ERDE, "system"); w.setzeBlock(x, y - 2, z, SC.B.ERDE, "system"); w.setzeBlock(x, y - 3, z, SC.B.STEIN, "system"); }
+  var m = h["8,8"]; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ w.setzeBlock(8 + d[0], m + 1, 8 + d[1], SC.B.GRAS, "system"); });
+  return { w: w, m: m, pd: { wetterSpuren: [] } };
+}
+function wbEff(o){ var e = { niederschlag: null, pfuetzen: 0, einsinken: false, schneeRate: 0, seitEnde: 0 }; for(var k in o) e[k] = o[k]; return e; }
+function wbTakte(b, n, eff, orte, schutz){ for(var i = 0; i < n; i++) b.schritt(1, eff, orte || [[8.5, 0, 8.5]], schutz || []); }
+test("Boden: Regen füllt nur natürliche Mulden", function(){
+  var t = wbWelt(); gleich(SC.WetterBoden.mulde(t.w, 8, 8), t.m, "Grube ist eine Mulde"); var b = new SC.WetterBoden(t.w, t.pd, SC.zufall(1)); b.radius = 0; wbTakte(b, 20, wbEff({ niederschlag: "regen", pfuetzen: 60 }));
+  gleich(t.w.holeBlock(8, t.m + 1, 8), SC.B.WASSER, "Grube gefüllt");
+  var l = wbWelt(); l.w.setzeBlock(8, l.m, 8, SC.B.LUFT, "spieler"); var bl = new SC.WetterBoden(l.w, l.pd, SC.zufall(1)); bl.radius = 0; wbTakte(bl, 20, wbEff({ niederschlag: "regen", pfuetzen: 60 }));
+  wahr(!SC.Fluessig.art(l.w.holeBlock(8, l.m, 8)) && !SC.Fluessig.art(l.w.holeBlock(8, l.m - 1, 8)), "gegrabenes Loch bleibt trocken");
+  var s = wbWelt(); s.w.setzeBlock(8, s.m, 8, SC.B.STEIN, "spieler"); gleich(SC.WetterBoden.mulde(s.w, 8, 8), null, "Becken aus Stein");
+  var p = wbWelt(), bp = new SC.WetterBoden(p.w, p.pd, SC.zufall(1)); bp.radius = 0; wbTakte(bp, 20, wbEff({ niederschlag: "regen", pfuetzen: 60 }), null, [[10, p.m, 10]]);
+  gleich(p.w.holeBlock(8, p.m + 1, 8), SC.B.LUFT, "nicht neben dem Bett");
+});
+test("Boden: Unwetter senkt Boden unter Pfützen, höchstens 2", function(){
+  var t = wbWelt(), b = new SC.WetterBoden(t.w, t.pd, SC.zufall(2)); b.radius = 0; wbTakte(b, 60, wbEff({ niederschlag: "regen", pfuetzen: 60, einsinken: true }));
+  gleich(t.w.holeBlock(8, t.m, 8), SC.B.WASSER); gleich(t.w.holeBlock(8, t.m - 1, 8), SC.B.WASSER); gleich(t.w.holeBlock(8, t.m - 2, 8), SC.B.ERDE, "höchstens 2 tief");
+});
+function wbBild(w, m){ var a = []; for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++) for(var y = m - 6; y < m + 8; y++) a.push(w.holeBlock(x, y, z)); return a.join(","); }
+test("Boden: nach dem Regen ist alles wie vorher, auch nach Speichern und Laden", function(){
+  var t = wbWelt(), f = new SC.Fluss(t.w), vorher = wbBild(t.w, t.m), b = new SC.WetterBoden(t.w, t.pd, SC.zufall(3)); b.radius = 3;
+  wbTakte(b, 120, wbEff({ niederschlag: "regen", pfuetzen: 60, einsinken: true })); f.bisRuhe(2000); wahr(t.pd.wetterSpuren.length > 0, "Spuren: " + t.pd.wetterSpuren.length);
+  wbTakte(b, 30, wbEff({ seitEnde: 10 })); wahr(t.pd.wetterSpuren.length > 0, "trocknet erst nach TROCKNEN");
+  var pd2 = JSON.parse(JSON.stringify(t.pd)), b2 = new SC.WetterBoden(t.w, pd2, SC.zufall(4)); t.pd = pd2;   // gespeichert und geladen
+  for(var i = 0; i < 400 && pd2.wetterSpuren.length; i++){ wbTakte(b2, 1, wbEff({ seitEnde: SC.WETTER.TROCKNEN + i })); f.bisRuhe(200); }
+  f.bisRuhe(2000); gleich(pd2.wetterSpuren.length, 0, "alle Spuren weg"); gleich(wbBild(t.w, t.m), vorher, "wie vorher");
+});
+test("Boden: Spieler baut an einer Spur, die Stelle bleibt", function(){
+  var t = wbWelt(), b = new SC.WetterBoden(t.w, t.pd, SC.zufall(1)); b.radius = 0; wbTakte(b, 5, wbEff({ niederschlag: "regen", pfuetzen: 60 }));
+  t.w.setzeBlock(8, t.m + 1, 8, SC.B.BRETTER, "spieler"); gleich(t.pd.wetterSpuren.length, 0); wbTakte(b, 10, wbEff({ seitEnde: 1000 })); gleich(t.w.holeBlock(8, t.m + 1, 8), SC.B.BRETTER);
+});
+test("Boden: Quelle, die das Fließen neben Regenwasser bildet, trocknet mit", function(){
+  var t = wbWelt(), b = new SC.WetterBoden(t.w, t.pd, SC.zufall(1)); b.radius = 0; wbTakte(b, 5, wbEff({ niederschlag: "regen", pfuetzen: 60 }));
+  t.w.setzeBlock(9, t.m + 1, 8, SC.B.LUFT, "system"); t.w.setzeBlock(9, t.m + 1, 8, SC.B.WASSER, "fluss"); wahr(t.pd.wetterSpuren.some(function(s){ return s[0] === 9 && s[1] === t.m + 1; }), "aufgenommen (gleiche Höhe wie das Regenwasser)");
+  t.w.setzeBlock(3, t.m + 5, 3, SC.B.WASSER, "fluss"); wahr(!t.pd.wetterSpuren.some(function(s){ return s[0] === 3; }), "fern vom Regenwasser nicht");
+});
+test("Boden: Schneedecke unter freiem Himmel, eine Schicht, taut wieder", function(){
+  var w = flWelt(); for(var x = 2; x <= 6; x++) for(var z = 2; z <= 6; z++) w.setzeBlock(x, 68, z, SC.B.STEIN, "spieler");   // Dach
+  var pd = { wetterSpuren: [] }, b = new SC.WetterBoden(w, pd, SC.zufall(5)); b.radius = 7;
+  wbTakte(b, 120, wbEff({ niederschlag: "schnee", schneeRate: 600 }), [[8.5, 64, 8.5]]);
+  var auf = 0, unter = 0, doppelt = 0; for(var x2 = 0; x2 < 16; x2++) for(var z2 = 0; z2 < 16; z2++){ if(w.holeBlock(x2, 64, z2) === SC.B.SCHNEESCHICHT){ if(x2 >= 2 && x2 <= 6 && z2 >= 2 && z2 <= 6) unter++; else auf++; } if(w.holeBlock(x2, 65, z2) === SC.B.SCHNEESCHICHT) doppelt++; }
+  wahr(auf > 20, "Schnee draußen: " + auf); gleich(unter, 0, "nicht unter dem Dach"); gleich(doppelt, 0, "eine Schicht"); wahr(w.holeBlock(4, 69, 4) === SC.B.SCHNEESCHICHT || w.holeBlock(3, 69, 3) === SC.B.SCHNEESCHICHT || w.holeBlock(5, 69, 5) === SC.B.SCHNEESCHICHT, "auch auf dem Dach");
+  for(var i = 0; i < 400 && pd.wetterSpuren.length; i++) wbTakte(b, 1, wbEff({ seitEnde: 1000 }), [[8.5, 64, 8.5]]); gleich(pd.wetterSpuren.length, 0, "getaut");
+  w.setzeBlock(9, 64, 9, SC.B.SCHNEESCHICHT, "wetter"); pd.wetterSpuren.push([9, 64, 9, SC.B.LUFT, SC.B.SCHNEESCHICHT]); b = new SC.WetterBoden(w, pd, SC.zufall(5));
+  w.setzeBlock(10, 64, 9, SC.B.LAVA, "spieler"); gleich(w.holeBlock(9, 64, 9), SC.B.LUFT, "neben Lava sofort");
+});
+test("Boden: höchstens JE_TAKT Änderungen je Takt, lädt keine Chunks", function(){
+  var w = flWelt(), pd = { wetterSpuren: [] }, b = new SC.WetterBoden(w, pd, SC.zufall(6)), n = 0; b.radius = 32; w.ereignisse.an("block", function(e){ if(e.quelle === "wetter") n++; });
+  b.schritt(1, wbEff({ niederschlag: "schnee", schneeRate: 60000 }), [[14.5, 64, 8.5]], []); wahr(n > 0 && n <= SC.WetterBoden.JE_TAKT, "Änderungen: " + n); gleich(w.istGeladen(1, 0), false);
+});

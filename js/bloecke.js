@@ -85,7 +85,7 @@ SC.BLOECKE = {};
     [SC.B.EIS, "eis", alle("eis"), true, true, 0, null, true, true],
     [SC.B.SCHLAMM, "schlamm", alle("schlamm"), true, false, 0, null, true, true],
     [SC.B.BASALT, "basalt", alle("basalt"), true, false, 0, null, true, true],
-    // Stufe 6a: [..., { form, klettern }] – form: "kreuz" | "pflanze" | "pfosten" | { typ: "platte", achse, versatz } (Standard Würfel)
+    // Stufe 6a: [..., { form, klettern }] – form: "kreuz" | "pflanze" | "pfosten" | "gegenstand" (nur Bild, z. B. Eimer in der Hand) | { typ: "platte", achse, versatz } (Standard Würfel)
     [SC.B.EISENERZ, "eisenerz", alle("eisenerz"), true, false, 0, null, true, true],
     [SC.B.TITAN, "titan", alle("titan"), true, false, 0, null, true, true],
     [SC.B.GLUTSTAHL, "glutstahl", alle("glutstahl"), true, false, 3, [1.0, 0.45, 0.15], true, true],
@@ -101,9 +101,9 @@ SC.BLOECKE = {};
     [SC.B.CHITIN, "chitin", alle("chitin"), true, false, 0, null, true, true],
     [SC.B.NETZ, "netz", alle("netz"), true, false, 0, null, true, false, { nichtAufstellbar: true }],
     [SC.B.TIERFUTTER, "tierfutter", alle("tierfutter"), true, false, 0, null, true, false, { nichtAufstellbar: true }],
-    [SC.B.EIMER, "eimer", alle("eimer"), true, true, 0, null, true, false, { nichtAufstellbar: true, ausschnitt: true }],
-    [SC.B.EIMER_WASSER, "eimerWasser", alle("eimer_wasser"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true }],
-    [SC.B.EIMER_LAVA, "eimerLava", alle("eimer_lava"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true }],
+    [SC.B.EIMER, "eimer", alle("eimer"), true, true, 0, null, true, false, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
+    [SC.B.EIMER_WASSER, "eimerWasser", alle("eimer_wasser"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
+    [SC.B.EIMER_LAVA, "eimerLava", alle("eimer_lava"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
     [SC.B.WERKBANK, "werkbank", { oben: "werkbank_oben", seite: "werkbank_seite", unten: "werkbank_seite" }, true, false, 0, null, true, true],
     [SC.B.FACKEL, "fackel", alle("fackel"), false, true, 14, [1.0, 0.7, 0.3], true, true, { form: "kreuz" }],
     [SC.B.ZAUN, "zaun", alle("zaun"), true, true, 0, null, true, true, { form: "pfosten" }],

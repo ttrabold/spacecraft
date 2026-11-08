@@ -30,8 +30,16 @@ test("Mesher: fließendes Wasser ist niedriger", function(){
   var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.WASSER_4, "system"); wahr(flMaxY(flMesh(w).durchsichtig) <= 64.51, "Stufe 4 halb hoch: " + flMaxY(flMesh(w).durchsichtig));
   var q = leereWelt(); q.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); gleich(flMaxY(flMesh(q).durchsichtig), 65, "Quelle wie bisher");
 });
-test("Mesher: keine Fläche zwischen Wasserstufen", function(){
-  var a = leereWelt(); a.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); a.setzeBlock(6, 64, 5, SC.B.WASSER_7, "system");
+function flMinY(g){ var m = 1e9; for(var i = 1; i < g.positionen.length; i += 3) m = Math.min(m, g.positionen[i]); return m; }
+test("Mesher: Stufe zwischen Wasserhöhen hat eine Seite, nur über dem Nachbarn", function(){
+  var w = leereWelt(); w.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); w.setzeBlock(6, 64, 5, SC.B.WASSER_4, "system");
+  var g = flMesh(w).durchsichtig, p = g.positionen, seite = 0;
+  for(var i = 0; i < p.length; i += 12){ var xs = [p[i], p[i + 3], p[i + 6], p[i + 9]], ys = [p[i + 1], p[i + 4], p[i + 7], p[i + 10]];
+    if(xs.every(function(x){ return Math.abs(x - 6) < 1e-6; }) && Math.min.apply(null, ys) > 64.49 && Math.max.apply(null, ys) > 64.99) seite++; }
+  gleich(seite, 1, "eine Seitenfläche von 64,5 bis 65 an x = 6");
+});
+test("Mesher: keine Fläche zwischen gleich hohem Wasser", function(){
+  var a = leereWelt(); a.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); a.setzeBlock(6, 64, 5, SC.B.WASSER_FALL, "system");
   var b = leereWelt(); b.setzeBlock(5, 64, 5, SC.B.WASSER, "system"); b.setzeBlock(6, 64, 5, SC.B.WASSER, "system");
   gleich(flMesh(a).durchsichtig.indizes.length, flMesh(b).durchsichtig.indizes.length);
 });
@@ -160,4 +168,23 @@ test("Netzprotokoll 9", function(){ gleich(SC.NETZ_PROTOKOLL, 9); });
 test("Anleitung erklärt Wasser, Lava und Eimer", function(){
   var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Wasser und Lava"; })[0]; wahr(a && a[1].length >= 4, "Abschnitt"); var t = a[1].join(" "); wahr(t.indexOf("Eimer") >= 0 && t.indexOf("Basalt") >= 0 && t.indexOf("Eisenerz") >= 0);
   wahr(SC.T.ewFluss, "Text für den Schalter im Entwicklerpanel");
+});
+test("Eimer in der Hand: flaches Bild statt Würfel", function(){
+  [SC.B.EIMER, SC.B.EIMER_WASSER, SC.B.EIMER_LAVA].forEach(function(id){
+    var h = SC.Render.handForm(SC.BLOECKE[id]); wahr(h, "eigene Handform: " + id); gleich(h.attributes.position.count, 4, "eine Fläche"); gleich(h.index.count, 6);
+    h.computeBoundingBox(); wahr(h.boundingBox.max.z - h.boundingBox.min.z < 0.01, "flach");
+  });
+});
+test("Strömung auf Eis schleudert nicht", function(){
+  var w = flStrom(); for(var x = 2; x <= 8; x++) for(var z = 4; z <= 6; z++) w.setzeBlock(x, 63, z, SC.B.EIS, "system");
+  var s = new SC.Spieler({ id: "a", pos: [3.5, 64, 5.5], blick: [0, 0], modus: "survival" }), max = 0;
+  for(var i = 0; i < 40; i++){ s.schritt(w, flRuhe, 0.05); max = Math.max(max, Math.hypot(s.geschw[0], s.geschw[2])); }
+  wahr(max <= SC.Fluss.STROEMUNG + 0.01, "höchstens Strömungstempo: " + max);
+});
+test("Eimer: nicht auf Mitspieler ausgießen", function(){
+  var w = flWelt(), s = new SC.Spieler({ id: "a", pos: [1.5, 64, 1.5], blick: [0, 0], modus: "survival" });
+  gleich(SC.Eimer.ausgiessen(w, s, 9, 64, 9, "lava", [[9.5, 64, 9.5]]), false, "Mitspieler steht dort"); gleich(SC.Eimer.ausgiessen(w, s, 9, 65, 9, "lava", [[9.5, 64, 9.5]]), false, "Kopfhöhe");
+  gleich(SC.Eimer.ausgiessen(w, s, 12, 64, 9, "lava", [[9.5, 64, 9.5]]), true);
+  var g = flSurv(), ziel = { x: 2, y: 88, z: 2, nx: 0, ny: 1, nz: 0 }; g.kampf.rucksack.plaetze[0] = { block: SC.B.EIMER_LAVA, anzahl: 1 }; g._mitspielerListe = function(){ return [{ pos: [2.5, 89, 2.5] }]; };
+  g._eimer(ziel); gleich(g.welt.holeBlock(2, 89, 2), SC.B.LUFT, "Spiel gibt die Mitspieler weiter");
 });

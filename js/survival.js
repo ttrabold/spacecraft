@@ -124,17 +124,19 @@
       if(!art) return true;
       neu = { block: SC.Eimer.voll(art), anzahl: 1 };
     } else {
-      if(!ziel || !SC.Eimer.ausgiessen(w, sp, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, SC.Eimer.art(hand.block))) return true;
+      if(!ziel || !SC.Eimer.ausgiessen(w, sp, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, SC.Eimer.art(hand.block), this._mitspielerOrte())) return true;
       neu = { block: B.EIMER, anzahl: 1 };
     }
     rs.nimm(sp.auswahl, 1); if(rs.lege(neu)) this.beuteAuswerfen(sp.pos.slice(), [neu]);   // passt er nicht mehr hinein, fliegt er als Kugel heraus
     this.audio.spiele("platsch"); return true;
   };
+  // Positionen der anderen Spieler im Raum (Gastgeber und Gäste), damit niemand übergossen wird
+  S._mitspielerOrte = function(){ return this._mitspielerListe ? this._mitspielerListe().map(function(m){ return m.pos; }).filter(Boolean) : []; };
   // Kreativ: voller Eimer aus der Leiste gießt aus und bleibt voll
   S._eimerKreativ = function(ziel){
     var art = SC.Eimer.art(this.spieler.schnellleiste[this.spieler.auswahl]);
     if(!art) return false;
-    if(ziel && SC.Eimer.ausgiessen(this.welt, this.spieler, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, art)) this.audio.spiele("platsch");
+    if(ziel && SC.Eimer.ausgiessen(this.welt, this.spieler, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, art, this._mitspielerOrte())) this.audio.spiele("platsch");
     return true;
   };
   S._blockErlaubt = function(){ return !(this.raum instanceof SC.Gast) || this.raum.status === "verbunden"; };

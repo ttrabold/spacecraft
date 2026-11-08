@@ -116,14 +116,15 @@ SC.Mesher = {};
         // Fläche nur zeichnen, wenn der Nachbar sie nicht verdeckt
         if(nb !== SC.B.LUFT){
           if(opak[nb]) continue;
-          if(nb === id || (fart[id] && fart[nb] === fart[id])) continue;   // Wasserstufen untereinander: keine Fläche
+          if(nb === id && !fart[id]) continue;
+          if(fart[id] && fart[nb] === fart[id] && (F.n[1] !== 0 || fhoehe[nb] >= fhoehe[id])) continue;   // Wasser untereinander: nur die Stufe zu einem niedrigeren Nachbarn
           if(dt && fest[nb] && !durch[nb]) continue;
         }
-        var uv = SC.Mesher.uvFuer(def.seiten[F.s]), basis = puf.n, oh = fhoehe[id];
+        var uv = SC.Mesher.uvFuer(def.seiten[F.s]), basis = puf.n, oh = fhoehe[id], uh = fart[id] && F.n[1] === 0 && fart[nb] === fart[id] ? fhoehe[nb] : 0;   // uh: Seite beginnt über dem niedrigeren Wasser
         for(var e = 0; e < 4; e++){
           var c = F.e[e];
-          puf.p.push(x + c[0], y + (c[1] ? oh : 0), z + c[2]);   // Fließstufen: Oberfläche niedriger
-          puf.uv.push(e === 0 || e === 3 ? uv[0] : uv[2], e < 2 ? uv[1] : uv[3]);
+          puf.p.push(x + c[0], y + (c[1] ? oh : uh), z + c[2]);   // Fließstufen: Oberfläche niedriger
+          puf.uv.push(e === 0 || e === 3 ? uv[0] : uv[2], F.n[1] !== 0 ? (e < 2 ? uv[1] : uv[3]) : uv[1] + (uv[3] - uv[1]) * (c[1] ? oh : uh));   // Seiten: Kachel nicht stauchen
           // Nachbarzellen in der Ebene vor der Fläche, zur Ecke hin
           var t = [], s = [0, 0, 0];
           for(var a = 0; a < 3; a++) if(F.n[a] === 0){ t.push(a); s[a] = c[a] ? 1 : -1; }

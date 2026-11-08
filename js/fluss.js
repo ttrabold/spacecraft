@@ -86,7 +86,7 @@ SC.Fluss.STROEMUNG = 0.4 * SC.PHYSIK.laufen;   // Schub der Strömung; Schwimmen
     if(F.art(this.hole(x, y + 1, z)) === art) return F.id(art, MAX, true);
     if(art === "wasser"){   // zwischen zwei Quellen entsteht eine neue
       var qn = 0; for(var i = 0; i < 4; i++) if(F.quelle(this.hole(x + SEITE[i][0], y, z + SEITE[i][1])) && F.istWasser(this.hole(x + SEITE[i][0], y, z + SEITE[i][1]))) qn++;
-      if(qn >= 2 && (SC.BLOECKE[unten].fest || (F.quelle(unten) && F.istWasser(unten)))) return B.WASSER;
+      if(qn >= 2 && (SC.BLOECKE[unten].fest || (F.quelle(unten) && F.istWasser(unten))) && !(this.welt.quelleVerboten && this.welt.quelleVerboten(x, y, z))) return B.WASSER;   // quelleVerboten: Wetter trocknet gerade aus (js/wetter-boden.js)
     }
     var best = 0;
     for(var j = 0; j < 4; j++){

@@ -162,3 +162,58 @@ test("Blitz: manchmal weißer Kristall, nichts zerstört", function(){
   var zf = SC.zufall(4), n = 0; for(var i = 0; i < 1000; i++){ var b = SC.Wetter.blitzBeute(zf); if(b.length){ n++; gleich(b[0].block, SC.B.KRISTALL_WEISS); } }
   wahr(n > 120 && n < 280, "Anteil " + n);
 });
+test("Boden: keine Pfützen neben Werkbank, Truhe oder Bett", function(){
+  var t = wbWelt(); t.w.setzeBlock(11, t.m + 3, 9, SC.B.WERKBANK, "spieler"); wahr(SC.WetterBoden.nahBauwerk(t.w, 8, t.m, 8), "Werkbank in der Nähe");
+  var b = new SC.WetterBoden(t.w, t.pd, SC.zufall(1)); b.radius = 0; wbTakte(b, 10, wbEff({ niederschlag: "regen", pfuetzen: 60 })); gleich(t.w.holeBlock(8, t.m + 1, 8), SC.B.LUFT);
+  var f = wbWelt(); gleich(SC.WetterBoden.nahBauwerk(f.w, 8, f.m, 8), false);
+});
+test("Wetter im Raum: zeit trägt das Wetter, Gast übernimmt es und rechnet nicht", function(){
+  var u, a;
+  return mspRaum(1).then(function(x){ u = x; a = u.gs[0]; u.h.takt(SC.RAUM_ZEIT_TAKT + 0.01, mspIch({ wetter: { art: "gewitter", staerke: 1, unwetter: true, wind: [1, 0], seitEnde: 0 } })); return raumLauf(u.netz); }).then(function(){
+    var z = a.nachr.filter(function(n){ return n.t === "zeit"; }).pop(); wahr(z && z.wetter && z.wetter.art === "gewitter", "zeit mit Wetter");
+    var s = Object.create(SC.Spiel.prototype); s.raum = a.g; s.daten = {}; s.wetter = new SC.Wetter("start", null, SC.zufall(1)); s._gastNachricht(a.g, z);
+    gleich(s.wetter.art, "gewitter"); gleich(s.wetter.gast, true); gleich(s.wetter.schritt(5).length, 0);
+  });
+});
+test("Wetter im Raum: Blitz kommt beim Gast an, Wetter-Blöcke gebündelt", function(){
+  var u, a, gesendet = [];
+  return mspRaum(1).then(function(x){ u = x; a = u.gs[0]; var echt = u.h.sendeAlle; u.h.sendeAlle = function(n, aus){ gesendet.push(n); return echt.call(u.h, n, aus); };
+    u.h.blitz([5, 70, 6]); u.welt.setzeBlock(5, 62, 5, SC.B.SCHNEESCHICHT, "wetter"); gleich(gesendet.filter(function(n){ return n.t === "block"; }).length, 0, "nicht einzeln"); u.h.takt(0.016, mspIch()); return raumLauf(u.netz);
+  }).then(function(){
+    var b = a.nachr.filter(function(n){ return n.t === "blitz"; }); gleich(b.length, 1); gleich([b[0].x, b[0].y, b[0].z].join(), "5,70,6");
+    gleich(a.welt.holeBlock(5, 62, 5), SC.B.SCHNEESCHICHT);
+  });
+});
+test("Netzprotokoll 10", function(){ gleich(SC.NETZ_PROTOKOLL, 10); });
+test("Anleitung erklärt das Wetter", function(){ var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Wetter"; })[0]; wahr(a && a[1].length >= 4); var t = a[1].join(" "); wahr(t.indexOf("Dach") >= 0 && t.indexOf("Kristall") >= 0 && t.indexOf("Pfütze") >= 0); wahr(SC.T.wetterKommt && SC.T.wetterKommt.gewitter); });
+test("Spiel: Wetter läuft, wird mit dem Planeten gespeichert, Gast rechnet keinen Boden", function(){
+  var s = survSpiel(), pd = s.daten.planeten.start; s.spieler.pos = [4.5, 118, 4.5]; s.welt.chunk(0, 0); s.wetter = new SC.Wetter("start", null, SC.zufall(1)); s.wetterBoden = new SC.WetterBoden(s.welt, pd, SC.zufall(1)); s.wetter.setze("gewitter", 100);
+  s._wetterTakt(1.1); wahr(pd.wetter && pd.wetter.art === "gewitter", "gespeichert"); wahr(s.spieler.wind && Math.hypot(s.spieler.wind[0], s.spieler.wind[1]) > 0, "Wind draußen");
+  for(var x = 2; x <= 7; x++) for(var z = 2; z <= 7; z++) s.welt.setzeBlock(x, 123, z, SC.B.STEIN, "spieler"); s._wetterTakt(0.3); gleich(s._unterDach, true, "unter Dach"); gleich(s.spieler.wind, null, "kein Wind unter Dach");
+  s.rolle = "gast"; s._wetterTakt(1.1); gleich(s.wetterBoden, null, "Gast meldet den Boden ab");
+});
+test("Entwicklerwerkzeuge: Wetter setzen und austrocknen", function(){
+  var w = document.createElement("div"), sp = new SC.Spieler({ id: "a", pos: [1, 70, 1], modus: "kreativ" }),
+    spiel = { tageszeit: 0.25, zeitTempo: 1, spieler: sp, welt: new SC.Welt(new SC.Planet({ id: "start", seed: 3 })), render: { fps: 60, chunks: new Map(), chunkGrenzen: false, sichtweite: 6 }, daten: { seed: "x" }, wetter: new SC.Wetter("start", null, SC.zufall(1)) },
+    pn = new SC.Entwickler.Panel(w, spiel); pn.zeige(); var sel = w.querySelector("#ew-wetter"); wahr(sel, "Auswahl"); sel.value = "gewitter"; w.querySelector('[data-ew="wetter"]').click(); gleich(spiel.wetter.art, "gewitter");
+  w.querySelector('[data-ew="trocknen"]').click(); gleich(spiel.wetter.art, null); wahr(spiel.wetter.seitEnde >= SC.WETTER.TROCKNEN, "trocknet sofort");
+});
+test("Boden: Mulde = nichts tiefer daneben, mindestens zwei Seiten höher; höchstens MAX_PFUETZEN", function(){
+  var t = wbWelt(); [[1, 0], [-1, 0]].forEach(function(d){ t.w.setzeBlock(8 + d[0], t.m + 1, 8 + d[1], SC.B.LUFT, "system"); t.w.setzeBlock(8 + d[0], t.m, 8 + d[1], SC.B.GRAS, "system"); });   // Rinne: zwei Seiten höher, zwei gleich hoch
+  gleich(SC.WetterBoden.mulde(t.w, 8, 8), t.m, "Rinne ist eine Mulde");
+  t.w.setzeBlock(9, t.m, 8, SC.B.LUFT, "system"); gleich(SC.WetterBoden.mulde(t.w, 8, 8), null, "daneben tiefer: Wasser liefe ab");
+  var f = flWelt(), pd = { wetterSpuren: [] }; for(var i = 0; i < SC.WetterBoden.MAX_PFUETZEN + 10; i++) pd.wetterSpuren.push([i % 16, 70, Math.floor(i / 16), SC.B.LUFT, SC.B.WASSER]);
+  var b = new SC.WetterBoden(f, pd, SC.zufall(1)), n = pd.wetterSpuren.length; wbTakte(b, 3, wbEff({ niederschlag: "regen", pfuetzen: 600 }), [[8.5, 64, 8.5]]); gleich(pd.wetterSpuren.length, n, "keine neuen Pfützen über der Grenze");
+});
+test("Boden: Regen findet Mulden auch im Umkreis", function(){
+  var t = wbWelt(), b = new SC.WetterBoden(t.w, t.pd, SC.zufall(2)); b.radius = 6; wbTakte(b, 30, wbEff({ niederschlag: "regen", pfuetzen: 20 }));
+  wahr(t.pd.wetterSpuren.length > 0, "Pfützen: " + t.pd.wetterSpuren.length);
+});
+test("Boden: eine höhere Seite reicht; bei Unwetter sinkt auch flacher Boden zur Pfütze ein", function(){
+  var t = wbWelt(); [[1, 0], [-1, 0], [0, 1]].forEach(function(d){ t.w.setzeBlock(8 + d[0], t.m + 1, 8 + d[1], SC.B.LUFT, "system"); t.w.setzeBlock(8 + d[0], t.m, 8 + d[1], SC.B.GRAS, "system"); });
+  gleich(SC.WetterBoden.mulde(t.w, 8, 8), t.m, "eine Seite höher");
+  var f = wbWelt(); [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ f.w.setzeBlock(8 + d[0], f.m + 1, 8 + d[1], SC.B.LUFT, "system"); f.w.setzeBlock(8 + d[0], f.m, 8 + d[1], SC.B.GRAS, "system"); });
+  gleich(SC.WetterBoden.mulde(f.w, 8, 8), null, "flach ist keine Mulde"); gleich(SC.WetterBoden.flach(f.w, 8, 8), f.m, "aber flach");
+  var b = new SC.WetterBoden(f.w, f.pd, SC.zufall(1)); b.radius = 0; wbTakte(b, 3, wbEff({ niederschlag: "regen", pfuetzen: 60 })); gleich(f.w.holeBlock(8, f.m, 8), SC.B.GRAS, "normaler Regen: flach bleibt");
+  wbTakte(b, 3, wbEff({ niederschlag: "regen", pfuetzen: 60, einsinken: true })); gleich(f.w.holeBlock(8, f.m, 8), SC.B.WASSER, "Unwetter: Boden sinkt zur Pfütze ein");
+});

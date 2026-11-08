@@ -69,7 +69,8 @@ SC.Entwickler = {};
       '<div class="ew-gruppe"><label>' + esc(T.sichtweite) + ' <b id="ew-sicht-w">' + s.render.sichtweite + '</b><input type="range" id="ew-sicht" min="2" max="16" step="1" value="' + s.render.sichtweite + '"></label>' +
       '<label>' + esc(T.ewFlug) + ' <b id="ew-flug-w">' + (s.spieler.flugFaktor || 1) + '</b><input type="range" id="ew-flug" min="0.5" max="5" step="0.5" value="' + (s.spieler.flugFaktor || 1) + '"></label>' +
       '<label class="ew-zeile"><input type="checkbox" id="ew-grenzen"' + (s.render.chunkGrenzen ? " checked" : "") + "> " + esc(T.ewGrenzen) + "</label>" +
-      '<label class="ew-zeile"><input type="checkbox" id="ew-fluss"' + (!s.fluss || s.fluss.an ? " checked" : "") + "> " + esc(T.ewFluss) + "</label></div>" +
+      '<label class="ew-zeile"><input type="checkbox" id="ew-fluss"' + (!s.fluss || s.fluss.an ? " checked" : "") + "> " + esc(T.ewFluss) + "</label>" +
+      '<div class="ew-reihe"><select id="ew-wetter">' + [""].concat(Object.keys(SC.WETTER.ARTEN)).map(function(a){ return '<option value="' + a + '">' + esc(a ? (T.wetterName[a] || a) : T.wetterKlar) + "</option>"; }).join("") + '</select><button data-ew="wetter">' + esc(T.ewWetter) + '</button><button data-ew="trocknen">' + esc(T.ewTrocknen) + "</button></div></div>" +
       // Survival
       '<div class="ew-gruppe"><b>' + esc(T.survival) + "</b>" +
       '<div class="ew-reihe"><select id="ew-art">' + Object.keys(SC.GEGNER).map(function(a){ return '<option value="' + a + '">' + esc(T.gegner[a]) + "</option>"; }).join("") + '</select><input id="ew-gstufe" type="number" min="1" max="30" value="3"><button data-ew="gegner">' + esc(T.ewErscheinen) + '</button><button data-ew="gegner-weg">' + esc(T.ewGegnerWeg) + "</button></div>" +
@@ -116,6 +117,8 @@ SC.Entwickler = {};
       if(vy <= 1) vy = sp.pos[1];
       SC.Wesen.neu(s.welt, "gegner", { gegnerArt: art, stufe: st, pos: [vx, vy, vz], heim: [vx, vy, vz], lp: def.lp(st), lpMax: def.lp(st), breite: def.breite, hoehe: def.hoehe, boss: !!def.boss, ort: "dungeon" });
     }
+    if(a === "wetter" && s.wetter && !s.wetter.gast) s.wetter.setze(this.el.querySelector("#ew-wetter").value || null);   // Wetter sofort (Gastgeber schickt es mit der Zeit)
+    if(a === "trocknen" && s.wetter && !s.wetter.gast){ s.wetter.setze(null); s.wetter.seitEnde = 1e6; }   // Pfützen und Schnee sofort zurücksetzen
     if(a === "gegner-weg"){ var w = s.welt; w.wesen.forEach(function(e){ if(e.art === "gegner" || e.art === "geschoss") SC.Wesen.entferne(w, e.id); }); }
     if(a === "gegenstand" && s.kampf){
       var sel = +this.el.querySelector("#ew-selt").value, g = SC.Beute.erzeuge(SC.zufall((Math.random() * 4294967296) >>> 0), { stufe: s.kampf.werte.stufe, art: this.el.querySelector("#ew-gart").value, mindest: sel });

@@ -164,7 +164,7 @@ test("Fluss: im Spiel nur für Einzelspieler und Gastgeber", function(){
   var s = survSpiel(); s.fluss = new SC.Fluss(s.welt); s.rolle = "gast"; s.welt.setzeBlock(4, 90, 4, SC.B.WASSER, "system"); s._flussTakt(1); gleich(s.welt.holeBlock(5, 90, 4), SC.B.LUFT, "Gast rechnet nicht");
   gleich(s.fluss, null, "Gast meldet das Fließen ab"); s = survSpiel(); s.fluss = new SC.Fluss(s.welt); s.welt.setzeBlock(4, 90, 4, SC.B.WASSER, "system"); s._flussTakt(1); wahr(SC.Fluessig.istWasser(s.welt.holeBlock(5, 90, 4)) || SC.Fluessig.istWasser(s.welt.holeBlock(4, 89, 4)), "allein fließt es");
 });
-test("Netzprotokoll 9", function(){ gleich(SC.NETZ_PROTOKOLL, 9); });
+test("Netzprotokoll mindestens 9 (Fließen)", function(){ wahr(SC.NETZ_PROTOKOLL >= 9); });
 test("Anleitung erklärt Wasser, Lava und Eimer", function(){
   var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Wasser und Lava"; })[0]; wahr(a && a[1].length >= 4, "Abschnitt"); var t = a[1].join(" "); wahr(t.indexOf("Eimer") >= 0 && t.indexOf("Basalt") >= 0 && t.indexOf("Eisenerz") >= 0);
   wahr(SC.T.ewFluss, "Text für den Schalter im Entwicklerpanel");

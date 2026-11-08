@@ -9,10 +9,15 @@ SC.WetterBoden = function(welt, pd, zf){
   this.spuren.forEach(function(sp){ s._index.set(sp[0] + "," + sp[1] + "," + sp[2], sp); });
   this._beiBlock = function(b){ s._block(b); };
   welt.ereignisse.an("block", this._beiBlock);
+  // Während des Austrocknens bildet das Fließen neben Regenwasser keine neuen Quellen (sonst füllte sich jede geleerte Stelle sofort wieder)
+  this._trocknet = false;
+  welt.quelleVerboten = function(x, y, z){ return s._trocknet && s._nebenRegen(x, y, z); };
 };
 SC.WetterBoden.RADIUS = 32;   // so weit um die Spieler sucht das Wetter Stellen
 SC.WetterBoden.JE_TAKT = 8;   // höchstens so viele Änderungen je Takt (1 s)
-SC.WetterBoden.SCHUTZ = 4;    // so weit (waagerecht) um Betten, Werkbänke, Truhen, Start- und Landepunkt keine Pfützen
+SC.WetterBoden.SCHUTZ = 4;
+SC.WetterBoden.MAX_PFUETZEN = 30;   // höchstens so viele Regenwasser-Quellen gleichzeitig (es soll nicht alles absaufen)
+SC.WetterBoden.VERSUCHE = 20;       // so viele Stellen prüft das Wetter je gewünschter Pfütze    // so weit (waagerecht) um Betten, Werkbänke, Truhen, Start- und Landepunkt keine Pfützen
 
 (function(){
   var B = SC.B, F = SC.Fluessig, H = SC.CHUNK.H, P = SC.WetterBoden.prototype, ALLE = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
@@ -24,14 +29,17 @@ SC.WetterBoden.SCHUTZ = 4;    // so weit (waagerecht) um Betten, Werkbänke, Tru
 
   // Über (x, y, z) bis zum Himmel nur Luft? (Blätter und alles andere sind ein Dach)
   SC.WetterBoden.freierHimmel = function(welt, x, y, z){ for(var yy = y; yy < H; yy++) if(hole(welt, x, yy, z) !== B.LUFT) return false; return true; };
-  // Mulde: Boden auf der Höhe, die der Generator erzeugt, natürlicher Bodenblock, darüber freier Himmel, mindestens 3 von 4 Nachbarn darüber fest → Bodenhöhe oder null
+  // Mulde: Boden auf der Höhe, die der Generator erzeugt, natürlicher Bodenblock, darüber freier Himmel; kein Nachbar tiefer (sonst liefe es ab), mindestens einer höher → Bodenhöhe oder null
+  function nachbarn(welt, x, y, z){ var hoch = 0, tief = false; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ if(SC.BLOECKE[hole(welt, x + d[0], y + 1, z + d[1])].fest) hoch++; else if(!SC.BLOECKE[hole(welt, x + d[0], y, z + d[1])].fest) tief = true; }); return { hoch: hoch, tief: tief }; }
+  function naturBoden(welt, x, z){ if(!geladen(welt, x, z)) return null; var y = welt.generator.hoehe(welt.planet.wickel(x), welt.planet.wickel(z)); return BODEN[hole(welt, x, y, z)] && SC.WetterBoden.freierHimmel(welt, x, y + 1, z) ? y : null; }
+  // Flacher natürlicher Boden (kein Nachbar höher oder tiefer): sinkt bei Unwetter zur Pfütze ein → Bodenhöhe oder null
+  SC.WetterBoden.flach = function(welt, x, z){ var y = naturBoden(welt, x, z); if(y === null) return null; var n = nachbarn(welt, x, y, z); return !n.tief && n.hoch === 0 ? y : null; };
   SC.WetterBoden.mulde = function(welt, x, z){
-    if(!geladen(welt, x, z)) return null;
-    var y = welt.generator.hoehe(welt.planet.wickel(x), welt.planet.wickel(z));
-    if(!BODEN[hole(welt, x, y, z)] || !SC.WetterBoden.freierHimmel(welt, x, y + 1, z)) return null;
-    var n = 0; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(d){ if(SC.BLOECKE[hole(welt, x + d[0], y + 1, z + d[1])].fest) n++; });
-    return n >= 3 ? y : null;
+    var yb = naturBoden(welt, x, z); if(yb === null) return null; var nb = nachbarn(welt, x, yb, z); return !nb.tief && nb.hoch >= 1 ? yb : null;
   };
+  // Werkbank, Truhe oder Bett in der Nähe (waagerecht SCHUTZ, Höhe −2 … +4)? Dort keine Pfützen
+  var BAU = {}; [B.WERKBANK, B.TRUHE, B.BETT_FUSS_N, B.BETT_FUSS_S, B.BETT_FUSS_O, B.BETT_FUSS_W, B.BETT_KOPF_N, B.BETT_KOPF_S, B.BETT_KOPF_O, B.BETT_KOPF_W].forEach(function(id){ BAU[id] = 1; });
+  SC.WetterBoden.nahBauwerk = function(welt, x, y, z){ var r = SC.WetterBoden.SCHUTZ; for(var dx = -r; dx <= r; dx++) for(var dz = -r; dz <= r; dz++) for(var dy = -2; dy <= 4; dy++) if(BAU[hole(welt, x + dx, y + dy, z + dz)]) return true; return false; };
   SC.WetterBoden.geschuetzt = function(x, y, z, schutz){ var r = SC.WetterBoden.SCHUTZ; return (schutz || []).some(function(p){ return p && Math.abs(Math.floor(p[0]) - x) <= r && Math.abs(Math.floor(p[2]) - z) <= r; }); };
 
   P._setze = function(x, y, z, id, alt){
@@ -63,6 +71,7 @@ SC.WetterBoden.SCHUTZ = 4;    // so weit (waagerecht) um Betten, Werkbänke, Tru
     if(F.istLava(b.id)) ALLE.forEach(function(d){ var n = s._index.get(schluessel(w, b.x + d[0], b.y + d[1], b.z + d[2])); if(n && n[4] === B.SCHNEESCHICHT) s._zurueck(n); });   // neben Lava taut Schnee sofort
   };
 
+  P._nebenRegen = function(x, y, z){ var w = this.welt, s = this; return [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(function(d){ var n = s._index.get(schluessel(w, x + d[0], y, z + d[1])); return n && F.istWasser(n[4]); }); };
   P._spalte = function(orte){
     var o = orte[Math.floor(this.zf() * orte.length)], r = this.radius;
     return [Math.floor(o[0] + (this.zf() * 2 - 1) * r), Math.floor(o[2] + (this.zf() * 2 - 1) * r)];
@@ -72,11 +81,17 @@ SC.WetterBoden.SCHUTZ = 4;    // so weit (waagerecht) um Betten, Werkbänke, Tru
     this._zeit += dt; if(this._zeit < 1 || !orte || !orte.length) return;
     this._zeit = Math.min(this._zeit - 1, 1);
     var w = this.welt, zf = this.zf, n = SC.WetterBoden.JE_TAKT, s = this;
+    this._trocknet = !eff.niederschlag && eff.seitEnde >= SC.WETTER.TROCKNEN;
     if(eff.niederschlag === "regen" && eff.pfuetzen > 0){
       this._regen = Math.min(this._regen + eff.pfuetzen / 60, n);
-      for(; this._regen >= 1 && n > 0; this._regen--){
-        var c = this._spalte(orte), y = SC.WetterBoden.mulde(w, c[0], c[1]);
-        if(y !== null && !SC.WetterBoden.geschuetzt(c[0], y, c[1], schutz) && this._setze(c[0], y + 1, c[1], B.WASSER, B.LUFT)) n--;
+      var regenQ = this.spuren.filter(function(sp){ return sp[4] === B.WASSER; }).length;
+      for(; this._regen >= 1 && n > 0 && regenQ < SC.WetterBoden.MAX_PFUETZEN; this._regen--){
+        for(var v = 0; v < SC.WetterBoden.VERSUCHE; v++){   // mehrere Stellen prüfen, bis eine Mulde passt
+          var c = this._spalte(orte), y = SC.WetterBoden.mulde(w, c[0], c[1]);
+          var hoehe = y !== null ? y + 1 : eff.einsinken ? SC.WetterBoden.flach(w, c[0], c[1]) : null;   // Unwetter: flacher Boden sinkt selbst zur Pfütze ein
+          if(hoehe === null || hoehe === undefined || SC.WetterBoden.geschuetzt(c[0], hoehe, c[1], schutz) || SC.WetterBoden.nahBauwerk(w, c[0], hoehe - 1, c[1])) continue;
+          if(this._setze(c[0], hoehe, c[1], B.WASSER, hole(w, c[0], hoehe, c[1]))){ n--; regenQ++; break; }
+        }
       }
       if(eff.einsinken && n > 0){   // Boden unter einer Pfütze sinkt ein (höchstens 2 tief)
         var pf = this.spuren.filter(function(sp){ return sp[4] === B.WASSER && geladen(w, sp[0], sp[2]); });
@@ -101,5 +116,5 @@ SC.WetterBoden.SCHUTZ = 4;    // so weit (waagerecht) um Betten, Werkbänke, Tru
       for(var i = this.spuren.length - 1; i >= 0 && n > 0; i--){ if(this._zurueck(this.spuren[i])) n--; }
     }
   };
-  P.abbauen = function(){ this.welt.ereignisse.aus("block", this._beiBlock); };
+  P.abbauen = function(){ this.welt.ereignisse.aus("block", this._beiBlock); this.welt.quelleVerboten = null; };
 })();

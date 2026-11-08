@@ -136,7 +136,7 @@ SC.Gastgeber = function(o){
   // Jede Blockänderung in der Welt des Gastgebers geht an alle Gäste, außer an den, von dem sie kam (Quelle "netz:<id>")
   G._blockGeaendert = function(b){
     if(this._zu) return;
-    if(b.quelle === "fluss"){ (this._fluss || (this._fluss = [])).push(b.x, b.y, b.z, b.id); return; }   // Fließen: gebündelt je Bild (takt)
+    if(b.quelle === "fluss" || b.quelle === "wetter"){ (this._fluss || (this._fluss = [])).push(b.x, b.y, b.z, b.id); return; }   // Fließen und Wetter: gebündelt je Bild (takt)
     var q = String(b.quelle || ""), urheber = q.indexOf("netz:") === 0 ? q.slice(5) : undefined;
     this.sendeAlle({ t: "block", x: b.x, y: b.y, z: b.z, id: b.id }, urheber);
   };
@@ -177,10 +177,11 @@ SC.Gastgeber = function(o){
       });
     }
     if(zeit){ var tz = ich && typeof ich.tageszeit === "number" ? ich.tageszeit : d.tageszeit; // je Gast mit seiner bestätigten Wunsch-Nummer
-      ids.forEach(function(id){ s._verb[id].verb.sende({ t: "zeit", tageszeit: tz, modus: d.modus, schwierigkeit: d.schwierigkeit, wunschNr: s._wunschNr[id] || 0 }); }); }
+      ids.forEach(function(id){ s._verb[id].verb.sende({ t: "zeit", tageszeit: tz, modus: d.modus, schwierigkeit: d.schwierigkeit, wetter: ich && ich.wetter || null, wunschNr: s._wunschNr[id] || 0 }); }); }
   };
 
   G.sende = function(id, n){ var c = this._verb[id]; if(c) c.verb.sende(n); };
+  G.blitz = function(p){ if(!this._zu) this.sendeAlle({ t: "blitz", x: p[0], y: p[1], z: p[2] }); };   // Wetter: Einschlag an alle Gäste
   G.sendeAlle = function(n, ausserId){ for(var id in this._verb) if(id !== ausserId) this._verb[id].verb.sende(n); };
   G.hinauswerfen = function(id){
     delete this._bestaetigt[id];
@@ -371,6 +372,7 @@ SC.Gast = function(o){
     },
     wesen: function(n){ this.wesen = n.liste || []; },
     zeit: function(n){ this._bestaetige(n.wunschNr); if(typeof n.tageszeit === "number") this.tageszeit = n.tageszeit; ruf(this.o.beiNachricht, n); },
+    blitz: function(n){ ruf(this.o.beiNachricht, n); },   // Wetter: Blitzeinschlag beim Gastgeber
     // Fließen beim Gastgeber: viele Zellen auf einmal [x, y, z, id, …]
     bloecke: function(n){ var w = this.welt, l = n.l; if(!w || !Array.isArray(l)) return; for(var i = 0; i + 3 < l.length; i += 4) if(SC.BLOECKE[l[i + 3]]) w.setzeBlock(l[i], l[i + 1], l[i + 2], l[i + 3], "netz"); },
     // Tatsache vom Gastgeber; mit zurueck:true wurde ein eigener Wunsch abgelehnt → beiBlockZurueck(x, y, z, id, wunsch {id, alt} | null)

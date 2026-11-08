@@ -130,6 +130,15 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 - Mit dem vollen Eimer gießt du genauso wieder aus: Dort entsteht ein neuer Block Wasser oder Lava, der losfließt. Gieß zwei Eimer Wasser mit einer Lücke dazwischen aus, dann füllt sich die Lücke von selbst – ein Brunnen, der nie leer wird.
 - Im Kreativmodus gibt es Wassereimer und Lavaeimer in der Blockauswahl. Sie werden nie leer.
 
+## Wetter
+
+- Auf jedem Planeten gibt es eigenes Wetter: Regen und Gewitter auf dem Startplaneten, Schnee und Schneesturm auf Glutfrost, Nebel, Regen und Wolkenbruch auf Rankenmoor. Meistens ist es schön, ein paar Sekunden vorher zieht es zu.
+- Bei Regen sammelt sich Wasser in Mulden zu einer Pfütze, bei Unwetter sinkt dort sogar der Boden ein. Auf Glutfrost legt sich eine dünne Schneeschicht auf alles. Eine Weile nach dem Wetter trocknet und taut alles wieder, die Welt sieht aus wie vorher.
+- Im Gewitter wird es dunkel, und Gegner kommen auch am Tag. Blitze schlagen in hohe Stellen ein, aber nie in dich oder Tiere. Manchmal liegt danach ein weißer Kristall an der Einschlagstelle.
+- Im Schneesturm siehst du kaum etwas, und der Wind schiebt dich. Im Nebel tauchen mehr Irrlichter auf. Bei Regen verstecken sich die Tiere, nur die Frösche kommen heraus.
+- Unter einem Dach bist du geschützt: kein Regen, kein Wind und bessere Sicht. Ein Unterschlupf lohnt sich!
+- Ist dein Tablet zu langsam, stell in den Einstellungen „Wetter-Effekte“ auf „Weniger“.
+
 ## Fahrzeuge
 
 - Den Schwebeflitzer findest du am Startpunkt. Kraterkäfer stehen bei Lagern, Kometenjäger bei Stationen, Schwebeflitzer auch bei Herrenhäusern.

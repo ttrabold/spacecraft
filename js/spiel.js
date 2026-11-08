@@ -119,6 +119,7 @@ SC.Spiel.startpunkt = function(planet){
     var pd = daten.planeten[daten.aktuellerPlanet], planet = new SC.Planet(pd);
     this.welt = new SC.Welt(planet, chunks || SC.Spielstand.chunksLaden(pd));
     this.fluss = new SC.Fluss(this.welt);   // Wasser und Lava fließen (rechnet nicht als Gast, siehe _flussTakt)
+    this.wetter = new SC.Wetter(daten.aktuellerPlanet, pd.wetter, Math.random); this.wetterBoden = new SC.WetterBoden(this.welt, pd, Math.random);   // Wetter (siehe _wetterTakt)
     this.welt.ereignisse.an("block", function(b){
       s._truheWeg(b); s._tuerWeg(b); s._bettWeg(b);
       if(b.quelle !== "spieler") return;
@@ -203,6 +204,7 @@ SC.Spiel.startpunkt = function(planet){
     var vorBoden = sp.aufBoden, vy = sp.geschw[1];
     if(this.all){ // im All: kein Boden, keine Gegner des Planeten
       this._allBild(e, dt, offen); this._hudSurvival(sp.modus === "survival", null, null); this._tiere(dt, offen);   // Tiere warten im Käfig
+      if(this.render.wetter) this.render.wetter(null); if(this.audio.wetter) this.audio.wetter(0, 0);   // im All kein Wetter
       if((this._musikZeit = (this._musikZeit || 0) + dt) > 0.5){ this._musikZeit = 0; this.audio.musikTakt("all", true); }
     } else {
       if(this._imFahrzeug()) this._fahren(e, dt, offen);
@@ -211,7 +213,7 @@ SC.Spiel.startpunkt = function(planet){
       this._survival(e, dt, offen, t);
       this._tiere(dt, offen);
       this._fahrzeugTakt(dt);
-      if(!offen || this.raum) this._flussTakt(dt);   // wie die Gegner: bei offenem Menü steht die Welt still, im Raum nicht
+      if(!offen || this.raum){ this._flussTakt(dt); this._wetterTakt(dt); }   // wie die Gegner: bei offenem Menü steht die Welt still, im Raum nicht
     }
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
     if(this.raum) this._raumBild(dt, offen);
@@ -219,6 +221,35 @@ SC.Spiel.startpunkt = function(planet){
     this.render.bild(sp, this.tageszeit, dt);
   };
 
+  // Wetter (Spec 2026-11-08-wetter-design.md): Zustand weiterrechnen (Gast übernimmt ihn vom Gastgeber), Dach über dem Kopf, Wind, Bild und Klang;
+  // einmal je Sekunde (nicht als Gast): speichern, Pfützen und Schnee, Blitze
+  SC.Spiel.prototype._wetterTakt = function(dt){
+    var w = this.wetter, s = this, sp = this.spieler; if(!w || !this.welt || !sp) return;
+    var gast = this.rolle === "gast";
+    if(gast){ w.gast = true; if(this.wetterBoden){ this.wetterBoden.abbauen(); this.wetterBoden = null; } }
+    else w.schritt(dt).forEach(function(e){ if((e.art === "ankuendigung" || e.art === "unwetter") && SC.T.wetterKommt[e.wetter]) s.ui.hinweis(SC.T.wetterKommt[e.wetter], 3500); });
+    var eff = this._wetterEff = w.effekte();
+    if((this._dachZeit = (this._dachZeit || 0) + dt) >= 0.25){ this._dachZeit = 0; this._unterDach = !SC.WetterBoden.freierHimmel(this.welt, Math.floor(sp.pos[0]), Math.floor(sp.pos[1] + 2), Math.floor(sp.pos[2])); }
+    sp.wind = this._unterDach || !eff.art ? null : eff.wind;
+    if(this.render && this.render.wetter) this.render.wetter(eff, this._unterDach, !!this.einstellungen && this.einstellungen.wetterEffekte === "weniger");
+    if(this.audio && this.audio.wetter){ var dm = this._unterDach ? 0.4 : 1; this.audio.wetter((eff.niederschlag === "regen" ? eff.menge : eff.niederschlag === "schnee" ? eff.menge * 0.2 : 0) * dm, Math.min(1, Math.hypot(eff.wind[0], eff.wind[1]) / 2) * dm); }
+    if(gast || (this._wetterSek = (this._wetterSek || 0) + dt) < 1) return;
+    this._wetterSek = 0;
+    var d = this.daten, pd = d.planeten[d.aktuellerPlanet], orte = [sp.pos], r = this.raum, b = d.spieler && d.spieler.bett;
+    if(pd) pd.wetter = w.alsDaten();
+    if(r instanceof SC.Gastgeber) r.spieler.forEach(function(e){ if(e.verbunden && e.pos) orte.push(e.pos); });
+    if(this.wetterBoden) this.wetterBoden.schritt(1, eff, orte, [d.startpunkt, pd && pd.landepunkt, b && b.planet === this.welt.planet.id ? [b.x, b.y, b.z] : null]);
+    if(eff.blitze > 0 && Math.random() < eff.blitze / 60){ var z = SC.Wetter.blitzZiel(this.welt, orte, Math.random); if(z) this._blitz(z, true); }
+  };
+  // Blitzeinschlag zeigen und hören; eigen (Einzelspieler, Gastgeber): an die Gäste schicken und manchmal einen weißen Kristall liegen lassen
+  SC.Spiel.prototype._blitz = function(z, eigen){
+    var sp = this.spieler, P = this.welt.planet.groesse;
+    if(this.render && this.render.blitz) this.render.blitz(z);
+    if(this.audio) this.audio.spiele("donner", { entfernung: Math.hypot(SC.mod(z[0] + 0.5 - sp.pos[0] + P / 2, P) - P / 2, SC.mod(z[2] + 0.5 - sp.pos[2] + P / 2, P) - P / 2) });
+    if(!eigen) return;
+    if(this.raum instanceof SC.Gastgeber) this.raum.blitz(z);
+    var beute = SC.Wetter.blitzBeute(Math.random); if(beute.length && this.beuteAuswerfen) this.beuteAuswerfen([z[0] + 0.5, z[1] + 1.2, z[2] + 0.5], beute);
+  };
   // Fließen rechnen nur Einzelspieler und Gastgeber; ein Gast bekommt die Blöcke vom Gastgeber und meldet die Warteschlange ab
   SC.Spiel.prototype._flussTakt = function(dt){
     if(!this.fluss) return;
@@ -563,7 +594,9 @@ SC.Spiel.startpunkt = function(planet){
       if(typeof n.tageszeit === "number") this.tageszeit = n.tageszeit;
       if(this.daten && n.schwierigkeit) this.daten.schwierigkeit = n.schwierigkeit;
       if(n.modus && n.modus !== this._raumModus && this.spieler){ this._raumModus = n.modus; this.modus(n.modus); } // Modus legt der Gastgeber fest
+      if(n.wetter && this.wetter){ this.wetter.gast = true; this.wetter.uebernimm(n.wetter); }   // Wetter legt der Gastgeber fest
     } else if(n.t === "spieler") rueck(this, "spieler", gast.spieler);
+    else if(n.t === "blitz" && this.welt && this.spieler) this._blitz([n.x, n.y, n.z], false);
     else if(n.t === "verpufft" && n.pos && this.render && this.render.wesen){ this.render.wesen.funken([n.pos[0], n.pos[1] + 1, n.pos[2]], "#ffd95c", 30, this.spieler.pos); this.audio.spiele("zerfall");
       var war = this._fzWar; if(war && war.f.id === n.id) this.ui.hinweis(SC.T.fahrzeugVerpufft.replace("{name}", SC.Fahrzeug.def(war.f).name), 4000); } // absetzen übernimmt _gastFahrzeuge
   };

@@ -112,7 +112,7 @@
 
   // Eigener Zustand für den Raum (Ziele der Gegner, „in der Nähe“, zustand-Nachricht)
   S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf, surv = sp.modus === "survival";
-    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), schlaeft: !!sp.schlaeft, hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, tiere: this.all ? [] : (this._tiereListe || []), schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
+    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), schlaeft: !!sp.schlaeft, hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, tiere: this.all ? [] : (this._tiereListe || []), schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, wetter: this.wetter && !this.wetter.gast ? this.wetter.netz() : null, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
   // Gast: Blöcke nur ändern, solange die Verbindung steht (sonst ginge der Wunsch verloren)
   // Eimer in der Hand (Survival): leer → aus der angeschauten Quelle schöpfen, voll → vor dem Ziel ausgießen; tauscht den Eimer im Rucksack.
   // true = der Tipp gehört dem Eimer (auch wenn nichts passiert), false = kein Eimer in der Hand
@@ -268,7 +268,7 @@
     if(!gast && (this._auftZeit = (this._auftZeit || 0) + dt) >= 1){
       this._auftZeit = 0;
       var h = SC.himmelsFarben(SC.PALETTEN[w.planet.palette] || SC.PALETTEN.start, this.tageszeit);
-      this.auftauchen.schritt(ziele || sp, h.tageslicht, this.daten.spielzeit);
+      this.auftauchen.schritt(ziele || sp, h.tageslicht, this.daten.spielzeit, this._wetterEff);   // Wetter: Gewitter-Gegner, Frostgegner im Schneesturm …
       this.auftauchen.zerfallen.forEach(function(z){ s.render.wesen.funken(z.pos, "#b9c2cc", 14, sp.pos); }); this.auftauchen.zerfallen = [];
     }
     if(kampfNah) this._kampfBis = t + 8000;

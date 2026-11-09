@@ -147,3 +147,32 @@ test("Anleitung: Abschnitt Feuer erklärt Feuerzeug, Lagerfeuer, Kamin, Wärme, 
   var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Feuer"; })[0]; wahr(a && a[1].length >= 5, "Abschnitt");
   var t = a[1].join(" "); ["Feuerzeug", "Lagerfeuer", "Kamin", "Wasser", "Regen", "Gegner", "Kreativ"].forEach(function(w){ wahr(t.indexOf(w) >= 0, "nennt " + w); });
 });
+
+// --- Befunde der Abschlussprüfung ---
+test("Final: Die Funken bekommen die Feuerliste vom Spiel (auch als Gast), die Liste wird zwischengespeichert", function(){
+  var s = feuerSpiel(), w = s.welt, B = SC.B, got = []; s.render = { feuer: function(l){ got.push(l); } }; w.setzeBlock(8, 61, 4, B.LAGERFEUER_AN, "spieler");
+  s._feuerTakt(0.1); gleich(got.length, 1); gleich(got[0].length, 1, "ein brennendes Feuer"); s.rolle = "gast"; s._feuerTakt(0.1); gleich(got.length, 2, "Gäste bekommen auch Funken");
+  wahr(s.feuer.liste() === s.feuer.liste(), "gleiche Liste ohne Änderung (keine Zuweisung pro Bild)"); var alt = s.feuer.liste(); w.setzeBlock(9, 61, 4, B.KAMIN_AN, "spieler"); wahr(s.feuer.liste() !== alt && s.feuer.liste().length === 2, "nach Änderung neu");
+  s.render = null; s._feuerTakt(0.1); wahr(true, "ohne Renderer kein Fehler");
+});
+test("Final: Fernkämpfer schießen nicht auf einen Spieler am Feuer, aber ohne Feuer schon", function(){
+  var w = feuerWelt(), B = SC.B, k = new SC.Feuer.Karte(w), ziel = { pos: [14.5, 61, 10.5], sichtbar: true, mitte: 1 };
+  var g = feuerGegner(w, "patrouillendroide", 23, 10); SC.KI.schritt(w, g, ziel, 0.05, SC.zufall(1), 1); gleich(g.bemerkt, true, "ohne Feuer bemerkt");
+  w.setzeBlock(14, 61, 10, B.LAGERFEUER_AN, "spieler"); w.feuer = k; var g2 = feuerGegner(w, "patrouillendroide", 23, 10); var abst = Math.hypot(g2.pos[0] - 14.5, g2.pos[2] - 10.5); wahr(abst > SC.FEUER.sperrRadius, "Droide steht außerhalb von 6,5 Blöcken: " + abst);
+  var akt = SC.KI.schritt(w, g2, ziel, 0.05, SC.zufall(1), 1); gleich(g2.bemerkt, false, "Spieler am Feuer: nicht bemerkt"); gleich(akt.filter(function(a){ return a.art === "schuss"; }).length, 0, "kein Schuss");
+  var g3 = feuerGegner(w, "patrouillendroide", 23, 22); SC.KI.schritt(w, g3, { pos: [14.5, 61, 22.5], sichtbar: true, mitte: 1 }, 0.05, SC.zufall(1), 1); gleich(g3.bemerkt, true, "Spieler weit vom Feuer: bemerkt");
+});
+test("Final: Die Karte findet Feuer in vielen neu geladenen Chunks schon beim ersten Aufruf", function(){
+  var w = feuerWelt(), B = SC.B; for(var cx = 0; cx < 7; cx++) for(var cz = 0; cz < 6; cz++) w.chunk(cx, cz);   // 42 Chunks geladen
+  w.setzeBlock(6 * 16 + 3, 61, 5 * 16 + 3, B.KAMIN_AN, "system"); var k = new SC.Feuer.Karte(w); k.aktualisiere(); gleich(k.liste().length, 1, "Feuer im zuletzt geladenen Chunk sofort gefunden");
+});
+test("Final: Wassereimer auf eine ausgeschaltete Feuerstelle gießt nicht daneben und bleibt voll", function(){
+  var s = feuerSpiel(), w = s.welt, B = SC.B; w.setzeBlock(8, 61, 4, B.LAGERFEUER, "system"); w.setzeBlock(10, 61, 4, B.KAMIN, "system"); s.kampf.rucksack.plaetze[0] = { block: B.EIMER_WASSER, anzahl: 1 }; s._blockErlaubt = function(){ return true; }; s._mitspielerOrte = function(){ return []; };
+  [[8, "lager"], [10, "kamin"]].forEach(function(p){ gleich(s._eimer({ x: p[0], y: 61, z: 4, nx: 0, ny: 1, nz: 0 }), true, p[1] + ": Tipp gehört dem Feuer"); gleich(s.kampf.rucksack.hat(B.EIMER_WASSER), 1, p[1] + ": Eimer bleibt voll"); gleich(w.holeBlock(p[0], 62, 4), B.LUFT, p[1] + ": kein Wasser daneben"); });
+});
+test("Final: Im Kreativmodus löscht der Wassereimer ein brennendes Feuer, gießt nicht daneben und bleibt voll", function(){
+  var s = feuerSpiel(), w = s.welt, B = SC.B; s.spieler.modus = "kreativ"; w.setzeBlock(8, 61, 4, B.LAGERFEUER_AN, "system"); w.setzeBlock(10, 61, 4, B.KAMIN, "system"); s.spieler.schnellleiste[0] = B.EIMER_WASSER; s._mitspielerOrte = function(){ return []; };
+  gleich(s._eimerKreativ({ x: 8, y: 61, z: 4, nx: 0, ny: 1, nz: 0 }), true); gleich(w.holeBlock(8, 61, 4), B.LAGERFEUER, "gelöscht"); wahr(s.klaenge.indexOf("loeschen") >= 0, "Klang"); gleich(s.hinweise[0], SC.T.feuerAus);
+  gleich(s._eimerKreativ({ x: 10, y: 61, z: 4, nx: 0, ny: 1, nz: 0 }), true, "auf ausgeschaltete Stelle"); gleich(w.holeBlock(10, 62, 4), B.LUFT, "kein Wasser daneben");
+  s.spieler.schnellleiste[0] = B.EIMER_LAVA; w.setzeBlock(8, 61, 4, B.LAGERFEUER_AN, "system"); s._eimerKreativ({ x: 8, y: 61, z: 4, nx: 0, ny: 1, nz: 0 }); gleich(w.holeBlock(8, 61, 4), B.LAGERFEUER_AN, "Lava löscht nicht");
+});

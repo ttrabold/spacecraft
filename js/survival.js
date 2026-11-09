@@ -132,6 +132,7 @@
       neu = { block: SC.Eimer.voll(art), anzahl: 1 };
     } else {
       var gel = ziel && SC.Eimer.art(hand.block) === "wasser" && SC.Feuer.brennt(w.holeBlock(ziel.x, ziel.y, ziel.z)) && SC.Feuer.loeschen(w, ziel.x, ziel.y, ziel.z);   // Wasser auf ein brennendes Feuer löscht es
+      if(!gel && ziel && SC.Feuer.istStelle(w.holeBlock(ziel.x, ziel.y, ziel.z))) return true;   // auf eine Feuerstelle (auch ausgeschaltet) gießt man nicht daneben
       if(!gel && (!ziel || !SC.Eimer.ausgiessen(w, sp, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, SC.Eimer.art(hand.block), this._mitspielerOrte()))) return true;
       neu = { block: B.EIMER, anzahl: 1 };
     }
@@ -178,6 +179,10 @@
   S._eimerKreativ = function(ziel){
     var art = SC.Eimer.art(this.spieler.schnellleiste[this.spieler.auswahl]);
     if(!art) return false;
+    if(ziel && SC.Feuer.istStelle(this.welt.holeBlock(ziel.x, ziel.y, ziel.z))){   // Wasser löscht ein brennendes Feuer, sonst wird auf einer Feuerstelle nichts gegossen
+      if(art === "wasser" && SC.Feuer.loeschen(this.welt, ziel.x, ziel.y, ziel.z)){ this.ui.hinweis(SC.T.feuerAus, 1500); this.audio.spiele("loeschen"); }
+      return true;
+    }
     if(ziel && SC.Eimer.ausgiessen(this.welt, this.spieler, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, art, this._mitspielerOrte())) this.audio.spiele("platsch");
     return true;
   };

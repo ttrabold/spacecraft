@@ -1,6 +1,6 @@
 // Lagerfeuer und Kamin (Spec 2026-11-09-feuer-design.md): Zahlen, Schalten (zünden/löschen), Karte der brennenden Feuer, Wärme, Gegner-Abstand, Regen.
 // Brennende Stellen sind eigene Blöcke (LAGERFEUER_AN, KAMIN_AN), deshalb sehen alle Mitspieler das Feuer und es wird mit der Welt gespeichert.
-SC.FEUER = { waermeRadius: 6, gegnerRadius: 5, sperrRadius: 6.5, regenSekunden: 6 };   // Blöcke; sperrRadius: so nah am Feuer verfolgen normale Gegner nicht; regenSekunden: im Mittel bis ein Lagerfeuer im Regen ausgeht
+SC.FEUER = { waermeRadius: 6, gegnerRadius: 5, sperrRadius: 6.5, regenSekunden: 6, scanChunks: 48 };   // Blöcke; sperrRadius: so nah am Feuer verfolgen normale Gegner nicht; regenSekunden: im Mittel bis ein Lagerfeuer im Regen ausgeht
 SC.Feuer = {};
 (function(){
   var B = SC.B, AN = {}, AUS = {};
@@ -23,21 +23,22 @@ SC.Feuer = {};
   K.abbauen = function(){ this.welt.ereignisse.aus("block", this._h); };
   K._block = function(b){
     var k = b.x + "," + b.y + "," + b.z;
-    if(SC.Feuer.brennt(b.id)) this.feuer[k] = [b.x, b.y, b.z, SC.BLOECKE[b.id].feuer]; else if(this.feuer[k]) delete this.feuer[k];
+    if(SC.Feuer.brennt(b.id)){ this.feuer[k] = [b.x, b.y, b.z, SC.BLOECKE[b.id].feuer]; this._l = null; } else if(this.feuer[k]){ delete this.feuer[k]; this._l = null; }
   };
-  // Pflegt die Karte: entladene Chunks vergessen, höchstens zwei neu geladene Chunks scannen (verteilt die Arbeit auf mehrere Aufrufe)
+  // Pflegt die Karte: entladene Chunks vergessen, höchstens SC.FEUER.scanChunks neu geladene Chunks scannen (ein Scan ist billig; so ist ein Feuer nach Reise oder Laden gleich da)
   K.aktualisiere = function(){
     var w = this.welt, k, t, i, n = 0, s = this;
     for(k in this.gescannt) if(!w.chunks.has(k)){
       delete this.gescannt[k]; t = k.split(","); var x0 = +t[0] * 16, z0 = +t[1] * 16;
-      for(var f in this.feuer){ var e = this.feuer[f]; if(e[0] >= x0 && e[0] < x0 + 16 && e[2] >= z0 && e[2] < z0 + 16) delete this.feuer[f]; }
+      for(var f in this.feuer){ var e = this.feuer[f]; if(e[0] >= x0 && e[0] < x0 + 16 && e[2] >= z0 && e[2] < z0 + 16){ delete this.feuer[f]; this._l = null; } }
     }
     w.chunks.forEach(function(c, key){
-      if(s.gescannt[key] || n >= 2) return; s.gescannt[key] = true; n++; var tt = key.split(","), cx = +tt[0] * 16, cz = +tt[1] * 16;
-      for(var j = 0; j < c.length; j++){ var id = c[j]; if(id === B.LAGERFEUER_AN || id === B.KAMIN_AN){ var lx = j & 15, lz = (j >> 4) & 15, ly = j >> 8; s.feuer[(cx + lx) + "," + ly + "," + (cz + lz)] = [cx + lx, ly, cz + lz, SC.BLOECKE[id].feuer]; } }
+      if(s.gescannt[key] || n >= SC.FEUER.scanChunks) return; s.gescannt[key] = true; n++; var tt = key.split(","), cx = +tt[0] * 16, cz = +tt[1] * 16;
+      for(var j = 0; j < c.length; j++){ var id = c[j]; if(id === B.LAGERFEUER_AN || id === B.KAMIN_AN){ var lx = j & 15, lz = (j >> 4) & 15, ly = j >> 8; s.feuer[(cx + lx) + "," + ly + "," + (cz + lz)] = [cx + lx, ly, cz + lz, SC.BLOECKE[id].feuer]; s._l = null; } }
     });
   };
-  K.liste = function(){ var l = []; for(var k in this.feuer) l.push(this.feuer[k]); return l; };
+  // Liste der brennenden Feuer [[x, y, z, art], …]; bleibt dieselbe Liste, solange sich nichts ändert (nicht verändern!)
+  K.liste = function(){ if(!this._l){ var l = []; for(var k in this.feuer) l.push(this.feuer[k]); this._l = l; } return this._l; };
   // Waagerechter Abstand zum nächsten brennenden Feuer (Infinity ohne Feuer)
   K.naechsterAbstand = function(pos){
     var best = Infinity, w = this.welt; for(var k in this.feuer){ var f = this.feuer[k], d = ring(w, [f[0] + 0.5, f[1], f[2] + 0.5], pos), l = Math.hypot(d[0], d[2]); if(l < best) best = l; }

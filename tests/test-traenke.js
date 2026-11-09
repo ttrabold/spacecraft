@@ -141,3 +141,44 @@ test("Spieler: Schwerkraftfaktor bremst das Fallen, die Sprunghöhe bleibt", fun
   var w = trankWelt(), s = new SC.Spieler({ id: "a", pos: [4.5, 61, 4.5], blick: [0, 0], modus: "survival" }); s.schritt(w, trankRuhe, 1 / 60); s.schwerkraftFaktor = 0.35;
   s.schritt(w, Object.assign({}, trankRuhe, { springen: true, springenNeu: true }), 1 / 60); wahr(Math.abs(s.geschw[1] - SC.PHYSIK.sprung * Math.sqrt(0.35)) < 0.01, "Sprunggeschwindigkeit " + s.geschw[1]);
 });
+
+// --- Speichern, Trinken und Spielablauf ---
+test("Spielstand: neuer Stand hat trank null, alter Stand ohne Feld wird zu null", function(){
+  var d = SC.Spielstand.neu({ name: "T", seedText: "t", modus: "survival" }); gleich(d.spieler.trank, null);
+  var alt = JSON.parse(JSON.stringify(d)); delete alt.spieler.trank; gleich(SC.Spielstand.migriere(alt).daten.spieler.trank, null);
+  gleich(SC.Spielstand.figur(d).trank, null);
+});
+test("Spielstand: laufender Trank überlebt Speichern und Laden mit Restzeit, auch als Gast-Figur", function(){
+  var k = trankKampf(); k.trinke("rot:fuchsgras"); k.zeitTrank(50);
+  SC.Spielstand.ausSpieler(k.daten, k.spieler, k); var j = JSON.parse(JSON.stringify(k.daten));
+  gleich(j.spieler.trank.kristall, "rot"); gleich(j.spieler.trank.pflanze, "fuchsgras"); gleich(j.spieler.trank.rest, 130);
+  var k2 = new SC.Kampf(k.welt, new SC.Spieler({ id: "b", pos: [4.5, 61, 4.5], modus: "survival" }), SC.Spielstand.migriere(j).daten, SC.zufall(2)); gleich(k2.trank.rest, 130); gleich(k2.werte.schadenBonus >= 25, true);
+  var f = SC.Spielstand.figur(j); gleich(f.trank.pflanze, "fuchsgras");
+  var ein = SC.Spielstand.neu({ name: "G", seedText: "g", modus: "survival" }); SC.Spielstand.figurUebernehmen(ein, f); gleich(ein.spieler.trank.rest, 130);
+  k.trankEnde(); SC.Spielstand.ausSpieler(k.daten, k.spieler, k); gleich(k.daten.spieler.trank, null);
+});
+test("Kampf: Besiegtwerden und Zuschauermodus beenden den Trank", function(){
+  var k = trankKampf(); k.trinke("gelb:hasenklee"); k.werte.lp = 0; k.zeitTrank(1); gleich(k.trank, null); wahr(k.werte.tempoBonus < 30, "Bonus weg");
+  var k2 = trankKampf(); k2.trinke("gelb:hasenklee"); k2.spieler.modus = "zuschauer"; k2.zeitTrank(1); gleich(k2.trank, null);
+  var k3 = trankKampf(); k3.trinke("gelb:hasenklee"); k3.zeitTrank(1); gleich(k3.trank.rest, 179);
+});
+function trankSpiel(modus, plaetze){
+  var k = trankKampf(); k.spieler.modus = modus; plaetze.forEach(function(p, i){ k.rucksack.plaetze[i] = p; }); k.spieler.auswahl = 0;
+  var log = { hinweis: [], klang: [] };
+  return { s: { kampf: k, spieler: k.spieler, ui: { hinweis: function(t){ log.hinweis.push(t); } }, audio: { spiele: function(n){ log.klang.push(n); } } }, k: k, log: log };
+}
+test("Spiel: trankTrinken im Survival verbraucht einen Trank und setzt den Zustand", function(){
+  var t = trankSpiel("survival", [{ block: SC.B.TRANK, anzahl: 2, trank: "gelb:hasenklee" }]);
+  gleich(SC.Spiel.prototype.trankTrinken.call(t.s, 0), true); gleich(t.k.rucksack.plaetze[0].anzahl, 1); gleich(t.k.trank.kristall, "gelb"); gleich(t.log.klang[0], "trinken"); gleich(t.log.hinweis.length, 1);
+  wahr(t.log.hinweis[0].indexOf("Hasenklee") >= 0, "Hinweis nennt die Pflanze: " + t.log.hinweis[0]);
+  SC.Spiel.prototype.trankTrinken.call(t.s, 0); gleich(t.k.rucksack.plaetze[0], null);
+  gleich(SC.Spiel.prototype.trankTrinken.call(t.s, 0), false);   // Platz leer
+});
+test("Spiel: trankTrinken im Kreativ verbraucht nichts, im Zuschauermodus geht es nicht", function(){
+  var t = trankSpiel("kreativ", [{ block: SC.B.TRANK, anzahl: 1, trank: "rot:hasenklee" }]);
+  gleich(SC.Spiel.prototype.trankTrinken.call(t.s, 0), true); gleich(t.k.rucksack.plaetze[0].anzahl, 1); gleich(t.k.trank.kristall, "rot");
+  var z = trankSpiel("zuschauer", [{ block: SC.B.TRANK, anzahl: 1, trank: "rot:hasenklee" }]);
+  gleich(SC.Spiel.prototype.trankTrinken.call(z.s, 0), false); gleich(z.k.trank, null); gleich(z.k.rucksack.plaetze[0].anzahl, 1);
+  var kein = trankSpiel("survival", [{ block: SC.B.STEIN, anzahl: 3 }]); gleich(SC.Spiel.prototype.trankTrinken.call(kein.s, 0), false); gleich(kein.k.rucksack.plaetze[0].anzahl, 3);
+  var kaputt = trankSpiel("survival", [{ block: SC.B.TRANK, anzahl: 1, trank: "kaputt" }]); gleich(SC.Spiel.prototype.trankTrinken.call(kaputt.s, 0), false); gleich(kaputt.k.rucksack.plaetze[0].anzahl, 1);
+});

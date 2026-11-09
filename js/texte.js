@@ -80,6 +80,7 @@ SC.T = {
   wetterName: { regen: "Regen", gewitter: "Gewitter", schnee: "Schnee", schneesturm: "Schneesturm", nebel: "Nebel", wolkenbruch: "Wolkenbruch" }, wetterKlar: "Klar",
   ewWetter: "Wetter setzen", ewTrocknen: "Austrocknen jetzt",
   tierstimmen: "Tierstimmen", tierstimmenNamen: "Tiere rufen ihren Namen", tierstimmenGeraeusche: "Tiergeräusche",
+  trankGetrunken: "Getrunken: {pflanze}-Trank – {wirkung}", trankWirkung: { tempo: "schneller laufen", sprung: "höher springen", schaden: "mehr Schaden", schild: "mehr Schild", schweben: "schweben", nachtsicht: "Nachtsicht" },
   wetterEffekte: "Wetter-Effekte", wetterEffekteAn: "An", wetterEffekteWeniger: "Weniger (für ältere Tablets)",
   fpsAnzeigen: "FPS anzeigen", autoAnlegen: "Bessere Ausrüstung automatisch anlegen", autoAngelegt: "Neu angelegt: {name} ({wert} {alt} → {neu})", bildrate: "Höchste Bildrate (Bilder pro Sekunde)", bildrateFrei: "Unbegrenzt", aufloesung: "Auflösung", aufloesungNormal: "Normal (sparsam)", aufloesungHoch: "Hoch (scharf, braucht mehr Leistung)",
   fertig: "Fertig",

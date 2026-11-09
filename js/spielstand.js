@@ -30,7 +30,7 @@ SC.Spielstand = {};
       planeten: { start: { id: "start", seed: SC.hashText(seed + ":start"), groesse: 2048, palette: "start", generatorVersion: SC.GENERATOR_VERSION, chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {}, wetter: null, wetterSpuren: [] } },
       mitspieler: {},
       spieler: { name: o.figurName || "", figurId: neueId(), pos: null, blick: [0, 0], schnellleiste: LEISTE.slice(), schnellleisteKreativ: LEISTE.slice(), ansicht: "ich",
-        stufe: 1, erfahrung: 0, lebenspunkte: null, schild: null, rucksack: leererRucksack(), ausruestung: leereAusruestung(), kaefig: leererKaefig() }
+        stufe: 1, erfahrung: 0, lebenspunkte: null, schild: null, trank: null, rucksack: leererRucksack(), ausruestung: leereAusruestung(), kaefig: leererKaefig() }
     };
   };
 
@@ -53,6 +53,7 @@ SC.Spielstand = {};
     if(kampf){
       var s = daten.spieler, w = kampf.werte;
       s.stufe = w.stufe; s.erfahrung = w.erfahrung; s.lebenspunkte = w.lp; s.schild = w.schild;
+      s.trank = kampf.trank ? { kristall: kampf.trank.kristall, pflanze: kampf.trank.pflanze, rest: kampf.trank.rest } : null;
       s.rucksack = kampf.rucksack.alsDaten(); s.ausruestung = JSON.parse(JSON.stringify(kampf.ausruestung));
       if(kampf.kaefig) s.kaefig = kampf.kaefig.alsDaten();
     }
@@ -60,7 +61,7 @@ SC.Spielstand = {};
   };
 
   // Figur = alles, was ein Spieler zwischen Welten mitnimmt
-  SC.Spielstand.FIGUR_FELDER = ["name", "figurId", "stufe", "erfahrung", "lebenspunkte", "schild", "rucksack", "ausruestung", "kaefig", "schnellleiste", "schnellleisteKreativ"];
+  SC.Spielstand.FIGUR_FELDER = ["name", "figurId", "stufe", "erfahrung", "lebenspunkte", "schild", "rucksack", "ausruestung", "kaefig", "schnellleiste", "schnellleisteKreativ", "trank"];
   SC.Spielstand.figur = function(daten){
     var f = {}; SC.Spielstand.FIGUR_FELDER.forEach(function(k){ f[k] = JSON.parse(JSON.stringify(daten.spieler[k] === undefined ? null : daten.spieler[k])); });
     return f;
@@ -105,6 +106,7 @@ SC.Spielstand = {};
     if(!s.schnellleiste || s.schnellleiste.length !== 9) s.schnellleiste = LEISTE.slice();
     if(!s.ansicht) s.ansicht = "ich";
     if(s.lebenspunkte === undefined) s.lebenspunkte = null;
+    if(s.trank === undefined) s.trank = null;   // Zaubertränke: laufender Trank { kristall, pflanze, rest } oder null
     // Format 2: Survival-Felder
     if(!d.schwierigkeit) d.schwierigkeit = "leicht";
     if(d.startpunkt === undefined) d.startpunkt = null;

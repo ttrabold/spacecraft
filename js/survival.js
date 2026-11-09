@@ -130,6 +130,17 @@
     rs.nimm(sp.auswahl, 1); if(rs.lege(neu)) this.beuteAuswerfen(sp.pos.slice(), [neu]);   // passt er nicht mehr hinein, fliegt er als Kugel heraus
     this.audio.spiele("platsch"); return true;
   };
+  // Zaubertrank trinken (Platz im Rucksack): im Survival wird er verbraucht, im Kreativmodus nicht; im Zuschauermodus geht es nicht → true, wenn getrunken
+  S.trankTrinken = function(platz){
+    var sp = this.spieler, k = this.kampf, st = k.rucksack.plaetze[platz];
+    if(sp.modus === "zuschauer" || !st || st.block !== SC.B.TRANK || !k.trinke(st.trank)) return false;
+    if(sp.modus === "survival") k.rucksack.verbrauche(platz);
+    var t = SC.Trank.teile(st.trank);
+    this.ui.hinweis(SC.T.trankGetrunken.replace("{pflanze}", SC.PFLANZEN[t.pflanze].name).replace("{wirkung}", SC.T.trankWirkung[SC.TRANK.wirkung[t.kristall].art]), 3500);
+    this.audio.spiele("trinken"); return true;
+  };
+  // Hält die Figur einen Zaubertrank in der Hand, trinkt das Setzen ihn (true = der Tipp gehörte dem Trank)
+  S._trankHand = function(){ var st = this.kampf.rucksack.plaetze[this.spieler.auswahl]; if(!st || st.block !== SC.B.TRANK) return false; this.trankTrinken(this.spieler.auswahl); return true; };
   // Positionen der anderen Spieler im Raum (Gastgeber und Gäste), damit niemand übergossen wird
   S._mitspielerOrte = function(){ return this._mitspielerListe ? this._mitspielerListe().map(function(m){ return m.pos; }).filter(Boolean) : []; };
   // Kreativ: voller Eimer aus der Leiste gießt aus und bleibt voll
@@ -153,7 +164,7 @@
     // Im Raum: Gastgeber rechnet Gegner für alle Spieler, Gast rechnet keine Gegner (gespiegelt) und meldet eigene Angriffe
     var raum = this.raum, gastgeber = raum instanceof SC.Gastgeber ? raum : null, gast = raum instanceof SC.Gast ? raum : null;
     var survival = sp.modus === "survival", lebt = !k.besiegt();
-    this.daten.spielzeit = (this.daten.spielzeit || 0) + dt;
+    this.daten.spielzeit = (this.daten.spielzeit || 0) + dt; k.zeitTrank(dt);
     var waffe = survival ? k.waffe() : null, wdef = waffe && SC.GEGENSTAENDE[waffe.art].waffe;
     var imFz = this._imFahrzeug(), ziel = sp.modus === "zuschauer" || imFz || !this._blockErlaubt() ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
     this.render.markiere(ziel);
@@ -194,6 +205,7 @@
       else this._abbau = null;
       // Setzen, Kiste öffnen
       if(e.setzen && this._tierBenutzen()){ /* Tier gestreichelt oder gefüttert */ }
+      else if(e.setzen && !imFz && this._trankHand()){ /* Zaubertrank getrunken */ }
       else if(e.setzen && !imFz && this._eimer(ziel)){ /* Eimer geschöpft oder ausgegossen */ }
       else if(e.setzen && ziel){
         if(this.benutzeBlock(ziel)){ /* Werkbank geöffnet */ }

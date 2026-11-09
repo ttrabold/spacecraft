@@ -59,7 +59,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
   };
   // Trank trinken (ersetzt einen laufenden) → false bei ungültigem Schlüssel; zeitTrank zählt die Spielzeit herunter, trankEnde beendet ihn sofort (z. B. beim Besiegtwerden)
   K.trinke = function(schluessel){ var z = SC.Trank.neu(schluessel); if(!z) return false; this.trank = z; this.ruestungAnwenden(); return true; };
-  K.zeitTrank = function(dt){ if(!this.trank) return; if(!SC.Trank.zeit(this.trank, dt)){ this.trank = null; this.ruestungAnwenden(); } };
+  K.zeitTrank = function(dt){ if(!this.trank) return; if(this.besiegt() || this.spieler.modus === "zuschauer"){ this.trankEnde(); return; } if(!SC.Trank.zeit(this.trank, dt)){ this.trank = null; this.ruestungAnwenden(); } };
   K.trankEnde = function(){ if(!this.trank) return; this.trank = null; this.ruestungAnwenden(); };
 
   K.waffe = function(){

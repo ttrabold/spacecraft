@@ -29,6 +29,23 @@ SC.Trank = {};
       weiss: { art: "nachtsicht", wert: 1, farbe: K.weiss.farbe }     // die Figur trägt ein Licht
     }
   };
+  // Zustand eines laufenden Tranks: { kristall, pflanze, rest } (rest = Sekunden Spielzeit) oder null
+  SC.Trank.neu = function(s){ var t = SC.Trank.teile(s); return t ? { kristall: t.kristall, pflanze: t.pflanze, rest: SC.TRANK.dauer } : null; };
+  // Aus einem Spielstand: nur gültige Zustände mit Restzeit > 0 (alte Stände ohne Feld, Müll → null); die Restzeit wird auf die Dauer begrenzt
+  SC.Trank.pruefe = function(z){
+    if(!z || typeof z !== "object" || typeof z.rest !== "number" || !(z.rest > 0) || !SC.Trank.teile(SC.Trank.schluessel(z.kristall, z.pflanze))) return null;
+    return { kristall: z.kristall, pflanze: z.pflanze, rest: Math.min(z.rest, SC.TRANK.dauer) };
+  };
+  // Zählt die Restzeit herunter; null, wenn der Trank abgelaufen ist
+  SC.Trank.zeit = function(z, dt){ if(!z) return null; z.rest -= dt; return z.rest > 0 ? z : null; };
+  // Werte, die der Trank der Figur gibt (nur die Art des Kristalls ist gesetzt)
+  SC.Trank.bonus = function(z){
+    var b = { tempo: 0, schaden: 0, schild: 0, sprung: 1, schwerkraft: 1, nachtsicht: false }, w = z && SC.TRANK.wirkung[z.kristall];
+    if(!w) return b;
+    if(w.art === "tempo") b.tempo = w.wert; else if(w.art === "schaden") b.schaden = w.wert; else if(w.art === "schild") b.schild = w.wert;
+    else if(w.art === "sprung") b.sprung = w.wert; else if(w.art === "schweben") b.schwerkraft = w.wert; else if(w.art === "nachtsicht") b.nachtsicht = true;
+    return b;
+  };
   SC.Trank.schluessel = function(kristall, pflanze){ return kristall + ":" + pflanze; };
   // → { kristall, pflanze } oder null bei ungültigem Schlüssel
   SC.Trank.teile = function(s){

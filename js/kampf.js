@@ -6,6 +6,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
   this.rucksack = new SC.Rucksack(s.rucksack);
   this.kaefig = new SC.Kaefig(s.kaefig);
   this.ausruestung = JSON.parse(JSON.stringify(s.ausruestung || { helm: null, brust: null, handschuhe: null, stiefel: null, schild: null }));
+  this.trank = SC.Trank.pruefe(s.trank);   // laufender Zaubertrank (js/traenke.js) oder null
   this.werte = { stufe: s.stufe || 1, erfahrung: s.erfahrung || 0, lp: 0, lpMax: 0, schild: 0, schildMax: 0, schutz: 0, schadenBonus: 0, tempoBonus: 0, erholungBonus: 0 };
   this.ruestungAnwenden();
   this.werte.lp = s.lebenspunkte == null ? this.werte.lpMax : Math.min(s.lebenspunkte, this.werte.lpMax);
@@ -50,8 +51,16 @@ SC.Kampf = function(welt, spieler, daten, zf){
     this.sonder = sonder;
     this.spieler.doppelsprung = sonder.has("doppelsprung");
     this.spieler.leuchten = sonder.has("leuchten");
+    // Zaubertrank: Tempo, Schaden und Schild laufen über dieselben Bonuswerte wie die Rüstung; Sprung, Schwerkraft und Nachtsicht gehen an die Figur
+    var tb = SC.Trank.bonus(this.trank);
+    w.tempoBonus += tb.tempo; w.schadenBonus += tb.schaden; w.schildMax += tb.schild; w.schild = Math.min(w.schild, w.schildMax);
+    this.spieler.sprungFaktor = tb.sprung; this.spieler.schwerkraftFaktor = tb.schwerkraft; this.spieler.leuchten = sonder.has("leuchten") || tb.nachtsicht;
     this.spieler.tempoFaktor = 1 + w.tempoBonus / 100;
   };
+  // Trank trinken (ersetzt einen laufenden) → false bei ungültigem Schlüssel; zeitTrank zählt die Spielzeit herunter, trankEnde beendet ihn sofort (z. B. beim Besiegtwerden)
+  K.trinke = function(schluessel){ var z = SC.Trank.neu(schluessel); if(!z) return false; this.trank = z; this.ruestungAnwenden(); return true; };
+  K.zeitTrank = function(dt){ if(!this.trank) return; if(!SC.Trank.zeit(this.trank, dt)){ this.trank = null; this.ruestungAnwenden(); } };
+  K.trankEnde = function(){ if(!this.trank) return; this.trank = null; this.ruestungAnwenden(); };
 
   K.waffe = function(){
     var s = this.rucksack.plaetze[this.spieler.auswahl], g = s && s.gegenstand;

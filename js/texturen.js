@@ -52,6 +52,11 @@ SC.Texturen = {};
         case "netz": c = x % 4 === 0 || y % 4 === 0 ? h : g; if((x + y) % 8 === 0) c = d; a = (x % 4 === 0 || y % 4 === 0) ? 255 : 90; break;
         // Eimer: Kübel aus Blech mit Henkel, die dritte Farbe ist der Inhalt (leer: dunkel, Wasser, Lava)
         case "eimer": a = 0; if(y >= 5 && y <= 14 && x >= 3 + (y < 10 ? 0 : 1) && x <= 12 - (y < 10 ? 0 : 1)){ a = 255; c = x === 3 || x === 12 || y === 14 || y === 9 ? d : g; if(y >= 6 && y <= 7 && x > 3 && x < 12) c = h; } else if((y === 2 && x >= 5 && x <= 10) || ((x === 4 || x === 11) && y >= 3 && y <= 4)){ a = 255; c = d; } break;
+        case "kraut": a = 0; if(x >= 7 && x <= 8 && y >= 6){ c = d; a = 255; } if(((x >= 4 && x <= 6 && y >= 9 && y <= 11) || (x >= 9 && x <= 11 && y >= 8 && y <= 10))){ c = g; a = 255; } if(y >= 3 && y <= 6 && x >= 5 && x <= 10 && !(y === 3 && (x === 5 || x === 10))){ c = x >= 7 && x <= 8 && y >= 4 && y <= 5 ? d : h; a = 255; } break;
+        case "kesseloben": c = x < 2 || x > 13 || y < 2 || y > 13 ? d : (x + y) % 7 === 0 ? h : g; break;
+        case "kesselseite": c = y < 2 || y === 8 ? h : x % 5 === 0 ? d : g; break;
+        case "flasche": a = 0; if(x >= 7 && x <= 8 && y >= 2 && y <= 5){ a = 255; c = y === 2 ? d : h; } if(y >= 6 && y <= 14 && x >= 4 && x <= 11){ if(y === 6 || y === 14 || x === 4 || x === 11){ a = 255; c = d; } else { a = 120; c = g; if(x === 5 && y >= 8 && y <= 10){ a = 255; c = h; } } } break;
+        case "trank": a = 0; if(x >= 7 && x <= 8 && y >= 2 && y <= 5){ a = 255; c = y === 2 ? d : h; } if(y >= 6 && y <= 14 && x >= 4 && x <= 11){ if(y === 6 || y === 14 || x === 4 || x === 11){ a = 255; c = d; } else if(y >= 8){ a = 255; c = x === 5 && y <= 10 ? h : g; } else { a = 100; c = h; } } break;
         case "tierfutter": c = zf() < 0.2 ? d : g; if((x * 5 + y * 3) % 11 === 0) c = h; break;
         case "werkbankoben": c = x === 0 || x === 15 || y === 0 || y === 15 ? d : y % 4 === 3 ? d : g; if(x >= 4 && x <= 11 && y >= 6 && y <= 9) c = h; break;
         case "werkbankseite": c = y < 3 || x < 2 || x > 13 ? d : g; if(y >= 6 && y <= 9 && x % 4 === 1) c = h; break;

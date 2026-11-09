@@ -8,7 +8,8 @@ SC.CRAFTING = {};
 
   // Rohstoffe, die der Kreativmodus per Knopfdruck in den Rucksack legt (Reiter „Materialien“): alles, woraus die Rezepte bestehen
   SC.CRAFTING_MATERIALIEN = [B.STAMM, B.BRETTER, B.STEIN, B.SAND, B.LEUCHTPILZ, B.EISENERZ, B.TITAN, B.GLUTSTAHL, B.MOORSILBER, B.STERNENMETALL,
-    B.KRISTALL_BLAU, B.KRISTALL_GRUEN, B.KRISTALL_ROT, B.KRISTALL_GELB, B.KRISTALL_VIOLETT, B.KRISTALL_WEISS, B.SCHALTKREIS, B.CHITIN];
+    B.KRISTALL_BLAU, B.KRISTALL_GRUEN, B.KRISTALL_ROT, B.KRISTALL_GELB, B.KRISTALL_VIOLETT, B.KRISTALL_WEISS, B.SCHALTKREIS, B.CHITIN,
+    B.FLASCHE, B.HASENKLEE, B.KATZENMINZE, B.FUCHSGRAS, B.EISBLUME, B.FROSTBEERE, B.GLUTMOHN, B.FEDERFARN, B.QUAKBLUME, B.DSCHUNGELRANKE];
 
   function bauteil(id, station, kosten, block, anzahl){ return { id: id, art: "bauteil", station: station, kosten: kosten, ergibt: { block: block, anzahl: anzahl } }; }
   function gegenstand(id, art, metall, kristall, extra){ return { id: id, art: art, station: "werkbank", gegenstand: id, metall: metall, kristall: kristall, extra: extra || [] }; }

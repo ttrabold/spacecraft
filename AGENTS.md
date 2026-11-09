@@ -19,7 +19,6 @@ js/lib/three.min.js three.js r158 (UMD-Build, unverändert eingecheckt)
 tests/index.html    Testseite (Browser), lädt dieselbe Skriptliste; SC_TEST verhindert den Spielstart
 scripts/tests.sh    führt die Testseite in Chrome ohne Fenster aus (Node ≥ 22, kein npm)
 scripts/tests-wsl.sh wie tests.sh, aber mit Windows-Chrome unter WSL2 (.wslconfig: networkingMode=mirrored)
-scripts/itch-zip.sh baut das itch.io-ZIP aus den in index.html referenzierten Dateien
 docs/ROADMAP.md     Vision, Stufen, aktueller Stand – Einstieg jeder Session
 Survival (Stufe 2)  js/werte, gegenstaende, rucksack, wesen, gegner, ki, kampf, auftauchen, render-wesen, ui-rucksack, survival
 docs/OFFENE-PUNKTE.md   Verweis auf die GitHub Issues
@@ -39,8 +38,6 @@ Die Tests laufen im Browser: `tests/index.html` öffnen, erwartet: keine ❌-Zei
 ## Veröffentlichen
 
 - **Version erhöhen** bei jeder Änderung an ausgelieferten Dateien, nach Semantic Versioning: `var V="X.Y.Z"` im Kopf von `index.html` ist die **einzige Stelle** (hängt als `?v=` an allen Dateien und am Service-Worker). Prototyp: MAJOR bleibt 0; neue Funktionen/Balance → MINOR, Fehlerbehebungen → PATCH.
-- **Release für itch.io:** GitHub → Actions → „Release (itch.io-Artefakt)“. Pro Version genau ein Release; existiert der Tag schon, bricht der Workflow ab.
-- **Devlog bei großen Änderungen:** Entwurf `docs/itch-devlog-X.Y.Z.md` (+ `.html` zum Kopieren) anlegen und einchecken; veröffentlicht wird von Hand. Am Ende der Arbeit anbieten, falls er fehlt.
 - **GitHub Pages** veröffentlicht über `.github/workflows/pages.yml` (Pages-Quelle: „GitHub Actions“, in beiden Repos). Nur Laufzeitdateien; Änderungen nur an `docs/`, `tests/`, `scripts/`, AGENTS.md oder CLAUDE.md lösen keine Veröffentlichung aus.
 - Größere Änderungen zuerst ins Test-Repo: `git push test <branch>:main`, dann in der Vorschau prüfen. Erst nach Bestätigung per Fast-Forward nach `main` und `git push origin main`.
 - Test-Vorschau und Live-Seite teilen sich denselben Origin und damit denselben `localStorage`. Dort nie Speicherstände löschen oder überschreiben. Zerstörende Tests nur per `file://` oder `localhost`.

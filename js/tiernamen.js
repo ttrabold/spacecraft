@@ -132,10 +132,11 @@ SC.Klang = SC.Klang || {};
     }
     return zeit;
   };
-  // Geräusch "tierlaut" (o.art, o.wie = ruf | freude | schreck | ko, o.entfernung in Blöcken: leiser, ab 28 fast still)
+  // Geräusch "tierlaut" (o.art, o.wie = ruf | freude | schreck | ko, o.entfernung in Blöcken: leiser, ab 28 fast still, o.modus "geraeusche" = Tiergeräusche aus js/tierlaut.js statt Namen)
   // ruf: zweimal (lange Namen einmal), freude: zweimal höher, schreck: einmal, hoch und schnell, ko: einmal, tief und langsam
   SC.Klang.tierlaut = function(c, z, t, o, v){
     var art = o.art, w = SC.Klang.NAMEN[art]; if(!w) return 0;
+    if(o.modus === "geraeusche"){ var l = SC.TIERE[art] && SC.TIERE[art].laut; return l && SC.Klang.tiergeraeusch ? SC.Klang.tiergeraeusch(c, z, t, { stimme: l[0], hoehe: l[1], wie: o.wie, entfernung: o.entfernung }, v) : 0; }
     var wie = o.wie || "ruf", lt = v * Math.max(0.1, 1 - (o.entfernung || 0) / 28) * 0.6, lang = w.split(/\s+/).length > 6;
     var p = wie === "freude" ? { hoehe: 1.12, mal: 2 } : wie === "schreck" ? { hoehe: 1.3, tempo: 1.3, mal: 1 } : wie === "ko" ? { hoehe: 0.8, tempo: 0.8, mal: 1 } : { mal: lang ? 1 : 2 };
     return SC.Klang.tiername(c, z, t, art, p, lt);

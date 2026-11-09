@@ -75,3 +75,27 @@ test("Tierlaute: Spiel ruft nur nah, mit Entfernung, gedrosselt", function(){
   f.call(s, "hund", "ruf", [200, 5, 10], true); gleich(gespielt.length, 2, "zu weit");
   f.call(s, "gibtesnicht", "ruf", [14, 5, 10], true); gleich(gespielt.length, 2, "unbekannte Art");
 });
+
+// --- Tierstimmen-Schalter: Namen oder Tiergeräusche ---
+test("Tiergeräusche: jede Art hat eine bekannte Stimme, alle Stimmen sind hörbar", function(){
+  Object.keys(SC.TIERE).forEach(function(a){ var l = SC.TIERE[a].laut; wahr(l && SC.Klang.TIERGERAEUSCHE[l[0]] && l[1] > 0, "Laut fehlt: " + a); });
+  var ps = [];
+  Object.keys(SC.Klang.TIERGERAEUSCHE).forEach(function(n){ ["ruf", "freude", "schreck", "ko"].forEach(function(w){
+    var ctx = new OfflineAudioContext(1, 44100 * 2, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.tiergeraeusch(ctx, z, 0.01, { stimme: n, hoehe: 1, wie: w }, 0.8);
+    ps.push(ctx.startRendering().then(function(b){ var d = b.getChannelData(0), s = 0; for(var i = 0; i < d.length; i++){ if(!isFinite(d[i])) { s = NaN; break; } s += d[i] * d[i]; } wahr(Math.sqrt(s / d.length) > 0.0005, n + "/" + w + " zu leise oder ungültig"); }));
+  }); });
+  return Promise.all(ps);
+});
+test("Tierstimmen: Modus geraeusche spielt Geräusch statt Namen, Standard sind Namen", function(){
+  function rms(modus){ var ctx = new OfflineAudioContext(1, 44100 * 3, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.erzeuge(ctx, z, "tierlaut", { art: "hund", wie: "ruf", modus: modus }, 0.8);
+    return ctx.startRendering().then(function(b){ var d = b.getChannelData(0), last = 0, s = 0; for(var i = 0; i < d.length; i++){ s += d[i] * d[i]; if(Math.abs(d[i]) > 0.003) last = i; } return { rms: Math.sqrt(s / d.length), ende: last / 44100 }; }); }
+  return Promise.all([rms(undefined), rms("namen"), rms("geraeusche")]).then(function(r){
+    wahr(r[0].rms > 0.002 && r[1].rms > 0.002 && r[2].rms > 0.002, "hörbar"); wahr(r[2].ende < r[0].ende - 0.2, "Geräusch deutlich kürzer als der Name: " + r[2].ende + " gegen " + r[0].ende); wahr(Math.abs(r[0].ende - r[1].ende) < 0.05, "Standard = Namen");
+  });
+});
+test("Einstellungen: tierstimmen Standard „namen“, alte Einstellungen ohne Feld, Texte, Auswahl im Panel", function(){
+  gleich(SC.Einstellungen.standard().tierstimmen, "namen"); localStorage.setItem("sc-ttest:einstellungen", JSON.stringify({ musik: 0.2 })); gleich(SC.Einstellungen.lade("ttest").tierstimmen, "namen"); localStorage.removeItem("sc-ttest:einstellungen");
+  wahr(SC.T.tierstimmen && SC.T.tierstimmenNamen && SC.T.tierstimmenGeraeusche, "Texte");
+  var s = { audio: { spiele: function(n, o){ s.o = o; } }, welt: { planet: { groesse: 512 } }, spieler: { pos: [0, 0, 0] }, einstellungen: { tierstimmen: "geraeusche" } };
+  SC.Spiel.prototype._tierLaut.call(s, "katze", "ruf", [1, 0, 0], true); gleich(s.o.modus, "geraeusche", "Spiel gibt den Modus weiter");
+});

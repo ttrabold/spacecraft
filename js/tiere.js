@@ -122,6 +122,12 @@ SC.Tier = {};
   var EMOJI = { hase: "🐰", frosch: "🐸", katze: "🐱", hund: "🐶", fuchs: "🦊", eule: "🦉", igel: "🦔", pinguin: "🐧", schneefuchs: "🐺", glutsalamander: "🦎", eisbaer: "🐻", chamaeleon: "🦎", schildkroete: "🐢", leuchtkaefer: "🐞", affe: "🐵", eichhoernchen: "🐿", reh: "🦌", schmetterling: "🦋", ente: "🦆", schaf: "🐑", schneehase: "🐇", robbe: "🐬", rentier: "🦌", schneeeule: "🦉", lavakrabbe: "🦀", papagei: "🦜", faultier: "🦥", libelle: "🦗", laubfrosch: "🐸", jaguar: "🐆" };
   Object.keys(EMOJI).forEach(function(a){ SC.TIERE[a].emoji = EMOJI[a]; });
   [["frosch", "#7dff5a"], ["pinguin", "#d8f2ff"], ["glutsalamander", "#ff7a2a"], ["leuchtkaefer", "#f4ff7a"], ["eule", "#e8d8b0"], ["schmetterling", "#ffb0e8"], ["schneeeule", "#e8f4ff"], ["papagei", "#ffd84a"], ["libelle", "#7affd8"], ["laubfrosch", "#7dff5a"], ["ente", "#7ad0ff"]].forEach(function(p){ SC.TIERE[p[0]].schussFarbe = p[1]; });
+  // Laut je Art: [Stimme, Tonhöhe-Faktor]; die Stimmen erzeugt SC.Klang (js/audio.js, "tierlaut"), Auslöser in js/haustiere.js (#185)
+  var LAUT = { hase: ["fiep", 1], frosch: ["quaken", 1], katze: ["miau", 1], hund: ["bellen", 1], fuchs: ["bellen", 1.5], eule: ["uhu", 1], igel: ["schnaufen", 1.2], pinguin: ["schnattern", 1], schneefuchs: ["bellen", 1.6],
+    glutsalamander: ["knistern", 1], eisbaer: ["brummen", 1.1], chamaeleon: ["zischen", 1], schildkroete: ["schnaufen", 0.8], leuchtkaefer: ["zirpen", 1.2], affe: ["juchzen", 1],
+    eichhoernchen: ["fiep", 1.35], reh: ["bellen", 0.8], schmetterling: ["flattern", 1], ente: ["quaken", 1.8], schaf: ["maeh", 1], schneehase: ["fiep", 1.1], robbe: ["bellen", 0.55], rentier: ["brummen", 1.5],
+    schneeeule: ["uhu", 0.85], lavakrabbe: ["klacken", 1], papagei: ["kreischen", 1], faultier: ["pfeifen", 1], libelle: ["zirpen", 0.7], laubfrosch: ["quaken", 2.2], jaguar: ["knurren", 1] };
+  Object.keys(LAUT).forEach(function(a){ SC.TIERE[a].laut = LAUT[a]; });
   var T = SC.Tier;
   T.arten =function(planetId){ return Object.keys(SC.TIERE).filter(function(a){ return SC.TIERE[a].planet === planetId; }); };
   function neueId(){ return Math.floor(Math.random() * 4294967296).toString(36) + Date.now().toString(36); }

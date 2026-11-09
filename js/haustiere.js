@@ -12,7 +12,7 @@
     if(!SC.TIERE[art] || !SC.Klang.NAMEN[art] || !this.audio || !this.welt) return;
     var jetzt = Date.now(); if(!immer && this._tierLautBis && jetzt < this._tierLautBis) return;   // Rufe dauern bis zu 2 s: sonst überlagern sie sich
     var r = pos ? ring(this.welt, this.spieler.pos, pos) : [0, 0, 0], e = Math.hypot(r[0], r[1], r[2]); if(e > 28) return;
-    this._tierLautBis = jetzt + 1500; this.audio.spiele("tierlaut", { art: art, wie: wie, entfernung: e });
+    this._tierLautBis = jetzt + 1500; this.audio.spiele("tierlaut", { art: art, wie: wie, entfernung: e, modus: this.einstellungen && this.einstellungen.tierstimmen });
   };
   // Jedes Bild: ab und zu ruft ein Wildtier oder eigener Begleiter in 24 Blöcken Umkreis (alle 5–14 s, Gast und Gastgeber, da die Wesen gespiegelt sind)
   S._tierLaute = function(dt){

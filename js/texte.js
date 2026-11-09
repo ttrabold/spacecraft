@@ -79,6 +79,7 @@ SC.T = {
   wetterKommt: { regen: "Es fängt an zu regnen.", gewitter: "Ein Gewitter zieht auf!", schnee: "Es fängt an zu schneien.", schneesturm: "Ein Schneesturm zieht auf!", nebel: "Nebel zieht auf.", wolkenbruch: "Ein Wolkenbruch zieht auf!" },
   wetterName: { regen: "Regen", gewitter: "Gewitter", schnee: "Schnee", schneesturm: "Schneesturm", nebel: "Nebel", wolkenbruch: "Wolkenbruch" }, wetterKlar: "Klar",
   ewWetter: "Wetter setzen", ewTrocknen: "Austrocknen jetzt",
+  tierstimmen: "Tierstimmen", tierstimmenNamen: "Tiere rufen ihren Namen", tierstimmenGeraeusche: "Tiergeräusche",
   wetterEffekte: "Wetter-Effekte", wetterEffekteAn: "An", wetterEffekteWeniger: "Weniger (für ältere Tablets)",
   fpsAnzeigen: "FPS anzeigen", autoAnlegen: "Bessere Ausrüstung automatisch anlegen", autoAngelegt: "Neu angelegt: {name} ({wert} {alt} → {neu})", bildrate: "Höchste Bildrate (Bilder pro Sekunde)", bildrateFrei: "Unbegrenzt", aufloesung: "Auflösung", aufloesungNormal: "Normal (sparsam)", aufloesungHoch: "Hoch (scharf, braucht mehr Leistung)",
   fertig: "Fertig",

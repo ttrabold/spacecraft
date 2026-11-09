@@ -389,3 +389,31 @@ test("Final: Der Trank läuft nicht ab, solange ein Menü offen ist", function()
   var s = trankSurv(); s.kampf.trinke("gelb:hasenklee"); s._survival(trankE(), 5, true, 1000); gleich(s.kampf.trank.rest, 180, "Menü offen: keine Zeit vergangen");
   s._survival(trankE(), 5, false, 2000); gleich(s.kampf.trank.rest, 175, "Spiel läuft: Zeit vergeht");
 });
+
+// --- Kostüm und Bewegung (Überarbeitung nach dem Probespiel: Verwandlung deutlich stärker) ---
+var KOSTUEM_TEILE = ["koerper", "kopf", "armL", "armR", "beinL", "beinR"];
+function figurFarben(f){ return KOSTUEM_TEILE.map(function(n){ return f[n].material.color.getHex(); }); }
+test("Kostüm: jede Pflanze färbt die ganze Figur in Tierfarben, Ablegen und Wechseln stellt die Spielerfarben wieder her", function(){
+  var f = SC.Figur.baue("#3a6fd8"), orig = figurFarben(f), haupt = {};
+  SC.PFLANZEN_REIHE.forEach(function(id){
+    SC.Figur.verwandle(f, "rot:" + id); var c = figurFarben(f); haupt[c[0]] = id; wahr(c.join() !== orig.join(), id + ": Farben geändert");
+    wahr(c[0] !== orig[0] && c[1] !== orig[1] && c[2] !== orig[2] && c[4] !== orig[4], id + ": Körper, Kopf, Arme und Beine sind Tier");
+    SC.Figur.verwandle(f, null); gleich(figurFarben(f).join(), orig.join(), id + ": Spielerfarben zurück");
+  });
+  gleich(Object.keys(haupt).length, 9, "jedes Tier hat eine eigene Körperfarbe");
+  SC.Figur.verwandle(f, "rot:hasenklee"); SC.Figur.verwandle(f, "blau:katzenminze"); SC.Figur.verwandle(f, null); gleich(figurFarben(f).join(), orig.join(), "Wechsel von Trank zu Trank und dann Ende");
+});
+test("Bewegung: jedes Tier hat bewegte Teile (Ohren, Schwänze, Flügel, Flammen), die sich über die Zeit ändern", function(){
+  SC.PFLANZEN_REIHE.forEach(function(id){
+    var f = SC.Figur.baue("#3a6fd8"); SC.Figur.verwandle(f, "gelb:" + id); wahr(f.trankAnim && f.trankAnim.length >= 1, id + ": bewegte Teile");
+    function stand(){ return f.trankAnim.map(function(a){ return [a.g.rotation.x, a.g.rotation.y, a.g.rotation.z, a.g.scale.y].map(function(x){ return x.toFixed(3); }).join(","); }).join("|"); }
+    SC.Figur.trankBild(f, 0); var s0 = stand(); SC.Figur.trankBild(f, 333); var s1 = stand(); wahr(s0 !== s1, id + ": bewegt sich"); SC.Figur.trankBild(f, 0); gleich(stand(), s0, id + ": gleiche Zeit, gleiche Lage");
+  });
+  var f2 = SC.Figur.baue("#3a6fd8"); SC.Figur.verwandle(f2, "gelb:hasenklee"); SC.Figur.verwandle(f2, null); gleich(f2.trankAnim.length, 0, "ohne Trank keine bewegten Teile");
+});
+test("Bewegung: Ohren links und rechts schwingen nicht im Gleichtakt, Flügel schlagen nach außen", function(){
+  var f = SC.Figur.baue("#3a6fd8"); SC.Figur.verwandle(f, "gelb:hasenklee"); SC.Figur.trankBild(f, 500);
+  var ohren = f.trankAnim.filter(function(a){ return a.art === "ohr"; }); gleich(ohren.length, 2); wahr(Math.abs(ohren[0].g.rotation.z - ohren[1].g.rotation.z) > 0.01, "nicht im Gleichtakt");
+  var p = SC.Figur.baue("#3a6fd8"); SC.Figur.verwandle(p, "gelb:federfarn"); var fl = p.trankAnim.filter(function(a){ return a.art === "fluegel"; }); gleich(fl.length, 2);
+  for(var t = 0; t < 1000; t += 50){ SC.Figur.trankBild(p, t); wahr(fl[0].g.rotation.z * fl[1].g.rotation.z < 0, "Flügel spiegelbildlich bei " + t); wahr(Math.abs(fl[0].g.rotation.z) > 0.1, "weg vom Körper bei " + t); }
+});

@@ -143,7 +143,7 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 
 - Baue an der Werkbank einen Kessel (6 Eisenerz und 2 Bretter) und aus 2 Glas drei Flaschen. Tippe den Kessel an, wähle einen Kristall und eine Pflanze und brau einen Zaubertrank. Dafür brauchst du eine Flasche, einen Kristall und eine Pflanze.
 - Der Kristall bestimmt die Wirkung: Gelb macht dich schneller, Grün lässt dich höher springen, Rot macht mehr Schaden, Blau gibt mehr Schild, Violett lässt dich schweben und langsam fallen, Weiß gibt dir Licht und Nachtsicht.
-- Die Pflanze bestimmt, wie du aussiehst: Hasenohren, Katzenöhrchen, Fuchsohren, Eisbärohren, Pinguinflügel, einen Salamanderschwanz, Papageienfedern, Froschaugen oder einen Affenschwanz. Dazu leuchtest du in der Farbe des Kristalls. Deine Mitspieler sehen das auch.
+- Die Pflanze bestimmt, welches Tier du wirst: Hase, Katze, Fuchs, Eisbär, Pinguin, Salamander, Papagei, Frosch oder Affe. Du bekommst Fell oder Haut in Tierfarben, Ohren, Schwanz und Flügel, und die wackeln, wedeln und schlagen. Dazu leuchtest du in der Farbe des Kristalls. Deine Mitspieler sehen das auch.
 - Pflanzen findest du auf jedem Planeten: In neuen Welten wachsen sie in der Landschaft (und wachsen nach einer Weile nach), und besiegte Gegner lassen sie manchmal fallen, auch in alten Welten.
 - Im Rezeptbuch (im Kessel und im Rucksack) steht alles auf einen Blick: welcher Kristall was bewirkt und welche Pflanze wie aussieht.
 - Trinken: Nimm den Trank in die Hand und tippe mit Rechtsklick oder dem Setzen-Knopf, oder wähle im Rucksack „Trinken“. Er wirkt etwa 3 Minuten. Ein neuer Trank ersetzt den alten. Wirst du besiegt, endet die Wirkung.

@@ -28,9 +28,10 @@ Die Kinder (Vater, neunjähriger Sohn und dessen Freund) sollen Zaubertränke br
 
 Jeder Trank hat zwei Bestandteile: die **Wirkung** kommt vom Kristall, das **Aussehen** von Kristall (Leuchten) und Pflanze (Tier-Teile).
 
-**Verwandlung** *(Nutzer: Tier-Teile und Leuchten, keine Größenänderung)*:
-- **Tier-Teile (von der Pflanze):** Die Figur bekommt zusätzliche Blockteile, z. B. Ohren auf dem Kopf, einen Schwanz, Flügel am Rücken, Federn oder einen Schnabel. Sie passen zu den Haustier-Arten des Planeten.
-- **Leuchten (vom Kristall):** Die Figur bekommt einen Schein in der Farbe des Kristalls und wenige Funken. Daran erkennt man auch bei Mitspielern den laufenden Buff.
+**Verwandlung** *(Nutzer: Tier-Teile und Leuchten, keine Größenänderung; nach dem Probespiel verstärkt zu „Kostüm + Bewegung“)*:
+- **Kostüm (von der Pflanze):** Die ganze Figur wird das Tier: Körper, Kopf, Arme und Beine in Tierfarben, dazu Bauchfleck, Pfoten und Füße, Schnauze, Ohren, Schwanz, Flügel oder Muster je Tier (Hase, Katze, Fuchs, Eisbär, Pinguin, Salamander, Papagei, Frosch, Affe). Die Spielerfarbe ist während des Tranks überdeckt; Mitspieler erkennt man am Namensschild. Beim Ende des Tranks kommen die Farben zurück.
+- **Bewegung:** Ohren wackeln, Schwänze wedeln, Flügel schlagen, Flammen und die Kehle des Frosches flackern.
+- **Leuchten (vom Kristall):** Die Figur hat einen Schein in der Farbe des Kristalls und wenige kreisende Funken. Daran erkennt man auch bei Mitspielern den laufenden Buff.
 
 **Wirkung je Kristallfarbe** *(Vorschlag; Zahlen stehen in einer Tabelle, damit sie sich leicht einstellen lassen)*:
 

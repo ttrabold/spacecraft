@@ -216,3 +216,61 @@ test("Rucksack: Trank hat Trinken als erste Aktion und ruft beiTrinken", functio
   gleich(knoepfe[0], "trinken"); wahr(knoepfe.indexOf("wegwerfen") > 0, "Wegwerfen nie zuerst"); wahr(w.querySelector(".rs-menue h3").textContent.indexOf("Hasenklee") >= 0, "Name nennt die Pflanze");
   w.querySelector('.rs-menue [data-aktion="trinken"]').click(); gleich(log.join(), String(pl));
 }); });
+
+// --- Verwandlung (Aussehen) und Netz ---
+function meshZahl(g){ var n = 0; g.traverse(function(o){ if(o.isMesh) n++; }); return n; }
+test("Verwandlung: jede der neun Pflanzen baut Teile, null baut sie ab", function(){
+  var f = SC.Figur.baue("#3a6fd8"), basis = meshZahl(f.gruppe);
+  SC.PFLANZEN_REIHE.forEach(function(id){ SC.Figur.verwandle(f, "rot:" + id); wahr(meshZahl(f.gruppe) > basis + 2, "Teile für " + id); SC.Figur.verwandle(f, null); gleich(meshZahl(f.gruppe), basis, "abgebaut nach " + id); });
+});
+test("Verwandlung: gleicher Schlüssel ändert nichts, ungültiger baut nichts", function(){
+  var f = SC.Figur.baue("#3a6fd8"), basis = meshZahl(f.gruppe); SC.Figur.verwandle(f, "gelb:fuchsgras"); var g1 = f.traenke, n = meshZahl(f.gruppe);
+  SC.Figur.verwandle(f, "gelb:fuchsgras"); wahr(f.traenke === g1, "gleiche Gruppe"); gleich(meshZahl(f.gruppe), n);
+  SC.Figur.verwandle(f, "kaputt"); gleich(meshZahl(f.gruppe), basis, "ungültig wie kein Trank"); SC.Figur.verwandle(f, undefined); gleich(meshZahl(f.gruppe), basis);
+});
+test("Verwandlung: Leuchtfarbe folgt dem Kristall", function(){
+  var f = SC.Figur.baue("#3a6fd8"); SC.Figur.verwandle(f, "gelb:hasenklee"); var c1 = f.trankAura[0].color.getHex(); SC.Figur.verwandle(f, "blau:hasenklee"); var c2 = f.trankAura[0].color.getHex();
+  gleich(c1, new THREE.Color(SC.TRANK.wirkung.gelb.farbe).getHex()); gleich(c2, new THREE.Color(SC.TRANK.wirkung.blau.farbe).getHex()); wahr(c1 !== c2, "verschieden");
+});
+test("Verwandlung: höchstens 40 zusätzliche Meshes je Figur, bei allen 54 Tränken", function(){
+  var f = SC.Figur.baue("#3a6fd8"), basis = meshZahl(f.gruppe);
+  Object.keys(SC.TRANK.wirkung).forEach(function(k){ SC.PFLANZEN_REIHE.forEach(function(p){ SC.Figur.verwandle(f, k + ":" + p); wahr(meshZahl(f.gruppe) - basis <= 40, k + ":" + p + " " + (meshZahl(f.gruppe) - basis)); }); });
+});
+test("Verwandlung: Funken bewegen sich, ohne Trank wirft trankBild nicht", function(){
+  var f = SC.Figur.baue("#3a6fd8"); SC.Figur.trankBild(f, 123); SC.Figur.verwandle(f, "rot:hasenklee"); SC.Figur.trankBild(f, 0); var p0 = f.trankFunken[0].position.clone(); SC.Figur.trankBild(f, 700); wahr(f.trankFunken[0].position.distanceTo(p0) > 0.05, "bewegt");
+  SC.Figur.verwandle(f, null); SC.Figur.trankBild(f, 900); wahr(true);
+});
+test("Netz: Protokoll 11, trank geht vom Gast zum Gastgeber, ungültig und fehlend ergeben keinen Trank", function(){
+  gleich(SC.NETZ_PROTOKOLL, 11);
+  var u, r;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Ben"); return raumBeitritt(u, r); }).then(function(){
+    var ich = { pos: [5, 70, 5], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, trank: "rot:hasenklee" }; r.g.takt(0.1, ich); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.h.spieler[0].trank, "rot:hasenklee");
+    r.g.takt(0.1, { pos: [5, 70, 5], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, trank: "kaputt" }); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.h.spieler[0].trank, null, "ungültiger Schlüssel wird verworfen");
+    r.g.takt(0.1, { pos: [5, 70, 5], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, trank: "gelb:fuchsgras" }); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(u.h.spieler[0].trank, "gelb:fuchsgras");
+    r.g.takt(0.1, { pos: [5, 70, 5], blick: [0, 0], modus: "survival", stufe: 1, lebt: true }); return raumLauf(u.netz);   // alter Gast ohne Feld
+  }).then(function(){ gleich(u.h.spieler[0].trank, null, "ohne Feld kein Trank"); });
+});
+test("Netz: der Gastgeber meldet den eigenen Trank an die Gäste", function(){
+  var u, r, hid;
+  return raumOffen({ antwort: true }).then(function(x){ u = x; hid = u.daten.spieler.figurId; r = raumGast(u, "Ben"); return raumBeitritt(u, r); }).then(function(){
+    u.h.takt(0.1, { pos: [1, 80, 2], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, trank: "blau:eisblume" }); return raumLauf(u.netz);
+  }).then(function(){
+    gleich(r.g.mitspieler[hid].trank, "blau:eisblume");
+    var l = SC.Spiel.prototype._mitspielerListe.call({ raum: r.g, welt: null }), e = l.filter(function(x){ return x.id === hid; })[0];
+    wahr(e, "Gastgeber in der Liste der Darstellung"); gleich(e.trank, "blau:eisblume", "Mitspielerliste reicht trank weiter");
+  });
+});
+test("Render: Weiß (Nachtsicht) schaltet das Eigenlicht der Figur ein, andere Tränke nicht", function(){
+  var r = { uniforms: { leuchtStaerke: { value: 0 }, leuchtPos: { value: new THREE.Vector3() } }, _fig: SC.Figur.baue("#3a6fd8"), trank: SC.Render.prototype.trank, _leuchtBild: SC.Render.prototype._leuchtBild };
+  r._leuchtBild(1, 2, 3); gleich(r.uniforms.leuchtStaerke.value, 0, "ohne Trank kein Licht");
+  r.trank("weiss:hasenklee"); r._leuchtBild(1, 2, 3); gleich(r.uniforms.leuchtStaerke.value, SC.LEUCHT_STAERKE); gleich(r.uniforms.leuchtPos.value.y, 3.2, "Licht um die Figur");
+  r.trank("rot:hasenklee"); r._leuchtBild(1, 2, 3); gleich(r.uniforms.leuchtStaerke.value, 0, "Rot gibt kein Licht");
+  r.trank("weiss:hasenklee"); r.trank(null); r._leuchtBild(1, 2, 3); gleich(r.uniforms.leuchtStaerke.value, 0, "Ende des Tranks");
+  r._leuchtet = true; r._leuchtBild(1, 2, 3); gleich(r.uniforms.leuchtStaerke.value, SC.LEUCHT_STAERKE, "Rüstung leuchtet weiter");
+});

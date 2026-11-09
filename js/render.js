@@ -121,6 +121,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.szene.remove(alt); alt.traverse(function(o){ if(o.material && o.material.dispose) o.material.dispose(); });
     this._baueFigur(farbe); this.figur.visible = sicht;
     if(a !== undefined) SC.Figur.ausruestung(this._fig, a, w);
+    if(this._trankKey) SC.Figur.verwandle(this._fig, this._trankKey);
   };
 
   // Waffe in der Ich-Ansicht (Rüstung und Figurwaffe baut SC.Figur)
@@ -143,6 +144,11 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var s = this.schweif, t = this._hiebT;
     s.visible = !!sw && this._hiebK !== 3 && this.handWaffe.klinge.visible; if(s.visible) s.material.opacity = t < 0.1 ? 0.6 : Math.max(0, 0.6 * (1 - (t - 0.1) / 0.15));
   };
+  // Zaubertrank der eigenen Figur (Schlüssel "kristall:pflanze" oder null), bleibt beim Farbwechsel der Figur erhalten
+  SC.Render.prototype.trank = function(schluessel){
+    var t = schluessel ? SC.Trank.teile(schluessel) : null; this._trankKey = t ? schluessel : null; SC.Figur.verwandle(this._fig, this._trankKey);
+    this._trankLicht = !!t && SC.TRANK.wirkung[t.kristall].art === "nachtsicht";   // Weiß: Nachtsicht = Licht um die Figur wie bei der Sonderkraft Leuchten
+  };
   SC.Render.prototype.ausruestung = function(a, waffe){
     this._ausrA = a; this._ausrW = waffe; SC.Figur.ausruestung(this._fig, a, waffe);
     SC.Figur.waffeStil(this.handWaffe, waffe);
@@ -152,8 +158,9 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this._leuchtet = !!a && ["helm", "brust"].some(function(p){ return a[p] && a[p].sonder === "leuchten"; });
   };
   SC.Render.prototype._leuchtBild = function(px, py, pz){
-    this.uniforms.leuchtStaerke.value = this._leuchtet ? SC.LEUCHT_STAERKE : 0;
-    if(this._leuchtet) this.uniforms.leuchtPos.value.set(px, py + 1.2, pz);
+    var an = this._leuchtet || this._trankLicht;
+    this.uniforms.leuchtStaerke.value = an ? SC.LEUCHT_STAERKE : 0;
+    if(an) this.uniforms.leuchtPos.value.set(px, py + 1.2, pz);
   };
 
   // Chunk-Grenzen (Entwicklerwerkzeuge): Gitter um den Chunk des Spielers
@@ -320,6 +327,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var sitzt = typeof spieler.sitzt === "number";
     this.figur.position.set(px, spieler.pos[1], pz); this.figur.rotation.y = sitzt ? spieler.sitzt : spieler.blick[0];
     this.kopf.rotation.x = spieler.blick[1];
+    SC.Figur.trankBild(this._fig, performance.now());
     var schw = SC.Figur.laufSchwung(spieler, performance.now());
     this.armL.rotation.x = schw; this.beinL.rotation.x = sitzt ? SC.Figur.SITZEN : -schw; this.beinR.rotation.x = sitzt ? SC.Figur.SITZEN : schw;
     this._schwungBild(dt, -schw);

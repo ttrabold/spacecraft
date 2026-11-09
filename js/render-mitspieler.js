@@ -68,7 +68,40 @@ SC.Figur = {
   ausruestung: function(figur, ruestung, waffe){
     Object.keys(figur.ruestung).forEach(function(p){ var g = ruestung && ruestung[p]; figur.ruestung[p].forEach(function(m){ m.visible = !!g; if(g) m.material.color.set(SC.Beute.stoffFarbe(g)); }); });
     SC.Figur.waffeStil(figur.waffe, waffe);
+  },
+  // Zaubertrank (Spec 2026-11-09): Tier-Teile je Pflanze (SC.PFLANZEN[..].teil, Tabelle SC.Figur.TEILE) und ein Leuchten in der Farbe des Kristalls
+  // (leicht durchsichtige Hüllen und kreisende Funken, kein Echtzeitlicht). schluessel "kristall:pflanze" oder null; derselbe Schlüssel baut nichts neu, ein ungültiger wirkt wie null.
+  verwandle: function(figur, schluessel){
+    var t = schluessel ? SC.Trank.teile(schluessel) : null, key = t ? schluessel : null;
+    if((figur.trankKey || null) === key) return;
+    if(figur.traenke){ figur.gruppe.remove(figur.traenke); figur.traenke.traverse(function(m){ if(m.material) m.material.dispose(); }); }
+    figur.traenke = null; figur.trankKey = key; figur.trankAura = []; figur.trankFunken = [];
+    if(!t) return;
+    var box = SC.Figur._box || (SC.Figur._box = new THREE.BoxGeometry(1, 1, 1)), g = new THREE.Group(), farbe = SC.TRANK.wirkung[t.kristall].farbe;
+    function teil(w, h, d, c, x, y, z, rz){ var m = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: c })); m.scale.set(w, h, d); m.position.set(x, y, z); if(rz) m.rotation.z = rz; g.add(m); return m; }
+    function huelle(w, h, d, x, y, z){ var m = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: farbe, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending })); m.scale.set(w, h, d); m.position.set(x, y, z); g.add(m); figur.trankAura.push(m.material); return m; }
+    var tt = SC.Figur.TEILE[SC.PFLANZEN[t.pflanze].teil]; if(tt) tt(teil);
+    huelle(0.62, 0.87, 0.42, 0, 1.125, 0); huelle(0.57, 0.57, 0.57, 0, 1.6, 0);
+    for(var i = 0; i < 6; i++){ var f = teil(0.07, 0.07, 0.07, farbe, 0, 1, 0); f.userData.i = i; figur.trankFunken.push(f); }
+    figur.gruppe.add(g); figur.traenke = g;
+  },
+  // Funken kreisen um die Figur (jetzt in ms); ohne Trank nichts zu tun
+  trankBild: function(figur, jetzt){
+    if(!figur.trankKey) return;
+    figur.trankFunken.forEach(function(f){ var i = f.userData.i, w = jetzt / 700 + i * Math.PI / 3; f.position.set(Math.cos(w) * 0.55, 0.3 + ((jetzt / 1500 + i / 6) % 1) * 1.7, Math.sin(w) * 0.55); });
   }
+};
+// Tier-Teile je Name aus SC.PFLANZEN: Kopf (y 1.6, ±0.225), Rücken (z = +0.14 hinten); t(Breite, Höhe, Tiefe, Farbe, x, y, z, Drehung z)
+SC.Figur.TEILE = {
+  hasenohren: function(t){ t(0.1, 0.5, 0.06, 0xfff2f2, -0.1, 2.08, 0); t(0.1, 0.5, 0.06, 0xfff2f2, 0.1, 2.08, 0); t(0.16, 0.16, 0.16, 0xffffff, 0, 0.95, 0.2); },
+  katzenoehrchen: function(t){ t(0.12, 0.16, 0.06, 0xd99b52, -0.15, 1.9, 0); t(0.12, 0.16, 0.06, 0xd99b52, 0.15, 1.9, 0); t(0.07, 0.07, 0.45, 0xd99b52, 0, 1.0, 0.37); },
+  fuchsohren: function(t){ t(0.12, 0.22, 0.06, 0xe0722a, -0.14, 1.94, 0); t(0.12, 0.22, 0.06, 0xe0722a, 0.14, 1.94, 0); t(0.12, 0.07, 0.065, 0x3a2a22, -0.14, 2.07, 0); t(0.12, 0.07, 0.065, 0x3a2a22, 0.14, 2.07, 0); t(0.16, 0.16, 0.5, 0xe8803a, 0, 0.9, 0.4); t(0.17, 0.17, 0.12, 0xffffff, 0, 0.9, 0.68); },
+  eisbaerohren: function(t){ t(0.14, 0.14, 0.08, 0xf4f8fc, -0.2, 1.85, 0); t(0.14, 0.14, 0.08, 0xf4f8fc, 0.2, 1.85, 0); },
+  pinguinfluegel: function(t){ t(0.06, 0.4, 0.2, 0x1e2a40, -0.3, 1.15, 0.2); t(0.06, 0.4, 0.2, 0x1e2a40, 0.3, 1.15, 0.2); },
+  salamanderschwanz: function(t){ t(0.12, 0.1, 0.55, 0x3a2420, 0, 0.9, 0.4); t(0.14, 0.12, 0.14, 0xff7a2a, 0, 0.9, 0.72); },
+  papageienfedern: function(t){ t(0.06, 0.4, 0.05, 0xe83a3a, -0.08, 2.03, 0, 0.3); t(0.06, 0.45, 0.05, 0xf2d03a, 0, 2.05, 0); t(0.06, 0.4, 0.05, 0x3a7ae8, 0.08, 2.03, 0, -0.3); },
+  froschaugen: function(t){ t(0.14, 0.14, 0.14, 0xfff8c8, -0.12, 1.9, -0.1); t(0.14, 0.14, 0.14, 0xfff8c8, 0.12, 1.9, -0.1); t(0.06, 0.06, 0.03, 0x1b1b2a, -0.12, 1.9, -0.18); t(0.06, 0.06, 0.03, 0x1b1b2a, 0.12, 1.9, -0.18); },
+  affenschwanz: function(t){ t(0.06, 0.06, 0.5, 0x8a5a3a, 0, 0.9, 0.35); t(0.06, 0.3, 0.06, 0x8a5a3a, 0, 1.05, 0.62); }
 };
 
 SC.RenderMitspieler = function(szene, planet){
@@ -136,6 +169,7 @@ SC.RenderMitspieler = function(szene, planet){
       g.visible = e.modus !== "zuschauer" && e.lebt !== false;
       var a = e.ausr || {}, key = JSON.stringify([a.ruestung || null, a.waffe || null]);
       if(key !== o.ausr){ o.ausr = key; SC.Figur.ausruestung(o.f, a.ruestung || null, a.waffe || null); }
+      SC.Figur.verwandle(o.f, e.trank || null); SC.Figur.trankBild(o.f, performance.now());   // Zaubertrank: Tier-Teile und Leuchten
       var halb = e.verbunden === false;
       if(halb !== !!o.halb){ o.halb = halb; g.traverse(function(m){ if(m.material && m !== o.schild){ m.material.transparent = halb || m.material.transparent; m.material.opacity = halb ? 0.4 : 1; m.material.needsUpdate = true; } }); }
       // Schild bleibt bis 64 Blöcke gleich lesbar: mit der Entfernung mitwachsen

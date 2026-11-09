@@ -119,7 +119,7 @@
 
   // Eigener Zustand für den Raum (Ziele der Gegner, „in der Nähe“, zustand-Nachricht)
   S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf, surv = sp.modus === "survival";
-    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), schlaeft: !!sp.schlaeft, hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, tiere: this.all ? [] : (this._tiereListe || []), schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, wetter: this.wetter && !this.wetter.gast ? this.wetter.netz() : null, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
+    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, trank: k.trank ? SC.Trank.schluessel(k.trank.kristall, k.trank.pflanze) : null, lebt: !k.besiegt(), schlaeft: !!sp.schlaeft, hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, tiere: this.all ? [] : (this._tiereListe || []), schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, wetter: this.wetter && !this.wetter.gast ? this.wetter.netz() : null, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
   // Gast: Blöcke nur ändern, solange die Verbindung steht (sonst ginge der Wunsch verloren)
   // Eimer in der Hand (Survival): leer → aus der angeschauten Quelle schöpfen, voll → vor dem Ziel ausgießen; tauscht den Eimer im Rucksack.
   // true = der Tipp gehört dem Eimer (auch wenn nichts passiert), false = kein Eimer in der Hand
@@ -327,6 +327,8 @@
     this._handSetzen();
     var aKey = JSON.stringify([k.ausruestung, waffe && waffe.id]);
     if(aKey !== this._ausrKey){ this._ausrKey = aKey; this.render.ausruestung(survival ? k.ausruestung : null, waffe); }
+    var tKey = k.trank ? SC.Trank.schluessel(k.trank.kristall, k.trank.pflanze) : null;
+    if(tKey !== this._trankKey){ this._trankKey = tKey; this.render.trank(tKey); }   // Zaubertrank: Aussehen der eigenen Figur
     var fzNah = this._fahrzeugNah();
     if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah && !this.all, platz: !this.all && !!this._imFahrzeug(), all: !!this.all });
     var ui = this.ui;

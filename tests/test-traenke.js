@@ -240,8 +240,8 @@ test("Verwandlung: Funken bewegen sich, ohne Trank wirft trankBild nicht", funct
   var f = SC.Figur.baue("#3a6fd8"); SC.Figur.trankBild(f, 123); SC.Figur.verwandle(f, "rot:hasenklee"); SC.Figur.trankBild(f, 0); var p0 = f.trankFunken[0].position.clone(); SC.Figur.trankBild(f, 700); wahr(f.trankFunken[0].position.distanceTo(p0) > 0.05, "bewegt");
   SC.Figur.verwandle(f, null); SC.Figur.trankBild(f, 900); wahr(true);
 });
-test("Netz: Protokoll 11, trank geht vom Gast zum Gastgeber, ungültig und fehlend ergeben keinen Trank", function(){
-  gleich(SC.NETZ_PROTOKOLL, 11);
+test("Netz: trank geht vom Gast zum Gastgeber, ungültig und fehlend ergeben keinen Trank", function(){
+  wahr(SC.NETZ_PROTOKOLL >= 11, "Protokoll mindestens 11 (Zaubertränke)");
   var u, r;
   return raumOffen({ antwort: true }).then(function(x){ u = x; r = raumGast(u, "Ben"); return raumBeitritt(u, r); }).then(function(){
     var ich = { pos: [5, 70, 5], blick: [0, 0], modus: "survival", stufe: 1, lebt: true, trank: "rot:hasenklee" }; r.g.takt(0.1, ich); return raumLauf(u.netz);

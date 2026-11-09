@@ -311,6 +311,14 @@ SC.T = {
         "Unter einem Dach bist du geschützt: kein Regen, kein Wind und bessere Sicht. Ein Unterschlupf lohnt sich!",
         "Ist dein Tablet zu langsam, stell in den Einstellungen „Wetter-Effekte“ auf „Weniger“."
       ]],
+      ["Feuer", [
+        "Das Feuerzeug baust du an der Werkbank aus 2 Eisenerz und einem roten Kristall. Es wird nie verbraucht.",
+        "Ein Lagerfeuer baust du aus 3 Baumstämmen, einen Kamin aus 6 Stein und 2 Baumstämmen. Stell sie hin und tippe sie mit dem Feuerzeug in der Hand an (Rechtsklick oder Setzen-Knopf), dann brennen sie. Das Lagerfeuer steht in der Natur, der Kamin im Haus.",
+        "Ein brennendes Feuer leuchtet warm, Funken steigen auf, und es knistert. In der Nähe füllt sich dein Leben doppelt so schnell auf. Normale Gegner trauen sich nachts nicht ans Feuer heran, nur Bosse lassen sich nicht aufhalten.",
+        "Das Feuer tut dir nichts, du kannst sogar hindurchlaufen. Es brennt, bis du es löschst: Tippe mit einem Wassereimer darauf. Bei Regen geht ein Lagerfeuer unter freiem Himmel von allein aus. Der Kamin unter einem Dach bleibt an.",
+        "Mit dem Feuerzeug zündest du es wieder an. Wenn du ein Feuer abbaust, bekommst du es zum Wiederaufstellen zurück.",
+        "Im Kreativmodus gibt es beide Feuerstellen in der Blockauswahl, ausgeschaltet und brennend."
+      ]],
       ["Zaubertränke", [
         "Baue an der Werkbank einen Kessel (6 Eisenerz und 2 Bretter) und aus 2 Glas drei Flaschen. Tippe den Kessel an, wähle einen Kristall und eine Pflanze und brau einen Zaubertrank. Dafür brauchst du eine Flasche, einen Kristall und eine Pflanze.",
         "Der Kristall bestimmt die Wirkung: Gelb macht dich schneller, Grün lässt dich höher springen, Rot macht mehr Schaden, Blau gibt mehr Schild, Violett lässt dich schweben und langsam fallen, Weiß gibt dir Licht und Nachtsicht.",

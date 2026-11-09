@@ -185,6 +185,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
   SC.Render.wetterNebel = function(sichtweite, eff, unterDach){ var f = eff ? (unterDach ? 1 - (1 - eff.sicht) * 0.5 : eff.sicht) : 1; return [sichtweite * 16 * 0.55 * f, sichtweite * 16 * 0.95 * f]; };
   SC.Render.wetterLicht = function(tageslicht, eff){ return tageslicht * (eff ? eff.dunkel : 1); };
   // Wetter für das nächste Bild merken (weniger: Einstellung „Wetter-Effekte: weniger“)
+  // Brennende Feuer für die Funken (Liste von SC.Feuer.Karte#liste, leer = keine)
+  SC.Render.prototype.feuer = function(liste){ this._feuerListe = liste; };
   SC.Render.prototype.wetter = function(eff, unterDach, weniger){ this._wetter = eff; this._unterDach = !!unterDach; this._weniger = !!weniger; };
   // Blitz: Strahl und (außer bei „weniger“) ein heller Schein über die Welt
   SC.Render.prototype.blitz = function(pos){ if(!this.wetterBild) return; this.wetterBild.blitz(pos); if(!this._weniger) this._blitzHell = 1; };
@@ -359,6 +361,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.uniforms.zeit.value = (this.uniforms.zeit.value + (dt || 0)) % 64;   // Fließ-Animation (Rest 64: Muster wiederholt sich je Kachel, Genauigkeit bleibt)
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);
     var nb = SC.Render.wetterNebel(this.sichtweite, we, this._unterDach); this.uniforms.nebelNah.value = nb[0]; this.uniforms.nebelFern.value = nb[1];
+    if(this._feuerListe && (this._feuerListe.length || this.feuerBild)){ if(!this.feuerBild) this.feuerBild = new SC.RenderFeuer(this.szene); this.feuerBild.bild(this._feuerListe, performance.now(), [k.position.x, k.position.y, k.position.z], this.planet.groesse, this._weniger); }
     if(we){ if(!this.wetterBild) this.wetterBild = new SC.RenderWetter(this.szene); this.wetterBild.bild(we, dt || 0, [k.position.x, k.position.y, k.position.z], this._unterDach, this._weniger); }
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());
     this.mitspieler.aktualisiere(this._mitspieler || [], spieler.pos, dt, k.position);

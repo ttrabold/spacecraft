@@ -46,6 +46,8 @@ SC.Klang = {};
     rausch(ctx, filter(ctx, "highpass", 1400, 0.7, huelle(ctx, z, t, 0.002, 0, 0.12, v * 0.5)), t, 0.15);
   };
 
+  // n kurze Klicks (Knistern, Funken) im Abstand abstand s um die Frequenz f
+  function klicks(ctx, z, t, n, abstand, f, v){ for(var i = 0; i < n; i++){ var ti = t + i * abstand + Math.random() * 0.02; rausch(ctx, filter(ctx, "bandpass", f * (0.85 + Math.random() * 0.3), 5, huelle(ctx, z, ti, 0.001, 0, 0.025, v * (0.5 + Math.random() * 0.5))), ti, 0.04); } }
   SC.Klang.material = function(id){
     var B = SC.B;
     if([B.STEIN, B.GRUNDGESTEIN, B.STEINZIEGEL, B.BETON, B.KIES, B.KRISTALL].indexOf(id) >= 0) return id === B.KRISTALL ? "glas" : "stein";
@@ -120,6 +122,18 @@ SC.Klang = {};
     } else if(name === "einsteigen"){
       osz(ctx, "sine", 160, huelle(ctx, z, t, 0.005, 0, 0.12, v * 0.4), t, t + 0.15);
       var oe = osz(ctx, "triangle", 300, huelle(ctx, z, t + 0.1, 0.02, 0.15, 0.2, v * 0.15), t + 0.1, t + 0.5); oe.frequency.exponentialRampToValueAtTime(700, t + 0.45);
+    } else if(name === "zuenden"){
+      // Feuerzeug: Funkenratsch, dann ein Fauchen und Knistern
+      klicks(ctx, z, t, 4, 0.03, 3500, v * 0.35); rausch(ctx, filter(ctx, "bandpass", 700, 0.8, huelle(ctx, z, t + 0.1, 0.05, 0.1, 0.3, v * 0.3)), t + 0.1, 0.5);
+      klicks(ctx, z, t + 0.25, 5, 0.05, 2800, v * 0.25);
+    } else if(name === "loeschen"){
+      // Wasser auf das Feuer: langes Zischen und ein dumpfer Plumps
+      rausch(ctx, filter(ctx, "highpass", 3200, 0.7, huelle(ctx, z, t, 0.03, 0.2, 0.6, v * 0.3)), t, 0.9); osz(ctx, "sine", 120, huelle(ctx, z, t, 0.003, 0, 0.12, v * 0.3), t, t + 0.2);
+    } else if(name === "feuer"){
+      // Knistern eines brennenden Feuers (o.entfernung in Blöcken: ab 14 fast still)
+      var lf = v * Math.max(0.05, 1 - ((o && o.entfernung) || 0) / 14);
+      klicks(ctx, z, t, 4 + Math.floor(Math.random() * 3), 0.06 + Math.random() * 0.04, 2200 + Math.random() * 2500, lf * 0.7);
+      rausch(ctx, filter(ctx, "lowpass", 300, 0.7, huelle(ctx, z, t, 0.05, 0.1, 0.35, lf * 0.15)), t, 0.5);
     } else if(name === "brauen"){
       // Zaubertrank brauen: dumpfes Köcheln und aufsteigende Blasen
       rausch(ctx, filter(ctx, "lowpass", 500, 0.7, huelle(ctx, z, t, 0.05, 0.3, 0.25, v * 0.12)), t, 0.65);

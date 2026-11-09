@@ -112,3 +112,38 @@ test("Feuer: Takt schiebt Gegner aus dem Umkreis; Regen löscht nur als Gastgebe
   s.rolle = "allein"; s._feuerTakt(1); gleich(w.holeBlock(8, 61, 4), B.LAGERFEUER, "Regen löscht"); gleich(w.holeBlock(20, 61, 20), B.KAMIN_AN, "Kamin brennt"); wahr(s.klaenge.indexOf("loeschen") >= 0, "Klang"); wahr(g.pos[0] > vor, "Gegner geschoben");
   var s2 = feuerSpiel(); s2._feuerTakt(1); wahr(true, "ohne Feuer und ohne Wetter kein Fehler"); var s3 = feuerSpiel(); s3.feuer = null; s3._feuerTakt(1); wahr(true, "ohne Karte kein Fehler");
 });
+
+// --- Funken, Geräusche, Knistern ---
+test("Feuer: Funken steigen über den nächsten brennenden Feuern auf, nur in der Nähe, höchstens acht Feuer, weniger bei „Weniger“", function(){
+  var sz = new THREE.Scene(), r = new SC.RenderFeuer(sz), P = 2048, kam = [100, 70, 100];
+  r.bild([], 1000, kam, P); gleich(r._geo.drawRange.count, 0, "ohne Feuer keine Funken");
+  r.bild([[103, 61, 100, "lager"]], 1000, kam, P, false); gleich(r._geo.drawRange.count, 12, "zwölf Funken je Feuer");
+  var p = r._p; for(var i = 0; i < 12; i++){ wahr(p[i * 3 + 1] >= 61 && p[i * 3 + 1] <= 61 + 2.5, "Höhe " + p[i * 3 + 1]); wahr(Math.hypot(p[i * 3] - 103.5, p[i * 3 + 2] - 100.5) < 0.8, "bleibt über dem Feuer"); }
+  var vor = Array.prototype.slice.call(p, 0, 36); r.bild([[103, 61, 100, "lager"]], 1400, kam, P, false); wahr(vor.join() !== Array.prototype.slice.call(p, 0, 36).join(), "bewegt sich");
+  r.bild([[300, 61, 300, "lager"]], 1000, kam, P); gleich(r._geo.drawRange.count, 0, "zu weit weg");
+  var viele = []; for(i = 0; i < 12; i++) viele.push([100 + i, 61, 100, "lager"]); r.bild(viele, 1000, kam, P); gleich(r._geo.drawRange.count, 8 * 12, "höchstens acht Feuer");
+  r.bild([[103, 61, 100, "lager"]], 1000, kam, P, true); wahr(r._geo.drawRange.count > 0 && r._geo.drawRange.count < 12, "weniger Funken");
+  r.bild([[2047, 61, 100, "lager"]], 1000, [1, 70, 100], P); gleich(r._geo.drawRange.count, 12, "über den Planetenrand");
+});
+test("Klang: zünden, löschen und knistern sind hörbar und endlich, Feuer in der Ferne leiser", function(){
+  function messe(name, o){ var ctx = new OfflineAudioContext(1, 44100 * 2, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.erzeuge(ctx, z, name, o || {}, 0.8);
+    return ctx.startRendering().then(function(b){ var d = b.getChannelData(0), s = 0, mx = 0; for(var i = 0; i < d.length; i++){ if(!isFinite(d[i])) return { rms: NaN, peak: 9 }; s += d[i] * d[i]; mx = Math.max(mx, Math.abs(d[i])); } return { rms: Math.sqrt(s / d.length), peak: mx }; }); }
+  return Promise.all([messe("zuenden"), messe("loeschen"), messe("feuer", { entfernung: 1 }), messe("feuer", { entfernung: 13 })]).then(function(r){
+    ["zuenden", "loeschen", "feuer"].forEach(function(n, i){ wahr(r[i].rms > 0.003, n + " zu leise: " + r[i].rms); wahr(r[i].peak < 0.9, n + " übersteuert: " + r[i].peak); }); wahr(r[3].rms < r[2].rms, "fern leiser");
+  });
+});
+test("Feuer: In der Nähe eines brennenden Feuers knistert es regelmäßig, in der Ferne nicht", function(){
+  var s = feuerSpiel(), w = s.welt; w.setzeBlock(8, 61, 4, SC.B.LAGERFEUER_AN, "spieler"); s.spieler.pos = [12.5, 61, 4.5]; s._zf = function(){ return 0.99; };
+  s._feuerTakt(0.9); var n = s.klaenge.filter(function(k){ return k === "feuer"; }).length; gleich(n, 1, "nach 0,9 s ein Knistern"); s._feuerTakt(0.2); gleich(s.klaenge.filter(function(k){ return k === "feuer"; }).length, 1, "nicht schon wieder");
+  s.spieler.pos = [31.5, 61, 31.5]; s._feuerTakt(2); gleich(s.klaenge.filter(function(k){ return k === "feuer"; }).length, 1, "weit weg: still");
+});
+
+// --- Netz, Anleitung, Kreativ ---
+test("Feuer: Netzprotokoll 12 und alle Feuerblöcke sind in der Kreativ-Auswahl (aus und an), das Feuerzeug nicht", function(){
+  gleich(SC.NETZ_PROTOKOLL, 12);
+  [SC.B.LAGERFEUER, SC.B.LAGERFEUER_AN, SC.B.KAMIN, SC.B.KAMIN_AN].forEach(function(id){ gleich(SC.BLOECKE[id].inAuswahl, true, SC.BLOECKE[id].name); }); gleich(SC.BLOECKE[SC.B.FEUERZEUG].inAuswahl, false);
+});
+test("Anleitung: Abschnitt Feuer erklärt Feuerzeug, Lagerfeuer, Kamin, Wärme, Löschen", function(){
+  var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Feuer"; })[0]; wahr(a && a[1].length >= 5, "Abschnitt");
+  var t = a[1].join(" "); ["Feuerzeug", "Lagerfeuer", "Kamin", "Wasser", "Regen", "Gegner", "Kreativ"].forEach(function(w){ wahr(t.indexOf(w) >= 0, "nennt " + w); });
+});

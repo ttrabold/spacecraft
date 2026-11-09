@@ -262,6 +262,8 @@ SC.Spiel.startpunkt = function(planet){
     var warm = sp.modus !== "zuschauer" && SC.Feuer.warm(f, sp.pos), jetzt = (this.daten && this.daten.spielzeit) || 0;
     if(warm && !k.warm && jetzt >= (this._feuerHinweis || 0)){ this._feuerHinweis = jetzt + 60; this.ui.hinweis(SC.T.feuerWarm, 2500); }
     k.warm = warm;
+    this._feuerKlang = (this._feuerKlang || 0) - dt;
+    if(this._feuerKlang <= 0){ this._feuerKlang = 0.8; var ab = f.naechsterAbstand(sp.pos); if(ab <= 14 && this.audio) this.audio.spiele("feuer", { entfernung: ab }); }   // Knistern, leiser mit dem Abstand
     if(this.rolle === "gast") return;
     this.welt.wesen.forEach(function(g){ if(g.art === "gegner") SC.Feuer.abstossen(s.welt, f, g); });
     if(SC.Feuer.regen(this.welt, f, this._wetterEff, dt, this._zf || Math.random) > 0 && this.audio) this.audio.spiele("loeschen");

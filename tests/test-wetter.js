@@ -186,7 +186,7 @@ test("Wetter im Raum: Blitz kommt beim Gast an, Wetter-Blöcke gebündelt", func
     gleich(a.welt.holeBlock(5, 62, 5), SC.B.SCHNEESCHICHT);
   });
 });
-test("Netzprotokoll 11 (Zaubertränke, seit 0.31.0)", function(){ gleich(SC.NETZ_PROTOKOLL, 11); });
+test("Netzprotokoll 12 (Lagerfeuer und Kamin, seit 0.32.0)", function(){ gleich(SC.NETZ_PROTOKOLL, 12); });
 test("Anleitung erklärt das Wetter", function(){ var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Wetter"; })[0]; wahr(a && a[1].length >= 4); var t = a[1].join(" "); wahr(t.indexOf("Dach") >= 0 && t.indexOf("Kristall") >= 0 && t.indexOf("Pfütze") >= 0); wahr(SC.T.wetterKommt && SC.T.wetterKommt.gewitter); });
 test("Spiel: Wetter läuft, wird mit dem Planeten gespeichert, Gast rechnet keinen Boden", function(){
   var s = survSpiel(), pd = s.daten.planeten.start; s.spieler.pos = [4.5, 118, 4.5]; s.welt.chunk(0, 0); s.wetter = new SC.Wetter("start", null, SC.zufall(1)); s.wetterBoden = new SC.WetterBoden(s.welt, pd, SC.zufall(1)); s.wetter.setze("gewitter", 100);

@@ -7,3 +7,4 @@
 - Größere Features laufen über die Superpowers-Skills: erst Spec in `docs/superpowers/specs/`, dann Plan in `docs/superpowers/plans/`, Dateinamen mit Datum (`JJJJ-MM-TT-name.md`).
 - Der Code ist extrem dicht (Einzeiler). Beim Bearbeiten mit `Read` und `offset`/`limit` arbeiten und mit `Edit` kleine, eindeutige Stellen ersetzen statt Dateien neu zu schreiben.
 - `.claude/` ist nicht eingecheckt. Nicht committen.
+- Modellwahl bei Subagenten (`subagent-driven-development`): mechanische Planaufgaben mit genauer Vorgabe (Daten, Texte, Tests nach Muster) mit `model: "haiku"`. Alles mit Logik, Spielstand, UI-Fokus oder Fehlersuche mit dem Hauptmodell. Reviews immer mit `model: "opus"`. Nach jeder Aufgabe `bash scripts/tests.sh` ausführen. Vorerst als Versuch; bei häufiger Nacharbeit lockern oder anpassen.

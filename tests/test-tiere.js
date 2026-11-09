@@ -305,7 +305,7 @@ test("Fremdes Tier, Wildtier oder weit entferntes: Benutzen tut nichts", functio
   k.e.besitzer = s.daten.spieler.figurId; k.e.pos = [4.5, 90, 20.5]; wild(s.welt, "hase", [4.5, 90, 2.5]); gleich(s._tierBenutzen(), false, "Wildtier"); gleich(k.t.staerke, null);
 });
 test("Rechtsklick auf das eigene Tier streichelt es, Blöcke setzt man dann nicht", function(){
-  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5]; ziele(s, k.e); s.render.markiere = function(){}; s.render.wesen.risse = function(){}; s.render.blocke = function(){}; s.render.ausruestung = function(){}; s.render.hieb = function(){}; s.render.fps = 60; s.eingabe = { touchAktiv: false, gamepadAktiv: false };
+  var k = kampfSpiel("hund"), s = k.s; k.e.pos = [4.5, 90, 2.5]; ziele(s, k.e); s.render.markiere = function(){}; s.render.wesen.risse = function(){}; s.render.blocke = function(){}; s.render.ausruestung = function(){}; s.render.trank = function(){}; s.render.hieb = function(){}; s.render.fps = 60; s.eingabe = { touchAktiv: false, gamepadAktiv: false };
   s.einstellungen = { fpsAnzeigen: false }; s.ui.hud = function(){}; s.ui.kampfHud = function(){}; s.ui.zeigeBesiegt = function(){}; s.kampf.rucksack.plaetze[0] = { block: SC.B.STEIN, anzahl: 5 }; s.spieler.auswahl = 0;
   var e = { ausweichen: false, setzenGehalten: false, abbauen: false, abbauenGehalten: false, setzen: true, vor: false, zurueck: false, links: false, rechts: false };
   s._survival(e, 0.05, false, 1000); gleich(k.t.staerke && k.t.staerke.art, "streicheln"); gleich(s.kampf.rucksack.plaetze[0].anzahl, 5, "kein Block gesetzt");

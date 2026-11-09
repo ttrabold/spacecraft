@@ -22,6 +22,7 @@ SC.PALETTEN = {};
       moorsilber: ["#6a7062", "#545a4e", "#7fffc0"], sternenmetall: ["#4a4560", "#332f46", "#d9a0ff"],
       kristall_blau: ["#3fa0ff", "#1f6fd0", "#c8e4ff"], kristall_gruen: ["#3fe06a", "#1fb04a", "#c8ffd8"], kristall_rot: ["#ff4a4a", "#c22a2a", "#ffc8c8"],
       kristall_gelb: ["#ffe14a", "#d0b21f", "#fff4b8"], kristall_violett: ["#b46bff", "#8a3fd0", "#e6ccff"], kristall_weiss: ["#f4f4ff", "#c8c8e0", "#ffffff"],
+      lagerfeuer_aus: ["#8a6a3a", "#5a4023", "#9a9a9a"], lagerfeuer_an: ["#8a6a3a", "#5a4023", "#ff8a2a"], kamin_oben: ["#8a8a92", "#5a5a62", "#aaaab2"], kamin_aus: ["#9a6a4a", "#5a3a2a", "#aaaaaa"], kamin_an: ["#9a6a4a", "#5a3a2a", "#ff8a2a"], feuerzeug: ["#c8c8d0", "#6a6a72", "#e8e8f0"],
       kessel_oben: ["#4fbf5a", "#2a2f36", "#b8f0a0"], kessel_seite: ["#3a4048", "#6a7480", "#22262c"], flasche: ["#bfe0f0", "#6a8fa8", "#ffffff"], trank: ["#b46bff", "#6a8fa8", "#ffffff"],
       pflanze_hasenklee: ["#5fbf4f", "#3a8f3a", "#ffffff"], pflanze_katzenminze: ["#6fa86f", "#4a7a4a", "#b48cff"], pflanze_fuchsgras: ["#c8a24a", "#8a6a22", "#ff9a4a"], pflanze_eisblume: ["#9fd8ef", "#6fb0cf", "#ffffff"], pflanze_frostbeere: ["#4a9a8a", "#2a6a5a", "#6fb0ff"],
       pflanze_glutmohn: ["#7a3a2a", "#4a2218", "#ff5a2a"], pflanze_federfarn: ["#2faa5a", "#1a7a3a", "#ff4a7a"], pflanze_quakblume: ["#3faa6a", "#2a7a4a", "#ffe14a"], pflanze_dschungelranke: ["#2a8a3a", "#1a5a26", "#b0ff5a"],

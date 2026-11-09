@@ -57,6 +57,25 @@ SC.Texturen = {};
         case "kesselseite": c = y < 2 || y === 8 ? h : x % 5 === 0 ? d : g; break;
         case "flasche": a = 0; if(x >= 7 && x <= 8 && y >= 2 && y <= 5){ a = 255; c = y === 2 ? d : h; } if(y >= 6 && y <= 14 && x >= 4 && x <= 11){ if(y === 6 || y === 14 || x === 4 || x === 11){ a = 255; c = d; } else { a = 120; c = g; if(x === 5 && y >= 8 && y <= 10){ a = 255; c = h; } } } break;
         case "trank": a = 0; if(x >= 7 && x <= 8 && y >= 2 && y <= 5){ a = 255; c = y === 2 ? d : h; } if(y >= 6 && y <= 14 && x >= 4 && x <= 11){ if(y === 6 || y === 14 || x === 4 || x === 11){ a = 255; c = d; } else if(y >= 8){ a = 255; c = x === 5 && y <= 10 ? h : g; } else { a = 100; c = h; } } break;
+        case "holzstoss": case "holzstossfeuer":
+          a = 0;
+          if(y >= 10 && y <= 13 && x >= 2 && x <= 13){ a = 255; c = y === 10 || y === 13 || x === 2 || x === 13 ? d : g; }
+          else if(y >= 7 && y <= 9 && x >= 4 && x <= 11){ a = 255; c = y === 7 || x === 4 || x === 11 ? d : g; }
+          else if(y >= 14 && x >= 1 && x <= 14 && (x + y) % 2 === 0){ a = 255; c = muster === "holzstoss" ? h : d; }
+          if(muster === "holzstossfeuer" && y >= 2 && y <= 9){ var br = 1 + (y - 2) * 0.55; if(Math.abs(x - 7.5) <= br){ a = 255; c = Math.abs(x - 7.5) < br * 0.45 && y >= 5 ? mische(h, [255, 240, 120], 0.65) : h; } }
+          break;
+        case "kaminoben": c = x < 1 || x > 14 || y < 1 || y > 14 ? d : rausch(x, y, 0.3); break;
+        case "kaminloch": case "kaminfeuer":
+          c = y % 4 === 3 || (x + (y >> 2) * 4) % 8 === 0 ? d : g;
+          if(x >= 4 && x <= 11 && y >= 6){ c = [32, 24, 22]; if(muster === "kaminfeuer" && y >= 8 && y <= 14 && Math.abs(x - 7.5) <= 1.2 + (y - 8) * 0.3) c = y < 11 ? mische(h, [255, 240, 120], 0.6) : h; }
+          else if(x >= 5 && x <= 10 && y === 5) c = d;
+          break;
+        case "feuerzeug":
+          a = 0;
+          if(x >= 5 && x <= 10 && y >= 6 && y <= 14){ a = 255; c = x === 5 || x === 10 || y === 14 ? d : g; }
+          if(x >= 5 && x <= 10 && y >= 4 && y <= 5){ a = 255; c = y === 4 || x === 5 || x === 10 ? d : h; }
+          if(x >= 7 && x <= 8 && y >= 1 && y <= 3){ a = 255; c = [255, 160, 40]; }
+          break;
         case "tierfutter": c = zf() < 0.2 ? d : g; if((x * 5 + y * 3) % 11 === 0) c = h; break;
         case "werkbankoben": c = x === 0 || x === 15 || y === 0 || y === 15 ? d : y % 4 === 3 ? d : g; if(x >= 4 && x <= 11 && y >= 6 && y <= 9) c = h; break;
         case "werkbankseite": c = y < 3 || x < 2 || x > 13 ? d : g; if(y >= 6 && y <= 9 && x % 4 === 1) c = h; break;

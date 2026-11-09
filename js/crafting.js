@@ -9,7 +9,7 @@ SC.CRAFTING = {};
   // Rohstoffe, die der Kreativmodus per Knopfdruck in den Rucksack legt (Reiter „Materialien“): alles, woraus die Rezepte bestehen
   SC.CRAFTING_MATERIALIEN = [B.STAMM, B.BRETTER, B.STEIN, B.SAND, B.LEUCHTPILZ, B.EISENERZ, B.TITAN, B.GLUTSTAHL, B.MOORSILBER, B.STERNENMETALL,
     B.KRISTALL_BLAU, B.KRISTALL_GRUEN, B.KRISTALL_ROT, B.KRISTALL_GELB, B.KRISTALL_VIOLETT, B.KRISTALL_WEISS, B.SCHALTKREIS, B.CHITIN,
-    B.FLASCHE, B.HASENKLEE, B.KATZENMINZE, B.FUCHSGRAS, B.EISBLUME, B.FROSTBEERE, B.GLUTMOHN, B.FEDERFARN, B.QUAKBLUME, B.DSCHUNGELRANKE];
+    B.FEUERZEUG, B.FLASCHE, B.HASENKLEE, B.KATZENMINZE, B.FUCHSGRAS, B.EISBLUME, B.FROSTBEERE, B.GLUTMOHN, B.FEDERFARN, B.QUAKBLUME, B.DSCHUNGELRANKE];
 
   function bauteil(id, station, kosten, block, anzahl){ return { id: id, art: "bauteil", station: station, kosten: kosten, ergibt: { block: block, anzahl: anzahl } }; }
   function gegenstand(id, art, metall, kristall, extra){ return { id: id, art: art, station: "werkbank", gegenstand: id, metall: metall, kristall: kristall, extra: extra || [] }; }
@@ -31,6 +31,9 @@ SC.CRAFTING = {};
     bauteil("eimer", "werkbank", [{ block: B.EISENERZ, anzahl: 3 }], B.EIMER, 1),
     bauteil("netz", "werkbank", [{ block: B.WOLLE_ROT, anzahl: 2 }, { block: B.BRETTER, anzahl: 2 }], B.NETZ, 1),
     bauteil("tierfutter", "werkbank", [{ block: B.BLAETTER, anzahl: 2 }, { block: B.LEUCHTPILZ, anzahl: 1 }], B.TIERFUTTER, 4),
+    bauteil("lagerfeuer", "werkbank", [{ block: B.STAMM, anzahl: 3 }], B.LAGERFEUER, 1),   // Lagerfeuer und Kamin
+    bauteil("kamin", "werkbank", [{ block: B.STEIN, anzahl: 6 }, { block: B.STAMM, anzahl: 2 }], B.KAMIN, 1),
+    bauteil("feuerzeug", "werkbank", [{ block: B.EISENERZ, anzahl: 2 }, { block: B.KRISTALL_ROT, anzahl: 1 }], B.FEUERZEUG, 1),
     bauteil("kessel", "werkbank", [{ block: B.EISENERZ, anzahl: 6 }, { block: B.BRETTER, anzahl: 2 }], B.KESSEL, 1),   // Zaubertränke
     bauteil("flasche", "werkbank", [{ block: B.GLAS, anzahl: 2 }], B.FLASCHE, 3),
     gegenstand("blasterpistole", "waffe", 4, 1), gegenstand("blastergewehr", "waffe", 8, 1), gegenstand("laserschwert", "waffe", 6, 2),

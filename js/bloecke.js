@@ -18,6 +18,8 @@ SC.B = {
   SCHNEESCHICHT: 88,   // Wetter: dünne Schneedecke, taut wieder   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
   // Zaubertränke (Spec 2026-11-09): Kessel, Flasche, Trank (Gegenstand mit Variante im Rucksackplatz) und neun Pflanzen
   KESSEL: 89, FLASCHE: 90, TRANK: 91, HASENKLEE: 92, KATZENMINZE: 93, FUCHSGRAS: 94, EISBLUME: 95, FROSTBEERE: 96, GLUTMOHN: 97, FEDERFARN: 98, QUAKBLUME: 99, DSCHUNGELRANKE: 100,
+  // Lagerfeuer und Kamin (Spec 2026-11-09-feuer): je aus und an, dazu das Feuerzeug
+  LAGERFEUER: 101, LAGERFEUER_AN: 102, KAMIN: 103, KAMIN_AN: 104, FEUERZEUG: 105,
   NETZ: 71, TIERFUTTER: 72, ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
@@ -35,6 +37,7 @@ SC.TEXTUREN = {
   kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
   schaltkreis: "schaltkreis", chitin: "chitin", netz: "netz", tierfutter: "tierfutter", eimer: "eimer", eimer_wasser: "eimer", eimer_lava: "eimer", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
   fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste",
+  lagerfeuer_aus: "holzstoss", lagerfeuer_an: "holzstossfeuer", kamin_oben: "kaminoben", kamin_aus: "kaminloch", kamin_an: "kaminfeuer", feuerzeug: "feuerzeug",
   kessel_oben: "kesseloben", kessel_seite: "kesselseite", flasche: "flasche", trank: "trank",
   pflanze_hasenklee: "kraut", pflanze_katzenminze: "kraut", pflanze_fuchsgras: "kraut", pflanze_eisblume: "kraut", pflanze_frostbeere: "kraut", pflanze_glutmohn: "kraut", pflanze_federfarn: "kraut", pflanze_quakblume: "kraut", pflanze_dschungelranke: "kraut"
 };
@@ -135,6 +138,11 @@ SC.BLOECKE = {};
     [SC.B.BETT_KOPF_W, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.W }],
     [SC.B.ZAUBERKUGEL, "zauberkugel", { oben: "zauber_tisch_oben", seite: "zauber_tisch", unten: "zauber_tisch", kugel: "zauber_kugel" }, true, true, 9, [0.7, 0.5, 1.0], true, true, { form: ZAUBER }],
     [SC.B.SCHNEESCHICHT, "schneeschicht", alle("schnee_oben"), false, true, 0, null, true, true, { form: { typ: "kasten", a: [0, 0, 0], b: [1, 0.125, 1] } }],
+    [SC.B.LAGERFEUER, "lagerfeuer", alle("lagerfeuer_aus"), false, true, 0, null, true, true, { form: "kreuz", feuer: "lager", brennt: false }],
+    [SC.B.LAGERFEUER_AN, "lagerfeuerAn", alle("lagerfeuer_an"), false, true, 15, [1.0, 0.55, 0.2], true, true, { form: "kreuz", feuer: "lager", brennt: true }],
+    [SC.B.KAMIN, "kamin", { oben: "kamin_oben", seite: "kamin_aus", unten: "kamin_oben" }, true, false, 0, null, true, true, { feuer: "kamin", brennt: false }],
+    [SC.B.KAMIN_AN, "kaminAn", { oben: "kamin_oben", seite: "kamin_an", unten: "kamin_oben" }, true, false, 13, [1.0, 0.6, 0.25], true, true, { feuer: "kamin", brennt: true }],
+    [SC.B.FEUERZEUG, "feuerzeug", alle("feuerzeug"), true, true, 0, null, true, false, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
     [SC.B.KESSEL, "kessel", { oben: "kessel_oben", seite: "kessel_seite", unten: "kessel_seite" }, true, false, 0, null, true, true],
     [SC.B.FLASCHE, "flasche", alle("flasche"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
     [SC.B.TRANK, "trank", alle("trank"), true, true, 0, null, true, false, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],

@@ -52,3 +52,38 @@ test("Rucksack: passt und alsDaten mit Trank", function(){
   var r2 = new SC.Rucksack(); r2.lege(trankSache("rot:hasenklee", 3)); var d = JSON.parse(JSON.stringify(r2.alsDaten())); var r3 = new SC.Rucksack(d);
   gleich(r3.hatTrank("rot:hasenklee"), 3); gleich(r3.passt(trankSache("rot:hasenklee", 61)), true); gleich(r3.passt(trankSache("rot:hasenklee", 61 * 40)), false);
 });
+
+// --- Rezepte und Brauen ---
+function rucksackMit(liste){ var r = new SC.Rucksack(); liste.forEach(function(x){ r.lege(x); }); return r; }
+test("Rezepte: Kessel und Flasche sind an der Werkbank herstellbar", function(){
+  var k = SC.Crafting.rezept("kessel"), f = SC.Crafting.rezept("flasche");
+  gleich(k.ergibt.block, SC.B.KESSEL); gleich(k.ergibt.anzahl, 1); gleich(f.ergibt.block, SC.B.FLASCHE); gleich(f.ergibt.anzahl, 3); gleich(k.station, "werkbank"); gleich(f.station, "werkbank");
+  var r = rucksackMit([{ block: SC.B.EISENERZ, anzahl: 6 }, { block: SC.B.BRETTER, anzahl: 2 }, { block: SC.B.GLAS, anzahl: 2 }]);
+  wahr(SC.Crafting.herstelle(r, k, null, Math.random, 1).ok, "Kessel"); wahr(SC.Crafting.herstelle(r, f, null, Math.random, 1).ok, "Flasche");
+  gleich(r.hat(SC.B.KESSEL), 1); gleich(r.hat(SC.B.FLASCHE), 3); gleich(r.hat(SC.B.EISENERZ), 0);
+});
+test("Brauen: verbraucht je eine Zutat und legt einen Trank ab", function(){
+  var r = rucksackMit([{ block: SC.B.FLASCHE, anzahl: 2 }, { block: SC.B.KRISTALL_ROT, anzahl: 1 }, { block: SC.B.HASENKLEE, anzahl: 3 }]);
+  var e = SC.Crafting.brauen(r, "rot", "hasenklee"); gleich(e.ok, true); gleich(e.schluessel, "rot:hasenklee");
+  gleich(r.hatTrank("rot:hasenklee"), 1); gleich(r.hat(SC.B.FLASCHE), 1); gleich(r.hat(SC.B.KRISTALL_ROT), 0); gleich(r.hat(SC.B.HASENKLEE), 2);
+});
+test("Brauen: fehlende Zutat ändert nichts", function(){
+  var r = rucksackMit([{ block: SC.B.KRISTALL_ROT, anzahl: 1 }, { block: SC.B.HASENKLEE, anzahl: 1 }]), vorher = JSON.stringify(r.alsDaten());
+  var e = SC.Crafting.brauen(r, "rot", "hasenklee"); gleich(e.ok, false); gleich(e.grund, "zutat"); gleich(JSON.stringify(r.alsDaten()), vorher);
+  var r2 = rucksackMit([{ block: SC.B.FLASCHE, anzahl: 1 }, { block: SC.B.HASENKLEE, anzahl: 1 }]); gleich(SC.Crafting.brauen(r2, "rot", "hasenklee").grund, "zutat");
+});
+test("Brauen: voller Rucksack verliert keine Zutaten", function(){
+  var r = new SC.Rucksack(); r.lege({ block: SC.B.FLASCHE, anzahl: 1 }); r.lege({ block: SC.B.KRISTALL_ROT, anzahl: 2 }); r.lege({ block: SC.B.HASENKLEE, anzahl: 2 });
+  for(var i = 0; i < 40; i++) r.lege({ gegenstand: { id: "g" + i } });
+  wahr(r.plaetze.every(Boolean), "Rucksack voll");
+  var vorher = JSON.stringify(r.alsDaten()), e = SC.Crafting.brauen(r, "rot", "hasenklee");
+  gleich(e.ok, true, "die Flasche gibt beim Verbrauch einen Platz frei, der Trank passt dorthin");   // Flasche war ein Einzelplatz: Platz frei, Trank passt
+  gleich(r.hatTrank("rot:hasenklee"), 1);
+  var r2 = new SC.Rucksack(); r2.lege({ block: SC.B.FLASCHE, anzahl: 2 }); r2.lege({ block: SC.B.KRISTALL_ROT, anzahl: 2 }); r2.lege({ block: SC.B.HASENKLEE, anzahl: 2 });
+  for(i = 0; i < 40; i++) r2.lege({ gegenstand: { id: "g" + i } });
+  var v2 = JSON.stringify(r2.alsDaten()); gleich(SC.Crafting.brauen(r2, "rot", "hasenklee").grund, "voll"); gleich(JSON.stringify(r2.alsDaten()), v2);
+});
+test("Brauen: unbekannter Kristall oder unbekannte Pflanze", function(){
+  var r = rucksackMit([{ block: SC.B.FLASCHE, anzahl: 1 }, { block: SC.B.KRISTALL_ROT, anzahl: 1 }, { block: SC.B.HASENKLEE, anzahl: 1 }]), vorher = JSON.stringify(r.alsDaten());
+  gleich(SC.Crafting.brauen(r, "pink", "hasenklee").grund, "zutat"); gleich(SC.Crafting.brauen(r, "rot", "gibtesnicht").grund, "zutat"); gleich(SC.Crafting.brauen(r, undefined, undefined).grund, "zutat"); gleich(SC.Crafting.brauen(r, "constructor", "hasenklee").grund, "zutat"); gleich(SC.Crafting.brauen(r, "rot", "__proto__").grund, "zutat"); gleich(SC.Trank.teile("constructor:hasenklee"), null); gleich(SC.Trank.teile("rot:toString"), null); gleich(JSON.stringify(r.alsDaten()), vorher);
+});

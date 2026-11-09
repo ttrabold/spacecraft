@@ -33,7 +33,8 @@ SC.Trank = {};
   // → { kristall, pflanze } oder null bei ungültigem Schlüssel
   SC.Trank.teile = function(s){
     if(typeof s !== "string") return null;
-    var t = s.split(":"); if(t.length !== 2 || !SC.TRANK.wirkung[t[0]] || !SC.PFLANZEN[t[1]]) return null;
+    var t = s.split(":"); var eigen = Object.prototype.hasOwnProperty;
+    if(t.length !== 2 || !eigen.call(SC.TRANK.wirkung, t[0]) || !eigen.call(SC.PFLANZEN, t[1])) return null;
     return { kristall: t[0], pflanze: t[1] };
   };
 })();

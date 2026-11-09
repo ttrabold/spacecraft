@@ -79,7 +79,7 @@ SC.Figur = {
     if(!t) return;
     var box = SC.Figur._box || (SC.Figur._box = new THREE.BoxGeometry(1, 1, 1)), g = new THREE.Group(), farbe = SC.TRANK.wirkung[t.kristall].farbe;
     function teil(w, h, d, c, x, y, z, rz){ var m = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: c })); m.scale.set(w, h, d); m.position.set(x, y, z); if(rz) m.rotation.z = rz; g.add(m); return m; }
-    function huelle(w, h, d, x, y, z){ var m = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: farbe, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending })); m.scale.set(w, h, d); m.position.set(x, y, z); g.add(m); figur.trankAura.push(m.material); return m; }
+    function huelle(w, h, d, x, y, z){ var m = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: farbe, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending })); m.scale.set(w, h, d); m.position.set(x, y, z); g.add(m); m.material.userData.grund = 0.2; figur.trankAura.push(m.material); return m; }
     var tt = SC.Figur.TEILE[SC.PFLANZEN[t.pflanze].teil]; if(tt) tt(teil);
     huelle(0.62, 0.87, 0.42, 0, 1.125, 0); huelle(0.57, 0.57, 0.57, 0, 1.6, 0);
     for(var i = 0; i < 6; i++){ var f = teil(0.07, 0.07, 0.07, farbe, 0, 1, 0); f.userData.i = i; figur.trankFunken.push(f); }
@@ -171,7 +171,7 @@ SC.RenderMitspieler = function(szene, planet){
       if(key !== o.ausr){ o.ausr = key; SC.Figur.ausruestung(o.f, a.ruestung || null, a.waffe || null); }
       SC.Figur.verwandle(o.f, e.trank || null); SC.Figur.trankBild(o.f, performance.now());   // Zaubertrank: Tier-Teile und Leuchten
       var halb = e.verbunden === false;
-      if(halb !== !!o.halb){ o.halb = halb; g.traverse(function(m){ if(m.material && m !== o.schild){ m.material.transparent = halb || m.material.transparent; m.material.opacity = halb ? 0.4 : 1; m.material.needsUpdate = true; } }); }
+      if(halb !== !!o.halb){ o.halb = halb; g.traverse(function(m){ if(m.material && m !== o.schild){ var grund = m.material.userData.grund || 1; m.material.transparent = halb || m.material.transparent; m.material.opacity = halb ? 0.4 * grund : grund; m.material.needsUpdate = true; } }); }
       // Schild bleibt bis 64 Blöcke gleich lesbar: mit der Entfernung mitwachsen
       var d = Math.hypot(x - (kamPos ? kamPos.x : ichPos[0]), o.p[1] - (kamPos ? kamPos.y : ichPos[1]), z - (kamPos ? kamPos.z : ichPos[2])), s = 1.6 * Math.max(1, Math.min(d, 64) / 10);
       o.schild.scale.set(s, s / 4, 1); o.schild.position.y = 2.0 + 0.5 + s / 8;

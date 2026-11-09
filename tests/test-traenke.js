@@ -344,3 +344,48 @@ test("Anleitung: Abschnitt Zaubertränke erklärt Kessel, Flasche, Kristall, Pfl
   var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Zaubertränke"; })[0]; wahr(a && a[1].length >= 6, "Abschnitt");
   var t = a[1].join(" "); ["Kessel", "Flasche", "Kristall", "Pflanze", "Rezeptbuch", "3 Minuten", "Kreativ"].forEach(function(w){ wahr(t.indexOf(w) >= 0, "nennt " + w); });
 });
+
+// --- Befunde der Abschlussprüfung ---
+test("Final: Aussehen und Licht der eigenen Figur kommen auch auf einem neuen Renderer an (Planetenwechsel, Neustart)", function(){
+  var s = { kampf: { trank: { kristall: "weiss", pflanze: "hasenklee", rest: 100 } }, _trankSync: SC.Spiel.prototype._trankSync };
+  function neuRender(){ return { _fig: SC.Figur.baue("#3a6fd8"), trank: SC.Render.prototype.trank }; }
+  var r1 = neuRender(); s.render = r1; s._trankSync(); gleich(r1._trankKey, "weiss:hasenklee"); wahr(r1._trankLicht, "Nachtsicht-Licht");
+  var teile = meshZahl(r1._fig.gruppe); s._trankSync(); gleich(meshZahl(r1._fig.gruppe), teile, "gleicher Schlüssel baut nichts neu");
+  var r2 = neuRender(); s.render = r2; s._trankSync(); gleich(r2._trankKey, "weiss:hasenklee", "neuer Renderer bekommt den Trank"); wahr(meshZahl(r2._fig.gruppe) > meshZahl(SC.Figur.baue("#3a6fd8").gruppe), "Teile gebaut");
+  s.kampf.trank = null; s._trankSync(); gleich(r2._trankKey, null, "Ende des Tranks"); gleich(r2._trankLicht, false);
+});
+test("Final: Trank aus der Truhe nehmen und zurücklegen behält den Schlüssel", function(){
+  var a = wb(), d = tdaten(), T = SC.Truhen.von(d, new SC.Planet(d.planeten.start));
+  var anb = { hole: function(){ return Promise.resolve({ plaetze: T.inhalt(1, 60, 1) }); }, nimm: function(i){ var s = T.nimm(1, 60, 1, i); return Promise.resolve({ sache: s, plaetze: T.inhalt(1, 60, 1) }); }, lege: function(s){ var r = T.lege(1, 60, 1, s); return Promise.resolve({ rest: r, plaetze: T.inhalt(1, 60, 1) }); } };
+  a.k.rucksack.lege({ block: SC.B.TRANK, anzahl: 2, trank: "rot:hasenklee" }); var pl = -1; a.k.rucksack.plaetze.forEach(function(s, i){ if(s && s.block === SC.B.TRANK) pl = i; });
+  a.ui.zeigeTruhe(a.k, anb, {});
+  function warte(){ return new Promise(function(ok){ setTimeout(ok, 0); }); }
+  return warte().then(function(){ a.w.querySelector('[data-aktion="rplatz"][data-i="' + pl + '"]').click(); return warte(); }).then(function(){
+    gleich(T.inhalt(1, 60, 1)[0].trank, "rot:hasenklee", "in der Truhe"); gleich(a.k.rucksack.hatTrank("rot:hasenklee"), 0);
+    a.w.querySelector('[data-aktion="tplatz"][data-i="0"]').click(); return warte();
+  }).then(function(){ gleich(a.k.rucksack.hatTrank("rot:hasenklee"), 2, "zurück im Rucksack mit Schlüssel"); });
+});
+test("Final: Rückkehr eines getrennten Gastes lässt das Leuchten durchsichtig (Deckkraft wird wiederhergestellt)", function(){
+  var m = _ms(); m.r.aktualisiere([_e(1, { trank: "weiss:hasenklee" })], [0, 0, 0], 0.1); var f = m.r.figuren.get(1).f, grund = f.trankAura[0].opacity;
+  gleich(grund, 0.2); m.r.aktualisiere([_e(1, { trank: "weiss:hasenklee", verbunden: false })], [0, 0, 0], 0.1); wahr(f.trankAura[0].opacity < grund, "getrennt: noch durchsichtiger");
+  m.r.aktualisiere([_e(1, { trank: "weiss:hasenklee", verbunden: true })], [0, 0, 0], 0.1); gleich(f.trankAura[0].opacity, grund, "wieder verbunden: wie vorher"); gleich(f.trankFunken[0].material.opacity, 1, "Funken wieder deckend");
+});
+function trankSurv(){
+  var s = survSpiel(); s.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, trank: function(){}, hieb: function(){}, blocke: function(){}, fps: 60 };
+  s.eingabe = { touchAktiv: false, gamepadAktiv: false, gebeMausFrei: function(){} }; s.auftauchen = { schritt: function(){}, zerfallen: [] }; s.einstellungen = { fpsAnzeigen: false };
+  s.ui = { hinweis: function(){}, hud: function(){}, kampfHud: function(){}, zeigeBesiegt: function(){}, zeigeKessel: function(){ s._kessel = true; }, zeigeRezeptbuch: function(){} };
+  s._zf = SC.zufall(1); s.tageszeit = 0.5; s.kampf.rucksack.plaetze[0] = { block: SC.B.TRANK, anzahl: 1, trank: "gelb:hasenklee" }; s.spieler.auswahl = 0; return s;
+}
+var trankE = function(o){ return Object.assign({ ausweichen: false, setzenGehalten: false, abbauen: false, abbauenGehalten: false, setzen: false, vor: false, zurueck: false, links: false, rechts: false }, o || {}); };
+test("Final: Setzen auf einen Kessel mit einem Trank in der Hand öffnet den Kessel, trinkt nicht", function(){
+  var s = trankSurv(); s.welt.setzeBlock(4, 91, 3, SC.B.KESSEL, "system"); wahr(SC.zielen(s.welt, s.spieler.augen(), s.spieler.richtung(), 6), "Kessel anvisiert");
+  s._survival(trankE({ setzen: true }), 0.05, false, 1000); wahr(s._kessel, "Kessel offen"); gleich(s.kampf.trank, null, "nichts getrunken"); gleich(s.kampf.rucksack.plaetze[0].anzahl, 1, "Trank noch da");
+});
+test("Final: Setzen auf einen gewöhnlichen Block mit einem Trank in der Hand trinkt ihn", function(){
+  var s = trankSurv(); s.welt.setzeBlock(4, 91, 3, SC.B.STEIN, "system");
+  s._survival(trankE({ setzen: true }), 0.05, false, 1000); gleich(s.kampf.trank && s.kampf.trank.kristall, "gelb"); gleich(s.kampf.rucksack.plaetze[0], null, "verbraucht");
+});
+test("Final: Der Trank läuft nicht ab, solange ein Menü offen ist", function(){
+  var s = trankSurv(); s.kampf.trinke("gelb:hasenklee"); s._survival(trankE(), 5, true, 1000); gleich(s.kampf.trank.rest, 180, "Menü offen: keine Zeit vergangen");
+  s._survival(trankE(), 5, false, 2000); gleich(s.kampf.trank.rest, 175, "Spiel läuft: Zeit vergeht");
+});

@@ -151,6 +151,17 @@
     this.ui.hinweis(SC.T.trankGetrunken.replace("{pflanze}", SC.PFLANZEN[t.pflanze].name).replace("{wirkung}", SC.T.trankWirkung[SC.TRANK.wirkung[t.kristall].art]), 3500);
     this.audio.spiele("trinken"); return true;
   };
+  // Aussehen der eigenen Figur an den Trank anpassen; verglichen wird mit dem Stand des Renderers (nicht mit einem eigenen Merker), damit auch ein neuer Renderer
+  // nach Planetenwechsel, Beitritt oder Neustart den laufenden Trank bekommt
+  S._trankSync = function(){
+    var k = this.kampf, key = k.trank ? SC.Trank.schluessel(k.trank.kristall, k.trank.pflanze) : null;
+    if(key !== (this.render._trankKey || null)) this.render.trank(key);
+  };
+  // Block, den das Setzen benutzt (Tür, Truhe, Bett, Zauberkugel, Kessel, Werkbank, Kiste) statt etwas zu setzen oder zu trinken
+  S._benutzbar = function(ziel){
+    var id = this.welt.holeBlock(ziel.x, ziel.y, ziel.z), B = SC.B;
+    return SC.Bauteile.istTuer(id) || SC.Bauteile.istBett(id) || id === B.TRUHE || id === B.ZAUBERKUGEL || id === B.KESSEL || id === B.WERKBANK || id === B.KISTE;
+  };
   // Hält die Figur einen Zaubertrank in der Hand, trinkt das Setzen ihn (true = der Tipp gehörte dem Trank)
   S._trankHand = function(){ var st = this.kampf.rucksack.plaetze[this.spieler.auswahl]; if(!st || st.block !== SC.B.TRANK) return false; this.trankTrinken(this.spieler.auswahl); return true; };
   // Positionen der anderen Spieler im Raum (Gastgeber und Gäste), damit niemand übergossen wird
@@ -176,7 +187,7 @@
     // Im Raum: Gastgeber rechnet Gegner für alle Spieler, Gast rechnet keine Gegner (gespiegelt) und meldet eigene Angriffe
     var raum = this.raum, gastgeber = raum instanceof SC.Gastgeber ? raum : null, gast = raum instanceof SC.Gast ? raum : null;
     var survival = sp.modus === "survival", lebt = !k.besiegt();
-    this.daten.spielzeit = (this.daten.spielzeit || 0) + dt; k.zeitTrank(dt);
+    this.daten.spielzeit = (this.daten.spielzeit || 0) + dt; if(!offen || raum) k.zeitTrank(dt);   // wie die Gegner: bei offenem Menü steht die Welt still (im Raum läuft sie weiter)
     var waffe = survival ? k.waffe() : null, wdef = waffe && SC.GEGENSTAENDE[waffe.art].waffe;
     var imFz = this._imFahrzeug(), ziel = sp.modus === "zuschauer" || imFz || !this._blockErlaubt() ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
     this.render.markiere(ziel);
@@ -217,7 +228,7 @@
       else this._abbau = null;
       // Setzen, Kiste öffnen
       if(e.setzen && this._tierBenutzen()){ /* Tier gestreichelt oder gefüttert */ }
-      else if(e.setzen && !imFz && this._trankHand()){ /* Zaubertrank getrunken */ }
+      else if(e.setzen && !imFz && !(ziel && this._benutzbar(ziel)) && this._trankHand()){ /* Zaubertrank getrunken (nicht, wenn das Setzen einen Kessel, eine Tür usw. benutzt) */ }
       else if(e.setzen && !imFz && this._eimer(ziel)){ /* Eimer geschöpft oder ausgegossen */ }
       else if(e.setzen && ziel){
         if(this.benutzeBlock(ziel)){ /* Werkbank geöffnet */ }
@@ -327,8 +338,7 @@
     this._handSetzen();
     var aKey = JSON.stringify([k.ausruestung, waffe && waffe.id]);
     if(aKey !== this._ausrKey){ this._ausrKey = aKey; this.render.ausruestung(survival ? k.ausruestung : null, waffe); }
-    var tKey = k.trank ? SC.Trank.schluessel(k.trank.kristall, k.trank.pflanze) : null;
-    if(tKey !== this._trankKey){ this._trankKey = tKey; this.render.trank(tKey); }   // Zaubertrank: Aussehen der eigenen Figur
+    this._trankSync();   // Zaubertrank: Aussehen der eigenen Figur
     var fzNah = this._fahrzeugNah();
     if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah && !this.all, platz: !this.all && !!this._imFahrzeug(), all: !!this.all });
     var ui = this.ui;

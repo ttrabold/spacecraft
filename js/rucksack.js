@@ -14,16 +14,16 @@ SC.Rucksack.STAPEL = 64;
       return 1;
     }
     var rest = sache.anzahl;
-    for(i = 0; i < p.length && rest; i++) if(p[i] && p[i].block === sache.block && p[i].anzahl < SC.Rucksack.STAPEL){
+    for(i = 0; i < p.length && rest; i++) if(p[i] && p[i].block === sache.block && (p[i].trank || null) === (sache.trank || null) && p[i].anzahl < SC.Rucksack.STAPEL){
       var n = Math.min(rest, SC.Rucksack.STAPEL - p[i].anzahl); p[i].anzahl += n; rest -= n;
     }
-    for(i = 0; i < p.length && rest; i++) if(!p[i]){ var m = Math.min(rest, SC.Rucksack.STAPEL); p[i] = { block: sache.block, anzahl: m }; rest -= m; }
+    for(i = 0; i < p.length && rest; i++) if(!p[i]){ var m = Math.min(rest, SC.Rucksack.STAPEL); p[i] = { block: sache.block, anzahl: m }; if(sache.trank) p[i].trank = sache.trank; rest -= m; }
     return rest;
   };
   R.nimm = function(platz, anzahl){
     var s = this.plaetze[platz]; if(!s) return null;
     if(s.gegenstand || anzahl === undefined || anzahl >= s.anzahl){ this.plaetze[platz] = null; return s; }
-    s.anzahl -= anzahl; return { block: s.block, anzahl: anzahl };
+    s.anzahl -= anzahl; var teil = { block: s.block, anzahl: anzahl }; if(s.trank) teil.trank = s.trank; return teil;
   };
   // Entfernt bis zu anzahl Stück eines Blocks (aus den hinteren Plätzen zuerst); liefert, was gefehlt hat
   R.entferne = function(block, anzahl){
@@ -37,10 +37,12 @@ SC.Rucksack.STAPEL = 64;
   R.passt = function(sache){
     var p = this.plaetze, frei = 0, i;
     if(sache.gegenstand){ for(i = 0; i < p.length; i++) if(!p[i]) return true; return false; }
-    for(i = 0; i < p.length; i++){ if(!p[i]) frei += SC.Rucksack.STAPEL; else if(p[i].block === sache.block) frei += SC.Rucksack.STAPEL - p[i].anzahl; }
+    for(i = 0; i < p.length; i++){ if(!p[i]) frei += SC.Rucksack.STAPEL; else if(p[i].block === sache.block && (p[i].trank || null) === (sache.trank || null)) frei += SC.Rucksack.STAPEL - p[i].anzahl; }
     return frei >= sache.anzahl;
   };
   R.hat = function(block){ var n = 0; this.plaetze.forEach(function(s){ if(s && s.block === block) n += s.anzahl; }); return n; };
+  // Zaubertränke (Spec 2026-11-09): Anzahl der Tränke mit diesem Schlüssel "kristall:pflanze"
+  R.hatTrank = function(schluessel){ var n = 0; this.plaetze.forEach(function(s){ if(s && s.block === SC.B.TRANK && s.trank === schluessel) n += s.anzahl; }); return n; };
   R.verbrauche = function(platz){
     var s = this.plaetze[platz]; if(!s || s.block === undefined) return false;
     if(--s.anzahl <= 0) this.plaetze[platz] = null;

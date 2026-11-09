@@ -333,3 +333,14 @@ test("Nachwachsen: Pflücken wird gemerkt (Spieler und Gast), anderes nicht; Sta
   var alt = SC.Spielstand.neu({ name: "N", seedText: "n", modus: "survival" }); delete alt.nachwuchs; gleich(JSON.stringify(SC.Spielstand.migriere(alt).daten.nachwuchs), "{}");
   var s = { daten: { spielzeit: 5 }, welt: nwWelt(), rolle: "einzel" }; SC.Spiel.prototype._nachwuchsTakt.call(s, 1); wahr(true);
 });
+
+// --- Geräusche, Anleitung ---
+test("Klang: brauen und trinken sind hörbar, endlich und übersteuern nicht", function(){
+  function messe(name){ var ctx = new OfflineAudioContext(1, 44100 * 2, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.erzeuge(ctx, z, name, {}, 0.8);
+    return ctx.startRendering().then(function(b){ var d = b.getChannelData(0), s = 0, mx = 0; for(var i = 0; i < d.length; i++){ if(!isFinite(d[i])) return { rms: NaN, peak: 9 }; s += d[i] * d[i]; mx = Math.max(mx, Math.abs(d[i])); } return { rms: Math.sqrt(s / d.length), peak: mx }; }); }
+  return Promise.all([messe("brauen"), messe("trinken")]).then(function(r){ r.forEach(function(x, i){ wahr(x.rms > 0.005, ["brauen", "trinken"][i] + " zu leise: " + x.rms); wahr(x.peak < 0.9, "übersteuert: " + x.peak); }); });
+});
+test("Anleitung: Abschnitt Zaubertränke erklärt Kessel, Flasche, Kristall, Pflanze, Rezeptbuch und Trinken", function(){
+  var a = SC.T.anleitung.abschnitte.filter(function(x){ return x[0] === "Zaubertränke"; })[0]; wahr(a && a[1].length >= 6, "Abschnitt");
+  var t = a[1].join(" "); ["Kessel", "Flasche", "Kristall", "Pflanze", "Rezeptbuch", "3 Minuten", "Kreativ"].forEach(function(w){ wahr(t.indexOf(w) >= 0, "nennt " + w); });
+});

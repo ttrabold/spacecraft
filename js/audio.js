@@ -120,6 +120,14 @@ SC.Klang = {};
     } else if(name === "einsteigen"){
       osz(ctx, "sine", 160, huelle(ctx, z, t, 0.005, 0, 0.12, v * 0.4), t, t + 0.15);
       var oe = osz(ctx, "triangle", 300, huelle(ctx, z, t + 0.1, 0.02, 0.15, 0.2, v * 0.15), t + 0.1, t + 0.5); oe.frequency.exponentialRampToValueAtTime(700, t + 0.45);
+    } else if(name === "brauen"){
+      // Zaubertrank brauen: dumpfes Köcheln und aufsteigende Blasen
+      rausch(ctx, filter(ctx, "lowpass", 500, 0.7, huelle(ctx, z, t, 0.05, 0.3, 0.25, v * 0.12)), t, 0.65);
+      [0, 0.11, 0.2, 0.33, 0.42, 0.55].forEach(function(dt, i){ var ob = osz(ctx, "sine", 180 + i * 35, huelle(ctx, z, t + dt, 0.005, 0, 0.1, v * 0.25), t + dt, t + dt + 0.14); ob.frequency.setValueAtTime(180 + i * 35, t + dt); ob.frequency.exponentialRampToValueAtTime(520 + i * 40, t + dt + 0.09); });
+    } else if(name === "trinken"){
+      // Zaubertrank trinken: drei Schlucke, dann ein kurzer Klingelton aufwärts
+      [0, 0.14, 0.27].forEach(function(dt, i){ var og = osz(ctx, "sine", 260, huelle(ctx, z, t + dt, 0.01, 0.02, 0.08, v * 0.3), t + dt, t + dt + 0.14); og.frequency.setValueAtTime(260 - i * 30, t + dt); og.frequency.exponentialRampToValueAtTime(120, t + dt + 0.1); });
+      [784, 988, 1319].forEach(function(f, i){ osz(ctx, "sine", f, huelle(ctx, z, t + 0.5 + i * 0.08, 0.003, 0, 0.3, v * 0.14), t + 0.5 + i * 0.08, t + 0.5 + i * 0.08 + 0.4); });
     } else if(name === "tierlaut"){
       SC.Klang.tierlaut(ctx, z, t, o || {}, v);
     } else if(name === "klick"){

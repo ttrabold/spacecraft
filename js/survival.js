@@ -57,6 +57,13 @@
     if(id === SC.B.TRUHE){ this.truheOeffnen(ziel); return true; }
     if(SC.Bauteile.istBett(id)){ this.bettBenutzen(ziel); return true; }
     if(id === SC.B.ZAUBERKUGEL){ this.zauberkugelBenutzen(); return true; }
+    if(id === SC.B.KESSEL){
+      // Survival: brauen; im Kreativmodus (Tränke gibt es dort im Reiter der Blockauswahl) nur das Rezeptbuch
+      var self = this; this.eingabe.gebeMausFrei();
+      if(this.spieler.modus === "survival") this.ui.zeigeKessel(this.kampf, { beiBrauen: function(){ self.audio.spiele("brauen"); }, beiFertig: function(){ self._weiter(); } });
+      else this.ui.zeigeRezeptbuch(function(){ self.ui.schliesse(); self._weiter(); });
+      return true;
+    }
     if(id !== SC.B.WERKBANK) return false;
     var s = this; this.eingabe.gebeMausFrei();
     this.ui.zeigeWerkbank(this.kampf, { station: "werkbank", fahrzeug: this._fahrzeugBauer(), beiFertig: function(){ s._weiter(); } });
@@ -133,9 +140,14 @@
   // Zaubertrank trinken (Platz im Rucksack): im Survival wird er verbraucht, im Kreativmodus nicht; im Zuschauermodus geht es nicht → true, wenn getrunken
   S.trankTrinken = function(platz){
     var sp = this.spieler, k = this.kampf, st = k.rucksack.plaetze[platz];
-    if(sp.modus === "zuschauer" || !st || st.block !== SC.B.TRANK || !k.trinke(st.trank)) return false;
+    if(!st || st.block !== SC.B.TRANK || !this.trankSchluck(st.trank)) return false;
     if(sp.modus === "survival") k.rucksack.verbrauche(platz);
-    var t = SC.Trank.teile(st.trank);
+    return true;
+  };
+  // Ein Schluck dieses Tranks "kristall:pflanze" (ohne Rucksack; im Kreativmodus tippt man die Kachel im Reiter Tränke an) → true, wenn getrunken
+  S.trankSchluck = function(schluessel){
+    var t = SC.Trank.teile(schluessel);
+    if(this.spieler.modus === "zuschauer" || !t || !this.kampf.trinke(schluessel)) return false;
     this.ui.hinweis(SC.T.trankGetrunken.replace("{pflanze}", SC.PFLANZEN[t.pflanze].name).replace("{wirkung}", SC.T.trankWirkung[SC.TRANK.wirkung[t.kristall].art]), 3500);
     this.audio.spiele("trinken"); return true;
   };

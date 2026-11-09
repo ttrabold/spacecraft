@@ -46,6 +46,8 @@ SC.Trank = {};
     else if(w.art === "sprung") b.sprung = w.wert; else if(w.art === "schweben") b.schwerkraft = w.wert; else if(w.art === "nachtsicht") b.nachtsicht = true;
     return b;
   };
+  // Anzeigename, z. B. "Hasenklee-Trank (Du machst mehr Schaden.)"; ohne gültigen Schlüssel "Zaubertrank"
+  SC.Trank.name = function(s){ var t = SC.Trank.teile(s); return t ? SC.PFLANZEN[t.pflanze].name + "-Trank (" + SC.T.trankWirkungLang[SC.TRANK.wirkung[t.kristall].art] + ")" : SC.BLOECKE[SC.B.TRANK].name; };
   SC.Trank.schluessel = function(kristall, pflanze){ return kristall + ":" + pflanze; };
   // → { kristall, pflanze } oder null bei ungültigem Schlüssel
   SC.Trank.teile = function(s){

@@ -165,7 +165,7 @@ test("Kampf: Besiegtwerden und Zuschauermodus beenden den Trank", function(){
 function trankSpiel(modus, plaetze){
   var k = trankKampf(); k.spieler.modus = modus; plaetze.forEach(function(p, i){ k.rucksack.plaetze[i] = p; }); k.spieler.auswahl = 0;
   var log = { hinweis: [], klang: [] };
-  return { s: { kampf: k, spieler: k.spieler, ui: { hinweis: function(t){ log.hinweis.push(t); } }, audio: { spiele: function(n){ log.klang.push(n); } } }, k: k, log: log };
+  return { s: { kampf: k, spieler: k.spieler, trankSchluck: SC.Spiel.prototype.trankSchluck, ui: { hinweis: function(t){ log.hinweis.push(t); } }, audio: { spiele: function(n){ log.klang.push(n); } } }, k: k, log: log };
 }
 test("Spiel: trankTrinken im Survival verbraucht einen Trank und setzt den Zustand", function(){
   var t = trankSpiel("survival", [{ block: SC.B.TRANK, anzahl: 2, trank: "gelb:hasenklee" }]);
@@ -182,3 +182,37 @@ test("Spiel: trankTrinken im Kreativ verbraucht nichts, im Zuschauermodus geht e
   var kein = trankSpiel("survival", [{ block: SC.B.STEIN, anzahl: 3 }]); gleich(SC.Spiel.prototype.trankTrinken.call(kein.s, 0), false); gleich(kein.k.rucksack.plaetze[0].anzahl, 3);
   var kaputt = trankSpiel("survival", [{ block: SC.B.TRANK, anzahl: 1, trank: "kaputt" }]); gleich(SC.Spiel.prototype.trankTrinken.call(kaputt.s, 0), false); gleich(kaputt.k.rucksack.plaetze[0].anzahl, 1);
 });
+
+// --- Kessel, Rezeptbuch, Kreativ-Reiter, Trinken im Rucksack ---
+function kesselAuf(fn){ var w = document.createElement("div"); document.body.appendChild(w); var ui = ui2(w, { beiWeiter: function(){} }), k = k2(); try{ fn(w, ui, k); } finally { w.remove(); } }
+function kq(w, a, id){ return w.querySelector('[data-aktion="' + a + '"]' + (id ? '[data-id="' + id + '"]' : "")); }
+test("Rezeptnamen: Kessel und Flasche haben Namen für die Werkbank", function(){
+  SC.REZEPTE.filter(function(r){ return r.art === "bauteil"; }).forEach(function(r){ wahr(SC.T.rezeptName[r.id], "Name fehlt: " + r.id); });
+});
+test("Kessel: Fenster zeigt sechs Kristalle und neun Pflanzen", function(){ kesselAuf(function(w, ui, k){
+  ui.zeigeKessel(k, {}); gleich(w.querySelectorAll('[data-aktion="kristall"]').length, 6); gleich(w.querySelectorAll('[data-aktion="pflanze"]').length, 9);
+  wahr(kq(w, "brauen").disabled, "Brauen gesperrt ohne Auswahl"); wahr(kq(w, "rezeptbuch"), "Rezeptbuch-Knopf"); wahr(kq(w, "fertig"), "Fertig-Knopf");
+}); });
+test("Kessel: Brauen ist gesperrt ohne Zutaten und braut mit Zutaten", function(){ kesselAuf(function(w, ui, k){
+  ui.zeigeKessel(k, {}); kq(w, "kristall", "rot").click(); kq(w, "pflanze", "hasenklee").click(); wahr(kq(w, "brauen").disabled, "ohne Zutaten gesperrt"); gleich(k.rucksack.hatTrank("rot:hasenklee"), 0);
+  k.rucksack.lege({ block: SC.B.FLASCHE, anzahl: 1 }); k.rucksack.lege({ block: SC.B.KRISTALL_ROT, anzahl: 1 }); k.rucksack.lege({ block: SC.B.HASENKLEE, anzahl: 1 });
+  var log = []; ui.zeigeKessel(k, { beiBrauen: function(s){ log.push(s); } }); kq(w, "kristall", "rot").click(); kq(w, "pflanze", "hasenklee").click(); wahr(!kq(w, "brauen").disabled, "mit Zutaten frei");
+  kq(w, "brauen").click(); gleich(k.rucksack.hatTrank("rot:hasenklee"), 1); gleich(log.join(), "rot:hasenklee"); wahr(kq(w, "brauen").disabled, "danach wieder gesperrt");
+}); });
+test("Rezeptbuch: nennt jede Wirkung und jede Pflanze", function(){ kesselAuf(function(w, ui){
+  var zu = 0; ui.zeigeRezeptbuch(function(){ zu++; }); var t = w.textContent;
+  SC.PFLANZEN_REIHE.forEach(function(i){ wahr(t.indexOf(SC.PFLANZEN[i].name) >= 0, "Pflanze " + i); });
+  Object.keys(SC.TRANK.wirkung).forEach(function(n){ wahr(t.indexOf(SC.T.trankWirkungLang[SC.TRANK.wirkung[n].art]) >= 0, "Wirkung " + n); });
+  kq(w, "zurueck").click(); gleich(zu, 1);
+}); });
+test("Kreativ-Reiter Tränke: 54 Kacheln, Antippen meldet den Schlüssel", function(){ kesselAuf(function(w, ui){
+  var log = []; ui.zeigeBlockauswahl(function(){}, { beiTrank: function(s){ log.push(s); } });
+  var kn = w.querySelectorAll('[data-aktion="trank"]'); gleich(kn.length, 54); kn[0].click(); gleich(log.length, 1); wahr(SC.Trank.teile(log[0]), "gültiger Schlüssel " + log[0]);
+  var ohne = document.createElement("div"); document.body.appendChild(ohne); ui2(ohne, { beiWeiter: function(){} }).zeigeBlockauswahl(function(){}, {}); gleich(ohne.querySelectorAll('[data-aktion="trank"]').length, 0, "ohne beiTrank kein Reiter"); ohne.remove();
+}); });
+test("Rucksack: Trank hat Trinken als erste Aktion und ruft beiTrinken", function(){ kesselAuf(function(w, ui, k){
+  k.rucksack.lege({ block: SC.B.TRANK, anzahl: 2, trank: "gelb:hasenklee" }); var log = [], pl = -1; k.rucksack.plaetze.forEach(function(s, i){ if(s && s.block === SC.B.TRANK) pl = i; });
+  ui.zeigeRucksack(k, { beiTrinken: function(i){ log.push(i); } }); w.querySelector('.rs-platz[data-i="' + pl + '"]').click(); var knoepfe = [].map.call(w.querySelectorAll(".rs-menue button"), function(b){ return b.getAttribute("data-aktion"); });
+  gleich(knoepfe[0], "trinken"); wahr(knoepfe.indexOf("wegwerfen") > 0, "Wegwerfen nie zuerst"); wahr(w.querySelector(".rs-menue h3").textContent.indexOf("Hasenklee") >= 0, "Name nennt die Pflanze");
+  w.querySelector('.rs-menue [data-aktion="trinken"]').click(); gleich(log.join(), String(pl));
+}); });

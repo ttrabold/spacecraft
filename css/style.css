@@ -188,7 +188,8 @@ h3{margin:14px 0 8px;color:#3ef0ff;font-size:18px}
 /* Werkbank (Stufe 6a) */
 .wb{display:flex;flex-wrap:wrap;gap:12px}
 .wb-liste{flex:1 1 220px;min-width:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;align-content:start}
-.wb-detail{flex:2 1 280px;min-width:0;font-size:14px}.wb-detail h3{margin:0 0 6px}
+.wb-detail{flex:2 1 280px;min-width:0;font-size:14px}
+.wb-liste.kz{display:block}.rb-zeile{margin:5px 0;line-height:1.35}.rb-zeile img{width:22px;height:22px;image-rendering:pixelated;vertical-align:middle}   /* Kessel und Rezeptbuch: Gruppen untereinander statt im Raster */.wb-detail h3{margin:0 0 6px}
 .wb-rezept{flex-direction:column;min-height:72px;padding:4px;font-size:11px}.wb-rezept.an{background:#33306f}
 .wb-rezept img,.wb-opt img,.wb-kosten img{width:24px;height:24px;image-rendering:pixelated;vertical-align:middle}
 .wb-wahl{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:6px 0}

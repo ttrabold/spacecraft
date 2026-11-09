@@ -188,6 +188,7 @@ SC.Spiel.startpunkt = function(planet){
         var kp = this.kampf, ich = this; this.eingabe.gebeMausFrei();
         ui.zeigeBlockauswahl(function(id){ sp.schnellleiste[sp.auswahl] = id; ui.hinweis(SC.BLOECKE[id].name, 1200); }, {
           ausruestung: true,
+          beiTrank: function(sl){ ich.trankSchluck(sl); },
           beiTier: function(art){ var t = SC.Tier.neu(art); ui.hinweis(kp.kaefig.lege(t) ? SC.T.neuGefangen.replace("{name}", t.name + " (" + SC.TIERE[art].name + ")") : SC.T.kaefigVoll, 2000); },
           beiMaterial: function(id){ var rest = kp.rucksack.lege({ block: id, anzahl: SC.Rucksack.STAPEL }); ui.hinweis(rest === SC.Rucksack.STAPEL ? SC.T.rucksackVoll : SC.BLOECKE[id].name + " × " + (SC.Rucksack.STAPEL - rest) + " → " + SC.T.rucksackTitel, 1500); },
           beiFahrzeug: function(art){ var f = ich.fahrzeugHinstellen(art); if(f) ui.hinweis(SC.FAHRZEUGE[art].name, 1500); },
@@ -305,6 +306,7 @@ SC.Spiel.startpunkt = function(planet){
     var s = this;
     this.ui.zeigeRucksack(this.kampf, {
       kaefig: this._kaefigOptionen(),
+      beiTrinken: function(i){ s.trankTrinken(i); },
       beiWegwerfen: function(sache){ if(sache) s.beuteAuswerfen([s.spieler.pos[0] - Math.sin(s.spieler.blick[0]) * 1.5, s.spieler.pos[1], s.spieler.pos[2] - Math.cos(s.spieler.blick[0]) * 1.5], [sache], { sperre: 4, weit: true, richtung: Math.atan2(-Math.cos(s.spieler.blick[0]), -Math.sin(s.spieler.blick[0])) }); },
       beiFertig: function(){ s._weiter(); }
     });

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Spacecraft – Tierlaute-Hörprobe</title>
+<title>Spacecraft – Tiere rufen ihren Namen (Hörprobe)</title>
 <style>
   body{font:15px/1.45 system-ui,sans-serif;background:#10131c;color:#dde3f0;margin:0;padding:20px;max-width:1100px}
   h1{margin:0 0 4px;font-size:22px} h2{font-size:16px;margin:22px 0 8px;color:#9fb3ff}
@@ -11,22 +11,23 @@
   .regler{display:flex;flex-wrap:wrap;gap:16px;align-items:center;background:#181d2b;padding:12px 14px;border-radius:10px;position:sticky;top:0;z-index:2}
   label{display:flex;gap:6px;align-items:center}
   select{background:#0e1119;color:#dde3f0;border:1px solid #33405e;border-radius:6px;padding:4px 6px}
-  .karten{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .karten{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
   .karte{background:#181d2b;border:1px solid #27304a;border-radius:10px;padding:10px 12px}
   .karte h3{margin:0 0 2px;font-size:16px} .karte .tags{font-size:12px;color:#7d8aa8;margin-bottom:4px}
   button{background:#2b3a66;color:#fff;border:0;border-radius:7px;padding:7px 12px;font:inherit;cursor:pointer;margin:4px 6px 0 0}
-  button:hover{background:#3a4d8a}   .planet{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:#26304d;color:#aab8e0;margin-left:4px}
+  button:hover{background:#3a4d8a}
   #fehler{color:#ff8a8a;font-weight:bold}
 </style>
 </head>
 <body>
-<h1>Tierlaute-Hörprobe</h1>
-<p>Alle Tierlaute des Spiels (#185, <code>js/tierlaut.js</code>). Jeder Druck klingt wegen kleiner Zufallsabweichungen ein wenig anders. Oben stellt ihr Stimmung und Entfernung ein, so wie sie im Spiel vorkommen.</p>
+<h1>Tiere rufen ihren Namen – mit eigener Stimme</h1>
+<p>Hörprobe: Jedes Tier ruft seine Art, hoch und mehrfach hintereinander („Hase! Hase!“). Die Stimmen sind eigene Sprachsynthese im Code (<code>js/tiernamen.js</code>), keine Geräte-Sprachausgabe: Sie klingen auf jedem Gerät gleich, und jedes Tier hat eigene Werte für Tonhöhe, Kopfgröße und Tempo. Noch nicht im Spiel.</p>
 
 <div class="regler">
-  <label>Stimmung <select id="wie"><option value="ruf">Ruf (normal)</option><option value="freude">Freude (Streicheln, Fangen)</option><option value="schreck">Schreck (Fangring, getroffen)</option><option value="ko">K.o. (tiefer)</option></select></label>
-  <label>Entfernung <select id="ent"><option value="0">nah (0)</option><option value="10">10 Blöcke</option><option value="20">20 Blöcke</option></select></label>
+  <label>Tonhöhe <input type="range" id="hoehe" min="0.6" max="1.6" step="0.05" value="1"></label>
+  <label>Tempo <input type="range" id="tempo" min="0.6" max="1.6" step="0.05" value="1"></label>
   <label>Lautstärke <input type="range" id="laut" min="0" max="1" step="0.05" value="0.8"></label>
+  <label>Wiederholungen <select id="mal"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select></label>
   <button id="alle">▶ Alle nacheinander</button>
 </div>
 
@@ -36,8 +37,7 @@
 
 <script src="../js/kern.js"></script>
 <script src="../js/tiere.js"></script>
-<script src="../js/audio.js"></script>
-<script src="../js/tierlaut.js"></script>
+<script src="../js/tiernamen.js"></script>
 <script>
 (function(){
   var ctx = null, aus = null, PLANET = { start: "Heimat", glutfrost: "Glutfrost", rankenmoor: "Rankenmoor" };
@@ -46,18 +46,16 @@
     if(ctx.state !== "running") ctx.resume();
     aus.gain.value = +document.getElementById("laut").value; return ctx;
   }
-  function opt(art){ var l = SC.TIERE[art].laut; return { stimme: l[0], hoehe: l[1], wie: document.getElementById("wie").value, entfernung: +document.getElementById("ent").value }; }
-  function spiele(art){ var c = audio(); SC.Klang.tierlaut(c, aus, c.currentTime + 0.02, opt(art), 1); }
+  function spiele(art){ var c = audio(); return SC.Klang.tiername(c, aus, c.currentTime + 0.03, art, { hoehe: +document.getElementById("hoehe").value, tempo: +document.getElementById("tempo").value, mal: +document.getElementById("mal").value }, 0.5); }
   var box = document.getElementById("karten");
   Object.keys(SC.TIERE).forEach(function(art){
     var d = SC.TIERE[art], k = document.createElement("div"); k.className = "karte";
-    k.innerHTML = "<h3>" + d.emoji + " " + d.name + '<span class="planet">' + (PLANET[d.planet] || d.planet) + "</span></h3><div class=\"tags\">Stimme: " + d.laut[0] + " · Höhe " + d.laut[1] + "</div>";
-    var b = document.createElement("button"); b.textContent = "▶ Abspielen"; b.onclick = function(){ try{ spiele(art); }catch(e){ document.getElementById("fehler").textContent = art + ": " + e.message; } }; k.appendChild(b);
-    box.appendChild(k);
+    k.innerHTML = "<h3>" + d.emoji + " " + d.name + "</h3><div class=\"tags\">" + (PLANET[d.planet] || d.planet) + " · " + SC.Klang.NAMEN[art] + "</div>";
+    var b = document.createElement("button"); b.textContent = "▶ Abspielen"; b.onclick = function(){ try{ spiele(art); }catch(e){ document.getElementById("fehler").textContent = art + ": " + e.message; } }; k.appendChild(b); box.appendChild(k);
   });
   document.getElementById("alle").onclick = function(){
     var arten = Object.keys(SC.TIERE), i = 0;
-    (function weiter(){ if(i >= arten.length) return; spiele(arten[i++]); setTimeout(weiter, 1500); })();
+    (function weiter(){ if(i >= arten.length) return; var dauer = spiele(arten[i++]); setTimeout(weiter, dauer * 1000 + 500); })();
   };
 })();
 </script>

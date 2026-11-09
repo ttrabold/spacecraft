@@ -50,26 +50,26 @@ test("Musikspieler spielt das neue Stück ohne Fehler", function(){
   a.musikTakt("nacht",true); wahr(a._stueck.blendetAus,"Wechsel blendet aus"); a.ctx.close();
 });
 
-// --- Tierlaute (#185) ---
-test("Tierlaute: jede Art hat eine bekannte Stimme", function(){
-  Object.keys(SC.TIERE).forEach(function(a){ var l = SC.TIERE[a].laut; wahr(l && SC.Klang.TIERSTIMMEN[l[0]] && l[1] > 0, "Laut fehlt: " + a); });
+// --- Tierlaute (#185): Tiere rufen ihren Namen ---
+test("Tierlaute: jede Art hat Namen und Stimmwerte", function(){
+  Object.keys(SC.TIERE).forEach(function(a){ var b = SC.Klang.NAMENSTIMMEN[a]; wahr(SC.Klang.NAMEN[a] && b && b.f0 > 100 && b.form > 0.5 && b.tempo > 0.3, "Name/Stimme fehlt: " + a); });
 });
-test("Tierlaute: jede Stimme in jeder Stimmung ist hörbar und endlich, fern leiser", function(){
-  var namen = Object.keys(SC.Klang.TIERSTIMMEN), wie = ["ruf", "freude", "schreck", "ko"];
-  function laut(stimme, w, e){ var ctx = new OfflineAudioContext(1, 44100 * 2, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.erzeuge(ctx, z, "tierlaut", { stimme: stimme, hoehe: 1, wie: w, entfernung: e }, 0.8);
-    return ctx.startRendering().then(function(b){ var d = b.getChannelData(0), s = 0; for(var i = 0; i < d.length; i++){ if(!isFinite(d[i])) return NaN; s += d[i] * d[i]; } return Math.sqrt(s / d.length); }); }
-  var ps = []; namen.forEach(function(n){ wie.forEach(function(w){ ps.push(laut(n, w, 0).then(function(r){ wahr(r > 0.0005, n + "/" + w + " zu leise: " + r); })); }); });
-  ps.push(Promise.all([laut("bellen", "ruf", 2), laut("bellen", "ruf", 27)]).then(function(r){ wahr(r[1] < r[0], "fern leiser"); }));
+test("Tierlaute: jeder Ruf in jeder Stimmung ist hörbar, endlich und übersteuert nicht", function(){
+  var wie = ["ruf", "freude", "schreck", "ko"], ps = [];
+  function laut(art, w, e){ var ctx = new OfflineAudioContext(1, 44100 * 5, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.erzeuge(ctx, z, "tierlaut", { art: art, wie: w, entfernung: e }, 0.8);
+    return ctx.startRendering().then(function(b){ var d = b.getChannelData(0), s = 0, mx = 0; for(var i = 0; i < d.length; i++){ if(!isFinite(d[i])) return { rms: NaN }; s += d[i] * d[i]; mx = Math.max(mx, Math.abs(d[i])); } return { rms: Math.sqrt(s / d.length), peak: mx }; }); }
+  Object.keys(SC.TIERE).forEach(function(a){ wie.forEach(function(w){ ps.push(laut(a, w, 0).then(function(r){ wahr(r.rms > 0.002, a + "/" + w + " zu leise: " + r.rms); wahr(r.peak < 0.9, a + "/" + w + " übersteuert: " + r.peak); })); }); });
+  ps.push(Promise.all([laut("hund", "ruf", 2), laut("hund", "ruf", 27)]).then(function(r){ wahr(r[1].rms < r[0].rms, "fern leiser"); }));
   return Promise.all(ps);
 });
-test("Tierlaute: unbekannte Stimme und fehlendes Audio werfen nicht", function(){
-  var ctx = new OfflineAudioContext(1, 4410, 44100), z = ctx.createGain(); SC.Klang.erzeuge(ctx, z, "tierlaut", { stimme: "gibtesnicht" }, 1); SC.Klang.erzeuge(ctx, z, "tierlaut", undefined, 1);
-  var a = Object.create(SC.Audio.prototype); a.ctx = null; a.spiele("tierlaut", { stimme: "miau" }); wahr(true);
+test("Tierlaute: unbekannte Art und fehlendes Audio werfen nicht", function(){
+  var ctx = new OfflineAudioContext(1, 4410, 44100), z = ctx.createGain(); SC.Klang.erzeuge(ctx, z, "tierlaut", { art: "gibtesnicht" }, 1); SC.Klang.erzeuge(ctx, z, "tierlaut", undefined, 1);
+  var a = Object.create(SC.Audio.prototype); a.ctx = null; a.spiele("tierlaut", { art: "hund" }); wahr(true);
 });
-test("Tierlaute: Spiel ruft Laut nur nah, mit Entfernung, gedrosselt", function(){
+test("Tierlaute: Spiel ruft nur nah, mit Entfernung, gedrosselt", function(){
   var gespielt = [], s = { audio: { spiele: function(n, o){ gespielt.push(o); } }, welt: { planet: { groesse: 512 } }, spieler: { pos: [10, 5, 10] } };
   var f = SC.Spiel.prototype._tierLaut;
-  f.call(s, "hund", "ruf", [14, 5, 10]); wahr(gespielt.length === 1 && gespielt[0].stimme === "bellen" && Math.abs(gespielt[0].entfernung - 4) < 0.01, "nah");
+  f.call(s, "hund", "ruf", [14, 5, 10]); wahr(gespielt.length === 1 && gespielt[0].art === "hund" && gespielt[0].wie === "ruf" && Math.abs(gespielt[0].entfernung - 4) < 0.01, "nah");
   f.call(s, "hund", "ruf", [14, 5, 10]); gleich(gespielt.length, 1, "gedrosselt");
   f.call(s, "hund", "ko", [14, 5, 10], true); gleich(gespielt.length, 2, "immer");
   f.call(s, "hund", "ruf", [200, 5, 10], true); gleich(gespielt.length, 2, "zu weit");

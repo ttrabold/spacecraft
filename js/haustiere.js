@@ -6,13 +6,13 @@
   function ring(welt, a, b){ var P = welt.planet.groesse; return [SC.mod(b[0] - a[0] + P / 2, P) - P / 2, b[1] - a[1], SC.mod(b[2] - a[2] + P / 2, P) - P / 2]; }
   var FANG_REICHWEITE = 4.5;
 
-  // --- Tierlaute (#185) ---
+  // --- Tierlaute (#185): das Tier ruft seinen Namen (js/tiernamen.js) ---
   // Ein Laut der Art an der Stelle pos (leiser mit Entfernung, ab 28 Blöcken stumm). wie: ruf, freude, schreck, ko. Kurz nacheinander höchstens einer, außer immer.
   S._tierLaut = function(art, wie, pos, immer){
-    var d = SC.TIERE[art]; if(!d || !d.laut || !this.audio || !this.welt) return;
-    var jetzt = Date.now(); if(!immer && this._tierLautBis && jetzt < this._tierLautBis) return;
+    if(!SC.TIERE[art] || !SC.Klang.NAMEN[art] || !this.audio || !this.welt) return;
+    var jetzt = Date.now(); if(!immer && this._tierLautBis && jetzt < this._tierLautBis) return;   // Rufe dauern bis zu 2 s: sonst überlagern sie sich
     var r = pos ? ring(this.welt, this.spieler.pos, pos) : [0, 0, 0], e = Math.hypot(r[0], r[1], r[2]); if(e > 28) return;
-    this._tierLautBis = jetzt + 250; this.audio.spiele("tierlaut", { stimme: d.laut[0], hoehe: d.laut[1], wie: wie, entfernung: e });
+    this._tierLautBis = jetzt + 1500; this.audio.spiele("tierlaut", { art: art, wie: wie, entfernung: e });
   };
   // Jedes Bild: ab und zu ruft ein Wildtier oder eigener Begleiter in 24 Blöcken Umkreis (alle 5–14 s, Gast und Gastgeber, da die Wesen gespiegelt sind)
   S._tierLaute = function(dt){

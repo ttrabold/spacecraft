@@ -49,7 +49,7 @@ test("Gastgeber: Fütterung beim Gast heilt sein Tier im Wesen, Heilung nur einm
 });
 test("Gastgeber: K.o. eines Gast-Tiers geht als tierStand an den Gast und kommt nicht wieder", function(){
   return mpTiere(function(u, r){
-    var t = gastTier("hund"), s = { raum: u.h, welt: u.welt, ui: { hinweis: function(){} }, render: { wesen: { funken: function(){}, zahl: function(){} } }, audio: { spiele: function(){} }, spieler: { pos: [0, 0, 0] }, daten: u.daten, kampf: { kaefig: new SC.Kaefig() }, _zahl: function(){}, _tierKo: SC.Spiel.prototype._tierKo }; var got = [];
+    var t = gastTier("hund"), s = { raum: u.h, welt: u.welt, ui: { hinweis: function(){} }, render: { wesen: { funken: function(){}, zahl: function(){} } }, audio: { spiele: function(){} }, spieler: { pos: [0, 0, 0] }, daten: u.daten, kampf: { kaefig: new SC.Kaefig() }, _zahl: function(){}, _tierKo: SC.Spiel.prototype._tierKo, _tierLaut: SC.Spiel.prototype._tierLaut }; var got = [];
     r.g.o.beiTierStand = function(n){ got.push(n); };
     r.g.takt(0.1, zustandMitTieren([t])); return raumLauf(u.netz).then(function(){
       SC.Spiel.prototype._tiereGaeste.call(s); var e = null; u.welt.wesen.forEach(function(x){ if(x.art === "tier") e = x; });

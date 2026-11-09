@@ -46,6 +46,43 @@ SC.Klang = {};
     rausch(ctx, filter(ctx, "highpass", 1400, 0.7, huelle(ctx, z, t, 0.002, 0, 0.12, v * 0.5)), t, 0.15);
   };
 
+  // Tierlaute (#185): Stimmen als kleine Synthesizer; (ctx, ziel, startzeit, lautstärke, tonhöhe-Faktor) → Dauer in s
+  // ton: ein Oszillator, Tonhöhe folgt den Punkten [Sekunde, Hz], optional Filter [typ, Hz, Q] und Vibrato [Hz, Tiefe]
+  function ton(ctx, z, t, typ, punkte, dauer, v, filt, vib){
+    var g = huelle(ctx, z, t, 0.01, dauer * 0.3, dauer * 0.7, v), ziel = filt ? filter(ctx, filt[0], filt[1], filt[2], g) : g, o = osz(ctx, typ, punkte[0][1], ziel, t, t + dauer + 0.05);
+    for(var i = 1; i < punkte.length; i++) o.frequency.linearRampToValueAtTime(punkte[i][1], t + punkte[i][0]);
+    if(vib){ var l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = vib[0]; lg.gain.value = vib[1]; l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t + dauer + 0.05); }
+    return dauer;
+  }
+  function klicks(ctx, z, t, n, abstand, f, v){ for(var i = 0; i < n; i++) rausch(ctx, filter(ctx, "bandpass", f, 5, huelle(ctx, z, t + i * abstand, 0.001, 0, 0.02, v)), t + i * abstand, 0.03); return n * abstand; }
+  SC.Klang.TIERSTIMMEN = {
+    fiep: function(c, z, t, v, p){ ton(c, z, t, "sine", [[0, 2600 * p], [0.08, 3400 * p]], 0.09, v * 0.25); ton(c, z, t + 0.12, "sine", [[0, 2800 * p], [0.08, 3600 * p]], 0.09, v * 0.2); return 0.25; },
+    quaken: function(c, z, t, v, p){ ton(c, z, t, "sawtooth", [[0, 190 * p], [0.14, 130 * p]], 0.15, v * 0.3, ["lowpass", 900, 1]); ton(c, z, t + 0.19, "sawtooth", [[0, 200 * p], [0.14, 135 * p]], 0.15, v * 0.3, ["lowpass", 900, 1]); return 0.4; },
+    miau: function(c, z, t, v, p){ return ton(c, z, t, "sawtooth", [[0, 520 * p], [0.18, 850 * p], [0.5, 470 * p]], 0.5, v * 0.25, ["bandpass", 1300 * p, 2]); },
+    bellen: function(c, z, t, v, p){ for(var i = 0; i < 2; i++){ rausch(c, filter(c, "highpass", 1200, 0.7, huelle(c, z, t + i * 0.2, 0.002, 0, 0.04, v * 0.2)), t + i * 0.2, 0.06); ton(c, z, t + i * 0.2, "sawtooth", [[0, 340 * p], [0.12, 200 * p]], 0.13, v * 0.3, ["lowpass", 1500, 1]); } return 0.4; },
+    uhu: function(c, z, t, v, p){ ton(c, z, t, "sine", [[0, 430 * p], [0.28, 400 * p]], 0.3, v * 0.35); ton(c, z, t + 0.42, "sine", [[0, 340 * p], [0.5, 320 * p]], 0.55, v * 0.35); return 1; },
+    schnattern: function(c, z, t, v, p){ for(var i = 0; i < 5; i++) ton(c, z, t + i * 0.07, "square", [[0, (700 + (i % 2) * 200) * p], [0.05, 600 * p]], 0.06, v * 0.12, ["bandpass", 1100 * p, 3]); return 0.4; },
+    maeh: function(c, z, t, v, p){ return ton(c, z, t, "sawtooth", [[0, 290 * p], [0.6, 250 * p]], 0.6, v * 0.25, ["bandpass", 900, 3], [22, 28]); },
+    brummen: function(c, z, t, v, p){ return ton(c, z, t, "sawtooth", [[0, 100 * p], [0.5, 80 * p]], 0.5, v * 0.4, ["lowpass", 350, 1]); },
+    zirpen: function(c, z, t, v, p){ for(var i = 0; i < 4; i++) ton(c, z, t + i * 0.06, "sine", [[0, 4200 * p], [0.03, 4300 * p]], 0.035, v * 0.12); return 0.3; },
+    kreischen: function(c, z, t, v, p){ return ton(c, z, t, "sawtooth", [[0, 1500 * p], [0.12, 1800 * p], [0.3, 900 * p]], 0.3, v * 0.2, ["bandpass", 1800, 2]); },
+    zischen: function(c, z, t, v, p){ rausch(c, filter(c, "highpass", 3500 / p, 0.7, huelle(c, z, t, 0.05, 0.1, 0.25, v * 0.2)), t, 0.45); return 0.45; },
+    knurren: function(c, z, t, v, p){ return ton(c, z, t, "sawtooth", [[0, 75 * p], [0.6, 62 * p]], 0.6, v * 0.45, ["lowpass", 300, 1], [28, 14]); },
+    pfeifen: function(c, z, t, v, p){ return ton(c, z, t, "sine", [[0, 1900 * p], [0.5, 1500 * p]], 0.5, v * 0.2); },
+    klacken: function(c, z, t, v, p){ return klicks(c, z, t, 3, 0.07, 2500 * p, v * 0.3); },
+    knistern: function(c, z, t, v, p){ return klicks(c, z, t, 7, 0.045, 3200 * p, v * 0.18); },
+    schnaufen: function(c, z, t, v, p){ rausch(c, filter(c, "lowpass", 900 * p, 0.7, huelle(c, z, t, 0.05, 0.05, 0.2, v * 0.25)), t, 0.35); return 0.35; },
+    juchzen: function(c, z, t, v, p){ ton(c, z, t, "triangle", [[0, 450 * p], [0.14, 760 * p]], 0.15, v * 0.3); ton(c, z, t + 0.2, "triangle", [[0, 480 * p], [0.14, 820 * p]], 0.15, v * 0.3); return 0.4; },
+    flattern: function(c, z, t, v, p){ for(var i = 0; i < 5; i++) rausch(c, filter(c, "bandpass", 2000 * p, 1.5, huelle(c, z, t + i * 0.05, 0.01, 0, 0.04, v * 0.08)), t + i * 0.05, 0.06); return 0.3; }
+  };
+  // Laut (o.stimme, o.hoehe) in einer Stimmung (o.wie): ruf, freude (zweimal, höher), schreck (kurz, hoch), ko (tiefer); o.entfernung in Blöcken macht ihn leiser
+  SC.Klang.tierlaut = function(ctx, z, t, o, v){
+    var st = SC.Klang.TIERSTIMMEN[o.stimme]; if(!st) return;
+    var e = o.entfernung || 0, lt = v * Math.max(0.1, 1 - e / 28), wie = o.wie || "ruf", p = (o.hoehe || 1) * (wie === "freude" ? 1.2 : wie === "schreck" ? 1.5 : wie === "ko" ? 0.75 : 1);
+    var d = st(ctx, z, t, lt, p);
+    if(wie === "freude") st(ctx, z, t + Math.max(0.25, d) + 0.05, lt * 0.8, p * 1.1);
+  };
+
   SC.Klang.material = function(id){
     var B = SC.B;
     if([B.STEIN, B.GRUNDGESTEIN, B.STEINZIEGEL, B.BETON, B.KIES, B.KRISTALL].indexOf(id) >= 0) return id === B.KRISTALL ? "glas" : "stein";
@@ -120,6 +157,8 @@ SC.Klang = {};
     } else if(name === "einsteigen"){
       osz(ctx, "sine", 160, huelle(ctx, z, t, 0.005, 0, 0.12, v * 0.4), t, t + 0.15);
       var oe = osz(ctx, "triangle", 300, huelle(ctx, z, t + 0.1, 0.02, 0.15, 0.2, v * 0.15), t + 0.1, t + 0.5); oe.frequency.exponentialRampToValueAtTime(700, t + 0.45);
+    } else if(name === "tierlaut"){
+      SC.Klang.tierlaut(ctx, z, t, o || {}, v);
     } else if(name === "klick"){
       osz(ctx, "square", 880, filter(ctx, "lowpass", 3000, 0.7, huelle(ctx, z, t, 0.002, 0, 0.05, v * 0.12)), t, t + 0.07);
     }

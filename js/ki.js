@@ -61,6 +61,7 @@ SC.KI = {};
   SC.KI.schritt = function(welt, g, ziel, dt, zf, schw){
     var def = SC.GEGNER[g.gegnerArt], akt = [];
     if(!def || g.entfernen){ g.entfernen = true; return akt; }
+    if(ziel && welt.feuer && !def.boss && !g.boss && welt.feuer.naechsterAbstand(g.pos) < SC.FEUER.sperrRadius) ziel = null;   // Lagerfeuer und Kamin: ein sicherer Ort, normale Gegner verfolgen dort nicht
     var drin = SC.BLOECKE[welt.holeBlock(g.pos[0], g.pos[1] + 0.3, g.pos[2])];
     if(drin && drin.fest){ aufgeben(g); if(g.entfernen) return akt; }
     g.cd = Math.max(0, (g.cd || 0) - dt); g.cd2 = Math.max(0, (g.cd2 || 0) - dt); g.cd3 = Math.max(0, (g.cd3 || 0) - dt); g.cdH = Math.max(0, (g.cdH || 0) - dt); g.zeit = (g.zeit || 0) + dt;

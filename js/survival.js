@@ -131,11 +131,12 @@
       if(!art) return true;
       neu = { block: SC.Eimer.voll(art), anzahl: 1 };
     } else {
-      if(!ziel || !SC.Eimer.ausgiessen(w, sp, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, SC.Eimer.art(hand.block), this._mitspielerOrte())) return true;
+      var gel = ziel && SC.Eimer.art(hand.block) === "wasser" && SC.Feuer.brennt(w.holeBlock(ziel.x, ziel.y, ziel.z)) && SC.Feuer.loeschen(w, ziel.x, ziel.y, ziel.z);   // Wasser auf ein brennendes Feuer löscht es
+      if(!gel && (!ziel || !SC.Eimer.ausgiessen(w, sp, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, SC.Eimer.art(hand.block), this._mitspielerOrte()))) return true;
       neu = { block: B.EIMER, anzahl: 1 };
     }
     rs.nimm(sp.auswahl, 1); if(rs.lege(neu)) this.beuteAuswerfen(sp.pos.slice(), [neu]);   // passt er nicht mehr hinein, fliegt er als Kugel heraus
-    this.audio.spiele("platsch"); return true;
+    this.audio.spiele(gel ? "loeschen" : "platsch"); if(gel) this.ui.hinweis(SC.T.feuerAus, 1500); return true;
   };
   // Zaubertrank trinken (Platz im Rucksack): im Survival wird er verbraucht, im Kreativmodus nicht; im Zuschauermodus geht es nicht → true, wenn getrunken
   S.trankTrinken = function(platz){
@@ -164,6 +165,13 @@
   };
   // Hält die Figur einen Zaubertrank in der Hand, trinkt das Setzen ihn (true = der Tipp gehörte dem Trank)
   S._trankHand = function(){ var st = this.kampf.rucksack.plaetze[this.spieler.auswahl]; if(!st || st.block !== SC.B.TRANK) return false; this.trankTrinken(this.spieler.auswahl); return true; };
+  // Feuerzeug in der Hand (Survival): das Setzen auf eine Lagerfeuer- oder Kaminstelle zündet sie an (das Feuerzeug wird nie verbraucht) → true, wenn der Tipp der Feuerstelle galt
+  S._feuerzeug = function(ziel){
+    var hand = this.kampf.rucksack.plaetze[this.spieler.auswahl]; if(!hand || hand.block !== SC.B.FEUERZEUG) return false;
+    if(!SC.Feuer.istStelle(this.welt.holeBlock(ziel.x, ziel.y, ziel.z))) return false;
+    if(SC.Feuer.zuenden(this.welt, ziel.x, ziel.y, ziel.z)){ this.ui.hinweis(SC.T.feuerAn, 1500); this.audio.spiele("zuenden"); }
+    return true;
+  };
   // Positionen der anderen Spieler im Raum (Gastgeber und Gäste), damit niemand übergossen wird
   S._mitspielerOrte = function(){ return this._mitspielerListe ? this._mitspielerListe().map(function(m){ return m.pos; }).filter(Boolean) : []; };
   // Kreativ: voller Eimer aus der Leiste gießt aus und bleibt voll
@@ -229,6 +237,7 @@
       // Setzen, Kiste öffnen
       if(e.setzen && this._tierBenutzen()){ /* Tier gestreichelt oder gefüttert */ }
       else if(e.setzen && !imFz && !(ziel && this._benutzbar(ziel)) && this._trankHand()){ /* Zaubertrank getrunken (nicht, wenn das Setzen einen Kessel, eine Tür usw. benutzt) */ }
+      else if(e.setzen && !imFz && ziel && this._feuerzeug(ziel)){ /* Feuerzeug zündet eine Feuerstelle */ }
       else if(e.setzen && !imFz && this._eimer(ziel)){ /* Eimer geschöpft oder ausgegossen */ }
       else if(e.setzen && ziel){
         if(this.benutzeBlock(ziel)){ /* Werkbank geöffnet */ }

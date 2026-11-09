@@ -218,7 +218,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
     var w = this.werte; this.uhr = jetzt;
     this.hitze = Math.max(0, this.hitze - 0.25 * dt);
     if(jetzt >= this.ueberhitztBis && this.ueberhitztBis && this.hitze > 0.6 && jetzt - this.ueberhitztBis < 50) this.hitze = 0.6;
-    if(w.lp > 0 && jetzt - this.zuletztGetroffen > 5000) w.lp = Math.min(w.lpMax, w.lp + w.lpMax * 0.04 * dt * (1 + w.erholungBonus / 100));
+    if(w.lp > 0 && jetzt - this.zuletztGetroffen > 5000) w.lp = Math.min(w.lpMax, w.lp + w.lpMax * 0.04 * dt * (1 + w.erholungBonus / 100) * (this.warm ? 2 : 1));   // warm: am Lagerfeuer oder Kamin (js/feuer.js)
     if(jetzt - this.zuletztGetroffen > 3000) w.schild = Math.min(w.schildMax, w.schild + w.schildMax * 0.2 * dt * (this.sonder.has("schnellladen") ? 2 : 1));
   };
 

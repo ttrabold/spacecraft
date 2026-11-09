@@ -118,6 +118,7 @@ SC.Spiel.startpunkt = function(planet){
     this.daten = daten; this.audio.thema = SC.hashText(String(daten.seed || "")); // Hauptthema der Musik hängt an der Welt
     var pd = daten.planeten[daten.aktuellerPlanet], planet = new SC.Planet(pd);
     this.welt = new SC.Welt(planet, chunks || SC.Spielstand.chunksLaden(pd));
+    this.feuer = new SC.Feuer.Karte(this.welt); this.welt.feuer = this.feuer;   // Lagerfeuer und Kamin (js/feuer.js)
     this.fluss = new SC.Fluss(this.welt);   // Wasser und Lava fließen (rechnet nicht als Gast, siehe _flussTakt)
     this.wetter = new SC.Wetter(daten.aktuellerPlanet, pd.wetter, Math.random); this.wetterBoden = new SC.WetterBoden(this.welt, pd, Math.random);   // Wetter (siehe _wetterTakt)
     this.welt.ereignisse.an("block", function(b){
@@ -215,7 +216,7 @@ SC.Spiel.startpunkt = function(planet){
       this._survival(e, dt, offen, t);
       this._tiere(dt, offen);
       this._fahrzeugTakt(dt);
-      if(!offen || this.raum){ this._flussTakt(dt); this._wetterTakt(dt); this._nachwuchsTakt(dt); }   // wie die Gegner: bei offenem Menü steht die Welt still, im Raum nicht
+      if(!offen || this.raum){ this._flussTakt(dt); this._wetterTakt(dt); this._nachwuchsTakt(dt); this._feuerTakt(dt); }   // wie die Gegner: bei offenem Menü steht die Welt still, im Raum nicht
     }
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
     if(this.raum) this._raumBild(dt, offen);
@@ -253,6 +254,18 @@ SC.Spiel.startpunkt = function(planet){
     var beute = SC.Wetter.blitzBeute(Math.random); if(beute.length && this.beuteAuswerfen) this.beuteAuswerfen([z[0] + 0.5, z[1] + 1.2, z[2] + 0.5], beute);
   };
   // Fließen rechnen nur Einzelspieler und Gastgeber; ein Gast bekommt die Blöcke vom Gastgeber und meldet die Warteschlange ab
+  // Lagerfeuer und Kamin (Spec 2026-11-09-feuer-design.md): Karte pflegen, Wärme (doppelte Erholung am Feuer, Hinweis höchstens alle 60 s), als Gastgeber/allein:
+  // Gegner aus dem Umkreis schieben und Regen löscht offene Lagerfeuer (Gäste rechnen das nicht, die Blöcke kommen vom Gastgeber)
+  SC.Spiel.prototype._feuerTakt = function(dt){
+    var f = this.feuer, sp = this.spieler, k = this.kampf, s = this; if(!f || !this.welt || !sp || !k) return;
+    this._feuerZeit = (this._feuerZeit || 0) + dt; if(this._feuerZeit >= 0.5){ this._feuerZeit = 0; f.aktualisiere(); }
+    var warm = sp.modus !== "zuschauer" && SC.Feuer.warm(f, sp.pos), jetzt = (this.daten && this.daten.spielzeit) || 0;
+    if(warm && !k.warm && jetzt >= (this._feuerHinweis || 0)){ this._feuerHinweis = jetzt + 60; this.ui.hinweis(SC.T.feuerWarm, 2500); }
+    k.warm = warm;
+    if(this.rolle === "gast") return;
+    this.welt.wesen.forEach(function(g){ if(g.art === "gegner") SC.Feuer.abstossen(s.welt, f, g); });
+    if(SC.Feuer.regen(this.welt, f, this._wetterEff, dt, this._zf || Math.random) > 0 && this.audio) this.audio.spiele("loeschen");
+  };
   // Pflanzen wachsen nach (Zaubertränke): einmal pro Sekunde; als Gast rechnet der Gastgeber
   SC.Spiel.prototype._nachwuchsTakt = function(dt){
     if(this.rolle === "gast" || !this.welt) return;

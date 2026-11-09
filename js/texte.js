@@ -86,6 +86,7 @@ SC.T = {
   trankWirkungLang: { tempo: "Du läufst schneller.", sprung: "Du springst höher.", schaden: "Du machst mehr Schaden.", schild: "Du bekommst mehr Schild.", schweben: "Du schwebst und fällst langsam.", nachtsicht: "Du leuchtest und siehst nachts besser." },
   trankTeil: { hasenohren: "Hase: Fell, lange Ohren und Puschelschwanz", katzenoehrchen: "Katze: Fell mit Streifen, Öhrchen und langer Schwanz", fuchsohren: "Fuchs: rotes Fell, große Ohren und buschiger Schwanz", eisbaerohren: "Eisbär: weißes Fell, runde Ohren und große Pfoten", pinguinfluegel: "Pinguin: Schnabel, weißer Bauch und Flügel", salamanderschwanz: "Salamander: dunkle Haut, Glutmuster und Flammen", papageienfedern: "Papagei: bunte Federn, Schnabel und große Flügel", froschaugen: "Frosch: grüne Haut und riesige Augen", affenschwanz: "Affe: braunes Fell, Gesichtsmaske und langer Schwanz" },
   trankPlanet: { start: "Heimat", glutfrost: "Glutfrost", rankenmoor: "Rankenmoor" },
+  feuerWarm: "Am Feuer ist es warm.", feuerAn: "Feuer angezündet", feuerAus: "Das Feuer ist aus.",
   wetterEffekte: "Wetter-Effekte", wetterEffekteAn: "An", wetterEffekteWeniger: "Weniger (für ältere Tablets)",
   fpsAnzeigen: "FPS anzeigen", autoAnlegen: "Bessere Ausrüstung automatisch anlegen", autoAngelegt: "Neu angelegt: {name} ({wert} {alt} → {neu})", bildrate: "Höchste Bildrate (Bilder pro Sekunde)", bildrateFrei: "Unbegrenzt", aufloesung: "Auflösung", aufloesungNormal: "Normal (sparsam)", aufloesungHoch: "Hoch (scharf, braucht mehr Leistung)",
   fertig: "Fertig",

@@ -26,7 +26,7 @@ SC.Spielstand = {};
     return {
       format: SC.FORMAT, spielVersion: window.V || "", id: neueId(), name: o.name || SC.T.neueWelt, seed: seed,
       erstellt: jetzt, zuletzt: jetzt, zuletztExport: null, modus: o.modus || "kreativ", tageszeit: 0.3, aktuellerPlanet: "start",
-      schwierigkeit: o.schwierigkeit || "leicht", startpunkt: null, spielzeit: 0,
+      schwierigkeit: o.schwierigkeit || "leicht", startpunkt: null, spielzeit: 0, nachwuchs: {},
       planeten: { start: { id: "start", seed: SC.hashText(seed + ":start"), groesse: 2048, palette: "start", generatorVersion: SC.GENERATOR_VERSION, chunks: {}, kisten: {}, geraeumt: {}, fahrzeuge: {}, wetter: null, wetterSpuren: [] } },
       mitspieler: {},
       spieler: { name: o.figurName || "", figurId: neueId(), pos: null, blick: [0, 0], schnellleiste: LEISTE.slice(), schnellleisteKreativ: LEISTE.slice(), ansicht: "ich",
@@ -75,7 +75,7 @@ SC.Spielstand = {};
     var w = willkommen.welt, p = w.planet, jetzt = Date.now(), d = {
       format: SC.FORMAT, spielVersion: window.V || "", id: "gast", name: w.name, seed: w.seed,
       erstellt: jetzt, zuletzt: jetzt, zuletztExport: null, modus: w.modus, tageszeit: w.tageszeit, aktuellerPlanet: p.id,
-      schwierigkeit: w.schwierigkeit, startpunkt: w.startpunkt ? w.startpunkt.slice() : null, spielzeit: 0, mitspieler: {},
+      schwierigkeit: w.schwierigkeit, startpunkt: w.startpunkt ? w.startpunkt.slice() : null, spielzeit: 0, nachwuchs: {}, mitspieler: {},
       planeten: {},
       spieler: { pos: willkommen.pos.slice(), blick: willkommen.blick.slice(), ansicht: "ich" }
     };
@@ -111,6 +111,7 @@ SC.Spielstand = {};
     if(!d.schwierigkeit) d.schwierigkeit = "leicht";
     if(d.startpunkt === undefined) d.startpunkt = null;
     if(typeof d.spielzeit !== "number") d.spielzeit = 0;
+    if(!d.nachwuchs || typeof d.nachwuchs !== "object") d.nachwuchs = {};   // Zaubertränke: gepflückte Pflanzen, die nachwachsen
     if(!s.schnellleisteKreativ || s.schnellleisteKreativ.length !== 9) s.schnellleisteKreativ = s.schnellleiste.slice();
     if(typeof s.stufe !== "number") s.stufe = 1;
     if(typeof s.erfahrung !== "number") s.erfahrung = 0;

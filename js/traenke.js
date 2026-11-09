@@ -48,6 +48,41 @@ SC.Trank = {};
   };
   // Anzeigename, z. B. "Hasenklee-Trank (Du machst mehr Schaden.)"; ohne gültigen Schlüssel "Zaubertrank"
   SC.Trank.name = function(s){ var t = SC.Trank.teile(s); return t ? SC.PFLANZEN[t.pflanze].name + "-Trank (" + SC.T.trankWirkungLang[SC.TRANK.wirkung[t.kristall].art] + ")" : SC.BLOECKE[SC.B.TRANK].name; };
+  // --- Pflanzen in der Welt: Beute, Wachsen und Nachwachsen ---
+  var VON = {}; SC.PFLANZEN_REIHE.forEach(function(id){ VON[SC.PFLANZEN[id].block] = id; });
+  SC.Trank.istPflanze = function(block){ return Object.prototype.hasOwnProperty.call(VON, block) ? VON[block] : null; };
+  // Pflanze (Block) an einer Stelle der Landschaft: hash ist SC.hash3(...); nur etwa 6 von 1024 Säulen, je eine der drei Pflanzen des Planeten; 0 = keine
+  SC.Trank.pflanzeAn = function(planetId, hash){
+    var w = hash & 1023; if(w >= 6) return 0;
+    var l = SC.PFLANZEN_REIHE.filter(function(i){ return SC.PFLANZEN[i].planet === planetId; });
+    return l.length ? SC.PFLANZEN[l[w % l.length]].block : 0;
+  };
+  // Beute eines besiegten Gegners: eine Pflanze seines Planeten (Chance SC.TRANK.beuteChance, Bosse immer) → { block, anzahl } oder null; zf() liefert 0..1
+  SC.Trank.beute = function(planetId, boss, zf){
+    var l = SC.PFLANZEN_REIHE.filter(function(i){ return SC.PFLANZEN[i].planet === planetId; });
+    if(!l.length || (!boss && !(zf() < SC.TRANK.beuteChance))) return null;
+    return { block: SC.PFLANZEN[l[Math.floor(zf() * l.length) % l.length]].block, anzahl: 1 };
+  };
+  // Nachwachsen: gepflückte Pflanzen stehen als [x, y, z, block, fälligBei] in einer Liste je Planet (daten.nachwuchs[planetId], Spielzeit in s)
+  SC.Trank.pflueckeMerken = function(liste, x, y, z, block, jetzt){ liste.push([x, y, z, block, jetzt + SC.TRANK.nachwuchs]); while(liste.length > 400) liste.shift(); };
+  // Setzt fällige Pflanzen zurück: nur in geladenen Chunks, nur in freier Luft über festem Boden (was dort inzwischen gebaut wurde, bleibt; der Eintrag fällt dann weg) → Anzahl
+  SC.Trank.nachwuchsTakt = function(welt, liste, jetzt){
+    var n = 0;
+    for(var i = liste.length - 1; i >= 0; i--){
+      var e = liste[i]; if(e[4] > jetzt || !welt.istGeladen(e[0] >> 4, e[2] >> 4)) continue;
+      liste.splice(i, 1);
+      if(welt.holeBlock(e[0], e[1], e[2]) !== SC.B.LUFT) continue;
+      var u = SC.BLOECKE[welt.holeBlock(e[0], e[1] - 1, e[2])]; if(!u || !u.fest) continue;
+      if(welt.setzeBlock(e[0], e[1], e[2], e[3], "nachwuchs")) n++;
+    }
+    return n;
+  };
+  // Block-Ereignis der Welt: Pflücken durch den Spieler oder einen Gast (quelle "spieler" oder "netz:…") merken
+  SC.Trank.beiBlock = function(daten, planetId, b){
+    if(b.id !== SC.B.LUFT || !SC.Trank.istPflanze(b.alt) || !(b.quelle === "spieler" || /^netz:/.test(b.quelle || ""))) return;
+    var l = daten.nachwuchs || (daten.nachwuchs = {}); if(!l[planetId]) l[planetId] = [];
+    SC.Trank.pflueckeMerken(l[planetId], b.x, b.y, b.z, b.alt, daten.spielzeit || 0);
+  };
   SC.Trank.schluessel = function(kristall, pflanze){ return kristall + ":" + pflanze; };
   // → { kristall, pflanze } oder null bei ungültigem Schlüssel
   SC.Trank.teile = function(s){

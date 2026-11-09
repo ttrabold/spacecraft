@@ -274,3 +274,62 @@ test("Render: Weiß (Nachtsicht) schaltet das Eigenlicht der Figur ein, andere T
   r.trank("weiss:hasenklee"); r.trank(null); r._leuchtBild(1, 2, 3); gleich(r.uniforms.leuchtStaerke.value, 0, "Ende des Tranks");
   r._leuchtet = true; r._leuchtBild(1, 2, 3); gleich(r.uniforms.leuchtStaerke.value, SC.LEUCHT_STAERKE, "Rüstung leuchtet weiter");
 });
+
+// --- Pflanzen in der Welt: Beute, Wachsen, Nachwachsen ---
+function pflanzenIds(){ return SC.PFLANZEN_REIHE.map(function(i){ return SC.PFLANZEN[i].block; }); }
+test("Beute: Pflanze des Planeten mit Chance, Boss immer", function(){
+  var mit = SC.Trank.beute("start", false, function(){ return 0; }); wahr(mit && mit.anzahl === 1, "Pflanze"); var p = SC.PFLANZEN_REIHE.filter(function(i){ return SC.PFLANZEN[i].block === mit.block; })[0]; gleich(SC.PFLANZEN[p].planet, "start");
+  gleich(SC.Trank.beute("start", false, function(){ return 0.99; }), null); wahr(SC.Trank.beute("glutfrost", true, function(){ return 0.99; }), "Boss immer");
+  gleich(SC.Trank.beute("gibtesnicht", true, function(){ return 0; }), null, "unbekannter Planet");
+  var arten = {}; for(var i = 0; i < 30; i++){ var b = SC.Trank.beute("rankenmoor", true, (function(w){ return function(){ return w; }; })(i / 30)); arten[b.block] = 1; } gleich(Object.keys(arten).length, 3, "alle drei Pflanzen des Planeten kommen vor");
+});
+test("Beute: Gegner lassen Pflanzen ihres Planeten fallen, auch in Welten ohne Pflanzen", function(){
+  var d = SC.Spielstand.neu({ name: "B", seedText: "b", modus: "survival" }); d.planeten.start.generatorVersion = 3;
+  var g = SC.Wesen.neu(new SC.Welt(new SC.Planet({ id: "start", seed: 5 })), "gegner", { gegnerArt: "krabbler", stufe: 1, pos: [4, 61, 4], lp: 1 });
+  var r = SC.Kampf.beuteFuer(g, d, function(){ return 0; }), ids = pflanzenIds(); wahr(r.beute.some(function(x){ return ids.indexOf(x.block) >= 0; }), "Pflanze in der Beute");
+  d.aktuellerPlanet = "glutfrost"; var r2 = SC.Kampf.beuteFuer(g, d, function(){ return 0; }); wahr(r2.beute.some(function(x){ return ids.indexOf(x.block) >= 0 && SC.BLOECKE[x.block] && ["Eisblume", "Frostbeere", "Glutmohn"].indexOf(SC.BLOECKE[x.block].name) >= 0; }), "Pflanze von Glutfrost");
+  var r3 = SC.Kampf.beuteFuer(g, d, function(){ return 0.99; }); gleich(r3.beute.some(function(x){ return ids.indexOf(x.block) >= 0; }), false, "ohne Glück keine");
+});
+function chunkMitVersion(id, v, cx, cz){ var p = new SC.Planet({ id: id, seed: 5, palette: id, generatorVersion: v }); return new SC.Generator(p).chunk(cx, cz); }
+test("Generator: Version 4 hat Pflanzen, Version 3 bleibt Byte für Byte unverändert (alle drei Planeten)", function(){
+  var ids = pflanzenIds();
+  ["start", "glutfrost", "rankenmoor"].forEach(function(pl){
+    var n3 = 0, n4 = 0, gleichOhne = true;
+    for(var cx = 0; cx < 4; cx++) for(var cz = 0; cz < 4; cz++){
+      var a = chunkMitVersion(pl, 3, cx, cz), b = chunkMitVersion(pl, 4, cx, cz);
+      for(var i = 0; i < a.length; i++){ if(ids.indexOf(a[i]) >= 0) n3++; var bi = b[i]; if(ids.indexOf(bi) >= 0){ n4++; bi = SC.B.LUFT; } if(a[i] !== bi) gleichOhne = false; }
+    }
+    gleich(n3, 0, pl + ": Version 3 ohne Pflanzen"); wahr(n4 >= 3, pl + ": Version 4 mit Pflanzen (" + n4 + ")"); wahr(gleichOhne, pl + ": ohne die Pflanzen identisch zu Version 3");
+  });
+});
+test("Generator: neue Welten bekommen Version 4, alte Pflanzen stehen nur auf Planeten, zu denen sie gehören", function(){
+  gleich(SC.GENERATOR_VERSION, 4);
+  var ids = pflanzenIds(), ok = true, planetVon = {}; SC.PFLANZEN_REIHE.forEach(function(i){ planetVon[SC.PFLANZEN[i].block] = SC.PFLANZEN[i].planet; });
+  ["start", "glutfrost", "rankenmoor"].forEach(function(pl){ var c = chunkMitVersion(pl, 4, 1, 1); for(var i = 0; i < c.length; i++) if(ids.indexOf(c[i]) >= 0 && planetVon[c[i]] !== pl) ok = false; }); wahr(ok, "falsche Pflanze auf dem Planeten");
+});
+function nwWelt(){ var w = new SC.Welt(new SC.Planet({ id: "start", seed: 5 })); for(var x = 0; x < 16; x++) for(var z = 0; z < 16; z++){ for(var y = 1; y < 128; y++) w.setzeBlock(x, y, z, y <= 60 ? SC.B.STEIN : SC.B.LUFT, "system"); } return w; }
+test("Nachwachsen: fälliger Eintrag setzt die Pflanze, nicht fälliger bleibt", function(){
+  var w = nwWelt(), l = []; SC.Trank.pflueckeMerken(l, 4, 61, 4, SC.B.HASENKLEE, 0); SC.Trank.pflueckeMerken(l, 6, 61, 6, SC.B.EISBLUME, 50);
+  gleich(l[0][4], SC.TRANK.nachwuchs, "fällig nach der Wartezeit"); gleich(SC.Trank.nachwuchsTakt(w, l, SC.TRANK.nachwuchs - 1), 0); gleich(w.holeBlock(4, 61, 4), SC.B.LUFT);
+  gleich(SC.Trank.nachwuchsTakt(w, l, SC.TRANK.nachwuchs), 1); gleich(w.holeBlock(4, 61, 4), SC.B.HASENKLEE); gleich(l.length, 1, "erledigter Eintrag weg"); gleich(l[0][3], SC.B.EISBLUME);
+  gleich(SC.Trank.nachwuchsTakt(w, l, 50 + SC.TRANK.nachwuchs), 1); gleich(w.holeBlock(6, 61, 6), SC.B.EISBLUME); gleich(l.length, 0);
+});
+test("Nachwachsen: belegte Zelle und fehlender Boden werden verworfen, nichts wird überschrieben", function(){
+  var w = nwWelt(), l = []; w.setzeBlock(4, 61, 4, SC.B.BRETTER, "spieler"); SC.Trank.pflueckeMerken(l, 4, 61, 4, SC.B.HASENKLEE, 0);
+  w.setzeBlock(8, 60, 8, SC.B.LUFT, "spieler"); SC.Trank.pflueckeMerken(l, 8, 61, 8, SC.B.HASENKLEE, 0);
+  gleich(SC.Trank.nachwuchsTakt(w, l, 1e6), 0); gleich(w.holeBlock(4, 61, 4), SC.B.BRETTER, "Bau bleibt"); gleich(w.holeBlock(8, 61, 8), SC.B.LUFT, "keine Pflanze in der Luft"); gleich(l.length, 0, "beide verworfen");
+});
+test("Nachwachsen: ungeladene Chunks warten, Liste ist auf 400 begrenzt", function(){
+  var w = nwWelt(), l = []; SC.Trank.pflueckeMerken(l, 1000, 61, 1000, SC.B.HASENKLEE, 0); gleich(w.istGeladen(62, 62), false);
+  gleich(SC.Trank.nachwuchsTakt(w, l, 1e6), 0); gleich(l.length, 1, "bleibt"); gleich(w.istGeladen(62, 62), false, "Chunk wurde nicht geladen");
+  var v = []; for(var i = 0; i < 450; i++) SC.Trank.pflueckeMerken(v, i, 61, 0, SC.B.HASENKLEE, i); gleich(v.length, 400); gleich(v[0][0], 50, "die ältesten fallen weg");
+});
+test("Nachwachsen: Pflücken wird gemerkt (Spieler und Gast), anderes nicht; Stand ohne nachwuchs wirft nicht", function(){
+  var d = { nachwuchs: undefined, spielzeit: 12 };
+  SC.Trank.beiBlock(d, "start", { x: 1, y: 2, z: 3, id: SC.B.LUFT, alt: SC.B.FUCHSGRAS, quelle: "spieler" }); gleich(d.nachwuchs.start.length, 1); gleich(d.nachwuchs.start[0][3], SC.B.FUCHSGRAS); gleich(d.nachwuchs.start[0][4], 12 + SC.TRANK.nachwuchs);
+  SC.Trank.beiBlock(d, "start", { x: 1, y: 2, z: 4, id: SC.B.LUFT, alt: SC.B.EISBLUME, quelle: "netz:abc" }); gleich(d.nachwuchs.start.length, 2);
+  SC.Trank.beiBlock(d, "start", { x: 1, y: 2, z: 5, id: SC.B.LUFT, alt: SC.B.EISBLUME, quelle: "system" }); SC.Trank.beiBlock(d, "start", { x: 1, y: 2, z: 5, id: SC.B.STEIN, alt: SC.B.EISBLUME, quelle: "spieler" }); SC.Trank.beiBlock(d, "start", { x: 1, y: 2, z: 5, id: SC.B.LUFT, alt: SC.B.STEIN, quelle: "spieler" });
+  gleich(d.nachwuchs.start.length, 2, "nur Pflücken von Spieler oder Gast");
+  var alt = SC.Spielstand.neu({ name: "N", seedText: "n", modus: "survival" }); delete alt.nachwuchs; gleich(JSON.stringify(SC.Spielstand.migriere(alt).daten.nachwuchs), "{}");
+  var s = { daten: { spielzeit: 5 }, welt: nwWelt(), rolle: "einzel" }; SC.Spiel.prototype._nachwuchsTakt.call(s, 1); wahr(true);
+});

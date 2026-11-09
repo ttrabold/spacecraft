@@ -210,6 +210,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
       beute.push({ block: SC.B.STERNENMETALL, anzahl: 1 + Math.floor(zf() * 2) });
       if(zf() < 0.25) beute.push({ block: SC.B.KRISTALL_WEISS, anzahl: 1 });
     }
+    var pb = SC.Trank.beute(daten.aktuellerPlanet, boss, zf); if(pb) beute.push(pb);   // Zaubertränke: Pflanze des Planeten (auch in alten Welten)
     return { erfahrung: xp, beute: beute, boss: boss };
   };
 

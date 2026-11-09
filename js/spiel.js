@@ -122,6 +122,7 @@ SC.Spiel.startpunkt = function(planet){
     this.wetter = new SC.Wetter(daten.aktuellerPlanet, pd.wetter, Math.random); this.wetterBoden = new SC.WetterBoden(this.welt, pd, Math.random);   // Wetter (siehe _wetterTakt)
     this.welt.ereignisse.an("block", function(b){
       s._truheWeg(b); s._tuerWeg(b); s._bettWeg(b);
+      if(s.rolle !== "gast") SC.Trank.beiBlock(s.daten, s.welt.planet.id, b);   // gepflückte Pflanzen wachsen nach (rechnet der Gastgeber)
       if(b.quelle !== "spieler") return;
       if(b.id === SC.B.LUFT) s.audio.spiele("abbauen", { material: SC.Klang.material(b.alt) });
       else s.audio.spiele("setzen", { material: SC.Klang.material(b.id) });
@@ -214,7 +215,7 @@ SC.Spiel.startpunkt = function(planet){
       this._survival(e, dt, offen, t);
       this._tiere(dt, offen);
       this._fahrzeugTakt(dt);
-      if(!offen || this.raum){ this._flussTakt(dt); this._wetterTakt(dt); }   // wie die Gegner: bei offenem Menü steht die Welt still, im Raum nicht
+      if(!offen || this.raum){ this._flussTakt(dt); this._wetterTakt(dt); this._nachwuchsTakt(dt); }   // wie die Gegner: bei offenem Menü steht die Welt still, im Raum nicht
     }
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);
     if(this.raum) this._raumBild(dt, offen);
@@ -252,6 +253,12 @@ SC.Spiel.startpunkt = function(planet){
     var beute = SC.Wetter.blitzBeute(Math.random); if(beute.length && this.beuteAuswerfen) this.beuteAuswerfen([z[0] + 0.5, z[1] + 1.2, z[2] + 0.5], beute);
   };
   // Fließen rechnen nur Einzelspieler und Gastgeber; ein Gast bekommt die Blöcke vom Gastgeber und meldet die Warteschlange ab
+  // Pflanzen wachsen nach (Zaubertränke): einmal pro Sekunde; als Gast rechnet der Gastgeber
+  SC.Spiel.prototype._nachwuchsTakt = function(dt){
+    if(this.rolle === "gast" || !this.welt) return;
+    this._nwZeit = (this._nwZeit || 0) + dt; if(this._nwZeit < 1) return; this._nwZeit = 0;
+    var l = this.daten.nachwuchs && this.daten.nachwuchs[this.welt.planet.id]; if(l && l.length) SC.Trank.nachwuchsTakt(this.welt, l, this.daten.spielzeit || 0);
+  };
   SC.Spiel.prototype._flussTakt = function(dt){
     if(!this.fluss) return;
     if(this.rolle === "gast"){ this.fluss.abbauen(); this.fluss = null; return; }

@@ -44,3 +44,12 @@ test("Spiegel: eine Hälfte abgebaut, die andere verschwindet mit; halber Zustan
   w.setzeBlock(5, 64, 5, SC.B.SPIEGEL_N, "system"); w.setzeBlock(5, 65, 5, SC.B.STEIN, "system"); w.setzeBlock(5, 64, 5, SC.B.LUFT, "spieler"); gleich(w.holeBlock(5, 65, 5), SC.B.STEIN, "Stein darüber bleibt");
   w.setzeBlock(11, 65, 5, SC.B.SPIEGEL_N_OBEN, "system"); w.setzeBlock(11, 65, 5, SC.B.LUFT, "spieler"); gleich(w.holeBlock(11, 64, 5), SC.B.LUFT, "einzelne Hälfte: kein Fehler");
 });
+test("Spiegel: Einstellung Standard „an“, alte Einstellungen ohne das Feld gelten als „an“, „aus“ bleibt (#188)", function(){
+  gleich(SC.Einstellungen.standard().spiegel, "an");
+  var ns = "test-spiegel-einst", k = "sc-" + ns + ":einstellungen";
+  try {
+    localStorage.setItem(k, JSON.stringify({ sichtweite: 7 })); var e = SC.Einstellungen.lade(ns); gleich(e.spiegel, "an", "Feld fehlt"); gleich(e.sichtweite, 7);
+    localStorage.setItem(k, JSON.stringify({ spiegel: "aus" })); gleich(SC.Einstellungen.lade(ns).spiegel, "aus");
+  } finally { localStorage.removeItem(k); }
+  wahr(SC.T.spiegel && SC.T.spiegelAn && SC.T.spiegelAus, "Beschriftungen");
+});

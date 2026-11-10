@@ -39,7 +39,7 @@ Ein Wunsch der Kinder (Issue-Text sinngemäß): Es gibt Landkarten, auf denen ma
 - Raster: **8 × 8 Blöcke je Feld** → 256 × 256 Felder je Planet (2048 / 8).
 - Als erkundet gilt, was im Umkreis um den Spieler liegt (Richtwert: die Sichtweite, höchstens 64 Blöcke; Kreis oder Quadrat, Builders Wahl). Aktualisiert wird nur, wenn der Spieler in ein neues Feld tritt, nicht jedes Bild.
 - Aufgezeichnet wird immer (Kreativ, Survival, Zuschauer; mit und ohne Karte im Rucksack), nur auf Planeten mit Blockwelt, nicht im All.
-- Speicher: ein Bit je Feld, je Spieler und Planet, kompakt codiert (Richtwert 8 KB je Planet, z. B. base64). Im Spielstand an der Figur des Spielers (wie Rucksack und Ausrüstung), für Gäste in deren Figurdaten. Fehlt das Feld beim Laden → leere Karte (Standardwert nachziehen, bestehende Spielstände dürfen nie brechen).
+- Speicher: ein Bit je Feld, kompakt codiert (Richtwert 8 KB je Planet, z. B. base64). Ein neues Figurfeld `erkundet` (in `SC.Spielstand.FIGUR_FELDER`, wie Rucksack und Ausrüstung): ein Objekt, **Schlüssel = Seed des Planeten** (`planet.seed`, je Welt und Planet verschieden, also keine Verwechslung zwischen gleichnamigen Planeten verschiedener Welten), Wert = die Bits. So reist die Karte mit der Figur: Der Gastgeber speichert sie mit seiner Figur in seiner Welt, ein Gast speichert sie mit seiner Figur in seiner eigenen Welt (dort, wo seine Figur ohnehin zurückgeschrieben wird), und beim nächsten Besuch derselben Welt ist die Karte wieder da. Es wird nichts übertragen. **Höchstens 6 Planeten je Figur** werden behalten (der am längsten nicht besuchte fliegt zuerst raus), damit die Figur nicht ohne Ende wächst (Claudes Entscheidung nach Rückfrage des Prüfers). Fehlt das Feld beim Laden → leere Karte (Standardwert nachziehen, bestehende Spielstände dürfen nie brechen).
 - Die Farbe eines erkundeten Feldes wird beim Zeichnen aus der **Landschaftsfunktion des Generators** (Höhe, Biom, Wasser) abgeleitet, nicht gespeichert. Damit bleibt der Spielstand klein; Folge: gebaute Dinge erscheinen nicht (siehe Nicht-Ziele).
 
 ### Gegenstand und Rezept
@@ -88,7 +88,7 @@ Ein Wunsch der Kinder (Issue-Text sinngemäß): Es gibt Landkarten, auf denen ma
 - Rezept vorhanden, Kosten wie oben, ergibt den Gegenstand `KARTE` (ID 114), in der Kreativ-Auswahl.
 - Erkunden: Aufruf mit Position markiert die erwarteten Felder; nur bei Feldwechsel wird neu gerechnet; Rand und Wrap an der Weltkante; im All keine Aufzeichnung.
 - Speichern und Laden der erkundeten Felder (Roundtrip, Größe unter dem Richtwert); alter Spielstand ohne das Feld lädt mit leerer Karte.
-- Gäste: eigene erkundete Felder je Figur, kein Abgleich mit den anderen.
+- Gäste: eigene erkundete Felder je Figur, kein Abgleich mit den anderen; Schlüssel ist der Planeten-Seed (gleichnamiger Planet einer anderen Welt zeigt nichts Erkundetes); mehr als 6 Planeten → der am längsten nicht besuchte wird verworfen.
 - Farbe eines Feldes aus dem Generator: Wasser, Land und Berg unterscheiden sich; unerkundetes ist dunkel.
 - Mitspieler-Punkte: nur gleicher Planet, auch in unerkundeter Gegend; Koordinatenumrechnung Welt ↔ Bild ist rund umkehrbar (Zoom und Verschieben, Wrap).
 - Netzprotokoll 14: Gast mit 13 wird abgelehnt.

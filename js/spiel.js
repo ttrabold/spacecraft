@@ -216,6 +216,7 @@ SC.Spiel.startpunkt = function(planet){
       this._survival(e, dt, offen, t);
       this._tiere(dt, offen);
       this._fahrzeugTakt(dt);
+      this._erkunden();   // Karten: erkundete Felder mitschreiben (nur bei Feldwechsel)
       if(!offen || this.raum){ this._flussTakt(dt); this._wetterTakt(dt); this._nachwuchsTakt(dt); this._feuerTakt(dt); }   // wie die Gegner: bei offenem Menü steht die Welt still, im Raum nicht
     }
     this.tageszeit = SC.mod(this.tageszeit + dt / 1200 * this.zeitTempo, 1);

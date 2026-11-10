@@ -249,6 +249,7 @@
       if(e.setzen && this._tierBenutzen()){ /* Tier gestreichelt oder gefüttert */ }
       else if(e.setzen && !imFz && !(ziel && this._benutzbar(ziel)) && this._trankHand()){ /* Zaubertrank getrunken (nicht, wenn das Setzen einen Kessel, eine Tür usw. benutzt) */ }
       else if(e.setzen && !imFz && ziel && this._feuerzeug(ziel)){ /* Feuerzeug zündet eine Feuerstelle */ }
+      else if(e.setzen && !imFz && !(ziel && this._benutzbar(ziel)) && this._karte()){ /* Karte geöffnet (Spec 2026-11-10-karten) */ }
       else if(e.setzen && !imFz && this._eimer(ziel)){ /* Eimer geschöpft oder ausgegossen */ }
       else if(e.setzen && ziel){
         if(this.benutzeBlock(ziel)){ /* Werkbank geöffnet */ }
@@ -259,6 +260,8 @@
           if(beute.length){ a.spiele("kiste"); this.beuteAuswerfen([ziel.x + 0.5, ziel.y + 0.5, ziel.z + 0.5], beute.map(SC.Beute.alsSache)); }
         } else if(!(wdef && wdef.typ === "schwert")) this.setzeAusRucksack(ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, ziel);
       }
+    } else if(!survival && !offen && !imFz && e.setzen && !(ziel && this._benutzbar(ziel)) && this._karte()){
+      // Kreativ: Karte in der Leiste geöffnet
     } else if(!survival && !offen && !imFz && e.abbauen && this._fahrzeugAbbauen(ziel)){
       // Kreativ: frei hingestelltes Fahrzeug entfernt
     } else if(!survival && ziel && !offen){

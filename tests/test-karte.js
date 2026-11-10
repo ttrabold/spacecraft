@@ -75,3 +75,30 @@ test("Karte: zeichne – Unerkundetes dunkel, Erkundetes in Feldfarbe, Mitspiele
   K.zeichne(ctx, A, { planet: u.p, gen: u.g, bits: bits, ich: { pos: [1000, 60, 1000], blick: [0, 0] }, punkte: [{ id: "x", name: "Ben", farbe: "#ff0000", pos: [1010, 60, 1000] }], bett: [990, 1000], cache: {} });
   var rot = false; for(var x = 66; x <= 74 && !rot; x++) for(var y = 56; y <= 64; y++){ var c = px(x, y); if(c[0] > 200 && c[1] < 80 && c[2] < 80) rot = true; } wahr(rot, "roter Punkt bei x = 1010");
 });
+function kaSpiel(extra){
+  var p = new SC.Planet({ id: "start", seed: 4711 }), f = { daten: { aktuellerPlanet: "start", spieler: { erkundet: {}, bett: null } }, welt: { planet: p }, spieler: { pos: [1000.5, 60, 1000.5], blick: [0, 0], auswahl: 0, modus: "survival", schnellleiste: [SC.B.KARTE, 0, 0, 0, 0, 0, 0, 0, 0] },
+    render: { sichtweite: 10 }, all: false, kampf: { rucksack: { plaetze: [{ block: SC.B.KARTE, anzahl: 1 }] } }, eingabe: { gebeMausFrei: function(){} }, geoeffnet: [], _weiter: function(){},
+    ui: { zeigeKarte: function(d, o){ f.geoeffnet.push(d); } }, _mitspielerListe: function(){ return []; } };
+  Object.assign(f, extra || {}); f._erkunden = SC.Spiel.prototype._erkunden; f._erkundetBits = SC.Spiel.prototype._erkundetBits; f._karte = SC.Spiel.prototype._karte; f._karteBett = SC.Spiel.prototype._karteBett; return f;
+}
+test("Karte im Spiel: _erkunden schreibt je Planeten-Seed, rechnet nur bei Feldwechsel neu, nicht im All (#169)", function(){
+  var s = kaSpiel(), K = SC.Karte, e = s.daten.spieler.erkundet;
+  s._erkunden(); wahr(e["4711"], "unter dem Seed gespeichert"); wahr(K.istErkundet(K.dekodiere(e["4711"], 2048), 2048, 125, 125), "Feld unter dem Spieler");
+  var vor = e["4711"]; s.spieler.pos = [1002, 60, 1002]; s._erkunden(); gleich(e["4711"], vor, "gleiches Feld: nichts geschrieben"); gleich(s._erkundeteFelder, 1, "nur einmal gerechnet");
+  s.spieler.pos = [1030, 60, 1000]; s._erkunden(); wahr(e["4711"] !== vor, "neues Feld: fortgeschrieben");
+  var a = kaSpiel({ all: true }); a._erkunden(); gleich(Object.keys(a.daten.spieler.erkundet).length, 0, "im All nichts");
+  var z = kaSpiel(); z.spieler.pos = [3, 60, 2045]; z._erkunden(); wahr(z.daten.spieler.erkundet["4711"], "an der Weltkante ohne Fehler");
+  var q = kaSpiel(); q.daten.spieler.erkundet = null; q._erkunden(); wahr(q.daten.spieler.erkundet && q.daten.spieler.erkundet["4711"], "kaputtes Feld wird ersetzt");
+  var wechsel = kaSpiel(); wechsel._erkunden(); wechsel.welt = { planet: new SC.Planet({ id: "glutfrost", seed: 99, palette: "glutfrost" }) }; wechsel._erkunden();
+  wahr(wechsel.daten.spieler.erkundet["99"] && wechsel.daten.spieler.erkundet["4711"], "Planetenwechsel: beide getrennt");
+});
+test("Karte im Spiel: _karte öffnet nur mit Karte in der Hand, zeigt Mitspieler und Bett (#169)", function(){
+  var s = kaSpiel(); gleich(s._karte(), true, "Survival: Karte in der Hand"); gleich(s.geoeffnet.length, 1); var d = s.geoeffnet[0];
+  gleich(d.name, "start"); wahr(d.gen && d.bits() && d.ich().pos, "Daten für die Karte"); gleich(d.bett(), null, "ohne Bett");
+  s.daten.spieler.bett = { planet: "start", x: 10, y: 60, z: 20 }; gleich(JSON.stringify(s._karteBett()), JSON.stringify([10.5, 20.5]), "Bett als Symbol");
+  s.daten.spieler.bett = { planet: "glutfrost", x: 10, y: 60, z: 20 }; gleich(s._karteBett(), null, "Bett auf anderem Planeten");
+  var l = kaSpiel({ kampf: { rucksack: { plaetze: [{ block: SC.B.STEIN, anzahl: 3 }] } } }); gleich(l._karte(), false, "andere Sache in der Hand"); gleich(l.geoeffnet.length, 0);
+  var k = kaSpiel(); k.spieler.modus = "kreativ"; k.spieler.schnellleiste[0] = SC.B.KARTE; gleich(k._karte(), true, "Kreativ: Karte in der Leiste");
+  var k2 = kaSpiel(); k2.spieler.modus = "kreativ"; k2.spieler.schnellleiste[0] = SC.B.STEIN; gleich(k2._karte(), false, "Kreativ: Stein");
+  var im = kaSpiel({ all: true }); gleich(im._karte(), false, "im All keine Karte");
+});

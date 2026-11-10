@@ -14,6 +14,12 @@ SC.Bauteile = {};
       // Die Wand liegt auf der Seite des getroffenen Blocks, also gegen die Normale
       return ziel.nz > 0 ? B.LEITER_N : ziel.nz < 0 ? B.LEITER_S : ziel.nx > 0 ? B.LEITER_W : B.LEITER_O;
     }
+    if(id === B.SPIEGEL_N){
+      // Spiegel: nur an die Seitenfläche eines festen, deckenden Blocks, Richtung wie bei der Leiter
+      if(ziel.ny !== 0) return 0;
+      var ds = SC.BLOECKE[welt.holeBlock(ziel.x, ziel.y, ziel.z)]; if(!ds.fest || ds.durchsichtig) return 0;   // strenger als die Leiter: Spiegel hängen nur an deckende Blöcke (Spec)
+      return ziel.nz > 0 ? B.SPIEGEL_N : ziel.nz < 0 ? B.SPIEGEL_S : ziel.nx > 0 ? B.SPIEGEL_W : B.SPIEGEL_O;
+    }
     if(id === B.TUER_X) return Math.abs(blick[0]) >= Math.abs(blick[2]) ? B.TUER_X : B.TUER_Z;
     // Bett: Das Kopfende liegt in Blickrichtung vor dem Fußende
     if(id === B.BETT_FUSS_N) return Math.abs(blick[0]) >= Math.abs(blick[2]) ? (blick[0] > 0 ? B.BETT_FUSS_O : B.BETT_FUSS_W) : (blick[2] > 0 ? B.BETT_FUSS_S : B.BETT_FUSS_N);
@@ -60,6 +66,11 @@ SC.Bauteile = {};
     TUER[t[0]] = t[1]; TUER[t[1]] = t[0]; TUER[t[2]] = t[3]; TUER[t[3]] = t[2];
     OBEN[t[0]] = t[2]; OBEN[t[1]] = t[3]; UNTEN[t[2]] = t[0]; UNTEN[t[3]] = t[1];
   });
+  // Spiegel: zwei Hälften wie die Tür, aber ohne Offen/Zu (eigene Tabellen, damit die Tür-Logik unberührt bleibt)
+  var SPOBEN = {}, SPUNTEN = {};
+  [[B.SPIEGEL_N, B.SPIEGEL_N_OBEN], [B.SPIEGEL_S, B.SPIEGEL_S_OBEN], [B.SPIEGEL_O, B.SPIEGEL_O_OBEN], [B.SPIEGEL_W, B.SPIEGEL_W_OBEN]].forEach(function(p){ SPOBEN[p[0]] = p[1]; SPUNTEN[p[1]] = p[0]; });
+  SC.Bauteile.istSpiegel = function(id){ return SPOBEN[id] !== undefined || SPUNTEN[id] !== undefined; };
+  SC.Bauteile.istSpiegelOben = function(id){ return SPUNTEN[id] !== undefined; };
   SC.Bauteile.istTuer = function(id){ return TUER[id] !== undefined; };
   SC.Bauteile.istTuerOben = function(id){ return UNTEN[id] !== undefined; };
   // Das Gegenstück einer Türhälfte: Block-Zelle { y, id } über oder unter (y), wenn dort die passende Hälfte steht, sonst null
@@ -71,7 +82,7 @@ SC.Bauteile = {};
   };
   // Block setzen; Türen belegen zwei Blöcke und brauchen beide Zellen frei (und keinen Spieler darin). → true, wenn gesetzt
   SC.Bauteile.setze = function(welt, spieler, x, y, z, id){
-    var oben = OBEN[id], kopf = KOPF[id];
+    var oben = OBEN[id] !== undefined ? OBEN[id] : SPOBEN[id], kopf = KOPF[id];
     if(!SC.kannSetzen(welt, spieler, x, y, z, id)) return false;
     if(oben !== undefined && !SC.kannSetzen(welt, spieler, x, y + 1, z, oben)) return false;
     if(kopf){

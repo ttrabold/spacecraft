@@ -121,7 +121,7 @@ SC.Spiel.startpunkt = function(planet){
     this.fluss = new SC.Fluss(this.welt);   // Wasser und Lava fließen (rechnet nicht als Gast, siehe _flussTakt)
     this.wetter = new SC.Wetter(daten.aktuellerPlanet, pd.wetter, Math.random); this.wetterBoden = new SC.WetterBoden(this.welt, pd, Math.random);   // Wetter (siehe _wetterTakt)
     this.welt.ereignisse.an("block", function(b){
-      s._truheWeg(b); s._tuerWeg(b); s._bettWeg(b);
+      s._truheWeg(b); s._tuerWeg(b); s._spiegelWeg(b); s._bettWeg(b);
       if(b.quelle !== "spieler") return;
       if(b.id === SC.B.LUFT) s.audio.spiele("abbauen", { material: SC.Klang.material(b.alt) });
       else s.audio.spiele("setzen", { material: SC.Klang.material(b.id) });

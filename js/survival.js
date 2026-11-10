@@ -84,6 +84,12 @@
     var py = T.istTuerOben(b.alt) ? b.y - 1 : b.y + 1, nb = this.welt.holeBlock(b.x, py, b.z);
     if(T.istTuer(nb) && T.istTuerOben(nb) !== T.istTuerOben(b.alt)) this.welt.setzeBlock(b.x, py, b.z, SC.B.LUFT, b.quelle);
   };
+  // Eine Spiegelhälfte wurde abgebaut: die andere verschwindet mit (ohne zweiten Spiegel als Beute)
+  S._spiegelWeg = function(b){
+    var T = SC.Bauteile; if(!T.istSpiegel(b.alt) || T.istSpiegel(b.id)) return;
+    var py = T.istSpiegelOben(b.alt) ? b.y - 1 : b.y + 1, nb = this.welt.holeBlock(b.x, py, b.z);
+    if(T.istSpiegel(nb) && T.istSpiegelOben(nb) !== T.istSpiegelOben(b.alt)) this.welt.setzeBlock(b.x, py, b.z, SC.B.LUFT, b.quelle);
+  };
   // Eine Betthälfte wurde abgebaut: die andere verschwindet mit (ohne zweites Bett als Beute)
   S._bettWeg = function(b){
     var T = SC.Bauteile; if(!T.istBett(b.alt) || T.istBett(b.id)) return;

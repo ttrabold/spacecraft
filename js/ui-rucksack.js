@@ -102,16 +102,17 @@
     function sacheVon(m){ return !m ? null : m.platz ? (a[m.platz] ? { gegenstand: a[m.platz] } : null) : rs.plaetze[m.i]; }
     function gleicheStelle(x, y){ return !!x && !!y && x.i === y.i && x.platz === y.platz; }
     function stelleVon(el){ var p = el.getAttribute("data-platz"), i = el.getAttribute("data-i"); return p ? { platz: p } : i !== null ? { i: +i } : null; }
-    function sachName(s){ return s.gegenstand ? s.gegenstand.name : SC.BLOECKE[s.block].name + (s.anzahl > 1 ? " × " + s.anzahl : ""); }
+    function sachName(s){ return s.gegenstand ? s.gegenstand.name : (s.trank ? SC.Trank.name(s.trank) : SC.BLOECKE[s.block].name) + (s.anzahl > 1 ? " × " + s.anzahl : ""); }
     // Knöpfe des Menüs, erste = vorausgewählt; Wegwerfen nie zuerst
     function knoepfe(m, s){
       if(m.platz) return ["ablegen", "abbrechen"];
       var k = [], g = s.gegenstand, platz = g && SC.GEGENSTAENDE[g.art].platz;
+      if(s.block === SC.B.TRANK && o.beiTrinken) k.push("trinken");   // Zaubertrank: Trinken zuerst
       if(g && platz !== "waffe") k.push("anlegen");
       else if(m.i >= 9) k.push("leiste");
       return k.concat(["verschieben", "wegwerfen", "abbrechen"]);
     }
-    var KNOPF = { anlegen: "anlegen", ablegen: "ablegen", leiste: "inSchnellleiste", verschieben: "verschieben", wegwerfen: "wegwerfen", abbrechen: "abbrechen" };
+    var KNOPF = { trinken: "trinken", anlegen: "anlegen", ablegen: "ablegen", leiste: "inSchnellleiste", verschieben: "verschieben", wegwerfen: "wegwerfen", abbrechen: "abbrechen" };
     function menueHtml(m){
       var s = sacheVon(m), g = s.gegenstand, kopf;
       if(g){
@@ -154,7 +155,7 @@
         '<div class="rs-werte">' + esc(SC.T.stufe) + " " + w.stufe + " · " + esc(SC.T.werteName.lp) + " " + w.lpMax + " · " + esc(SC.T.werteName.schutz) + " " + w.schutz + (w.schildMax ? " · " + esc(SC.T.werteName.schild) + " " + w.schildMax : "") + "</div>" +
         '<div class="rs-info"></div></div>' +
         '<div class="rs-raster" data-zone="raster">' + rs.plaetze.map(platzHtml).join("") + "</div></div>" +
-        '<div class="reihe" data-zone="aktionen"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button data-aktion="kaefig">' + esc(SC.T.kfKnopf) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+        '<div class="reihe" data-zone="aktionen"><button data-aktion="handwerk">' + esc(SC.T.handwerk) + '</button><button data-aktion="kaefig">' + esc(SC.T.kfKnopf) + '</button><button data-aktion="rezeptbuch">' + esc(SC.T.rezeptbuch) + '</button><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
         aktionen, { seite: true, startZone: "raster" });
       // Offenes Menü: Cursor auf die erste Aktion; sonst zurück auf den Platz, an dem man war
       var f = menue ? ui.ebene.querySelector(".rs-menue button") : cursor && ui.ebene.querySelector(cursor.platz ? '.rs-aplatz[data-platz="' + cursor.platz + '"]' : '.rs-platz[data-i="' + cursor.i + '"]');
@@ -188,6 +189,8 @@
         if(rs.lege({ gegenstand: a[p] }) === 0){ a[p] = null; kampf.ruestungAnwenden(); fertigMit(); }
         else { ui.hinweis(SC.T.rucksackVoll); menue = null; zeichne(); }
       },
+      trinken: function(){ var i = menue.i; o.beiTrinken && o.beiTrinken(i); fertigMit(); },
+      rezeptbuch: function(){ ui.zeigeRezeptbuch(function(){ ui.zeigeRucksack(kampf, o); }); },
       leiste: function(){
         var ziel = -1; for(var j = 0; j < 9; j++) if(!rs.plaetze[j]){ ziel = j; break; }
         if(ziel < 0) ziel = kampf.spieler.auswahl;

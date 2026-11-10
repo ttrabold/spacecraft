@@ -57,6 +57,13 @@
     if(id === SC.B.TRUHE){ this.truheOeffnen(ziel); return true; }
     if(SC.Bauteile.istBett(id)){ this.bettBenutzen(ziel); return true; }
     if(id === SC.B.ZAUBERKUGEL){ this.zauberkugelBenutzen(); return true; }
+    if(id === SC.B.KESSEL){
+      // Survival: brauen; im Kreativmodus (Tränke gibt es dort im Reiter der Blockauswahl) nur das Rezeptbuch
+      var self = this; this.eingabe.gebeMausFrei();
+      if(this.spieler.modus === "survival") this.ui.zeigeKessel(this.kampf, { beiBrauen: function(){ self.audio.spiele("brauen"); }, beiFertig: function(){ self._weiter(); } });
+      else this.ui.zeigeRezeptbuch(function(){ self.ui.schliesse(); self._weiter(); });
+      return true;
+    }
     if(id !== SC.B.WERKBANK) return false;
     var s = this; this.eingabe.gebeMausFrei();
     this.ui.zeigeWerkbank(this.kampf, { station: "werkbank", fahrzeug: this._fahrzeugBauer(), beiFertig: function(){ s._weiter(); } });
@@ -118,7 +125,7 @@
 
   // Eigener Zustand für den Raum (Ziele der Gegner, „in der Nähe“, zustand-Nachricht)
   S.raumIch = function(offen){ var sp = this.spieler, k = this.kampf, surv = sp.modus === "survival";
-    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, lebt: !k.besiegt(), schlaeft: !!sp.schlaeft, hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, tiere: this.all ? [] : (this._tiereListe || []), schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, wetter: this.wetter && !this.wetter.gast ? this.wetter.netz() : null, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
+    return { pos: sp.pos, blick: sp.blick, modus: sp.modus, stufe: k.werte.stufe, ausr: { ruestung: surv ? k.ausruestung : null, waffe: surv ? k.waffe() : null }, menue: !!offen, trank: k.trank ? SC.Trank.schluessel(k.trank.kristall, k.trank.pflanze) : null, lebt: !k.besiegt(), schlaeft: !!sp.schlaeft, hieb: this._hiebN ? { n: this._hiebN, kombo: this._hiebKombo } : undefined, blockt: !!k.blockt, lp: Math.ceil(k.werte.lp), lpMax: k.werte.lpMax, tiere: this.all ? [] : (this._tiereListe || []), schild: Math.ceil(k.werte.schild), schildMax: k.werte.schildMax, tageszeit: this.tageszeit, wetter: this.wetter && !this.wetter.gast ? this.wetter.netz() : null, sitzt: typeof sp.sitzt === "number" ? sp.sitzt : null, fz: this._fzLage(), all: this._allLage() }; };
   // Gast: Blöcke nur ändern, solange die Verbindung steht (sonst ginge der Wunsch verloren)
   // Eimer in der Hand (Survival): leer → aus der angeschauten Quelle schöpfen, voll → vor dem Ziel ausgießen; tauscht den Eimer im Rucksack.
   // true = der Tipp gehört dem Eimer (auch wenn nichts passiert), false = kein Eimer in der Hand
@@ -130,11 +137,47 @@
       if(!art) return true;
       neu = { block: SC.Eimer.voll(art), anzahl: 1 };
     } else {
-      if(!ziel || !SC.Eimer.ausgiessen(w, sp, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, SC.Eimer.art(hand.block), this._mitspielerOrte())) return true;
+      var gel = ziel && SC.Eimer.art(hand.block) === "wasser" && SC.Feuer.brennt(w.holeBlock(ziel.x, ziel.y, ziel.z)) && SC.Feuer.loeschen(w, ziel.x, ziel.y, ziel.z);   // Wasser auf ein brennendes Feuer löscht es
+      if(!gel && ziel && SC.Feuer.istStelle(w.holeBlock(ziel.x, ziel.y, ziel.z))) return true;   // auf eine Feuerstelle (auch ausgeschaltet) gießt man nicht daneben
+      if(!gel && (!ziel || !SC.Eimer.ausgiessen(w, sp, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, SC.Eimer.art(hand.block), this._mitspielerOrte()))) return true;
       neu = { block: B.EIMER, anzahl: 1 };
     }
     rs.nimm(sp.auswahl, 1); if(rs.lege(neu)) this.beuteAuswerfen(sp.pos.slice(), [neu]);   // passt er nicht mehr hinein, fliegt er als Kugel heraus
-    this.audio.spiele("platsch"); return true;
+    this.audio.spiele(gel ? "loeschen" : "platsch"); if(gel) this.ui.hinweis(SC.T.feuerAus, 1500); return true;
+  };
+  // Zaubertrank trinken (Platz im Rucksack): im Survival wird er verbraucht, im Kreativmodus nicht; im Zuschauermodus geht es nicht → true, wenn getrunken
+  S.trankTrinken = function(platz){
+    var sp = this.spieler, k = this.kampf, st = k.rucksack.plaetze[platz];
+    if(!st || st.block !== SC.B.TRANK || !this.trankSchluck(st.trank)) return false;
+    if(sp.modus === "survival") k.rucksack.verbrauche(platz);
+    return true;
+  };
+  // Ein Schluck dieses Tranks "kristall:pflanze" (ohne Rucksack; im Kreativmodus tippt man die Kachel im Reiter Tränke an) → true, wenn getrunken
+  S.trankSchluck = function(schluessel){
+    var t = SC.Trank.teile(schluessel);
+    if(this.spieler.modus === "zuschauer" || !t || !this.kampf.trinke(schluessel)) return false;
+    this.ui.hinweis(SC.T.trankGetrunken.replace("{pflanze}", SC.PFLANZEN[t.pflanze].name).replace("{wirkung}", SC.T.trankWirkung[SC.TRANK.wirkung[t.kristall].art]), 3500);
+    this.audio.spiele("trinken"); return true;
+  };
+  // Aussehen der eigenen Figur an den Trank anpassen; verglichen wird mit dem Stand des Renderers (nicht mit einem eigenen Merker), damit auch ein neuer Renderer
+  // nach Planetenwechsel, Beitritt oder Neustart den laufenden Trank bekommt
+  S._trankSync = function(){
+    var k = this.kampf, key = k.trank ? SC.Trank.schluessel(k.trank.kristall, k.trank.pflanze) : null;
+    if(key !== (this.render._trankKey || null)) this.render.trank(key);
+  };
+  // Block, den das Setzen benutzt (Tür, Truhe, Bett, Zauberkugel, Kessel, Werkbank, Kiste) statt etwas zu setzen oder zu trinken
+  S._benutzbar = function(ziel){
+    var id = this.welt.holeBlock(ziel.x, ziel.y, ziel.z), B = SC.B;
+    return SC.Bauteile.istTuer(id) || SC.Bauteile.istBett(id) || id === B.TRUHE || id === B.ZAUBERKUGEL || id === B.KESSEL || id === B.WERKBANK || id === B.KISTE;
+  };
+  // Hält die Figur einen Zaubertrank in der Hand, trinkt das Setzen ihn (true = der Tipp gehörte dem Trank)
+  S._trankHand = function(){ var st = this.kampf.rucksack.plaetze[this.spieler.auswahl]; if(!st || st.block !== SC.B.TRANK) return false; this.trankTrinken(this.spieler.auswahl); return true; };
+  // Feuerzeug in der Hand (Survival): das Setzen auf eine Lagerfeuer- oder Kaminstelle zündet sie an (das Feuerzeug wird nie verbraucht) → true, wenn der Tipp der Feuerstelle galt
+  S._feuerzeug = function(ziel){
+    var hand = this.kampf.rucksack.plaetze[this.spieler.auswahl]; if(!hand || hand.block !== SC.B.FEUERZEUG) return false;
+    if(!SC.Feuer.istStelle(this.welt.holeBlock(ziel.x, ziel.y, ziel.z))) return false;
+    if(SC.Feuer.zuenden(this.welt, ziel.x, ziel.y, ziel.z)){ this.ui.hinweis(SC.T.feuerAn, 1500); this.audio.spiele("zuenden"); }
+    return true;
   };
   // Positionen der anderen Spieler im Raum (Gastgeber und Gäste), damit niemand übergossen wird
   S._mitspielerOrte = function(){ return this._mitspielerListe ? this._mitspielerListe().map(function(m){ return m.pos; }).filter(Boolean) : []; };
@@ -142,6 +185,10 @@
   S._eimerKreativ = function(ziel){
     var art = SC.Eimer.art(this.spieler.schnellleiste[this.spieler.auswahl]);
     if(!art) return false;
+    if(ziel && SC.Feuer.istStelle(this.welt.holeBlock(ziel.x, ziel.y, ziel.z))){   // Wasser löscht ein brennendes Feuer, sonst wird auf einer Feuerstelle nichts gegossen
+      if(art === "wasser" && SC.Feuer.loeschen(this.welt, ziel.x, ziel.y, ziel.z)){ this.ui.hinweis(SC.T.feuerAus, 1500); this.audio.spiele("loeschen"); }
+      return true;
+    }
     if(ziel && SC.Eimer.ausgiessen(this.welt, this.spieler, ziel.x + ziel.nx, ziel.y + ziel.ny, ziel.z + ziel.nz, art, this._mitspielerOrte())) this.audio.spiele("platsch");
     return true;
   };
@@ -159,7 +206,7 @@
     // Im Raum: Gastgeber rechnet Gegner für alle Spieler, Gast rechnet keine Gegner (gespiegelt) und meldet eigene Angriffe
     var raum = this.raum, gastgeber = raum instanceof SC.Gastgeber ? raum : null, gast = raum instanceof SC.Gast ? raum : null;
     var survival = sp.modus === "survival", lebt = !k.besiegt();
-    this.daten.spielzeit = (this.daten.spielzeit || 0) + dt;
+    this.daten.spielzeit = (this.daten.spielzeit || 0) + dt; if(!offen || raum) k.zeitTrank(dt);   // wie die Gegner: bei offenem Menü steht die Welt still (im Raum läuft sie weiter)
     var waffe = survival ? k.waffe() : null, wdef = waffe && SC.GEGENSTAENDE[waffe.art].waffe;
     var imFz = this._imFahrzeug(), ziel = sp.modus === "zuschauer" || imFz || !this._blockErlaubt() ? null : SC.zielen(w, sp.augen(), sp.richtung(), 6);
     this.render.markiere(ziel);
@@ -200,6 +247,8 @@
       else this._abbau = null;
       // Setzen, Kiste öffnen
       if(e.setzen && this._tierBenutzen()){ /* Tier gestreichelt oder gefüttert */ }
+      else if(e.setzen && !imFz && !(ziel && this._benutzbar(ziel)) && this._trankHand()){ /* Zaubertrank getrunken (nicht, wenn das Setzen einen Kessel, eine Tür usw. benutzt) */ }
+      else if(e.setzen && !imFz && ziel && this._feuerzeug(ziel)){ /* Feuerzeug zündet eine Feuerstelle */ }
       else if(e.setzen && !imFz && this._eimer(ziel)){ /* Eimer geschöpft oder ausgegossen */ }
       else if(e.setzen && ziel){
         if(this.benutzeBlock(ziel)){ /* Werkbank geöffnet */ }
@@ -309,6 +358,7 @@
     this._handSetzen();
     var aKey = JSON.stringify([k.ausruestung, waffe && waffe.id]);
     if(aKey !== this._ausrKey){ this._ausrKey = aKey; this.render.ausruestung(survival ? k.ausruestung : null, waffe); }
+    this._trankSync();   // Zaubertrank: Aussehen der eigenen Figur
     var fzNah = this._fahrzeugNah();
     if(ein.touch) ein.touch.beschrifte({ angriff: !!waffe, blocken: !!(wdef && wdef.typ === "schwert"), ausweichen: survival, benutzen: fzNah && !this.all, platz: !this.all && !!this._imFahrzeug(), all: !!this.all });
     var ui = this.ui;

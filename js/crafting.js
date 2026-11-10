@@ -8,7 +8,8 @@ SC.CRAFTING = {};
 
   // Rohstoffe, die der Kreativmodus per Knopfdruck in den Rucksack legt (Reiter „Materialien“): alles, woraus die Rezepte bestehen
   SC.CRAFTING_MATERIALIEN = [B.STAMM, B.BRETTER, B.STEIN, B.SAND, B.LEUCHTPILZ, B.EISENERZ, B.TITAN, B.GLUTSTAHL, B.MOORSILBER, B.STERNENMETALL,
-    B.KRISTALL_BLAU, B.KRISTALL_GRUEN, B.KRISTALL_ROT, B.KRISTALL_GELB, B.KRISTALL_VIOLETT, B.KRISTALL_WEISS, B.SCHALTKREIS, B.CHITIN];
+    B.KRISTALL_BLAU, B.KRISTALL_GRUEN, B.KRISTALL_ROT, B.KRISTALL_GELB, B.KRISTALL_VIOLETT, B.KRISTALL_WEISS, B.SCHALTKREIS, B.CHITIN,
+    B.FEUERZEUG, B.FLASCHE, B.HASENKLEE, B.KATZENMINZE, B.FUCHSGRAS, B.EISBLUME, B.FROSTBEERE, B.GLUTMOHN, B.FEDERFARN, B.QUAKBLUME, B.DSCHUNGELRANKE];
 
   function bauteil(id, station, kosten, block, anzahl){ return { id: id, art: "bauteil", station: station, kosten: kosten, ergibt: { block: block, anzahl: anzahl } }; }
   function gegenstand(id, art, metall, kristall, extra){ return { id: id, art: art, station: "werkbank", gegenstand: id, metall: metall, kristall: kristall, extra: extra || [] }; }
@@ -31,6 +32,11 @@ SC.CRAFTING = {};
     bauteil("eimer", "werkbank", [{ block: B.EISENERZ, anzahl: 3 }], B.EIMER, 1),
     bauteil("netz", "werkbank", [{ block: B.WOLLE_ROT, anzahl: 2 }, { block: B.BRETTER, anzahl: 2 }], B.NETZ, 1),
     bauteil("tierfutter", "werkbank", [{ block: B.BLAETTER, anzahl: 2 }, { block: B.LEUCHTPILZ, anzahl: 1 }], B.TIERFUTTER, 4),
+    bauteil("lagerfeuer", "werkbank", [{ block: B.STAMM, anzahl: 3 }], B.LAGERFEUER, 1),   // Lagerfeuer und Kamin
+    bauteil("kamin", "werkbank", [{ block: B.STEIN, anzahl: 6 }, { block: B.STAMM, anzahl: 2 }], B.KAMIN, 1),
+    bauteil("feuerzeug", "werkbank", [{ block: B.EISENERZ, anzahl: 2 }, { block: B.KRISTALL_ROT, anzahl: 1 }], B.FEUERZEUG, 1),
+    bauteil("kessel", "werkbank", [{ block: B.EISENERZ, anzahl: 6 }, { block: B.BRETTER, anzahl: 2 }], B.KESSEL, 1),   // Zaubertränke
+    bauteil("flasche", "werkbank", [{ block: B.GLAS, anzahl: 2 }], B.FLASCHE, 3),
     gegenstand("blasterpistole", "waffe", 4, 1), gegenstand("blastergewehr", "waffe", 8, 1), gegenstand("laserschwert", "waffe", 6, 2),
     gegenstand("helm", "ruestung", 5, 0), gegenstand("brust", "ruestung", 8, 0), gegenstand("handschuhe", "ruestung", 4, 0), gegenstand("stiefel", "ruestung", 4, 0),
     gegenstand("schildgenerator", "ruestung", 6, 0, [{ block: B.SCHALTKREIS, anzahl: 1 }]),
@@ -66,6 +72,19 @@ SC.CRAFTING = {};
       if(o && o.gratis) return { ok: true };
       var fehlt = []; k.forEach(function(x){ var n = rucksack.hat(x.block); if(n < x.anzahl) fehlt.push({ block: x.block, anzahl: x.anzahl - n }); });
       return fehlt.length ? { ok: false, grund: "material", fehlt: fehlt } : { ok: true };
+    },
+    // Zaubertrank brauen (Spec 2026-11-09): eine Flasche + ein Kristall der Farbe + eine Pflanze → ein Trank "kristall:pflanze".
+    // → { ok: true, schluessel } | { ok: false, grund: "zutat"|"voll" }; ganz oder gar nicht (bei "voll" bleibt alles beim Alten)
+    brauen: function(rucksack, kristall, pflanze){
+      var t = SC.Trank.teile(SC.Trank.schluessel(kristall, pflanze)); if(!t) return { ok: false, grund: "zutat" };
+      var zutaten = [{ block: SC.B.FLASCHE, anzahl: 1 }, { block: SC.CRAFTING_KRISTALLE[kristall].block, anzahl: 1 }, { block: SC.PFLANZEN[pflanze].block, anzahl: 1 }];
+      if(zutaten.some(function(x){ return rucksack.hat(x.block) < x.anzahl; })) return { ok: false, grund: "zutat" };
+      var s = SC.Trank.schluessel(kristall, pflanze), trank = { block: SC.B.TRANK, anzahl: 1, trank: s }, probe = new SC.Rucksack(rucksack.alsDaten(), rucksack.plaetze.length);
+      zutaten.forEach(function(x){ probe.entferne(x.block, x.anzahl); });
+      if(!probe.passt(trank)) return { ok: false, grund: "voll" };
+      zutaten.forEach(function(x){ rucksack.entferne(x.block, x.anzahl); });
+      rucksack.lege(trank);
+      return { ok: true, schluessel: s };
     },
     // Fahrzeug: o.fahrzeug = { platz(art) → Stelle | null, setze(art, bau, stelle) → Fahrzeug }. Erst Platz suchen, dann bezahlen, dann aufstellen.
     herstelleFahrzeug: function(rucksack, rz, wahl, o){

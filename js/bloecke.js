@@ -15,8 +15,12 @@ SC.B = {
   // Wasser und Lava fließen (Spec 2026-11-08): Fließstufen und fallendes Wasser/Lava; WASSER (8) und LAVA (29) bleiben die Quellen
   WASSER_1: 73, WASSER_2: 74, WASSER_3: 75, WASSER_4: 76, WASSER_5: 77, WASSER_6: 78, WASSER_7: 79, WASSER_FALL: 80, LAVA_1: 81, LAVA_2: 82, LAVA_3: 83, LAVA_FALL: 84,
   EIMER: 85, EIMER_WASSER: 86, EIMER_LAVA: 87,
-  SCHNEESCHICHT: 88,
-  SPIEGEL_N: 89, SPIEGEL_S: 90, SPIEGEL_O: 91, SPIEGEL_W: 92, SPIEGEL_N_OBEN: 93, SPIEGEL_S_OBEN: 94, SPIEGEL_O_OBEN: 95, SPIEGEL_W_OBEN: 96,   // Spiegel: Wandrichtung wie die Leiter, zwei Blöcke hoch wie die Tür   // Wetter: dünne Schneedecke, taut wieder   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
+  SCHNEESCHICHT: 88,   // Wetter: dünne Schneedecke, taut wieder   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
+  // Zaubertränke (Spec 2026-11-09): Kessel, Flasche, Trank (Gegenstand mit Variante im Rucksackplatz) und neun Pflanzen
+  KESSEL: 89, FLASCHE: 90, TRANK: 91, HASENKLEE: 92, KATZENMINZE: 93, FUCHSGRAS: 94, EISBLUME: 95, FROSTBEERE: 96, GLUTMOHN: 97, FEDERFARN: 98, QUAKBLUME: 99, DSCHUNGELRANKE: 100,
+  // Lagerfeuer und Kamin (Spec 2026-11-09-feuer): je aus und an, dazu das Feuerzeug
+  LAGERFEUER: 101, LAGERFEUER_AN: 102, KAMIN: 103, KAMIN_AN: 104, FEUERZEUG: 105,
+  SPIEGEL_N: 106, SPIEGEL_S: 107, SPIEGEL_O: 108, SPIEGEL_W: 109, SPIEGEL_N_OBEN: 110, SPIEGEL_S_OBEN: 111, SPIEGEL_O_OBEN: 112, SPIEGEL_W_OBEN: 113,   // Spiegel: Wandrichtung wie die Leiter, zwei Blöcke hoch wie die Tür
   NETZ: 71, TIERFUTTER: 72, ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
@@ -33,7 +37,10 @@ SC.TEXTUREN = {
   eisenerz: "erz", titan: "erz", glutstahl: "erz", moorsilber: "erz", sternenmetall: "erz",
   kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
   schaltkreis: "schaltkreis", chitin: "chitin", netz: "netz", tierfutter: "tierfutter", eimer: "eimer", eimer_wasser: "eimer", eimer_lava: "eimer", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
-  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", spiegel_unten: "spiegelunten", spiegel_oben: "spiegeloben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste"
+  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", spiegel_unten: "spiegelunten", spiegel_oben: "spiegeloben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste",
+  lagerfeuer_aus: "holzstoss", lagerfeuer_an: "holzstossfeuer", kamin_oben: "kaminoben", kamin_aus: "kaminloch", kamin_an: "kaminfeuer", feuerzeug: "feuerzeug",
+  kessel_oben: "kesseloben", kessel_seite: "kesselseite", flasche: "flasche", trank: "trank",
+  pflanze_hasenklee: "kraut", pflanze_katzenminze: "kraut", pflanze_fuchsgras: "kraut", pflanze_eisblume: "kraut", pflanze_frostbeere: "kraut", pflanze_glutmohn: "kraut", pflanze_federfarn: "kraut", pflanze_quakblume: "kraut", pflanze_dschungelranke: "kraut"
 };
 
 SC.BLOECKE = {};
@@ -140,6 +147,23 @@ SC.BLOECKE = {};
     [SC.B.BETT_KOPF_W, "bett", { oben: "bett_kopf_oben", seite: "bett_seite", unten: "bretter" }, false, true, 0, null, true, false, { form: BETT.W }],
     [SC.B.ZAUBERKUGEL, "zauberkugel", { oben: "zauber_tisch_oben", seite: "zauber_tisch", unten: "zauber_tisch", kugel: "zauber_kugel" }, true, true, 9, [0.7, 0.5, 1.0], true, true, { form: ZAUBER }],
     [SC.B.SCHNEESCHICHT, "schneeschicht", alle("schnee_oben"), false, true, 0, null, true, true, { form: { typ: "kasten", a: [0, 0, 0], b: [1, 0.125, 1] } }],
+    [SC.B.LAGERFEUER, "lagerfeuer", alle("lagerfeuer_aus"), false, true, 0, null, true, true, { form: "kreuz", feuer: "lager", brennt: false }],
+    [SC.B.LAGERFEUER_AN, "lagerfeuerAn", alle("lagerfeuer_an"), false, true, 15, [1.0, 0.55, 0.2], true, true, { form: "kreuz", feuer: "lager", brennt: true }],
+    [SC.B.KAMIN, "kamin", { oben: "kamin_oben", seite: "kamin_aus", unten: "kamin_oben" }, true, false, 0, null, true, true, { feuer: "kamin", brennt: false }],
+    [SC.B.KAMIN_AN, "kaminAn", { oben: "kamin_oben", seite: "kamin_an", unten: "kamin_oben" }, true, false, 13, [1.0, 0.6, 0.25], true, true, { feuer: "kamin", brennt: true }],
+    [SC.B.FEUERZEUG, "feuerzeug", alle("feuerzeug"), true, true, 0, null, true, false, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
+    [SC.B.KESSEL, "kessel", { oben: "kessel_oben", seite: "kessel_seite", unten: "kessel_seite" }, true, false, 0, null, true, true],
+    [SC.B.FLASCHE, "flasche", alle("flasche"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
+    [SC.B.TRANK, "trank", alle("trank"), true, true, 0, null, true, false, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
+    [SC.B.HASENKLEE, "hasenklee", alle("pflanze_hasenklee"), false, true, 0, null, true, true, { form: "pflanze" }],
+    [SC.B.KATZENMINZE, "katzenminze", alle("pflanze_katzenminze"), false, true, 0, null, true, true, { form: "pflanze" }],
+    [SC.B.FUCHSGRAS, "fuchsgras", alle("pflanze_fuchsgras"), false, true, 0, null, true, true, { form: "pflanze" }],
+    [SC.B.EISBLUME, "eisblume", alle("pflanze_eisblume"), false, true, 0, null, true, true, { form: "pflanze" }],
+    [SC.B.FROSTBEERE, "frostbeere", alle("pflanze_frostbeere"), false, true, 0, null, true, true, { form: "pflanze" }],
+    [SC.B.GLUTMOHN, "glutmohn", alle("pflanze_glutmohn"), false, true, 0, null, true, true, { form: "pflanze" }],
+    [SC.B.FEDERFARN, "federfarn", alle("pflanze_federfarn"), false, true, 0, null, true, true, { form: "pflanze" }],
+    [SC.B.QUAKBLUME, "quakblume", alle("pflanze_quakblume"), false, true, 0, null, true, true, { form: "pflanze" }],
+    [SC.B.DSCHUNGELRANKE, "dschungelranke", alle("pflanze_dschungelranke"), false, true, 0, null, true, true, { form: "pflanze" }],
     [SC.B.TRUHE, "truhe", { oben: "truhe_oben", seite: "truhe_seite", unten: "truhe_seite" }, true, false, 0, null, true, true]
   ];
   // Fließstufen: wie die Quelle, aber nicht in der Auswahl; stufe 1 (fast leer) … MAX − 1, fallend = voller Strahl nach unten

@@ -136,8 +136,9 @@ SC.RenderMitspieler = function(szene, planet){
       g.visible = e.modus !== "zuschauer" && e.lebt !== false;
       var a = e.ausr || {}, key = JSON.stringify([a.ruestung || null, a.waffe || null]);
       if(key !== o.ausr){ o.ausr = key; SC.Figur.ausruestung(o.f, a.ruestung || null, a.waffe || null); }
+      SC.Figur.verwandle(o.f, e.trank || null); SC.Figur.trankBild(o.f, performance.now());   // Zaubertrank: Tier-Teile und Leuchten
       var halb = e.verbunden === false;
-      if(halb !== !!o.halb){ o.halb = halb; g.traverse(function(m){ if(m.material && m !== o.schild){ m.material.transparent = halb || m.material.transparent; m.material.opacity = halb ? 0.4 : 1; m.material.needsUpdate = true; } }); }
+      if(halb !== !!o.halb){ o.halb = halb; g.traverse(function(m){ if(m.material && m !== o.schild){ var grund = m.material.userData.grund || 1; m.material.transparent = halb || m.material.transparent; m.material.opacity = halb ? 0.4 * grund : grund; m.material.needsUpdate = true; } }); }
       // Schild bleibt bis 64 Blöcke gleich lesbar: mit der Entfernung mitwachsen
       var d = Math.hypot(x - (kamPos ? kamPos.x : ichPos[0]), o.p[1] - (kamPos ? kamPos.y : ichPos[1]), z - (kamPos ? kamPos.z : ichPos[2])), s = 1.6 * Math.max(1, Math.min(d, 64) / 10);
       o.schild.scale.set(s, s / 4, 1); o.schild.position.y = 2.0 + 0.5 + s / 8;

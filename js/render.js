@@ -122,6 +122,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.szene.remove(alt); alt.traverse(function(o){ if(o.material && o.material.dispose) o.material.dispose(); });
     this._baueFigur(farbe); this.figur.visible = sicht;
     if(a !== undefined) SC.Figur.ausruestung(this._fig, a, w);
+    if(this._trankKey) SC.Figur.verwandle(this._fig, this._trankKey);
   };
 
   // Waffe in der Ich-Ansicht (Rüstung und Figurwaffe baut SC.Figur)
@@ -144,6 +145,11 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var s = this.schweif, t = this._hiebT;
     s.visible = !!sw && this._hiebK !== 3 && this.handWaffe.klinge.visible; if(s.visible) s.material.opacity = t < 0.1 ? 0.6 : Math.max(0, 0.6 * (1 - (t - 0.1) / 0.15));
   };
+  // Zaubertrank der eigenen Figur (Schlüssel "kristall:pflanze" oder null), bleibt beim Farbwechsel der Figur erhalten
+  SC.Render.prototype.trank = function(schluessel){
+    var t = schluessel ? SC.Trank.teile(schluessel) : null; this._trankKey = t ? schluessel : null; SC.Figur.verwandle(this._fig, this._trankKey);
+    this._trankLicht = !!t && SC.TRANK.wirkung[t.kristall].art === "nachtsicht";   // Weiß: Nachtsicht = Licht um die Figur wie bei der Sonderkraft Leuchten
+  };
   SC.Render.prototype.ausruestung = function(a, waffe){
     this._ausrA = a; this._ausrW = waffe; SC.Figur.ausruestung(this._fig, a, waffe);
     SC.Figur.waffeStil(this.handWaffe, waffe);
@@ -153,8 +159,9 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this._leuchtet = !!a && ["helm", "brust"].some(function(p){ return a[p] && a[p].sonder === "leuchten"; });
   };
   SC.Render.prototype._leuchtBild = function(px, py, pz){
-    this.uniforms.leuchtStaerke.value = this._leuchtet ? SC.LEUCHT_STAERKE : 0;
-    if(this._leuchtet) this.uniforms.leuchtPos.value.set(px, py + 1.2, pz);
+    var an = this._leuchtet || this._trankLicht;
+    this.uniforms.leuchtStaerke.value = an ? SC.LEUCHT_STAERKE : 0;
+    if(an) this.uniforms.leuchtPos.value.set(px, py + 1.2, pz);
   };
 
   // Chunk-Grenzen (Entwicklerwerkzeuge): Gitter um den Chunk des Spielers
@@ -179,6 +186,8 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
   SC.Render.wetterNebel = function(sichtweite, eff, unterDach){ var f = eff ? (unterDach ? 1 - (1 - eff.sicht) * 0.5 : eff.sicht) : 1; return [sichtweite * 16 * 0.55 * f, sichtweite * 16 * 0.95 * f]; };
   SC.Render.wetterLicht = function(tageslicht, eff){ return tageslicht * (eff ? eff.dunkel : 1); };
   // Wetter für das nächste Bild merken (weniger: Einstellung „Wetter-Effekte: weniger“)
+  // Brennende Feuer für die Funken (Liste von SC.Feuer.Karte#liste, leer = keine)
+  SC.Render.prototype.feuer = function(liste){ this._feuerListe = liste; };
   SC.Render.prototype.wetter = function(eff, unterDach, weniger){ this._wetter = eff; this._unterDach = !!unterDach; this._weniger = !!weniger; };
   // Blitz: Strahl und (außer bei „weniger“) ein heller Schein über die Welt
   SC.Render.prototype.blitz = function(pos){ if(!this.wetterBild) return; this.wetterBild.blitz(pos); if(!this._weniger) this._blitzHell = 1; };
@@ -321,6 +330,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     var sitzt = typeof spieler.sitzt === "number";
     this.figur.position.set(px, spieler.pos[1], pz); this.figur.rotation.y = sitzt ? spieler.sitzt : spieler.blick[0];
     this.kopf.rotation.x = spieler.blick[1];
+    SC.Figur.trankBild(this._fig, performance.now());
     var schw = SC.Figur.laufSchwung(spieler, performance.now());
     this.armL.rotation.x = schw; this.beinL.rotation.x = sitzt ? SC.Figur.SITZEN : -schw; this.beinR.rotation.x = sitzt ? SC.Figur.SITZEN : schw;
     this._schwungBild(dt, -schw);
@@ -352,6 +362,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.uniforms.zeit.value = (this.uniforms.zeit.value + (dt || 0)) % 64;   // Fließ-Animation (Rest 64: Muster wiederholt sich je Kachel, Genauigkeit bleibt)
     this.uniforms.tageslicht.value = h.tageslicht; this.uniforms.nebelFarbe.value.copy(h.unten);
     var nb = SC.Render.wetterNebel(this.sichtweite, we, this._unterDach); this.uniforms.nebelNah.value = nb[0]; this.uniforms.nebelFern.value = nb[1];
+    if(this._feuerListe && (this._feuerListe.length || this.feuerBild)){ if(!this.feuerBild) this.feuerBild = new SC.RenderFeuer(this.szene); this.feuerBild.bild(this._feuerListe, performance.now(), [k.position.x, k.position.y, k.position.z], this.planet.groesse, this._weniger); }
     if(we){ if(!this.wetterBild) this.wetterBild = new SC.RenderWetter(this.szene); this.wetterBild.bild(we, dt || 0, [k.position.x, k.position.y, k.position.z], this._unterDach, this._weniger); }
     this.wesen.bild(this._welt, spieler.pos, dt, h.tageslicht, performance.now());
     this.mitspieler.aktualisiere(this._mitspieler || [], spieler.pos, dt, k.position);

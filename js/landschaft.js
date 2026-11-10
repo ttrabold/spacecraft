@@ -100,6 +100,7 @@ SC.Landschaft = {};
       }
       var hz = SC.hash3(s, wx, wz, 501) & 1023;
       if(L.leuchtpilze && hz < L.leuchtpilze && c[SC.idx(x, h, z)] === sl.oben && !sl.fluessig && h + 1 < H) c[SC.idx(x, h + 1, z)] = B.LEUCHTPILZ;
+      if(g.planet.generatorVersion >= 4 && c[SC.idx(x, h, z)] === sl.oben && !sl.fluessig && h + 1 < H && c[SC.idx(x, h + 1, z)] === B.LUFT){ var pf = SC.Trank.pflanzeAn(g.planet.id, SC.hash3(s, wx, wz, 909)); if(pf) c[SC.idx(x, h + 1, z)] = pf; }   // Zaubertränke
     }
     // Bäume: Ursprünge aus dem Chunk und einem 5-Block-Rand (Kronen bis Radius 4)
     for(var bx = -5; bx < 21; bx++) for(var bz = -5; bz < 21; bz++){

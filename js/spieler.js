@@ -78,9 +78,11 @@ SC.PHYSIK = { laufen: 4.3, sprint: 5.6, fliegen: 11, schwerkraft: 32, sprung: Ma
       if(e.springen) this.geschw[1] = 3.5;
       if(this.geschw[1] < -3) this.geschw[1] = -3;
     } else {
-      this.geschw[1] -= F.schwerkraft * dt;
-      if(e.springen && this.aufBoden){ this.geschw[1] = F.sprung; this._zweiterSprung = true; }
-      else if(e.springenNeu && !this.aufBoden && this.doppelsprung && this._zweiterSprung){ this.geschw[1] = F.sprung; this._zweiterSprung = false; }
+      // Zaubertrank: sprungFaktor (Grün) mehr Sprungkraft; schwerkraftFaktor (Violett) langsameres Fallen, die Sprunghöhe bleibt (Geschwindigkeit mal Wurzel des Faktors)
+      var sf = this.schwerkraftFaktor || 1, sprung = F.sprung * (this.sprungFaktor || 1) * Math.sqrt(sf);
+      this.geschw[1] -= F.schwerkraft * sf * dt;
+      if(e.springen && this.aufBoden){ this.geschw[1] = sprung; this._zweiterSprung = true; }
+      else if(e.springenNeu && !this.aufBoden && this.doppelsprung && this._zweiterSprung){ this.geschw[1] = sprung; this._zweiterSprung = false; }
       if(this.geschw[1] < -60) this.geschw[1] = -60;
     }
 

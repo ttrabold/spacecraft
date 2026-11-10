@@ -1,8 +1,8 @@
 // Spiegel (#188): Block, Rezept, Aufstellen, Einstellung, Spiegelmathematik
 var SP_IDS = ["SPIEGEL_N", "SPIEGEL_S", "SPIEGEL_O", "SPIEGEL_W", "SPIEGEL_N_OBEN", "SPIEGEL_S_OBEN", "SPIEGEL_O_OBEN", "SPIEGEL_W_OBEN"];
-test("Spiegel: acht Blöcke ab ID 89, dünne Platten, nicht fest; Rezept 2 Glas + 1 Eisenerz + 2 Bretter (#188)", function(){
+test("Spiegel: acht Blöcke ab ID 106, dünne Platten, nicht fest; Rezept 2 Glas + 1 Eisenerz + 2 Bretter (#188)", function(){
   SP_IDS.forEach(function(n, i){
-    var id = SC.B[n]; gleich(id, 89 + i, n);
+    var id = SC.B[n]; gleich(id, 106 + i, n);
     var d = SC.BLOECKE[id]; wahr(d && d.form && d.form.typ === "platte", n + " ist eine Platte"); gleich(d.fest, false, n + " nicht fest"); wahr(!d.klettern, n + " nicht kletterbar");
     gleich(d.inAuswahl === true, id === SC.B.SPIEGEL_N, n + " nur SPIEGEL_N in der Auswahl");
   });
@@ -145,4 +145,4 @@ test("Anleitung erklärt den Spiegel, ANLEITUNG.md enthält denselben Abschnitt 
   var req = new XMLHttpRequest(); req.open("GET", "../docs/ANLEITUNG.md", false); try { req.send(); } catch(e){ return; }   // per file:// nicht lesbar: dann nur der Text oben
   if(req.status === 200 || req.responseText) wahr(req.responseText.indexOf(sp) >= 0, "ANLEITUNG.md enthält denselben Satz");
 });
-test("Netzprotokoll 11 wegen der neuen Block-IDs des Spiegels, alte Gäste werden abgelehnt (#188)", function(){ gleich(SC.NETZ_PROTOKOLL, 11); });
+test("Netzprotokoll 13 wegen der neuen Block-IDs des Spiegels, alte Gäste werden abgelehnt (#188)", function(){ gleich(SC.NETZ_PROTOKOLL, 13); });

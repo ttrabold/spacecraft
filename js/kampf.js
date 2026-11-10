@@ -6,6 +6,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
   this.rucksack = new SC.Rucksack(s.rucksack);
   this.kaefig = new SC.Kaefig(s.kaefig);
   this.ausruestung = JSON.parse(JSON.stringify(s.ausruestung || { helm: null, brust: null, handschuhe: null, stiefel: null, schild: null }));
+  this.trank = SC.Trank.pruefe(s.trank);   // laufender Zaubertrank (js/traenke.js) oder null
   this.werte = { stufe: s.stufe || 1, erfahrung: s.erfahrung || 0, lp: 0, lpMax: 0, schild: 0, schildMax: 0, schutz: 0, schadenBonus: 0, tempoBonus: 0, erholungBonus: 0 };
   this.ruestungAnwenden();
   this.werte.lp = s.lebenspunkte == null ? this.werte.lpMax : Math.min(s.lebenspunkte, this.werte.lpMax);
@@ -50,8 +51,16 @@ SC.Kampf = function(welt, spieler, daten, zf){
     this.sonder = sonder;
     this.spieler.doppelsprung = sonder.has("doppelsprung");
     this.spieler.leuchten = sonder.has("leuchten");
+    // Zaubertrank: Tempo, Schaden und Schild laufen über dieselben Bonuswerte wie die Rüstung; Sprung, Schwerkraft und Nachtsicht gehen an die Figur
+    var tb = SC.Trank.bonus(this.trank);
+    w.tempoBonus += tb.tempo; w.schadenBonus += tb.schaden; w.schildMax += tb.schild; w.schild = Math.min(w.schild, w.schildMax);
+    this.spieler.sprungFaktor = tb.sprung; this.spieler.schwerkraftFaktor = tb.schwerkraft; this.spieler.leuchten = sonder.has("leuchten") || tb.nachtsicht;
     this.spieler.tempoFaktor = 1 + w.tempoBonus / 100;
   };
+  // Trank trinken (ersetzt einen laufenden) → false bei ungültigem Schlüssel; zeitTrank zählt die Spielzeit herunter, trankEnde beendet ihn sofort (z. B. beim Besiegtwerden)
+  K.trinke = function(schluessel){ var z = SC.Trank.neu(schluessel); if(!z) return false; this.trank = z; this.ruestungAnwenden(); return true; };
+  K.zeitTrank = function(dt){ if(!this.trank) return; if(this.besiegt() || this.spieler.modus === "zuschauer"){ this.trankEnde(); return; } if(!SC.Trank.zeit(this.trank, dt)){ this.trank = null; this.ruestungAnwenden(); } };
+  K.trankEnde = function(){ if(!this.trank) return; this.trank = null; this.ruestungAnwenden(); };
 
   K.waffe = function(){
     var s = this.rucksack.plaetze[this.spieler.auswahl], g = s && s.gegenstand;
@@ -201,6 +210,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
       beute.push({ block: SC.B.STERNENMETALL, anzahl: 1 + Math.floor(zf() * 2) });
       if(zf() < 0.25) beute.push({ block: SC.B.KRISTALL_WEISS, anzahl: 1 });
     }
+    var pb = SC.Trank.beute(daten.aktuellerPlanet, boss, zf); if(pb) beute.push(pb);   // Zaubertränke: Pflanze des Planeten (auch in alten Welten)
     return { erfahrung: xp, beute: beute, boss: boss };
   };
 
@@ -208,7 +218,7 @@ SC.Kampf = function(welt, spieler, daten, zf){
     var w = this.werte; this.uhr = jetzt;
     this.hitze = Math.max(0, this.hitze - 0.25 * dt);
     if(jetzt >= this.ueberhitztBis && this.ueberhitztBis && this.hitze > 0.6 && jetzt - this.ueberhitztBis < 50) this.hitze = 0.6;
-    if(w.lp > 0 && jetzt - this.zuletztGetroffen > 5000) w.lp = Math.min(w.lpMax, w.lp + w.lpMax * 0.04 * dt * (1 + w.erholungBonus / 100));
+    if(w.lp > 0 && jetzt - this.zuletztGetroffen > 5000) w.lp = Math.min(w.lpMax, w.lp + w.lpMax * 0.04 * dt * (1 + w.erholungBonus / 100) * (this.warm ? 2 : 1));   // warm: am Lagerfeuer oder Kamin (js/feuer.js)
     if(jetzt - this.zuletztGetroffen > 3000) w.schild = Math.min(w.schildMax, w.schild + w.schildMax * 0.2 * dt * (this.sonder.has("schnellladen") ? 2 : 1));
   };
 

@@ -1,5 +1,5 @@
 // Weltgenerator: rechnet jeden Chunk nur aus Seed und Koordinaten (kein Math.random)
-SC.GENERATOR_VERSION = 3;   // 3: Erze und Kristalle für das Crafting (Welten mit Version 2 bleiben unverändert)
+SC.GENERATOR_VERSION = 4;   // 4: Pflanzen für Zaubertränke; 3: Erze und Kristalle für das Crafting (Welten mit Version 3 und älter bleiben unverändert)
 SC.MEER = 48;
 
 SC.Generator = function(planet){
@@ -138,6 +138,7 @@ SC.Generator = function(planet){
       if(c[SC.idx(x, h, z)] !== oben) continue;                     // Oberfläche weggehöhlt
       if(biom === "kristallfeld" && hz < 20){ for(var k = 1; k <= 1 + (hz % 3); k++) if(h + k < H) c[SC.idx(x, h + k, z)] = B.KRISTALL; }
       else if((biom === "wald" || biom === "wiese") && hz >= 1021 && h + 1 < H) c[SC.idx(x, h + 1, z)] = B.LEUCHTPILZ;
+      if(this.planet.generatorVersion >= 4 && (biom === "wald" || biom === "wiese") && h + 1 < H && c[SC.idx(x, h + 1, z)] === B.LUFT){ var pf = SC.Trank.pflanzeAn("start", SC.hash3(s, wx, wz, 909)); if(pf) c[SC.idx(x, h + 1, z)] = pf; }   // Zaubertränke
     }
     // Bäume: Ursprünge aus dem Chunk und einem 2-Block-Rand, damit Kronen über Grenzen passen
     for(var bx = -2; bx < 18; bx++) for(var bz = -2; bz < 18; bz++){

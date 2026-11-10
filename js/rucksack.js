@@ -14,16 +14,16 @@ SC.Rucksack.STAPEL = 64;
       return 1;
     }
     var rest = sache.anzahl;
-    for(i = 0; i < p.length && rest; i++) if(p[i] && p[i].block === sache.block && p[i].anzahl < SC.Rucksack.STAPEL){
+    for(i = 0; i < p.length && rest; i++) if(p[i] && p[i].block === sache.block && (p[i].trank || null) === (sache.trank || null) && p[i].anzahl < SC.Rucksack.STAPEL){
       var n = Math.min(rest, SC.Rucksack.STAPEL - p[i].anzahl); p[i].anzahl += n; rest -= n;
     }
-    for(i = 0; i < p.length && rest; i++) if(!p[i]){ var m = Math.min(rest, SC.Rucksack.STAPEL); p[i] = { block: sache.block, anzahl: m }; rest -= m; }
+    for(i = 0; i < p.length && rest; i++) if(!p[i]){ var m = Math.min(rest, SC.Rucksack.STAPEL); p[i] = { block: sache.block, anzahl: m }; if(sache.trank) p[i].trank = sache.trank; rest -= m; }
     return rest;
   };
   R.nimm = function(platz, anzahl){
     var s = this.plaetze[platz]; if(!s) return null;
     if(s.gegenstand || anzahl === undefined || anzahl >= s.anzahl){ this.plaetze[platz] = null; return s; }
-    s.anzahl -= anzahl; return { block: s.block, anzahl: anzahl };
+    s.anzahl -= anzahl; var teil = { block: s.block, anzahl: anzahl }; if(s.trank) teil.trank = s.trank; return teil;
   };
   // Entfernt bis zu anzahl Stück eines Blocks (aus den hinteren Plätzen zuerst); liefert, was gefehlt hat
   R.entferne = function(block, anzahl){
@@ -37,10 +37,12 @@ SC.Rucksack.STAPEL = 64;
   R.passt = function(sache){
     var p = this.plaetze, frei = 0, i;
     if(sache.gegenstand){ for(i = 0; i < p.length; i++) if(!p[i]) return true; return false; }
-    for(i = 0; i < p.length; i++){ if(!p[i]) frei += SC.Rucksack.STAPEL; else if(p[i].block === sache.block) frei += SC.Rucksack.STAPEL - p[i].anzahl; }
+    for(i = 0; i < p.length; i++){ if(!p[i]) frei += SC.Rucksack.STAPEL; else if(p[i].block === sache.block && (p[i].trank || null) === (sache.trank || null)) frei += SC.Rucksack.STAPEL - p[i].anzahl; }
     return frei >= sache.anzahl;
   };
   R.hat = function(block){ var n = 0; this.plaetze.forEach(function(s){ if(s && s.block === block) n += s.anzahl; }); return n; };
+  // Zaubertränke (Spec 2026-11-09): Anzahl der Tränke mit diesem Schlüssel "kristall:pflanze"
+  R.hatTrank = function(schluessel){ var n = 0; this.plaetze.forEach(function(s){ if(s && s.block === SC.B.TRANK && s.trank === schluessel) n += s.anzahl; }); return n; };
   R.verbrauche = function(platz){
     var s = this.plaetze[platz]; if(!s || s.block === undefined) return false;
     if(--s.anzahl <= 0) this.plaetze[platz] = null;
@@ -62,11 +64,14 @@ SC.Abbau = {};
   // Stufe 6a: Erze nach Seltenheit, Kristalle, Teile, Werkbank und Bauteile
   ZEIT[B.EISENERZ] = 1.6; ZEIT[B.TITAN] = 2.2; ZEIT[B.GLUTSTAHL] = 3; ZEIT[B.MOORSILBER] = 3; ZEIT[B.STERNENMETALL] = 4;
   [B.KRISTALL_BLAU, B.KRISTALL_GRUEN, B.KRISTALL_ROT, B.KRISTALL_GELB, B.KRISTALL_VIOLETT, B.KRISTALL_WEISS].forEach(function(id){ ZEIT[id] = 1.4; });
-  [B.SCHALTKREIS, B.CHITIN, B.NETZ, B.TIERFUTTER, B.EIMER, B.EIMER_WASSER, B.EIMER_LAVA].forEach(function(id){ ZEIT[id] = 1; });
+  [B.SCHALTKREIS, B.CHITIN, B.NETZ, B.TIERFUTTER, B.EIMER, B.EIMER_WASSER, B.EIMER_LAVA, B.FLASCHE, B.TRANK].forEach(function(id){ ZEIT[id] = 1; });
+  ZEIT[B.LAGERFEUER] = ZEIT[B.LAGERFEUER_AN] = 0.5; ZEIT[B.KAMIN] = ZEIT[B.KAMIN_AN] = 1.4; ZEIT[B.FEUERZEUG] = 1;   // Lagerfeuer und Kamin
+  ZEIT[B.KESSEL] = 0.9; [B.HASENKLEE, B.KATZENMINZE, B.FUCHSGRAS, B.EISBLUME, B.FROSTBEERE, B.GLUTMOHN, B.FEDERFARN, B.QUAKBLUME, B.DSCHUNGELRANKE].forEach(function(id){ ZEIT[id] = 0.1; });   // Zaubertränke: Pflanzen sind ein Schlag
   [B.WERKBANK, B.FACKEL, B.ZAUN, B.LEITER_N, B.LEITER_S, B.LEITER_O, B.LEITER_W, B.SPIEGEL_N, B.SPIEGEL_S, B.SPIEGEL_O, B.SPIEGEL_W, B.SPIEGEL_N_OBEN, B.SPIEGEL_S_OBEN, B.SPIEGEL_O_OBEN, B.SPIEGEL_W_OBEN, B.TUER_X, B.TUER_Z, B.TUER_X_OFFEN, B.TUER_Z_OFFEN, B.TUER_X_OBEN, B.TUER_Z_OBEN, B.TUER_X_OFFEN_OBEN, B.TUER_Z_OFFEN_OBEN, B.TRUHE, B.ZAUBERKUGEL, B.BETT_FUSS_N, B.BETT_FUSS_S, B.BETT_FUSS_O, B.BETT_FUSS_W, B.BETT_KOPF_N, B.BETT_KOPF_S, B.BETT_KOPF_O, B.BETT_KOPF_W].forEach(function(id){ ZEIT[id] = 0.9; });
   var GRUND = {}; [B.SPIEGEL_S, B.SPIEGEL_O, B.SPIEGEL_W, B.SPIEGEL_N_OBEN, B.SPIEGEL_S_OBEN, B.SPIEGEL_O_OBEN, B.SPIEGEL_W_OBEN].forEach(function(id){ GRUND[id] = B.SPIEGEL_N; });
   GRUND[B.LEITER_S] = GRUND[B.LEITER_O] = GRUND[B.LEITER_W] = B.LEITER_N; GRUND[B.TUER_Z] = GRUND[B.TUER_X_OFFEN] = GRUND[B.TUER_Z_OFFEN] = GRUND[B.TUER_X_OBEN] = GRUND[B.TUER_Z_OBEN] = GRUND[B.TUER_X_OFFEN_OBEN] = GRUND[B.TUER_Z_OFFEN_OBEN] = B.TUER_X;
   [B.BETT_FUSS_S, B.BETT_FUSS_O, B.BETT_FUSS_W, B.BETT_KOPF_N, B.BETT_KOPF_S, B.BETT_KOPF_O, B.BETT_KOPF_W].forEach(function(id){ GRUND[id] = B.BETT_FUSS_N; });
+  GRUND[B.LAGERFEUER_AN] = B.LAGERFEUER; GRUND[B.KAMIN_AN] = B.KAMIN;   // brennende Stellen ergeben die ausgeschaltete Form
   SC.Abbau.zeit = function(id){
     var b = SC.BLOECKE[id];
     if(!b || !b.zerstoerbar) return Infinity;

@@ -6,6 +6,24 @@
   function ring(welt, a, b){ var P = welt.planet.groesse; return [SC.mod(b[0] - a[0] + P / 2, P) - P / 2, b[1] - a[1], SC.mod(b[2] - a[2] + P / 2, P) - P / 2]; }
   var FANG_REICHWEITE = 4.5;
 
+  // --- Tierlaute (#185): das Tier ruft seinen Namen (js/tiernamen.js) ---
+  // Ein Laut der Art an der Stelle pos (leiser mit Entfernung, ab 28 Blöcken stumm). wie: ruf, freude, schreck, ko. Kurz nacheinander höchstens einer, außer immer.
+  S._tierLaut = function(art, wie, pos, immer){
+    if(!SC.TIERE[art] || !SC.Klang.NAMEN[art] || !this.audio || !this.welt) return;
+    var jetzt = Date.now(); if(!immer && this._tierLautBis && jetzt < this._tierLautBis) return;   // Rufe dauern bis zu 2 s: sonst überlagern sie sich
+    var r = pos ? ring(this.welt, this.spieler.pos, pos) : [0, 0, 0], e = Math.hypot(r[0], r[1], r[2]); if(e > 28) return;
+    this._tierLautBis = jetzt + 1500; this.audio.spiele("tierlaut", { art: art, wie: wie, entfernung: e, modus: this.einstellungen && this.einstellungen.tierstimmen });
+  };
+  // Jedes Bild: ab und zu ruft ein Wildtier oder eigener Begleiter in 24 Blöcken Umkreis (alle 5–14 s, Gast und Gastgeber, da die Wesen gespiegelt sind)
+  S._tierLaute = function(dt){
+    this._rufWarte = (this._rufWarte == null ? 4 : this._rufWarte) - dt; if(this._rufWarte > 0) return;
+    this._rufWarte = 5 + Math.random() * 9;
+    var w = this.welt, sp = this.spieler, fid = this.daten.spieler.figurId, nah = [];
+    w.wesen.forEach(function(e){ if(e.art !== "tier" || !(e.wild || e.besitzer === fid) || e.haeltStill) return; var r = ring(w, sp.pos, e.pos); if(Math.hypot(r[0], r[2]) < 24 && Math.abs(r[1]) < 12) nah.push(e); });
+    if(!nah.length){ this._rufWarte = 2; return; }
+    var e = nah[Math.floor(Math.random() * nah.length)]; this._tierLaut(e.tierArt, "ruf", e.pos);
+  };
+
   // --- Fangen mit dem Netz (Zielring, js/fang.js) ---
   // Netz in der Hand + Angriffstaste: das nächste Wildtier im Blickfeld (Kegel von etwa 60°, bis 4,5 Blöcke) wird gefangen, sofern der Käfig Platz hat und kein anderer es gerade fängt
   S._fangVersuch = function(){
@@ -46,16 +64,16 @@
     var druck = this._fangDruck; this._fangDruck = false;
     var r = druck ? f.fang.druecken() : f.fang.schritt(dt);
     if(r === "laeuft"){ this.ui.fangRing({ ring: f.fang.ring, zone: f.fang.zone, treffer: f.fang.treffer, noetig: f.fang.noetig }, function(){ s._fangDruck = true; }); return; }
-    if(r === "treffer"){ this.audio.spiele("treffer"); this.render.wesen.funken(tier.pos, "#7dff9a", 10, sp.pos); this.ui.hinweis(SC.T.fangTreffer, 900); this.ui.fangRing({ ring: f.fang.ring, zone: f.fang.zone, treffer: f.fang.treffer, noetig: f.fang.noetig }, function(){ s._fangDruck = true; }); return; }
+    if(r === "treffer"){ this.audio.spiele("treffer"); this._tierLaut(tier.tierArt, "schreck", tier.pos, true); this.render.wesen.funken(tier.pos, "#7dff9a", 10, sp.pos); this.ui.hinweis(SC.T.fangTreffer, 900); this.ui.fangRing({ ring: f.fang.ring, zone: f.fang.zone, treffer: f.fang.treffer, noetig: f.fang.noetig }, function(){ s._fangDruck = true; }); return; }
     if(r === "daneben"){
       // Das Tier hoppelt ein Stück weg; man kann es gleich nochmal versuchen (nichts geht verloren; beim Gast macht das der Gastgeber)
-      this._fangEnde(tier, false);
+      this._fangEnde(tier, false); this._tierLaut(tier.tierArt, "schreck", tier.pos, true);
       if(!(this.raum instanceof SC.Gast)){ var l = Math.hypot(d[0], d[2]) || 1; tier.richtung = [d[0] / l, d[2] / l]; tier.modus = "flieht"; tier.bis = (tier.zeit || 0) + 1; tier.geschw[1] = 6; }
       this.ui.hinweis(SC.T.fangDaneben, 1500);
     } else {
       var t = SC.Tier.neu(tier.tierArt, this._zf);
       if(!k.kaefig.lege(t)){ this._fangEnde(tier, false); this.ui.hinweis(SC.T.kaefigVoll, 2500); return; }
-      this._fangEnde(tier, true); SC.Wesen.entferne(w, tier.id); if(typeof this.speichere === "function") this.speichere("fund"); this.render.wesen.funken(tier.pos, "#ffe36b", 28, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 4 });
+      this._fangEnde(tier, true); SC.Wesen.entferne(w, tier.id); if(typeof this.speichere === "function") this.speichere("fund"); this.render.wesen.funken(tier.pos, "#ffe36b", 28, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 4 }); this._tierLaut(tier.tierArt, "freude", tier.pos, true);
       this.ui.hinweis(SC.T.neuGefangen.replace("{name}", t.name + " (" + SC.TIERE[t.art].name + ")"), 3000);
     }
   };
@@ -76,7 +94,7 @@
     k.kaefig.plaetze.forEach(function(t){
       if(!t || !t.draussen || !erlaubt || t.koRest > 0) return;
       var e = da[t.id], wt = SC.Tier.werte(t);
-      if(!e){ e = s._tierWesen(t, sp.pos.slice(), n); if(e) SC.KI.tierZuBesitzer(w, e, sp.pos, n); }
+      if(!e){ e = s._tierWesen(t, sp.pos.slice(), n); if(e){ SC.KI.tierZuBesitzer(w, e, sp.pos, n); s._tierLaut(t.art, "freude", sp.pos); } }
       else {
         delete da[t.id]; t.lp = Math.max(0, Math.min(e.lp, wt.lpMax)); e.lp = t.lp; e.lpMax = wt.lpMax; e.schaden = wt.schaden; e.name = t.name; e.stufe = t.stufe;
       }
@@ -104,7 +122,7 @@
   };
   S._tierTreffer = function(e, schaden){
     if(!(schaden > 0) || e.ko) return;
-    e.lp -= schaden; this.audio.spiele("treffer"); this._zahl({ pos: e.pos, hoehe: e.hoehe }, schaden);
+    e.lp -= schaden; this.audio.spiele("treffer"); this._zahl({ pos: e.pos, hoehe: e.hoehe }, schaden); if(e.lp > 0 && Math.random() < 0.5) this._tierLaut(e.tierArt, "schreck", e.pos);
     if(e.lp <= 0) this._tierKo(e);
   };
   // K.o.: freundlich verpuffen, zurück in den Käfig, nach 1 Minute wieder fit (Erfahrung bleibt)
@@ -116,7 +134,7 @@
       this.raum.tierStand(e.besitzer, [], [e.tierId]);
     }
     if(t){ t.lp = 0; t.koRest = 60; t.draussen = false; t.staerke = null; this.ui.hinweis(SC.T.tierKo.replace("{name}", t.name), 3000); }
-    this.render.wesen.funken(e.pos, "#ffe36b", 18, this.spieler.pos); this.audio.spiele("zerfall");
+    this.render.wesen.funken(e.pos, "#ffe36b", 18, this.spieler.pos); this.audio.spiele("zerfall"); this._tierLaut(e.tierArt, "ko", e.pos, true);
     SC.Wesen.entferne(this.welt, e.id);
   };
   // Erfahrung für den Besitzer besiegter Gegner: Begleiter in 30 Blöcken Umkreis bekommen dieselbe Menge (Stufe höchstens die des Besitzers)
@@ -147,7 +165,7 @@
     var hand = k.rucksack.plaetze[sp.auswahl], futter = !!(hand && hand.block === SC.B.TIERFUTTER) && !(t.staerke && t.staerke.art === "fuettern" && t.staerke.rest > 295);
     if(futter && SC.Tier.staerken(t, "fuettern")){ k.rucksack.verbrauche(sp.auswahl); best.lp = t.lp; this.ui.hinweis(SC.T.gefuettert.replace("{name}", t.name), 2500); }
     else if(SC.Tier.staerken(t, "streicheln")) this.ui.hinweis(SC.T.gestreichelt.replace("{name}", t.name), 2500);
-    this.render.wesen.funken([best.pos[0], best.pos[1] + best.hoehe + 0.2, best.pos[2]], "#ff7fb0", 10, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 1 });
+    this.render.wesen.funken([best.pos[0], best.pos[1] + best.hoehe + 0.2, best.pos[2]], "#ff7fb0", 10, sp.pos); this.audio.spiele("aufsammeln", { seltenheit: 1 }); this._tierLaut(best.tierArt, "freude", best.pos, true);
     return true;
   };
   // --- Mehrspieler (Gastgeber): Tiere der Gäste, Stand zurück an den Gast, Fang-Sperren ---
@@ -194,6 +212,7 @@
   S._tiere = function(dt, offen){
     var w = this.welt, sp = this.spieler, raum = this.raum, s = this;
     this._fangBild(dt, offen);
+    if(!offen && !this.all) this._tierLaute(dt);
     if(!this.auftauchen) return;
     // Gast: die Tiere rechnet der Gastgeber; hier laufen nur die Zeiten der Käfigtiere, und die Liste der Tiere draußen geht mit dem zustand hinaus
     if(raum instanceof SC.Gast){
@@ -238,7 +257,8 @@
           var gg = w.wesen.get(a.ziel); if(!gg || gg.art !== "gegner") return;
           var d = ring(w, e.pos, gg.pos), r = s.kampf.trifftGegner(gg, a.schaden, [d[0], 0, d[2]]);
           s._zahl(gg, r.schaden); if(r.besiegt) s.besiege(gg); else s.audio.spiele("treffer");
-        } else if(a.art === "schuss") s._spielerSchuss({ pos: a.pos, richtung: a.richtung, tempo: a.tempo, schaden: a.schaden, team: "spieler", art: "laser", lebensdauer: 0.6, farbe: a.farbe, tier: true });
+          if(Math.random() < 0.35) s._tierLaut(e.tierArt, "ruf", e.pos);
+        } else if(a.art === "schuss"){ if(Math.random() < 0.25) s._tierLaut(e.tierArt, "ruf", e.pos); s._spielerSchuss({ pos: a.pos, richtung: a.richtung, tempo: a.tempo, schaden: a.schaden, team: "spieler", art: "laser", lebensdauer: 0.6, farbe: a.farbe, tier: true }); }
       });
     });
   };

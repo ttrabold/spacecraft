@@ -130,7 +130,9 @@
       if(r.plaetze === null){ ui.hinweis(T.truheWeg); plaetze = plaetze || []; } else plaetze = r.plaetze;
       o.beiAenderung && o.beiAenderung(); zeichne();
     }
-    function ablegen(sache){ return sache.gegenstand ? rs.lege({ gegenstand: sache.gegenstand }) : rs.lege({ block: sache.block, anzahl: sache.anzahl }); }
+    // Kopie einer Sache mit anderer Anzahl; ein Zaubertrank behält seinen Schlüssel "kristall:pflanze"
+    function kopie(s, n){ var x = { block: s.block, anzahl: n }; if(s.trank) x.trank = s.trank; return x; }
+    function ablegen(sache){ return sache.gegenstand ? rs.lege({ gegenstand: sache.gegenstand }) : rs.lege(kopie(sache, sache.anzahl)); }
     var aktionen = {
       tplatz: function(el){
         var s = plaetze && plaetze[+el.getAttribute("data-i")]; if(!s) return;
@@ -138,7 +140,7 @@
         return anbieter.nimm(+el.getAttribute("data-i")).then(function(r){
           if(r.sache){
             var rest = ablegen(r.sache);
-            if(rest) return anbieter.lege(r.sache.gegenstand ? r.sache : { block: r.sache.block, anzahl: rest }).then(antwort);   // Rest zurücklegen (z. B. nach einem Wettlauf um den Platz)
+            if(rest) return anbieter.lege(r.sache.gegenstand ? r.sache : kopie(r.sache, rest)).then(antwort);   // Rest zurücklegen (z. B. nach einem Wettlauf um den Platz)
           }
           antwort(r);
         });
@@ -147,7 +149,7 @@
         var i = +el.getAttribute("data-i"); if(!rs.plaetze[i]) return;
         var sache = rs.nimm(i);
         return anbieter.lege(sache).then(function(r){
-          var zurueck = r.plaetze === null ? sache : r.rest ? (sache.gegenstand ? sache : { block: sache.block, anzahl: r.rest }) : null;
+          var zurueck = r.plaetze === null ? sache : r.rest ? (sache.gegenstand ? sache : kopie(sache, r.rest)) : null;
           if(zurueck){ ablegen(zurueck); if(r.plaetze !== null) ui.hinweis(T.truheVoll); }
           antwort(r);
         });

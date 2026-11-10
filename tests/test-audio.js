@@ -49,3 +49,53 @@ test("Musikspieler spielt das neue Stück ohne Fehler", function(){
   ["tag","kampf","all"].forEach(function(m){ a._stueck=null; a._pauseBis=0; a.musikTakt(m,true); wahr(a._stueck&&a._stueck.stimmung===m,m+": Stück läuft"); a.musikTakt(m,true); wahr(Object.keys(a._stueck.inst).length>0,m+": Instrumente angeschlossen"); });
   a.musikTakt("nacht",true); wahr(a._stueck.blendetAus,"Wechsel blendet aus"); a.ctx.close();
 });
+
+// --- Tierlaute (#185): Tiere rufen ihren Namen ---
+test("Tierlaute: jede Art hat Namen und Stimmwerte", function(){
+  Object.keys(SC.TIERE).forEach(function(a){ var b = SC.Klang.NAMENSTIMMEN[a]; wahr(SC.Klang.NAMEN[a] && b && b.f0 > 100 && b.form > 0.5 && b.tempo > 0.3, "Name/Stimme fehlt: " + a); });
+});
+test("Tierlaute: jeder Ruf in jeder Stimmung ist hörbar, endlich und übersteuert nicht", function(){
+  var wie = ["ruf", "freude", "schreck", "ko"], ps = [];
+  function laut(art, w, e){ var ctx = new OfflineAudioContext(1, 44100 * 5, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.erzeuge(ctx, z, "tierlaut", { art: art, wie: w, entfernung: e }, 0.8);
+    return ctx.startRendering().then(function(b){ var d = b.getChannelData(0), s = 0, mx = 0; for(var i = 0; i < d.length; i++){ if(!isFinite(d[i])) return { rms: NaN }; s += d[i] * d[i]; mx = Math.max(mx, Math.abs(d[i])); } return { rms: Math.sqrt(s / d.length), peak: mx }; }); }
+  Object.keys(SC.TIERE).forEach(function(a){ wie.forEach(function(w){ ps.push(laut(a, w, 0).then(function(r){ wahr(r.rms > 0.002, a + "/" + w + " zu leise: " + r.rms); wahr(r.peak < 0.9, a + "/" + w + " übersteuert: " + r.peak); })); }); });
+  ps.push(Promise.all([laut("hund", "ruf", 2), laut("hund", "ruf", 27)]).then(function(r){ wahr(r[1].rms < r[0].rms, "fern leiser"); }));
+  return Promise.all(ps);
+});
+test("Tierlaute: unbekannte Art und fehlendes Audio werfen nicht", function(){
+  var ctx = new OfflineAudioContext(1, 4410, 44100), z = ctx.createGain(); SC.Klang.erzeuge(ctx, z, "tierlaut", { art: "gibtesnicht" }, 1); SC.Klang.erzeuge(ctx, z, "tierlaut", undefined, 1);
+  var a = Object.create(SC.Audio.prototype); a.ctx = null; a.spiele("tierlaut", { art: "hund" }); wahr(true);
+});
+test("Tierlaute: Spiel ruft nur nah, mit Entfernung, gedrosselt", function(){
+  var gespielt = [], s = { audio: { spiele: function(n, o){ gespielt.push(o); } }, welt: { planet: { groesse: 512 } }, spieler: { pos: [10, 5, 10] } };
+  var f = SC.Spiel.prototype._tierLaut;
+  f.call(s, "hund", "ruf", [14, 5, 10]); wahr(gespielt.length === 1 && gespielt[0].art === "hund" && gespielt[0].wie === "ruf" && Math.abs(gespielt[0].entfernung - 4) < 0.01, "nah");
+  f.call(s, "hund", "ruf", [14, 5, 10]); gleich(gespielt.length, 1, "gedrosselt");
+  f.call(s, "hund", "ko", [14, 5, 10], true); gleich(gespielt.length, 2, "immer");
+  f.call(s, "hund", "ruf", [200, 5, 10], true); gleich(gespielt.length, 2, "zu weit");
+  f.call(s, "gibtesnicht", "ruf", [14, 5, 10], true); gleich(gespielt.length, 2, "unbekannte Art");
+});
+
+// --- Tierstimmen-Schalter: Namen oder Tiergeräusche ---
+test("Tiergeräusche: jede Art hat eine bekannte Stimme, alle Stimmen sind hörbar", function(){
+  Object.keys(SC.TIERE).forEach(function(a){ var l = SC.TIERE[a].laut; wahr(l && SC.Klang.TIERGERAEUSCHE[l[0]] && l[1] > 0, "Laut fehlt: " + a); });
+  var ps = [];
+  Object.keys(SC.Klang.TIERGERAEUSCHE).forEach(function(n){ ["ruf", "freude", "schreck", "ko"].forEach(function(w){
+    var ctx = new OfflineAudioContext(1, 44100 * 2, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.tiergeraeusch(ctx, z, 0.01, { stimme: n, hoehe: 1, wie: w }, 0.8);
+    ps.push(ctx.startRendering().then(function(b){ var d = b.getChannelData(0), s = 0; for(var i = 0; i < d.length; i++){ if(!isFinite(d[i])) { s = NaN; break; } s += d[i] * d[i]; } wahr(Math.sqrt(s / d.length) > 0.0005, n + "/" + w + " zu leise oder ungültig"); }));
+  }); });
+  return Promise.all(ps);
+});
+test("Tierstimmen: Modus geraeusche spielt Geräusch statt Namen, Standard sind Namen", function(){
+  function rms(modus){ var ctx = new OfflineAudioContext(1, 44100 * 3, 44100), z = ctx.createGain(); z.connect(ctx.destination); SC.Klang.erzeuge(ctx, z, "tierlaut", { art: "hund", wie: "ruf", modus: modus }, 0.8);
+    return ctx.startRendering().then(function(b){ var d = b.getChannelData(0), last = 0, s = 0; for(var i = 0; i < d.length; i++){ s += d[i] * d[i]; if(Math.abs(d[i]) > 0.003) last = i; } return { rms: Math.sqrt(s / d.length), ende: last / 44100 }; }); }
+  return Promise.all([rms(undefined), rms("namen"), rms("geraeusche")]).then(function(r){
+    wahr(r[0].rms > 0.002 && r[1].rms > 0.002 && r[2].rms > 0.002, "hörbar"); wahr(r[2].ende < r[0].ende - 0.2, "Geräusch deutlich kürzer als der Name: " + r[2].ende + " gegen " + r[0].ende); wahr(Math.abs(r[0].ende - r[1].ende) < 0.05, "Standard = Namen");
+  });
+});
+test("Einstellungen: tierstimmen Standard „namen“, alte Einstellungen ohne Feld, Texte, Auswahl im Panel", function(){
+  gleich(SC.Einstellungen.standard().tierstimmen, "namen"); localStorage.setItem("sc-ttest:einstellungen", JSON.stringify({ musik: 0.2 })); gleich(SC.Einstellungen.lade("ttest").tierstimmen, "namen"); localStorage.removeItem("sc-ttest:einstellungen");
+  wahr(SC.T.tierstimmen && SC.T.tierstimmenNamen && SC.T.tierstimmenGeraeusche, "Texte");
+  var s = { audio: { spiele: function(n, o){ s.o = o; } }, welt: { planet: { groesse: 512 } }, spieler: { pos: [0, 0, 0] }, einstellungen: { tierstimmen: "geraeusche" } };
+  SC.Spiel.prototype._tierLaut.call(s, "katze", "ruf", [1, 0, 0], true); gleich(s.o.modus, "geraeusche", "Spiel gibt den Modus weiter");
+});

@@ -341,7 +341,7 @@ test("Mehrspieler: Neuverbinden schickt keine Beute doppelt", function(){
 // Durchstich durch SC.Spiel#_survival mit einem echten Raum
 function mspSpiel(welt, daten, raum, kampf){
   var s = Object.create(SC.Spiel.prototype); s.welt = welt; s.daten = daten; s.kampf = kampf; s.spieler = kampf.spieler; s.raum = raum;
-  s.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, hieb: function(){}, blocke: function(){}, fps: 60 };
+  s.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, trank: function(){}, hieb: function(){}, blocke: function(){}, fps: 60 };
   s.eingabe = { touchAktiv: false, gamepadAktiv: false }; s.auftauchen = { schritt: function(l){ s._auftArg = l; }, zerfallen: [], gegnerBesiegt: function(){} }; s.einstellungen = { fpsAnzeigen: false };
   s.ui = { hinweis: function(){}, hud: function(){}, kampfHud: function(){}, zeigeBesiegt: function(){} }; s.audio = { spiele: function(){} }; s._zf = SC.zufall(1); s.tageszeit = 0.5;
   return s;
@@ -486,7 +486,7 @@ function mspSpielVoll(slots){
   var s = Object.create(SC.Spiel.prototype); s.slots = slots; s.hinweise = []; s.weltliste = 0; s.toene = [];
   s.ui = { ankunft: function(t){ (s.ui.ankuenfte = s.ui.ankuenfte || []).push(t); }, hinweis: function(t){ s.hinweise.push(t); }, zeigeWeltliste: function(){ s.weltliste++; return Promise.resolve(); }, verbergeHud: function(){}, offen: function(){ return false; }, hud: function(){}, kampfHud: function(){}, zeigeBesiegt: function(){}, schliesse: function(){} };
   s.audio = { spiele: function(n){ s.toene.push(n); }, musikTakt: function(){} }; s.eingabe = { gebeMausFrei: function(){}, touchAktiv: false, gamepadAktiv: false }; s.entwickler = { verberge: function(){} }; s.einstellungen = { fpsAnzeigen: false };
-  s._anzeigen = function(){ var r = this.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, hieb: function(){}, blocke: function(){}, fps: 60, welt: function(){}, renderer: { clear: function(){} }, setzeMitspieler: function(l){ r.mitspieler = l; } }; this._laeuft = true; };
+  s._anzeigen = function(){ var r = this.render = { markiere: function(){}, wesen: { risse: function(){}, funken: function(){}, zahl: function(){} }, ausruestung: function(){}, trank: function(){}, hieb: function(){}, blocke: function(){}, fps: 60, welt: function(){}, renderer: { clear: function(){} }, setzeMitspieler: function(l){ r.mitspieler = l; } }; this._laeuft = true; };
   return s;
 }
 function mspLauf(netz, n){ var p = Promise.resolve(); for(var i = 0; i < (n || 3); i++) p = p.then(function(){ return raumLauf(netz); }); return p; }

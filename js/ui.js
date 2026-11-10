@@ -1,6 +1,6 @@
 // Oberfläche: Weltliste, Neue Welt, Pause, Einstellungen, Blockauswahl, HUD und Hinweise
 SC.Einstellungen = {
-  standard: function(){ return { sichtweite: matchMedia("(pointer: coarse)").matches ? 6 : 10, empfindlichkeit: 1, touchGroesse: 1, fpsAnzeigen: false, entwickler: false, musik: 0.5, geraeusche: 0.8, bildrate: 60, autoAnlegen: true, aufloesung: matchMedia("(pointer: coarse)").matches ? "hoch" : "normal", wetterEffekte: matchMedia("(pointer: coarse)").matches ? "weniger" : "an", spiegel: "an" }; }, // wetterEffekte: Tablets zunächst „weniger“; bildrate: höchstens so viele Bilder/s, 0 = unbegrenzt
+  standard: function(){ return { sichtweite: matchMedia("(pointer: coarse)").matches ? 6 : 10, empfindlichkeit: 1, touchGroesse: 1, fpsAnzeigen: false, entwickler: false, musik: 0.5, geraeusche: 0.8, bildrate: 60, autoAnlegen: true, aufloesung: matchMedia("(pointer: coarse)").matches ? "hoch" : "normal", spiegel: "an", wetterEffekte: matchMedia("(pointer: coarse)").matches ? "weniger" : "an", tierstimmen: "namen" }; }, // wetterEffekte: Tablets zunächst „weniger“; bildrate: höchstens so viele Bilder/s, 0 = unbegrenzt
   lade: function(ns){ var e = SC.Einstellungen.standard(); try { var t = localStorage.getItem("sc-" + ns + ":einstellungen"); if(t) Object.assign(e, JSON.parse(t)); } catch(err){} return e; },
   speichere: function(ns, e){ try { localStorage.setItem("sc-" + ns + ":einstellungen", JSON.stringify(e)); } catch(err){} }
 };
@@ -415,6 +415,7 @@ SC.UI = function(wurzel, o){
       '<label class="feld">' + esc(SC.T.aufloesung) + ' <select id="e-aufloesung">' + [["normal", SC.T.aufloesungNormal], ["hoch", SC.T.aufloesungHoch]].map(function(o){ return '<option value="' + o[0] + '"' + (e.aufloesung === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") + "</select></label>" +
       '<label class="feld">' + esc(SC.T.wetterEffekte) + ' <select id="e-wetter">' + [["an", SC.T.wetterEffekteAn], ["weniger", SC.T.wetterEffekteWeniger]].map(function(o){ return '<option value="' + o[0] + '"' + (e.wetterEffekte === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") + "</select></label>" +
       '<label class="feld">' + esc(SC.T.spiegel) + ' <select id="e-spiegel">' + [["an", SC.T.spiegelAn], ["aus", SC.T.spiegelAus]].map(function(o){ return '<option value="' + o[0] + '"' + ((e.spiegel || "an") === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") + "</select></label>" +
+      '<label class="feld">' + esc(SC.T.tierstimmen) + ' <select id="e-tierstimmen">' + [["namen", SC.T.tierstimmenNamen], ["geraeusche", SC.T.tierstimmenGeraeusche]].map(function(o){ return '<option value="' + o[0] + '"' + (e.tierstimmen === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") + "</select></label>" +
       '<label class="feld">' + esc(SC.T.bildrate) + ' <select id="e-bildrate">' + [[30, "30"], [60, "60"], [0, SC.T.bildrateFrei]].map(function(o){ return '<option value="' + o[0] + '"' + (+e.bildrate === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") + "</select></label>" +
       '<label class="feld zeile"><input type="checkbox" id="e-auto"' + (e.autoAnlegen !== false ? " checked" : "") + "> " + esc(SC.T.autoAnlegen) + "</label>" +
       '<label class="feld zeile"><input type="checkbox" id="e-fps"' + (e.fpsAnzeigen ? " checked" : "") + "> " + esc(SC.T.fpsAnzeigen) + "</label>" +
@@ -431,6 +432,7 @@ SC.UI = function(wurzel, o){
       });
     }
     ui2.ebene.querySelector("#e-aufloesung").addEventListener("change", function(ev){ e.aufloesung = ev.target.value; ui.o.beiEinstellungen && ui.o.beiEinstellungen(e); });
+    ui2.ebene.querySelector("#e-tierstimmen").addEventListener("change", function(ev){ e.tierstimmen = ev.target.value; ui.o.beiEinstellungen && ui.o.beiEinstellungen(e); });
     ui2.ebene.querySelector("#e-wetter").addEventListener("change", function(ev){ e.wetterEffekte = ev.target.value; ui.o.beiEinstellungen && ui.o.beiEinstellungen(e); });
     ui2.ebene.querySelector("#e-spiegel").addEventListener("change", function(ev){ e.spiegel = ev.target.value; ui.o.beiEinstellungen && ui.o.beiEinstellungen(e); });
     ui2.ebene.querySelector("#e-bildrate").addEventListener("change", function(ev){ e.bildrate = +ev.target.value; ui.o.beiEinstellungen && ui.o.beiEinstellungen(e); });
@@ -457,16 +459,20 @@ SC.UI = function(wurzel, o){
     }).join("") + "</div>" : "";
     // Kreativ: Reiter Tiere – jede Art direkt in den Käfig
     if(opt.beiTier) reiter = reiter.replace("</div>", '<button class="modus" data-aktion="reiter" data-id="tiere">' + esc(SC.T.tiereTitel) + "</button></div>");
+    // Kreativ: Reiter Tränke – alle 54 Kombinationen, Antippen trinkt sofort (der Kreativmodus hat keinen Rucksack zum Halten)
+    if(opt.beiTrank) reiter = reiter.replace("</div>", '<button class="modus" data-aktion="reiter" data-id="traenke">' + esc(SC.T.traenkeTitel) + "</button></div>");
+    var tk = opt.beiTrank ? '<div class="raster traenke" hidden>' + Object.keys(SC.TRANK.wirkung).map(function(kr){ return SC.PFLANZEN_REIHE.map(function(pf){ var s = SC.Trank.schluessel(kr, pf); return '<button class="block" data-aktion="trank" data-art="' + s + '" title="' + esc(SC.Trank.name(s)) + '"><img src="' + SC.UI.blockBild(SC.CRAFTING_KRISTALLE[kr].block) + '" alt=""><img src="' + SC.UI.blockBild(SC.PFLANZEN[pf].block) + '" alt=""><span>' + esc(SC.PFLANZEN[pf].name) + "</span></button>"; }).join(""); }).join("") + "</div>" : "";
     var tr = opt.beiTier ? '<div class="raster tiere" hidden>' + Object.keys(SC.TIERE).map(function(a){ return '<button class="block" data-aktion="tier" data-art="' + a + '" title="' + esc(SC.TIERE[a].name) + '"><span class="kf-emoji">' + SC.TIERE[a].emoji + "</span><span>" + esc(SC.TIERE[a].name) + "</span></button>"; }).join("") + "</div>" : "";
     var fz = opt.beiFahrzeug ? '<div class="raster fz" hidden>' + Object.keys(SC.FAHRZEUGE).map(function(a){ return '<button class="block" data-aktion="fahrzeug" data-art="' + a + '"><span>' + esc(SC.FAHRZEUGE[a].name) + "</span></button>"; }).join("") + "</div>" : "";
-    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl" data-zone="raster">' + kacheln + "</div>" + ausr + mat + tr + fz + '<div class="reihe" data-zone="aktionen"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
+    this._zeige("<h2>" + esc(SC.T.bloeckeTitel) + "</h2>" + reiter + '<div class="raster bl" data-zone="raster">' + kacheln + "</div>" + ausr + mat + tr + tk + fz + '<div class="reihe" data-zone="aktionen"><button class="haupt" data-aktion="fertig">' + esc(SC.T.fertig) + "</button></div>",
       {
         block: function(el){ beiWahl(+el.getAttribute("data-block")); },
         fahrzeug: function(el){ opt.beiFahrzeug(el.getAttribute("data-art")); },
         material: function(el){ opt.beiMaterial(+el.getAttribute("data-block")); },
         tier: function(el){ opt.beiTier && opt.beiTier(el.getAttribute("data-art")); },
+        trank: function(el){ opt.beiTrank && opt.beiTrank(el.getAttribute("data-art")); },
         gegenstand: function(el){ opt.beiGegenstand && opt.beiGegenstand(el.getAttribute("data-art"), +el.getAttribute("data-selt")); },
-        reiter: function(el){ var id = el.getAttribute("data-id"), a = id === "ausruestung", fzr = ui.ebene.querySelector(".raster.fz"), matr = ui.ebene.querySelector(".raster.mat"), tir = ui.ebene.querySelector(".raster.tiere"); ui.ebene.querySelector(".raster.bl").hidden = id !== "bloecke"; ui.ebene.querySelector(".raster.ausr").hidden = !a; if(fzr) fzr.hidden = id !== "fahrzeuge"; if(matr) matr.hidden = id !== "material"; if(tir) tir.hidden = id !== "tiere"; Array.prototype.forEach.call(ui.ebene.querySelectorAll(".reiter button"), function(b){ b.classList.toggle("an", b === el); }); },
+        reiter: function(el){ var id = el.getAttribute("data-id"), a = id === "ausruestung", fzr = ui.ebene.querySelector(".raster.fz"), matr = ui.ebene.querySelector(".raster.mat"), tir = ui.ebene.querySelector(".raster.tiere"), trr = ui.ebene.querySelector(".raster.traenke"); ui.ebene.querySelector(".raster.bl").hidden = id !== "bloecke"; ui.ebene.querySelector(".raster.ausr").hidden = !a; if(fzr) fzr.hidden = id !== "fahrzeuge"; if(matr) matr.hidden = id !== "material"; if(tir) tir.hidden = id !== "tiere"; if(trr) trr.hidden = id !== "traenke"; Array.prototype.forEach.call(ui.ebene.querySelectorAll(".reiter button"), function(b){ b.classList.toggle("an", b === el); }); },
         fertig: function(){ ui.schliesse(); ui.o.beiWeiter && ui.o.beiWeiter(); }
       }, { seite: true, startZone: "raster" });
   };

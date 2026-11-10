@@ -1,13 +1,13 @@
 // Spiegel (#188): Spiegelmathematik und Wahl des aktiven Spiegels (reine Funktionen, ohne WebGL); die Zeichnung steht weiter unten.
 SC.Spiegel = {};
 (function(){
-  var B = SC.B, RADIUS = 8, DICKE = 0.08;
+  var B = SC.B, RADIUS = 8, DICKE = 0.08, ABST = DICKE + 0.01;   // ABST: Spiegelebene 0,01 vor der Platte, damit die Platte der Spiegelkamera hinter der Near-Ebene liegt
   // Spiegelfläche der unteren Hälfte: Normale (nx, nz) in den Raum und Lage der Ebene in der Zelle (Platte wie die Leiter, Dicke 0,08)
   var SEITEN = {};
-  SEITEN[B.SPIEGEL_N] = { nx: 0, nz: 1, ex: 0.5, ez: DICKE };
-  SEITEN[B.SPIEGEL_S] = { nx: 0, nz: -1, ex: 0.5, ez: 1 - DICKE };
-  SEITEN[B.SPIEGEL_O] = { nx: -1, nz: 0, ex: 1 - DICKE, ez: 0.5 };
-  SEITEN[B.SPIEGEL_W] = { nx: 1, nz: 0, ex: DICKE, ez: 0.5 };
+  SEITEN[B.SPIEGEL_N] = { nx: 0, nz: 1, ex: 0.5, ez: ABST };
+  SEITEN[B.SPIEGEL_S] = { nx: 0, nz: -1, ex: 0.5, ez: 1 - ABST };
+  SEITEN[B.SPIEGEL_O] = { nx: -1, nz: 0, ex: 1 - ABST, ez: 0.5 };
+  SEITEN[B.SPIEGEL_W] = { nx: 1, nz: 0, ex: ABST, ez: 0.5 };
   SC.Spiegel.RADIUS = RADIUS;
   SC.Spiegel.seite = function(id){ return SEITEN[id] || null; };
 
@@ -100,6 +100,7 @@ SC.RenderSpiegel = function(render){
     }
     if(!this.flaeche){
       this.flaeche = new THREE.Mesh(new THREE.PlaneGeometry(SC.Spiegel.BREITE, SC.Spiegel.HOEHE), new THREE.MeshBasicMaterial({ map: this.ziel.texture, toneMapped: false }));
+      this.flaeche.scale.set(1.05, 1.025, 1);   // minimal größer als die Glasfläche: keine hellen Nahtlinien zum Rahmen
       this.flaeche.visible = false; this.r.szene.add(this.flaeche);
     }
   };
@@ -113,7 +114,7 @@ SC.RenderSpiegel = function(render){
     var neu = !this.treffer || this.treffer.x !== t.x || this.treffer.y !== t.y || this.treffer.z !== t.z; this.treffer = t;
     this._anlegen();
     var mitte = [kp[0] + t.ox, kp[1] + t.oy, kp[2] + t.oz], n = [t.nx, 0, t.nz], f = SC.Spiegel.fenster(kp, mitte, n), fl = this.flaeche;
-    fl.position.set(mitte[0] + n[0] * 0.01, mitte[1], mitte[2] + n[2] * 0.01);
+    fl.position.set(mitte[0], mitte[1], mitte[2]);   // die Fläche liegt genau auf der Spiegelebene
     fl.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(-f.rechts[0], 0, -f.rechts[2]), new THREE.Vector3(0, 1, 0), new THREE.Vector3(n[0], 0, n[2])));
     fl.visible = true;
     var gerade = !(this.takt++ & 1);

@@ -93,10 +93,11 @@ Diese Anleitung gibt es auch im Spiel: Menü (Esc) → „Spielanleitung“ oder
 - Eisenerz findest du in Höhlen des Startplaneten, Titan tief unten, Glutstahl auf Glutfrost, Moorsilber auf Rankenmoor und Sternenmetall bei Bossen.
 - Besiegte Gegner lassen Teile fallen, zum Beispiel Schaltkreise und Chitinplatten.
 - Im Rucksack gibt es den Knopf Handwerk: Dort baust du aus Holz und Stein eine Werkbank.
-- Stell die Werkbank auf und tippe sie an. Dort baust du Fenster, Fackeln, Zäune, Leitern, Türen und Truhen.
+- Stell die Werkbank auf und tippe sie an. Dort baust du Fenster, Fackeln, Zäune, Leitern, Türen, Spiegel und Truhen.
 - Laserschwert, Blaster und Rüstung baust du aus Metall: Je seltener das Metall, desto stärker. Die Farbe von Klinge und Strahl bestimmt der Kristall (Blau, Grün, Rot, Gelb, Violett oder Weiß).
 - Gefundene Waffen und Rüstung sind seltener geworden, richtig gute lassen nur noch Bosse fallen.
 - Türen öffnest und schließt du durch Antippen. Auf Leitern kletterst du mit Vorwärts hoch und mit Rückwärts runter. In Truhen lagerst du Sachen, auch gemeinsam mit anderen.
+- Einen Spiegel hängst du flach an eine Wand. Er ist zwei Blöcke hoch, und du siehst dich darin mit Rüstung, Waffe und Tieren, auch in der Ich-Ansicht. Es spiegelt immer nur der nächste Spiegel, die anderen glänzen nur. Ist dein Tablet zu langsam, stell in den Einstellungen „Spiegel“ auf „Aus“.
 
 ## Betten
 

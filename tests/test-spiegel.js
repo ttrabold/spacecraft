@@ -64,8 +64,8 @@ test("Spiegel: Normale und Ebene aus der ID – Spiegelseite zeigt in den Raum (
   var S = SC.Spiegel;
   [["SPIEGEL_N", 0, 1], ["SPIEGEL_S", 0, -1], ["SPIEGEL_O", -1, 0], ["SPIEGEL_W", 1, 0]].forEach(function(t){
     var s = S.seite(SC.B[t[0]]); gleich(s.nx, t[1], t[0]); gleich(s.nz, t[2], t[0]);
-    var f = SC.BLOECKE[SC.B[t[0]]].form, mitte = f.achse === "z" ? s.ez : s.ex;   // Platte [versatz ± 0,04]: die Spiegelebene liegt an der Raumseite der Platte
-    wahr(Math.abs(mitte - (f.versatz === 0 ? 0.08 : 0.92)) < 1e-9, t[0] + " Ebene an der Raumseite der Platte");
+    var f = SC.BLOECKE[SC.B[t[0]]].form, mitte = f.achse === "z" ? s.ez : s.ex;   // Platte [versatz ± 0,04]: die Spiegelebene liegt 0,01 vor der Raumseite der Platte
+    wahr(Math.abs(mitte - (f.versatz === 0 ? 0.09 : 0.91)) < 1e-9, t[0] + " Ebene an der Raumseite der Platte");
   });
   gleich(S.seite(SC.B.SPIEGEL_N_OBEN), null, "obere Hälfte hat keine eigene Fläche"); gleich(S.seite(SC.B.STEIN), null);
 });
@@ -138,4 +138,10 @@ test("RenderSpiegel: Touch oder „weniger“ erneuert das Spiegelbild nur jedes
   gleich(r.aufgenommen.length, 3, "5 Bilder → 3 Durchgänge (erstes, drittes, fünftes)"); gleich(r.spiegel.ziel.height, 256); gleich(r.spiegel.ziel.width, 128);
   var d = spRender(spWeltMitSpiegel()); for(i = 0; i < 4; i++) d.spiegel.bild(sp, 0.016); gleich(d.aufgenommen.length, 4, "am Computer jedes Bild"); gleich(d.spiegel.ziel.height, 512); gleich(d.spiegel.ziel.width, 256);
   var w = spRender(spWeltMitSpiegel(), { _weniger: true }); for(i = 0; i < 4; i++) w.spiegel.bild(sp, 0.016); gleich(w.aufgenommen.length, 2, "„weniger“: jedes zweite");
+});
+test("Anleitung erklärt den Spiegel, ANLEITUNG.md enthält denselben Abschnitt (#188)", function(){
+  var sp = SC.T.anleitung.abschnitte.reduce(function(a, x){ return a.concat(x[1]); }, []).filter(function(t){ return t.indexOf("Spiegel hängst") >= 0; })[0];
+  wahr(sp && sp.indexOf("zwei Blöcke hoch") >= 0 && sp.indexOf("Einstellungen") >= 0, "Satz in SC.T.anleitung");
+  var req = new XMLHttpRequest(); req.open("GET", "../docs/ANLEITUNG.md", false); try { req.send(); } catch(e){ return; }   // per file:// nicht lesbar: dann nur der Text oben
+  if(req.status === 200 || req.responseText) wahr(req.responseText.indexOf(sp) >= 0, "ANLEITUNG.md enthält denselben Satz");
 });

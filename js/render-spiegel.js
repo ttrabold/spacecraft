@@ -26,7 +26,7 @@ SC.Spiegel = {};
   // und Mitte der Spiegelfläche relativ zu pos (ox, oy, oz), um den Ring des Planeten herum gerechnet.
   SC.Spiegel.kandidaten = function(welt, pos){
     var P = welt.planet.groesse, out = [], x0 = Math.floor(pos[0]), y0 = Math.floor(pos[1]), z0 = Math.floor(pos[2]);
-    for(var dy = -3; dy <= 2; dy++) for(var dz = -RADIUS; dz <= RADIUS; dz++) for(var dx = -RADIUS; dx <= RADIUS; dx++){
+    for(var dy = -RADIUS; dy <= RADIUS; dy++) for(var dz = -RADIUS; dz <= RADIUS; dz++) for(var dx = -RADIUS; dx <= RADIUS; dx++){
       var x = x0 + dx, y = y0 + dy, z = z0 + dz; if(y < 0) continue;
       var id = welt.holeBlock(SC.mod(x, P), y, SC.mod(z, P)), s = SEITEN[id]; if(!s) continue;
       out.push({ x: SC.mod(x, P), y: y, z: SC.mod(z, P), id: id, nx: s.nx, nz: s.nz, ox: x + s.ex - pos[0], oy: y + 1 - pos[1], oz: z + s.ez - pos[2] });
@@ -40,11 +40,12 @@ SC.Spiegel = {};
     var bl = Math.sqrt(blick[0] * blick[0] + blick[1] * blick[1] + blick[2] * blick[2]) || 1, beste = null, bd = Infinity, alt = null, ad = Infinity;
     for(var i = 0; i < kand.length; i++){
       var k = kand[i], d = Math.sqrt(k.ox * k.ox + k.oy * k.oy + k.oz * k.oz);
-      if(d > RADIUS || d < 0.05) continue;
+      var bleibt = vorher && k.x === vorher.x && k.y === vorher.y && k.z === vorher.z;   // der bisherige Treffer darf großzügiger (1 Block weiter, ~75° statt ~70°): kein Flackern an den Schwellen
+      if(d > RADIUS + (bleibt ? 1 : 0) || d < 0.05) continue;
       if(k.ox * k.nx + k.oz * k.nz > -0.05) continue;   // Spieler hinter der Wand oder in der Ebene
-      if((blick[0] * k.ox + blick[1] * k.oy + blick[2] * k.oz) / (bl * d) < 0.34) continue;   // außerhalb von rund 70° um die Blickrichtung
+      if((blick[0] * k.ox + blick[1] * k.oy + blick[2] * k.oz) / (bl * d) < (bleibt ? 0.25 : 0.34)) continue;   // außerhalb von rund 70° um die Blickrichtung
       if(d < bd){ bd = d; beste = k; }
-      if(vorher && k.x === vorher.x && k.y === vorher.y && k.z === vorher.z){ alt = k; ad = d; }
+      if(bleibt){ alt = k; ad = d; }
     }
     return alt && ad < bd + 1 ? alt : beste;
   };
@@ -85,7 +86,7 @@ SC.RenderSpiegel = function(render){
   this.r = render; this.sucher = new SC.Spiegel.Sucher(); this.ziel = null; this.flaeche = null; this.kam = null; this.treffer = null; this.takt = 0; this._zeit = 0;
 };
 (function(){
-  var P = SC.RenderSpiegel.prototype, WEIT = 44, NEBEL = 40;   // Chunks jenseits von WEIT Blöcken und Nebel ab NEBEL: das Spiegelbild muss nicht weit reichen
+  var P = SC.RenderSpiegel.prototype, WEIT = 52, NEBEL = 40;   // Chunks jenseits von WEIT Blöcken und Nebel ab NEBEL: das Spiegelbild muss nicht weit reichen
   // Alles abbauen (Einstellung „Aus“, neue Welt): Fläche und Textur freigeben
   P.aus = function(){
     if(this.flaeche){ this.r.szene.remove(this.flaeche); this.flaeche.geometry.dispose(); this.flaeche.material.dispose(); this.flaeche = null; }
@@ -107,7 +108,8 @@ SC.RenderSpiegel = function(render){
   // Je Bild vor dem Hauptbild aufrufen. spieler: Spieler, dt: Sekunden seit dem letzten Bild
   P.bild = function(spieler, dt){
     var r = this.r;
-    if(r.spiegelAn === false || !r._welt || typeof spieler.sitzt === "number"){ if(this.flaeche || this.ziel) this.aus(); return; }
+    if(r.spiegelAn === false || !r._welt){ if(this.flaeche || this.ziel) this.aus(); return; }
+    if(typeof spieler.sitzt === "number"){ if(this.flaeche) this.flaeche.visible = false; return; }   // im Fahrzeug kein Spiegelbild; Textur bleibt für das Aussteigen
     this._zeit += dt || 0;
     var kc = spieler.kamera(), kp = kc.pos, t = this.sucher.finde(r._welt, kp, kc.richtung, this._zeit);
     if(!t){ if(this.flaeche) this.flaeche.visible = false; this.treffer = null; return; }
@@ -129,7 +131,7 @@ SC.RenderSpiegel = function(render){
     kam.matrix.setPosition(f.pos[0], f.pos[1], f.pos[2]); kam.matrixWorldNeedsUpdate = true;
     // Eigene Figur sichtbar (nicht als Zuschauer), alles, was an der Kamera hängt oder nur für den Spieler da ist, weg
     verstecke(this.flaeche, false); verstecke(r.figur, spieler.modus !== "zuschauer"); verstecke(r.hand, false); verstecke(r.handWaffe, false); verstecke(r.rahmen, false); verstecke(r.grenzen, false);
-    var px = k.position.x, pz = k.position.z;
+    var px = f.pos[0], pz = f.pos[2];   // gemessen von der Spiegelkamera (steht hinter der Wand), nicht vom Spieler
     r.chunks.forEach(function(c){
       var o = c.fest || c.form || c.durch; if(!o) return;
       if(Math.hypot(o.position.x + 8 - px, o.position.z + 8 - pz) > WEIT){ if(c.fest) verstecke(c.fest, false); if(c.form) verstecke(c.form, false); if(c.durch) verstecke(c.durch, false); }
@@ -139,9 +141,12 @@ SC.RenderSpiegel = function(render){
     himmel.forEach(function(o){ o.position.x += dx; o.position.y += dy; o.position.z += dz; });
     var nah = u.nebelNah.value, fern = u.nebelFern.value; u.nebelFern.value = Math.min(fern, NEBEL); u.nebelNah.value = Math.min(nah, NEBEL * 0.5);
     var rt = r.renderer.getRenderTarget();
-    r.renderer.setRenderTarget(this.ziel); r.renderer.render(r.szene, kam); r.renderer.setRenderTarget(rt);
-    u.nebelNah.value = nah; u.nebelFern.value = fern;
-    himmel.forEach(function(o){ o.position.x -= dx; o.position.y -= dy; o.position.z -= dz; });
-    merk.forEach(function(m){ m[0].visible = m[1]; });
+    try { r.renderer.setRenderTarget(this.ziel); r.renderer.render(r.szene, kam); }
+    finally {   // auch bei einem Fehler im Zeichnen alles zurücksetzen (sonst bleiben Chunks unsichtbar und das Bild friert ein)
+      r.renderer.setRenderTarget(rt);
+      u.nebelNah.value = nah; u.nebelFern.value = fern;
+      himmel.forEach(function(o){ o.position.x -= dx; o.position.y -= dy; o.position.z -= dz; });
+      merk.forEach(function(m){ m[0].visible = m[1]; });
+    }
   };
 })();

@@ -146,3 +146,22 @@ test("Anleitung erklärt den Spiegel, ANLEITUNG.md enthält denselben Abschnitt 
   if(req.status === 200 || req.responseText) wahr(req.responseText.indexOf(sp) >= 0, "ANLEITUNG.md enthält denselben Satz");
 });
 test("Netzprotokoll 13 wegen der neuen Block-IDs des Spiegels, alte Gäste werden abgelehnt (#188)", function(){ gleich(SC.NETZ_PROTOKOLL, 13); });
+test("Spiegel: Suche reicht 8 Zellen nach oben und unten; der bisherige Treffer bleibt an den Schwellen (#188)", function(){
+  var w = leereWelt(), S = SC.Spiegel; w.setzeBlock(8, 70, 2, SC.B.SPIEGEL_N, "system");
+  wahr(S.finde(w, spPos(8.5, 65.6, 7.5), [0, 0.3, -1], null), "Spiegel 5 Zellen über dem Auge");
+  var w2 = spWeltMitSpiegel(), a = S.finde(w2, spPos(8.5, 65.6, 7.5), [0, 0, -1], null);
+  gleich(S.finde(w2, spPos(8.5, 65.6, 10.2), [0, 0, -1], null), null, "neu gesucht: knapp über 8 Blöcke");
+  gleich(S.finde(w2, spPos(8.5, 65.6, 10.2), [0, 0, -1], a).x, 8, "bisheriger Treffer bleibt bis 9 Blöcke");
+  gleich(S.finde(w2, spPos(8.5, 65.6, 12.0), [0, 0, -1], a), null, "über 9 Blöcke weg");
+  var seit = [1.9, 65.6, 4.29]; gleich(S.finde(w2, seit, [0, 0, -1], null), null, "Winkel knapp außerhalb 70° neu gesucht"); gleich(S.finde(w2, seit, [0, 0, -1], a).x, 8, "bisheriger Treffer bleibt bis ~75°");
+});
+test("RenderSpiegel: Fehler im Zeichnen stellt trotzdem alles zurück; im Fahrzeug bleibt die Textur; Chunks nach Abstand der Spiegelkamera (#188)", function(){
+  var r = spRender(spWeltMitSpiegel()), fern = new THREE.Object3D(), nah = new THREE.Object3D(), kopf = new THREE.Object3D(); fern.visible = nah.visible = true;
+  fern.position.set(8 - 8, 0, 7 + 50); nah.position.set(8 - 8, 0, 7 - 24);   // Chunk-Mitte (x + 8, z + 8): 58 Blöcke hinter dem Spieler bzw. 24 vor ihm
+  r.chunks.set("a", { fest: fern }); r.chunks.set("b", { fest: nah });
+  r.spiegel.bild(spSpieler(), 0.016); gleich(r.aufgenommen.length, 1); gleich(fern.visible, true, "nach dem Durchgang wieder sichtbar");
+  var orig = r.renderer.render; r.renderer.render = function(){ throw new Error("kaputt"); }; r.spiegel.takt = 0;
+  var wurf = false; try { r.spiegel._zeichne(spSpieler(), SC.Spiegel.fenster([8, 65.6, 7], [8.5, 65, 2.09], [0, 0, 1])); } catch(e){ wurf = true; }
+  wahr(wurf, "Fehler wird weitergereicht"); gleich(r.figur.visible, false, "Figur wie vorher"); gleich(r.hand.visible, true); gleich(fern.visible, true, "Chunk wieder sichtbar"); gleich(r.renderer.ziel, null, "Render-Ziel zurückgesetzt"); gleich(r.uniforms.nebelFern.value, 150);
+  r.renderer.render = orig; var sp = spSpieler(); sp.sitzt = 1.5; r.spiegel.bild(sp, 0.016); wahr(r.spiegel.ziel, "Textur bleibt im Fahrzeug"); gleich(r.spiegel.flaeche.visible, false, "Fläche aus");
+});

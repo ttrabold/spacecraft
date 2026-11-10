@@ -14,8 +14,8 @@ SC.B = {
   // Betten: Fuß und Kopf je Richtung; N/S/O/W sagt, auf welcher Seite des Fußes der Kopf liegt (Norden = z−1)
   // Wasser und Lava fließen (Spec 2026-11-08): Fließstufen und fallendes Wasser/Lava; WASSER (8) und LAVA (29) bleiben die Quellen
   WASSER_1: 73, WASSER_2: 74, WASSER_3: 75, WASSER_4: 76, WASSER_5: 77, WASSER_6: 78, WASSER_7: 79, WASSER_FALL: 80, LAVA_1: 81, LAVA_2: 82, LAVA_3: 83, LAVA_FALL: 84,
-  EIMER: 85, EIMER_WASSER: 86, EIMER_LAVA: 87,
-  SCHNEESCHICHT: 88,   // Wetter: dünne Schneedecke, taut wieder   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
+  EIMER: 85, EIMER_WASSER: 86, EIMER_LAVA: 87,   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
+  SCHNEESCHICHT: 88,   // Wetter: dünne Schneedecke, taut wieder
   // Zaubertränke (Spec 2026-11-09): Kessel, Flasche, Trank (Gegenstand mit Variante im Rucksackplatz) und neun Pflanzen
   KESSEL: 89, FLASCHE: 90, TRANK: 91, HASENKLEE: 92, KATZENMINZE: 93, FUCHSGRAS: 94, EISBLUME: 95, FROSTBEERE: 96, GLUTMOHN: 97, FEDERFARN: 98, QUAKBLUME: 99, DSCHUNGELRANKE: 100,
   // Lagerfeuer und Kamin (Spec 2026-11-09-feuer): je aus und an, dazu das Feuerzeug

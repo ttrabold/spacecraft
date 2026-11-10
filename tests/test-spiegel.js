@@ -53,3 +53,50 @@ test("Spiegel: Einstellung Standard „an“, alte Einstellungen ohne das Feld g
   } finally { localStorage.removeItem(k); }
   wahr(SC.T.spiegel && SC.T.spiegelAn && SC.T.spiegelAus, "Beschriftungen");
 });
+function spPos(x, y, z){ return [x, y, z]; }
+test("Spiegelmathematik: Punkt und Richtung an einer Ebene spiegeln (#188)", function(){
+  var S = SC.Spiegel, n = [0, 0, 1], e = [0, 0, 5], p = S.spiegelPunkt([1, 2, 7], e, n);
+  gleich(p[0], 1); gleich(p[1], 2); gleich(p[2], 3); gleich(S.spiegelPunkt([4, 4, 5], e, n)[2], 5, "Punkt in der Ebene bleibt");
+  var r = S.spiegelRichtung([0.6, 0.2, -0.8], n); gleich(r[0], 0.6); gleich(r[1], 0.2); gleich(r[2], 0.8, "nur die Normalen-Komponente kippt");
+  var q = S.spiegelPunkt([3, 1, 2], [2, 0, 0], [1, 0, 0]); gleich(q[0], 1, "Ebene x = 2"); gleich(q[1], 1); gleich(q[2], 2);
+});
+test("Spiegel: Normale und Ebene aus der ID – Spiegelseite zeigt in den Raum (#188)", function(){
+  var S = SC.Spiegel;
+  [["SPIEGEL_N", 0, 1], ["SPIEGEL_S", 0, -1], ["SPIEGEL_O", -1, 0], ["SPIEGEL_W", 1, 0]].forEach(function(t){
+    var s = S.seite(SC.B[t[0]]); gleich(s.nx, t[1], t[0]); gleich(s.nz, t[2], t[0]);
+    var f = SC.BLOECKE[SC.B[t[0]]].form, mitte = f.achse === "z" ? s.ez : s.ex;   // Platte [versatz ± 0,04]: die Spiegelebene liegt an der Raumseite der Platte
+    wahr(Math.abs(mitte - (f.versatz === 0 ? 0.08 : 0.92)) < 1e-9, t[0] + " Ebene an der Raumseite der Platte");
+  });
+  gleich(S.seite(SC.B.SPIEGEL_N_OBEN), null, "obere Hälfte hat keine eigene Fläche"); gleich(S.seite(SC.B.STEIN), null);
+});
+test("Spiegel: aktiver Spiegel – davor, nah genug, im Blick; hinter der Wand, zu weit, weggedreht und in der Ebene keiner (#188)", function(){
+  var w = leereWelt(), S = SC.Spiegel; w.setzeBlock(8, 64, 2, SC.B.SPIEGEL_N, "system"); w.setzeBlock(8, 65, 2, SC.B.SPIEGEL_N_OBEN, "system");
+  var vor = S.finde(w, spPos(8.5, 65.6, 7.5), [0, 0, -1], null); wahr(vor, "davor"); gleich(vor.x, 8); gleich(vor.y, 64); gleich(vor.z, 2); gleich(vor.nz, 1);
+  gleich(S.finde(w, spPos(8.5, 65.6, 7.5), [0, 0, 1], null), null, "weggedreht");
+  gleich(S.finde(w, spPos(8.5, 65.6, 0.5), [0, 0, 1], null), null, "hinter der Wand");
+  gleich(S.finde(w, spPos(8.5, 65.6, 11.5), [0, 0, -1], null), null, "über 8 Blöcke");
+  wahr(S.finde(w, spPos(8.5, 65.6, 9.5), [0, 0, -1], null), "7,4 Blöcke: noch aktiv");
+  var inE = S.finde(w, spPos(8.5, 65.6, 2.08), [0, 0, -1], null); gleich(inE, null, "genau in der Ebene (keine Division durch null)");
+  w.setzeBlock(8, 64, 2, SC.B.LUFT, "system"); gleich(S.finde(w, spPos(8.5, 65.6, 7.5), [0, 0, -1], null), null, "abgebauter Spiegel");
+});
+test("Spiegel: zwei Spiegel – der nähere gewinnt, der bisherige bleibt bei kleinem Unterschied (#188)", function(){
+  var w = leereWelt(), S = SC.Spiegel; w.setzeBlock(4, 64, 2, SC.B.SPIEGEL_N, "system"); w.setzeBlock(8, 64, 2, SC.B.SPIEGEL_N, "system");
+  var a = S.finde(w, spPos(4.5, 65.6, 7.5), [0, 0, -1], null); gleich(a.x, 4, "vor A");
+  var b = S.finde(w, spPos(8.5, 65.6, 7.5), [0, 0, -1], null); gleich(b.x, 8, "vor B");
+  gleich(S.finde(w, spPos(7.2, 65.6, 7.5), [0, 0, -1], a).x, 4, "Unterschied unter 1 Block: A bleibt");
+  gleich(S.finde(w, spPos(8.5, 65.6, 7.5), [0, 0, -1], a).x, 8, "deutlich näher an B: wechselt");
+});
+test("Spiegel: Sucher fragt zwischen zwei Suchläufen kaum Blöcke ab und bemerkt Abbau (#188)", function(){
+  var w = leereWelt(), S = SC.Spiegel; w.setzeBlock(8, 64, 2, SC.B.SPIEGEL_N, "system");
+  var n = 0, orig = w.holeBlock; w.holeBlock = function(x, y, z){ n++; return orig.call(w, x, y, z); };
+  var s = new S.Sucher(), p = spPos(8.5, 65.6, 7.5);
+  wahr(s.finde(w, p, [0, 0, -1], 0), "erster Lauf findet"); var voll = n; wahr(voll > 1000, "Suche liest den Umkreis: " + voll);
+  n = 0; wahr(s.finde(w, spPos(8.6, 65.6, 7.4), [0, 0, -1], 0.1), "zweiter Aufruf aus dem Zwischenspeicher"); wahr(n <= 3, "nur Kandidaten geprüft: " + n);
+  w.holeBlock = orig; w.setzeBlock(8, 64, 2, SC.B.LUFT, "system"); gleich(s.finde(w, spPos(8.6, 65.6, 7.4), [0, 0, -1], 0.15), null, "Abbau im Zwischenspeicher bemerkt");
+});
+test("Spiegel: schräge Near-Ebene legt die Near-Ebene auf die Spiegelebene (#188)", function(){
+  var k = new THREE.PerspectiveCamera(75, 0.5, 0.08, 32), m = SC.Spiegel.schraegeNear(k.projectionMatrix.elements.slice(), [0, 0, 1, 5]);   // Ebene z = -5 im Kameraraum
+  function ndcZ(x, y, z){ var cz = m[2] * x + m[6] * y + m[10] * z + m[14], cw = m[3] * x + m[7] * y + m[11] * z + m[15]; return cz / cw; }
+  wahr(Math.abs(ndcZ(0, 0, -5) + 1) < 1e-6, "Punkt auf der Ebene liegt auf der Near-Ebene: " + ndcZ(0, 0, -5));
+  wahr(ndcZ(0, 0, -3) < -1, "davor (näher an der Kamera) wird weggeschnitten"); wahr(ndcZ(0, 0, -10) > -1 && ndcZ(0, 0, -10) < 1, "dahinter bleibt sichtbar");
+});

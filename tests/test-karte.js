@@ -51,3 +51,27 @@ test("Karte: Lava ist orange (Glutfrost) (#169)", function(){
   var u = kaGen("glutfrost"), lava = kaSuche(u, function(b){ return b === "lavasee"; }); if(!lava) return;   // Seed ohne Lavasee im Raster: nichts zu prüfen
   var c = SC.Karte.farbe(u.g, u.p, lava[0], lava[1]); wahr(c[0] > c[2] + 60 && c[0] > 150, "orange: " + c);
 });
+test("Karte: Ansicht – Welt ↔ Bild rund umkehrbar, auch an der Weltkante; Zoom hält den Punkt unter dem Finger; Zu mir zentriert (#169)", function(){
+  var A = new SC.Karte.Ansicht(2048, 400, 300); A.mitte = [2040, 5]; A.zoom = 2;
+  [[2040, 5], [2047, 2040], [6, 20], [1990, 2040]].forEach(function(p){ var b = A.zuBild(p[0], p[1]), w = A.zuWelt(b[0], b[1]);
+    wahr(Math.abs(SC.mod(w[0] - p[0] + 1024, 2048) - 1024) < 1e-6 && Math.abs(SC.mod(w[1] - p[1] + 1024, 2048) - 1024) < 1e-6, "Roundtrip " + p); });
+  var b0 = A.zuBild(2047, 3); wahr(b0[0] > 200 - 20 && b0[0] < 200 + 20, "Punkt links der Naht liegt nahe der Mitte: " + b0);
+  var vor = A.zuWelt(100, 80); A.zoomen(2, 100, 80); var nach = A.zuWelt(100, 80); wahr(Math.abs(SC.mod(nach[0] - vor[0] + 1024, 2048) - 1024) < 1e-6 && Math.abs(SC.mod(nach[1] - vor[1] + 1024, 2048) - 1024) < 1e-6, "Punkt bleibt unter dem Finger");
+  A.zoomen(1e6, 200, 150); wahr(A.zoom <= 400 / 128 + 1e-9, "Zoom nach oben begrenzt (128 Blöcke breit): " + A.zoom); A.zoomen(1e-9, 200, 150); wahr(A.zoom >= 300 / 2048 - 1e-9, "Zoom nach unten: ganzer Planet: " + A.zoom);
+  A.zuMir([500.5, 60, 700.2]); wahr(Math.abs(A.mitte[0] - 500.5) < 1e-9 && Math.abs(A.mitte[1] - 700.2) < 1e-9, "Zu mir zentriert");
+  A.verschieben(-100, 0); wahr(A.mitte[0] > 500.5, "Ziehen nach links schiebt die Karte nach rechts"); A.mitte = [1, 1]; A.verschieben(10, 0); wahr(A.mitte[0] >= 0 && A.mitte[0] < 2048, "Mitte bleibt im Ring");
+});
+test("Karte: punkte – Mitspieler nur vom gleichen Planeten, ohne Position keine (#169)", function(){
+  var l = [{ id: "a", name: "A", pos: [1, 2, 3], planet: "start" }, { id: "b", name: "B", pos: [4, 5, 6], planet: "glutfrost" }, { id: "c", name: "C", pos: null }, { id: "d", name: "D", pos: [7, 8, 9] }];
+  var p = SC.Karte.punkte(l, "start"); gleich(p.map(function(x){ return x.id; }).join(), "a,d", "gleicher Planet oder ohne Angabe");
+});
+test("Karte: zeichne – Unerkundetes dunkel, Erkundetes in Feldfarbe, Mitspieler als Punkt (#169)", function(){
+  var u = kaGen("start"), K = SC.Karte, bits = K.neu(2048); K.markiere(bits, 2048, [1000, 60, 1000], 24);
+  var cv = document.createElement("canvas"); cv.width = 120; cv.height = 120; var ctx = cv.getContext("2d"), A = new K.Ansicht(2048, 120, 120); A.mitte = [1000, 1000]; A.zoom = 1;
+  K.zeichne(ctx, A, { planet: u.p, gen: u.g, bits: bits, ich: null, punkte: [], bett: null, cache: {} });
+  function px(x, y){ var d = ctx.getImageData(x, y, 1, 1).data; return [d[0], d[1], d[2]]; }
+  gleich(JSON.stringify(px(2, 2)), JSON.stringify(K.UNERKUNDET), "Ecke unerkundet");
+  var f = K.feldVon(2048, 1000, 1000), soll = K.farbe(u.g, u.p, f.fx, f.fz); gleich(JSON.stringify(px(60, 60)), JSON.stringify(soll), "Mitte in Feldfarbe");
+  K.zeichne(ctx, A, { planet: u.p, gen: u.g, bits: bits, ich: { pos: [1000, 60, 1000], blick: [0, 0] }, punkte: [{ id: "x", name: "Ben", farbe: "#ff0000", pos: [1010, 60, 1000] }], bett: [990, 1000], cache: {} });
+  var rot = false; for(var x = 66; x <= 74 && !rot; x++) for(var y = 56; y <= 64; y++){ var c = px(x, y); if(c[0] > 200 && c[1] < 80 && c[2] < 80) rot = true; } wahr(rot, "roter Punkt bei x = 1010");
+});

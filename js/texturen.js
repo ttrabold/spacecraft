@@ -76,6 +76,8 @@ SC.Texturen = {};
           if(x >= 5 && x <= 10 && y >= 4 && y <= 5){ a = 255; c = y === 4 || x === 5 || x === 10 ? d : h; }
           if(x >= 7 && x <= 8 && y >= 1 && y <= 3){ a = 255; c = [255, 160, 40]; }
           break;
+        // Karte: gefaltetes Papier (Rand und Linien dunkel, ein roter Punkt), außen durchsichtig wie beim Eimer
+        case "karte": a = 0; if(x >= 2 && x <= 13 && y >= 2 && y <= 13){ a = 255; c = x === 2 || x === 13 || y === 2 || y === 13 || x === 7 || x === 8 ? d : (y % 3 === 1 && x > 8 ? d : g); if(x >= 10 && x <= 11 && y >= 9 && y <= 10) c = h; } break;
         case "tierfutter": c = zf() < 0.2 ? d : g; if((x * 5 + y * 3) % 11 === 0) c = h; break;
         case "werkbankoben": c = x === 0 || x === 15 || y === 0 || y === 15 ? d : y % 4 === 3 ? d : g; if(x >= 4 && x <= 11 && y >= 6 && y <= 9) c = h; break;
         case "werkbankseite": c = y < 3 || x < 2 || x > 13 ? d : g; if(y >= 6 && y <= 9 && x % 4 === 1) c = h; break;

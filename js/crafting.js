@@ -24,6 +24,7 @@ SC.CRAFTING = {};
     bauteil("zaun", "werkbank", [{ block: B.BRETTER, anzahl: 3 }], B.ZAUN, 4),
     bauteil("leiter", "werkbank", [{ block: B.BRETTER, anzahl: 3 }], B.LEITER_N, 3),
     bauteil("spiegel", "werkbank", [{ block: B.GLAS, anzahl: 2 }, { block: B.EISENERZ, anzahl: 1 }, { block: B.BRETTER, anzahl: 2 }], B.SPIEGEL_N, 1),
+    bauteil("karte", "werkbank", [{ block: B.BRETTER, anzahl: 2 }, { block: B.EISENERZ, anzahl: 1 }], B.KARTE, 1),
     bauteil("tuer", "werkbank", [{ block: B.BRETTER, anzahl: 4 }], B.TUER_X, 1),
     bauteil("truhe", "werkbank", [{ block: B.BRETTER, anzahl: 6 }], B.TRUHE, 1),
     bauteil("zauberkugel", "werkbank", [{ block: B.BRETTER, anzahl: 6 }, { block: B.KRISTALL_BLAU, anzahl: 2 }, { block: B.KRISTALL_GRUEN, anzahl: 1 }, { block: B.TITAN, anzahl: 1 }], B.ZAUBERKUGEL, 1),

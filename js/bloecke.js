@@ -21,6 +21,7 @@ SC.B = {
   // Lagerfeuer und Kamin (Spec 2026-11-09-feuer): je aus und an, dazu das Feuerzeug
   LAGERFEUER: 101, LAGERFEUER_AN: 102, KAMIN: 103, KAMIN_AN: 104, FEUERZEUG: 105,
   SPIEGEL_N: 106, SPIEGEL_S: 107, SPIEGEL_O: 108, SPIEGEL_W: 109, SPIEGEL_N_OBEN: 110, SPIEGEL_S_OBEN: 111, SPIEGEL_O_OBEN: 112, SPIEGEL_W_OBEN: 113,   // Spiegel: Wandrichtung wie die Leiter, zwei Blöcke hoch wie die Tür
+  KARTE: 114,   // Karte: Gegenstand wie der Eimer (Spec 2026-11-10-karten)
   NETZ: 71, TIERFUTTER: 72, ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
@@ -37,7 +38,7 @@ SC.TEXTUREN = {
   eisenerz: "erz", titan: "erz", glutstahl: "erz", moorsilber: "erz", sternenmetall: "erz",
   kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
   schaltkreis: "schaltkreis", chitin: "chitin", netz: "netz", tierfutter: "tierfutter", eimer: "eimer", eimer_wasser: "eimer", eimer_lava: "eimer", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
-  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", spiegel_unten: "spiegelunten", spiegel_oben: "spiegeloben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste",
+  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", karte: "karte", spiegel_unten: "spiegelunten", spiegel_oben: "spiegeloben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste",
   lagerfeuer_aus: "holzstoss", lagerfeuer_an: "holzstossfeuer", kamin_oben: "kaminoben", kamin_aus: "kaminloch", kamin_an: "kaminfeuer", feuerzeug: "feuerzeug",
   kessel_oben: "kesseloben", kessel_seite: "kesselseite", flasche: "flasche", trank: "trank",
   pflanze_hasenklee: "kraut", pflanze_katzenminze: "kraut", pflanze_fuchsgras: "kraut", pflanze_eisblume: "kraut", pflanze_frostbeere: "kraut", pflanze_glutmohn: "kraut", pflanze_federfarn: "kraut", pflanze_quakblume: "kraut", pflanze_dschungelranke: "kraut"
@@ -113,6 +114,7 @@ SC.BLOECKE = {};
     [SC.B.EIMER, "eimer", alle("eimer"), true, true, 0, null, true, false, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
     [SC.B.EIMER_WASSER, "eimerWasser", alle("eimer_wasser"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
     [SC.B.EIMER_LAVA, "eimerLava", alle("eimer_lava"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
+    [SC.B.KARTE, "karte", alle("karte"), true, true, 0, null, true, true, { nichtAufstellbar: true, ausschnitt: true, form: "gegenstand" }],
     [SC.B.WERKBANK, "werkbank", { oben: "werkbank_oben", seite: "werkbank_seite", unten: "werkbank_seite" }, true, false, 0, null, true, true],
     [SC.B.FACKEL, "fackel", alle("fackel"), false, true, 14, [1.0, 0.7, 0.3], true, true, { form: "kreuz" }],
     [SC.B.ZAUN, "zaun", alle("zaun"), true, true, 0, null, true, true, { form: "pfosten" }],

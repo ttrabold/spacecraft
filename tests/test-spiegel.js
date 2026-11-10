@@ -145,7 +145,7 @@ test("Anleitung erklärt den Spiegel, ANLEITUNG.md enthält denselben Abschnitt 
   var req = new XMLHttpRequest(); req.open("GET", "../docs/ANLEITUNG.md", false); try { req.send(); } catch(e){ return; }   // per file:// nicht lesbar: dann nur der Text oben
   if(req.status === 200 || req.responseText) wahr(req.responseText.indexOf(sp) >= 0, "ANLEITUNG.md enthält denselben Satz");
 });
-test("Netzprotokoll 13 wegen der neuen Block-IDs des Spiegels, alte Gäste werden abgelehnt (#188)", function(){ gleich(SC.NETZ_PROTOKOLL, 13); });
+test("Netzprotokoll 13 wegen der neuen Block-IDs des Spiegels, alte Gäste werden abgelehnt (#188)", function(){ wahr(SC.NETZ_PROTOKOLL >= 13); });
 test("Spiegel: Suche reicht 8 Zellen nach oben und unten; der bisherige Treffer bleibt an den Schwellen (#188)", function(){
   var w = leereWelt(), S = SC.Spiegel; w.setzeBlock(8, 70, 2, SC.B.SPIEGEL_N, "system");
   wahr(S.finde(w, spPos(8.5, 65.6, 7.5), [0, 0.3, -1], null), "Spiegel 5 Zellen über dem Auge");

@@ -37,3 +37,28 @@ SC.Karte = {};
     erkundet.__zuletzt = z;
   };
 })();
+(function(){
+  var MEER = function(){ return SC.MEER; };
+  SC.Karte.UNERKUNDET = [18, 20, 30];
+  function hex(c){ var n = parseInt(c.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  function pal(planet, name, fallback){ var P = SC.PALETTEN[planet.palette] || SC.PALETTEN.start, t = P && P.texturen && P.texturen[name]; return hex(t ? t[0] : fallback); }
+  function mul(c, f){ return [Math.max(0, Math.min(255, Math.round(c[0] * f))), Math.max(0, Math.min(255, Math.round(c[1] * f))), Math.max(0, Math.min(255, Math.round(c[2] * f)))]; }
+  function mix(a, b, t){ return [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)]; }
+  // Farbe des Felds (fx, fz) aus der Landschaft in der Feldmitte: Biom und Höhe, nichts wird gespeichert (gebaute Dinge erscheinen deshalb nicht)
+  SC.Karte.farbe = function(gen, planet, fx, fz){
+    var x = fx * SC.Karte.FELD + SC.Karte.FELD / 2, z = fz * SC.Karte.FELD + SC.Karte.FELD / 2, h = gen.hoehe(x, z), b = gen.biom(x, z), meer = MEER();
+    var licht = 0.78 + 0.42 * Math.max(0, Math.min(1, (h - meer) / 50));
+    if(b === "lavasee") return mul([232, 92, 24], 0.85 + 0.3 * Math.max(0, Math.min(1, (h - meer + 8) / 8)));
+    if(h <= meer){ var tief = Math.max(0, Math.min(1, (meer - h) / 24)); return mul(pal(planet, "wasser", "#2f7fd8"), 1.1 - 0.5 * tief); }
+    var c;
+    if(b === "wueste" || b === "strand") c = pal(planet, "sand", "#e3cf8a");
+    else if(b === "berge") c = mix(pal(planet, "stein", "#8c8f96"), [255, 255, 255], Math.max(0, Math.min(0.5, (h - 82) / 60)));
+    else if(b === "schneefeld") c = pal(planet, "schnee_oben", "#f4f8ff");
+    else if(b === "vulkan") c = pal(planet, "grundgestein", "#3e3f45");
+    else if(b === "kristallfeld") c = pal(planet, "kristall", "#ff6fd8");
+    else if(b === "wald" || b === "dschungel") c = pal(planet, "blaetter", "#3f9a35");
+    else if(b === "sumpf") c = mix(pal(planet, "gras_oben", "#5cb83a"), pal(planet, "erde", "#8a5a33"), 0.55);
+    else c = pal(planet, "gras_oben", "#5cb83a");
+    return mul(c, licht);
+  };
+})();

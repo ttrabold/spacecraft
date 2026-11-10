@@ -36,3 +36,18 @@ test("Karte: Spielstand ohne erkundet lädt mit leerer Karte, Figur trägt erkun
     wahr(g.spieler.erkundet && typeof g.spieler.erkundet === "object" && !Array.isArray(g.spieler.erkundet), "Standardwert bei " + JSON.stringify(bad)); });
   d.spieler.erkundet = { "9": "AA" }; gleich(SC.Spielstand.figur(d).erkundet["9"], "AA", "Figur enthält erkundet");
 });
+function kaGen(id, seed){ var p = new SC.Planet({ id: id, seed: seed || 4711, palette: id === "glutfrost" ? "glutfrost" : "start" }); return { p: p, g: new SC.Generator(p) }; }
+function kaHell(c){ return c[0] + c[1] + c[2]; }
+function kaSuche(u, bed, von){ for(var fz = von || 0; fz < 256; fz += 3) for(var fx = 0; fx < 256; fx += 3){ var m = u.g.biom(fx * 8 + 4, fz * 8 + 4); if(bed(m, u.g.hoehe(fx * 8 + 4, fz * 8 + 4))) return [fx, fz]; } return null; }
+test("Karte: Farbe eines Felds aus dem Generator – Meer blau, Berg heller als Ebene, deterministisch, Unerkundetes dunkel (#169)", function(){
+  var u = kaGen("start"), K = SC.Karte, see = kaSuche(u, function(b){ return b === "see"; }), berg = kaSuche(u, function(b){ return b === "berge"; }), wiese = kaSuche(u, function(b){ return b === "wiese"; });
+  wahr(see && wiese, "Gelände mit Meer und Wiese gefunden"); var cs = K.farbe(u.g, u.p, see[0], see[1]); wahr(cs[2] > cs[0], "Meer ist bläulich: " + cs);
+  var cw = K.farbe(u.g, u.p, wiese[0], wiese[1]); wahr(cw[1] > cw[2], "Wiese ist grünlich: " + cw);
+  if(berg) wahr(kaHell(K.farbe(u.g, u.p, berg[0], berg[1])) > kaHell(cw), "Berg heller als Wiese");
+  gleich(JSON.stringify(K.farbe(u.g, u.p, see[0], see[1])), JSON.stringify(cs), "deterministisch");
+  [cs, cw].forEach(function(c){ wahr(kaHell(c) > kaHell(K.UNERKUNDET) + 60, "Feld heller als Unerkundet: " + c); });
+});
+test("Karte: Lava ist orange (Glutfrost) (#169)", function(){
+  var u = kaGen("glutfrost"), lava = kaSuche(u, function(b){ return b === "lavasee"; }); if(!lava) return;   // Seed ohne Lavasee im Raster: nichts zu prüfen
+  var c = SC.Karte.farbe(u.g, u.p, lava[0], lava[1]); wahr(c[0] > c[2] + 60 && c[0] > 150, "orange: " + c);
+});

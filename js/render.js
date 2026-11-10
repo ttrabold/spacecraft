@@ -69,6 +69,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.mitspieler = new SC.RenderMitspieler(this.szene, planet);
     this.fahrzeuge = new SC.RenderFahrzeuge(this.szene, planet);
     this._baueAusruestung();
+    this.spiegel = new SC.RenderSpiegel(this); this.spiegelAn = true;   // Spiegel (#188): spiegelAn von der Einstellung
     this.fps = 60; this._fpsZeit = 0; this._fpsBilder = 0;
     var r = this; this._groesse = function(){ r.renderer.setSize(window.innerWidth, window.innerHeight, false); r.kamera.aspect = window.innerWidth / window.innerHeight; r.kamera.updateProjectionMatrix(); };
     window.addEventListener("resize", this._groesse); this._groesse();
@@ -356,6 +357,7 @@ SC.chunkVersatz = function(cx, spielerX, groesse){ return cx * 16 + groesse * Ma
     this.mitspieler.aktualisiere(this._mitspieler || [], spieler.pos, dt, k.position);
     if(this._welt) this.fahrzeuge.bild(this._welt, spieler.pos, h.tageslicht, this.sichtweite * 16);
     this.renderer.setClearColor(h.unten);
+    this.spiegel.bild(spieler, dt);   // Spiegelbild in die Textur des aktiven Spiegels (vor dem Hauptbild)
     this.renderer.render(this.szene, k);
     // FPS
     this._fpsBilder++; this._fpsZeit += dt;

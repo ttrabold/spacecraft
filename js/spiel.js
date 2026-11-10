@@ -150,9 +150,9 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype._anzeigen = function(){
     var s = this, daten = this.daten;
     this.zeitTempo = 1; this.entwickler.verberge();
-    if(this.render){ this.render.renderer.dispose(); }
+    if(this.render){ if(this.render.spiegel) this.render.spiegel.aus(); this.render.renderer.dispose(); }
     this.render = new SC.Render(this.leinwand, this.welt.planet);
-    this.render.sichtweite = this.einstellungen.sichtweite; this.render.aufloesung(this.einstellungen.aufloesung);
+    this.render.sichtweite = this.einstellungen.sichtweite; this.render.aufloesung(this.einstellungen.aufloesung); this.render.spiegelAn = this.einstellungen.spiegel !== "aus";
     this.render.welt(this.welt);
     if(this.eingabe.touch) this.eingabe.touch.setzeGroesse(this.einstellungen.touchGroesse);
     this.lebenszyklusAnmelden(document);
@@ -352,7 +352,7 @@ SC.Spiel.startpunkt = function(planet){
   SC.Spiel.prototype._einstellungen = function(e){
     this.einstellungen = e; SC.Einstellungen.speichere(this.ns, e);
     this.eingabe.empfindlichkeit = e.empfindlichkeit;
-    if(this.render){ this.render.sichtweite = e.sichtweite; if(this.render.aufloesung) this.render.aufloesung(e.aufloesung); }
+    if(this.render){ this.render.sichtweite = e.sichtweite; if(this.render.aufloesung) this.render.aufloesung(e.aufloesung); this.render.spiegelAn = e.spiegel !== "aus"; }
     this.audio.lautstaerke(e.musik, e.geraeusche);
   };
 

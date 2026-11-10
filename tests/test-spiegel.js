@@ -94,9 +94,48 @@ test("Spiegel: Sucher fragt zwischen zwei Suchläufen kaum Blöcke ab und bemerk
   n = 0; wahr(s.finde(w, spPos(8.6, 65.6, 7.4), [0, 0, -1], 0.1), "zweiter Aufruf aus dem Zwischenspeicher"); wahr(n <= 3, "nur Kandidaten geprüft: " + n);
   w.holeBlock = orig; w.setzeBlock(8, 64, 2, SC.B.LUFT, "system"); gleich(s.finde(w, spPos(8.6, 65.6, 7.4), [0, 0, -1], 0.15), null, "Abbau im Zwischenspeicher bemerkt");
 });
-test("Spiegel: schräge Near-Ebene legt die Near-Ebene auf die Spiegelebene (#188)", function(){
-  var k = new THREE.PerspectiveCamera(75, 0.5, 0.08, 32), m = SC.Spiegel.schraegeNear(k.projectionMatrix.elements.slice(), [0, 0, 1, 5]);   // Ebene z = -5 im Kameraraum
-  function ndcZ(x, y, z){ var cz = m[2] * x + m[6] * y + m[10] * z + m[14], cw = m[3] * x + m[7] * y + m[11] * z + m[15]; return cz / cw; }
-  wahr(Math.abs(ndcZ(0, 0, -5) + 1) < 1e-6, "Punkt auf der Ebene liegt auf der Near-Ebene: " + ndcZ(0, 0, -5));
-  wahr(ndcZ(0, 0, -3) < -1, "davor (näher an der Kamera) wird weggeschnitten"); wahr(ndcZ(0, 0, -10) > -1 && ndcZ(0, 0, -10) < 1, "dahinter bleibt sichtbar");
+test("Spiegel: Sichtfenster der gespiegelten Kamera – Near-Ebene ist die Spiegelebene, Fenster über der Glasfläche (#188)", function(){
+  var f = SC.Spiegel.fenster([0, 1.6, 5], [0, 1, 0], [0, 0, 1]);
+  gleich(f.pos[0], 0); gleich(f.pos[1], 1.6); gleich(f.pos[2], -5, "Kamera hinter der Wand"); gleich(f.near, 5, "Abstand zur Ebene");
+  gleich(f.vor[2], 1, "schaut in den Raum"); gleich(f.rechts[0], -1, "rechts der Spiegelkamera ist −x");
+  wahr(Math.abs(f.links + 0.375) < 1e-9 && Math.abs(f.rechtsKante - 0.375) < 1e-9, "Breite 0,75 mittig: " + f.links + " " + f.rechtsKante);
+  wahr(Math.abs(f.unten + 1.475) < 1e-9 && Math.abs(f.oben - 0.275) < 1e-9, "Höhe 1,75 um die Mitte, schief zur Augenhöhe: " + f.unten + " " + f.oben);
+  var g = SC.Spiegel.fenster([2, 1.6, 0.5], [0, 1, 0], [1, 0, 0]);   // Spiegelnormale +x, Spieler seitlich versetzt in z
+  gleich(g.pos[0], -2); gleich(g.near, 2); wahr(Math.abs(g.rechts[2] - 1) < 1e-9, "rechts der Spiegelkamera ist +z"); wahr(Math.abs(g.links - (0 - 0.5 - 0.375)) < 1e-9, "Versatz seitlich: " + g.links);
+});
+// Attrappe für SC.Render: nur, was RenderSpiegel braucht; der Renderer zeichnet nichts, sondern merkt sich die Sichtbarkeiten im Spiegel-Durchgang
+function spRender(w, extra){
+  var o = function(v){ var x = new THREE.Object3D(); x.visible = v; return x; }, r = {
+    szene: new THREE.Scene(), kamera: new THREE.PerspectiveCamera(75, 1, 0.08, 1000), chunks: new Map(), _welt: w, touch: false, _weniger: false, spiegelAn: true,
+    figur: o(false), hand: o(true), handWaffe: o(true), rahmen: o(true), grenzen: o(true), himmel: o(true), sonne: o(true), mond: o(true), sterne: o(true),
+    uniforms: { nebelNah: { value: 90 }, nebelFern: { value: 150 } }, aufgenommen: [], ziele: [],
+    renderer: { ziel: null, getRenderTarget: function(){ return this.ziel; }, setRenderTarget: function(t){ this.ziel = t; },
+      render: function(){ r.ziele.push(this.ziel); r.aufgenommen.push({ figur: r.figur.visible, hand: r.hand.visible, waffe: r.handWaffe.visible, rahmen: r.rahmen.visible, flaeche: r.spiegel.flaeche.visible, nebel: r.uniforms.nebelFern.value }); } }
+  };
+  Object.assign(r, extra || {}); r.spiegel = new SC.RenderSpiegel(r); return r;
+}
+function spSpieler(modus){ return { pos: [8, 64, 7], modus: modus || "survival", ansicht: "ich", blick: [Math.PI, 0], sitzt: false, augen: function(){ return [8, 65.6, 7]; }, richtung: function(){ return [0, 0, -1]; }, kamera: function(){ return { pos: [8, 65.6, 7], richtung: [0, 0, -1] }; } };
+}
+function spWeltMitSpiegel(){ var w = leereWelt(); w.setzeBlock(8, 64, 2, SC.B.SPIEGEL_N, "system"); w.setzeBlock(8, 65, 2, SC.B.SPIEGEL_N_OBEN, "system"); return w; }
+test("RenderSpiegel: Spiegel-Durchgang zeigt die eigene Figur, versteckt Hand, Rahmen und Fläche und stellt alles wieder her (#188)", function(){
+  var r = spRender(spWeltMitSpiegel()); r.spiegel.bild(spSpieler(), 0.016);
+  gleich(r.aufgenommen.length, 1, "ein Durchgang"); var a = r.aufgenommen[0];
+  gleich(a.figur, true, "Figur sichtbar (auch in der Ich-Ansicht)"); gleich(a.hand, false); gleich(a.waffe, false); gleich(a.rahmen, false); gleich(a.flaeche, false, "Spiegelfläche selbst unsichtbar"); gleich(a.nebel, 40, "kürzere Sicht");
+  gleich(r.figur.visible, false, "danach wieder wie vorher"); gleich(r.hand.visible, true); gleich(r.handWaffe.visible, true); gleich(r.rahmen.visible, true); gleich(r.spiegel.flaeche.visible, true, "Fläche liegt vor dem Spiegel");
+  gleich(r.uniforms.nebelFern.value, 150); gleich(r.renderer.ziel, null, "Render-Ziel zurückgesetzt"); wahr(r.ziele[0] === r.spiegel.ziel, "gezeichnet in die Spiegeltextur");
+  r.sonne.position.set(1, 2, 3); r.spiegel.bild(spSpieler(), 0.016); gleich(r.sonne.position.x, 1, "Himmelskörper wieder an ihrem Platz");
+  var z = spRender(spWeltMitSpiegel()); z.spiegel.bild(spSpieler("zuschauer"), 0.016); gleich(z.aufgenommen[0].figur, false, "Zuschauer: keine eigene Figur"); 
+});
+test("RenderSpiegel: aus, kein Spiegel in der Nähe, im Fahrzeug → keine Textur, kein Durchgang (#188)", function(){
+  var r = spRender(spWeltMitSpiegel(), { spiegelAn: false }); r.spiegel.bild(spSpieler(), 0.016); gleich(r.aufgenommen.length, 0); gleich(r.spiegel.ziel, null, "ausgeschaltet: keine Render-Textur"); gleich(r.spiegel.flaeche, null);
+  var e = spRender(leereWelt()); e.spiegel.bild(spSpieler(), 0.016); gleich(e.aufgenommen.length, 0, "kein Spiegel"); gleich(e.spiegel.ziel, null);
+  var f = spRender(spWeltMitSpiegel()), sp = spSpieler(); sp.sitzt = 1.5; f.spiegel.bild(sp, 0.016); gleich(f.aufgenommen.length, 0, "im Fahrzeug"); gleich(f.spiegel.ziel, null);
+  var an = spRender(spWeltMitSpiegel()); an.spiegel.bild(spSpieler(), 0.016); wahr(an.spiegel.ziel && an.spiegel.flaeche, "angelegt"); an.spiegelAn = false; an.spiegel.bild(spSpieler(), 0.016);
+  gleich(an.spiegel.ziel, null, "Ausschalten gibt die Textur frei"); gleich(an.spiegel.flaeche, null); gleich(an.szene.children.length, 0, "Fläche aus der Szene entfernt");
+});
+test("RenderSpiegel: Touch oder „weniger“ erneuert das Spiegelbild nur jedes zweite Bild, Textur kleiner (#188)", function(){
+  var r = spRender(spWeltMitSpiegel(), { touch: true }), sp = spSpieler(); for(var i = 0; i < 5; i++) r.spiegel.bild(sp, 0.016);
+  gleich(r.aufgenommen.length, 3, "5 Bilder → 3 Durchgänge (erstes, drittes, fünftes)"); gleich(r.spiegel.ziel.height, 256); gleich(r.spiegel.ziel.width, 128);
+  var d = spRender(spWeltMitSpiegel()); for(i = 0; i < 4; i++) d.spiegel.bild(sp, 0.016); gleich(d.aufgenommen.length, 4, "am Computer jedes Bild"); gleich(d.spiegel.ziel.height, 512); gleich(d.spiegel.ziel.width, 256);
+  var w = spRender(spWeltMitSpiegel(), { _weniger: true }); for(i = 0; i < 4; i++) w.spiegel.bild(sp, 0.016); gleich(w.aufgenommen.length, 2, "„weniger“: jedes zweite");
 });

@@ -145,3 +145,4 @@ test("Anleitung erklärt den Spiegel, ANLEITUNG.md enthält denselben Abschnitt 
   var req = new XMLHttpRequest(); req.open("GET", "../docs/ANLEITUNG.md", false); try { req.send(); } catch(e){ return; }   // per file:// nicht lesbar: dann nur der Text oben
   if(req.status === 200 || req.responseText) wahr(req.responseText.indexOf(sp) >= 0, "ANLEITUNG.md enthält denselben Satz");
 });
+test("Netzprotokoll 11 wegen der neuen Block-IDs des Spiegels, alte Gäste werden abgelehnt (#188)", function(){ gleich(SC.NETZ_PROTOKOLL, 11); });

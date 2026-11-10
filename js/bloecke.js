@@ -15,7 +15,8 @@ SC.B = {
   // Wasser und Lava fließen (Spec 2026-11-08): Fließstufen und fallendes Wasser/Lava; WASSER (8) und LAVA (29) bleiben die Quellen
   WASSER_1: 73, WASSER_2: 74, WASSER_3: 75, WASSER_4: 76, WASSER_5: 77, WASSER_6: 78, WASSER_7: 79, WASSER_FALL: 80, LAVA_1: 81, LAVA_2: 82, LAVA_3: 83, LAVA_FALL: 84,
   EIMER: 85, EIMER_WASSER: 86, EIMER_LAVA: 87,
-  SCHNEESCHICHT: 88,   // Wetter: dünne Schneedecke, taut wieder   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
+  SCHNEESCHICHT: 88,
+  SPIEGEL_N: 89, SPIEGEL_S: 90, SPIEGEL_O: 91, SPIEGEL_W: 92, SPIEGEL_N_OBEN: 93, SPIEGEL_S_OBEN: 94, SPIEGEL_O_OBEN: 95, SPIEGEL_W_OBEN: 96,   // Spiegel: Wandrichtung wie die Leiter, zwei Blöcke hoch wie die Tür   // Wetter: dünne Schneedecke, taut wieder   // Eimer (leer, mit Wasser, mit Lava): Gegenstände, nicht aufstellbar
   NETZ: 71, TIERFUTTER: 72, ZAUBERKUGEL: 70, BETT_FUSS_N: 62, BETT_FUSS_S: 63, BETT_FUSS_O: 64, BETT_FUSS_W: 65, BETT_KOPF_N: 66, BETT_KOPF_S: 67, BETT_KOPF_O: 68, BETT_KOPF_W: 69
 };
 
@@ -32,7 +33,7 @@ SC.TEXTUREN = {
   eisenerz: "erz", titan: "erz", glutstahl: "erz", moorsilber: "erz", sternenmetall: "erz",
   kristall_blau: "kristall", kristall_gruen: "kristall", kristall_rot: "kristall", kristall_gelb: "kristall", kristall_violett: "kristall", kristall_weiss: "kristall",
   schaltkreis: "schaltkreis", chitin: "chitin", netz: "netz", tierfutter: "tierfutter", eimer: "eimer", eimer_wasser: "eimer", eimer_lava: "eimer", werkbank_oben: "werkbankoben", werkbank_seite: "werkbankseite",
-  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste"
+  fackel: "fackel", zaun: "zaun", leiter: "leiter", tuer: "tuer", tuer_oben: "tueroben", spiegel_unten: "spiegelunten", spiegel_oben: "spiegeloben", zauber_tisch_oben: "zaubertisch", zauber_tisch: "zaubertischseite", zauber_kugel: "zauberkugel", bett_fuss_oben: "bettfuss", bett_kopf_oben: "bettkopf", bett_seite: "bettseite", truhe_oben: "kistedeckel", truhe_seite: "kiste"
 };
 
 SC.BLOECKE = {};
@@ -112,6 +113,14 @@ SC.BLOECKE = {};
     [SC.B.LEITER_S, "leiter", alle("leiter"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 1 }, klettern: true }],
     [SC.B.LEITER_O, "leiter", alle("leiter"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 1 }, klettern: true }],
     [SC.B.LEITER_W, "leiter", alle("leiter"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 0 }, klettern: true }],
+    [SC.B.SPIEGEL_N, "spiegel", { oben: "spiegel_unten", seite: "spiegel_unten", unten: "spiegel_unten" }, false, true, 0, null, true, true, { form: { typ: "platte", achse: "z", versatz: 0 } }],
+    [SC.B.SPIEGEL_S, "spiegel", { oben: "spiegel_unten", seite: "spiegel_unten", unten: "spiegel_unten" }, false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 1 } }],
+    [SC.B.SPIEGEL_O, "spiegel", { oben: "spiegel_unten", seite: "spiegel_unten", unten: "spiegel_unten" }, false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 1 } }],
+    [SC.B.SPIEGEL_W, "spiegel", { oben: "spiegel_unten", seite: "spiegel_unten", unten: "spiegel_unten" }, false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 0 } }],
+    [SC.B.SPIEGEL_N_OBEN, "spiegel", { oben: "spiegel_oben", seite: "spiegel_oben", unten: "spiegel_oben" }, false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 0 } }],
+    [SC.B.SPIEGEL_S_OBEN, "spiegel", { oben: "spiegel_oben", seite: "spiegel_oben", unten: "spiegel_oben" }, false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 1 } }],
+    [SC.B.SPIEGEL_O_OBEN, "spiegel", { oben: "spiegel_oben", seite: "spiegel_oben", unten: "spiegel_oben" }, false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 1 } }],
+    [SC.B.SPIEGEL_W_OBEN, "spiegel", { oben: "spiegel_oben", seite: "spiegel_oben", unten: "spiegel_oben" }, false, true, 0, null, true, false, { form: { typ: "platte", achse: "x", versatz: 0 } }],
     [SC.B.TUER_X, "tuer", alle("tuer"), true, true, 0, null, true, true, { form: { typ: "platte", achse: "x", versatz: 0.5 } }],
     [SC.B.TUER_Z, "tuer", alle("tuer"), true, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 0.5 } }],
     [SC.B.TUER_X_OFFEN, "tuer", alle("tuer"), false, true, 0, null, true, false, { form: { typ: "platte", achse: "z", versatz: 0 } }],

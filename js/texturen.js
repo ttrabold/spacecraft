@@ -60,6 +60,9 @@ SC.Texturen = {};
         case "leiter": a = 0; if(x <= 2 || x >= 13 || y % 4 === 1){ c = x <= 2 || x >= 13 ? g : d; a = 255; } break;
         case "tuer": c = x < 2 || x > 13 || y < 2 || y > 13 ? d : (y === 7 || y === 8) ? d : g; if(x === 12 && (y === 7 || y === 8)) c = h; break;
         case "tueroben": c = x < 2 || x > 13 || y < 2 || y > 13 ? d : (x >= 4 && x <= 11 && y >= 3 && y <= 9) ? h : g; break;
+        // Spiegel: Holzrahmen, silbrig-blaue Fläche, diagonale Glanzstreifen, die über beide Hälften durchlaufen (unten = untere Hälfte, y läuft nach unten)
+        case "spiegelunten": var su = x < 2 || x > 13 || y > 13; c = su ? d : g; if(!su && ((x + y + 16) % 11 === 0 || (x + y + 16) % 11 === 1 && x % 2)) c = h; break;
+        case "spiegeloben": var so = x < 2 || x > 13 || y < 2; c = so ? d : g; if(!so && ((x + y) % 11 === 0 || (x + y) % 11 === 1 && x % 2)) c = h; break;
         case "bettfuss": c = y % 5 === 4 ? d : (x === 0 || x === 15 || y === 0) ? d : g; break;
         case "bettkopf": c = (x === 0 || x === 15 || y === 15) ? d : (x >= 2 && x <= 13 && y >= 1 && y <= 6) ? h : g; if(y === 7 && x >= 2 && x <= 13) c = d; break;
         case "bettseite": c = y < 6 ? (y === 5 ? d : h) : (y % 4 === 3 ? d : g); break;

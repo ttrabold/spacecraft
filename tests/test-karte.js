@@ -102,3 +102,9 @@ test("Karte im Spiel: _karte öffnet nur mit Karte in der Hand, zeigt Mitspieler
   var k2 = kaSpiel(); k2.spieler.modus = "kreativ"; k2.spieler.schnellleiste[0] = SC.B.STEIN; gleich(k2._karte(), false, "Kreativ: Stein");
   var im = kaSpiel({ all: true }); gleich(im._karte(), false, "im All keine Karte");
 });
+test("Anleitung erklärt die Karte, ANLEITUNG.md enthält denselben Satz (#169)", function(){
+  var sp = SC.T.anleitung.abschnitte.reduce(function(a, x){ return a.concat(x[1]); }, []).filter(function(t){ return t.indexOf("Die Karte baust du") >= 0; })[0];
+  wahr(sp && sp.indexOf("immer mit") >= 0 && sp.indexOf("dunkel") >= 0, "Satz in SC.T.anleitung");
+  var req = new XMLHttpRequest(); req.open("GET", "../docs/ANLEITUNG.md", false); try { req.send(); } catch(e){ return; }
+  if(req.status === 200 || req.responseText) wahr(req.responseText.indexOf(sp) >= 0, "ANLEITUNG.md enthält denselben Satz");
+});

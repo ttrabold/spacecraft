@@ -31,7 +31,8 @@ SC.Karte = {};
   // erkundet: { [planet.seed]: base64, __zuletzt: [seed, …] } (Figurfeld); die Karte reist so mit der Figur
   SC.Karte.fuerPlanet = function(erkundet, planet){ return SC.Karte.dekodiere(erkundet[String(planet.seed)], planet.groesse); };
   SC.Karte.speichereFuerPlanet = function(erkundet, planet, bits){
-    var k = String(planet.seed), z = Array.isArray(erkundet.__zuletzt) ? erkundet.__zuletzt.filter(function(s){ return s !== k && erkundet[s] !== undefined; }) : [];
+    var k = String(planet.seed), z = (Array.isArray(erkundet.__zuletzt) ? erkundet.__zuletzt : Object.keys(erkundet)).filter(function(s){ return s !== k && s !== "__zuletzt" && erkundet[s] !== undefined; });
+    Object.keys(erkundet).forEach(function(s){ if(s !== k && s !== "__zuletzt" && z.indexOf(s) < 0) z.unshift(s); });   // Schlüssel ohne Eintrag in __zuletzt (altes oder kaputtes Feld) gelten als die ältesten
     erkundet[k] = SC.Karte.kodiere(bits); z.push(k);
     while(z.length > MAX) delete erkundet[z.shift()];   // der am längsten nicht besuchte Planet fliegt raus
     erkundet.__zuletzt = z;

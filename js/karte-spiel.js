@@ -25,7 +25,8 @@
     this._erkunden(); if(this.eingabe && this.eingabe.gebeMausFrei) this.eingabe.gebeMausFrei();
     var bett = null, bettZeit = -1;
     this.ui.zeigeKarte({
-      planet: p, gen: p._gelaende || (p._gelaende = new SC.Generator(p)), name: p.id, bits: function(){ return s._erkundetBits(); },
+      gueltig: function(){ return s.welt && s.welt.planet === p && s.spieler === sp; },
+      planet: p, gen: p._gelaende || (p._gelaende = new SC.Generator(p)), name: (SC.Planeten && SC.Planeten.def && SC.Planeten.def(p) && SC.Planeten.def(p).name) || p.id, bits: function(){ return s._erkundetBits(); },
       ich: function(){ return { pos: sp.pos, blick: sp.blick }; }, mitspieler: function(){ return s._mitspielerListe(); },
       bett: function(){ var t = Date.now(); if(t - bettZeit > 1000){ bett = s._karteBett(); bettZeit = t; } return bett; }
     }, { beiFertig: function(){ s._weiter(); } });

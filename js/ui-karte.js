@@ -62,6 +62,7 @@
     var aktionen = { fertig: function(){ stop = true; ui.schliesse(); o.beiFertig ? o.beiFertig() : ui.o.beiWeiter && ui.o.beiWeiter(); } }, stop = false;
     var zusatz = '<div class="reihe"><button data-aktion="plus">+</button><button data-aktion="minus">−</button><button data-aktion="mir">' + esc(T.karteZuMir) + '</button><button class="haupt" data-aktion="fertig">' + esc(T.fertig) + "</button></div>";
     ui._zeige("<h2>" + esc(T.karteTitel) + (d.name ? " – " + esc(d.name) : "") + '</h2><canvas class="karte-fl"></canvas><p class="leer" id="karte-pos"></p><p class="leer">' + esc(T.karteTipp) + "</p>" + zusatz, aktionen, { startZone: null });
+    ui._eigeneSteuerung = true;   // Stick und LB/RB steuern die Karte, nicht den Menüfokus
     var cv = ui.ebene.querySelector(".karte-fl"), pos = ui.ebene.querySelector("#karte-pos"), b = Math.max(200, Math.min(820, window.innerWidth - 48)), h = Math.max(160, Math.min(560, window.innerHeight - 250));
     cv.width = b; cv.height = h; var ctx = cv.getContext("2d"), a = new K.Ansicht(d.gen.planet.groesse, b, h), cache = {}, schmutzig = true, letzte = "";
     var ich0 = d.ich(); if(ich0) { a.zuMir(ich0.pos); a.setzeZoom(a.b / 256); }
@@ -83,6 +84,7 @@
     cv.addEventListener("wheel", function(ev){ ev.preventDefault(); var p = lokal(ev); a.zoomen(ev.deltaY < 0 ? 1.25 : 0.8, p[0], p[1]); schmutzig = true; }, { passive: false });
     function bild(){
       if(stop || !cv.isConnected){ return; }
+      if(d.gueltig && !d.gueltig()){ aktionen.fertig(); return; }   // Planet oder Spieler wurde ausgetauscht (Gast: Gastgeber reist)
       var i = d.ich(), ml = K.punkte(d.mitspieler(), d.planet.id), sig = JSON.stringify([i && i.pos.map(Math.round), i && Math.round(i.blick[0] * 10), ml.map(function(e){ return [e.id, Math.round(e.pos[0]), Math.round(e.pos[2])]; })]);
       // Controller: linker Stick verschiebt, LB/RB zoomen
       var gp = navigator.getGamepads ? navigator.getGamepads() : []; for(var g = 0; g < gp.length; g++){ var p = gp[g]; if(!p) continue;

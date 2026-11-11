@@ -94,7 +94,7 @@ test("Karte im Spiel: _erkunden schreibt je Planeten-Seed, rechnet nur bei Feldw
 });
 test("Karte im Spiel: _karte öffnet nur mit Karte in der Hand, zeigt Mitspieler und Bett (#169)", function(){
   var s = kaSpiel(); gleich(s._karte(), true, "Survival: Karte in der Hand"); gleich(s.geoeffnet.length, 1); var d = s.geoeffnet[0];
-  gleich(d.name, "start"); wahr(d.gen && d.bits() && d.ich().pos, "Daten für die Karte"); gleich(d.bett(), null, "ohne Bett");
+  gleich(d.name, "Heimatplanet", "lokalisierter Planetenname"); wahr(d.gen && d.bits() && d.ich().pos, "Daten für die Karte"); gleich(d.bett(), null, "ohne Bett");
   s.daten.spieler.bett = { planet: "start", x: 10, y: 60, z: 20 }; gleich(JSON.stringify(s._karteBett()), JSON.stringify([10.5, 20.5]), "Bett als Symbol");
   s.daten.spieler.bett = { planet: "glutfrost", x: 10, y: 60, z: 20 }; gleich(s._karteBett(), null, "Bett auf anderem Planeten");
   var l = kaSpiel({ kampf: { rucksack: { plaetze: [{ block: SC.B.STEIN, anzahl: 3 }] } } }); gleich(l._karte(), false, "andere Sache in der Hand"); gleich(l.geoeffnet.length, 0);
@@ -107,4 +107,26 @@ test("Anleitung erklärt die Karte, ANLEITUNG.md enthält denselben Satz (#169)"
   wahr(sp && sp.indexOf("immer mit") >= 0 && sp.indexOf("dunkel") >= 0, "Satz in SC.T.anleitung");
   var req = new XMLHttpRequest(); req.open("GET", "../docs/ANLEITUNG.md", false); try { req.send(); } catch(e){ return; }
   if(req.status === 200 || req.responseText) wahr(req.responseText.indexOf(sp) >= 0, "ANLEITUNG.md enthält denselben Satz");
+});
+function kaUi(){ var w = document.createElement("div"); document.body.appendChild(w); return { w: w, ui: new SC.UI(w, { slots: null, beiStart: function(){}, beiImport: function(){}, beiWeiter: function(){} }) }; }
+function kaDaten(gueltig){
+  var p = new SC.Planet({ id: "start", seed: 4711 }), sp = { pos: [1000, 60, 1000], blick: [0, 0] };
+  return { planet: p, gen: new SC.Generator(p), name: "start", bits: function(){ return SC.Karte.neu(2048); }, ich: function(){ return sp; }, mitspieler: function(){ return []; }, bett: function(){ return null; }, gueltig: gueltig };
+}
+test("Karte offen: Stick und Schultertasten steuern die Karte, nicht den Menüfokus; A und B bleiben (#169)", function(){
+  var x = kaUi(), ui = x.ui, n = { nav: 0, zone: 0, ok: 0 }; ui.navigiere = function(){ n.nav++; }; ui.zone = function(){ n.zone++; }; ui.bestaetige = function(){ n.ok++; };
+  ui.zeigeKarte(kaDaten(function(){ return true; }), {}); wahr(ui._eigeneSteuerung, "Flag gesetzt");
+  ui.menueAktion("hoch"); ui.menueAktion("links"); ui.menueAktion("zoneVor"); ui.menueAktion("zoneZurueck"); gleich(n.nav + n.zone, 0, "Richtungen und Zonen ignoriert"); ui.menueAktion("ok"); gleich(n.ok, 1, "A geht durch");
+  ui.schliesse(); gleich(ui._eigeneSteuerung, false, "Flag nach dem Schließen weg"); ui.menueAktion("hoch"); gleich(n.nav, 1, "danach wieder normal"); x.w.remove();
+});
+test("Karte offen: wechselt Planet oder Spieler, schließt sie sich selbst (#169)", function(){
+  var x = kaUi(), ui = x.ui, ok = true, zu = 0; ui.zeigeKarte(kaDaten(function(){ return ok; }), { beiFertig: function(){ zu++; } });
+  wahr(x.w.querySelector(".karte-fl"), "offen"); ok = false;
+  return new Promise(function(res){ var n = 0; (function warte(){ if(!x.w.querySelector(".karte-fl") || ++n > 60){ res(); return; } setTimeout(warte, 20); })(); }).then(function(){
+    gleich(!!x.w.querySelector(".karte-fl"), false, "geschlossen"); gleich(zu, 1, "beiFertig genau einmal"); x.w.remove(); });
+});
+test("Karte im Spiel: gueltig endet, wenn Welt oder Spieler ausgetauscht werden (#169)", function(){
+  var s = kaSpiel(); s._karte(); var d = s.geoeffnet[0]; gleich(d.gueltig(), true);
+  s.welt = { planet: new SC.Planet({ id: "glutfrost", seed: 99 }) }; gleich(d.gueltig(), false, "anderer Planet");
+  var t = kaSpiel(); t._karte(); var e = t.geoeffnet[0]; t.spieler = Object.assign({}, t.spieler); gleich(e.gueltig(), false, "neuer Spieler");
 });

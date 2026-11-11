@@ -172,13 +172,14 @@ SC.UI = function(wurzel, o){
     if(k) k.click();
   };
 
-  SC.UI.prototype.schliesse = function(){ this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._beiZurueck = null; this._beiKlickLeer = null; this._startZone = null; this.hudEl.classList.remove("seitenpanel"); };
+  SC.UI.prototype.schliesse = function(){ this._eigeneSteuerung = false; this.ebene.hidden = true; this.ebene.innerHTML = ""; this._aktionen = {}; this._beiFokus = null; this._kurzaktion = null; this._beiZurueck = null; this._beiKlickLeer = null; this._startZone = null; this.hudEl.classList.remove("seitenpanel"); };
   SC.UI.prototype.offen = function(){ return !this.ebene.hidden || this.modalOffen(); };
   // Für die Controller-Hilfe: zusätzlich das Entwicklerpanel (in der Eingabe und in _fenster ein Menü)
   SC.UI.prototype.menueOffen = function(){ return this.offen() || !!(this.wurzel.querySelector(".entwickler:not([hidden])")); };
 
   // Zuordnung der Gamepad-Werte aus SC.Gamepad.zuMenue zu den Aktionen des offenen Fensters
   SC.UI.prototype.menueAktion = function(r){
+    if(this._eigeneSteuerung && r !== "ok" && r !== "zurueck" && r !== "schliessen") return;   // Karte offen: Stick und Schultertasten gehören der Karte (js/ui-karte.js)
     if(r === "ok") this.bestaetige();
     else if(r === "zurueck") this.zurueck();
     else if(r === "schliessen") this.schliesse();
